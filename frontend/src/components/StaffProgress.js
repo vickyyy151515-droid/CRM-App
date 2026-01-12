@@ -9,6 +9,9 @@ export default function StaffProgress() {
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState('');
   const [products, setProducts] = useState([]);
+  const [dateRange, setDateRange] = useState('all');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
 
   useEffect(() => {
     loadData();
