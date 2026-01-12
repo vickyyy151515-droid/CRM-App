@@ -125,6 +125,7 @@ export default function MyAssignedRecords() {
                           </th>
                         ))}
                         <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">Assigned Date</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">WhatsApp Ada/Tidak</th>
                       </tr>
                     </thead>
                     <tbody>
