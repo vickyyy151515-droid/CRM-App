@@ -86,10 +86,14 @@ class CustomerRecord(BaseModel):
     row_number: int
     row_data: dict
     status: str = "available"
+    whatsapp_status: Optional[str] = None
     assigned_to: Optional[str] = None
     assigned_to_name: Optional[str] = None
     assigned_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class WhatsAppStatusUpdate(BaseModel):
+    whatsapp_status: str
 
 class DatabaseCreate(BaseModel):
     description: Optional[str] = None
