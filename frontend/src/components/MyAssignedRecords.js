@@ -56,16 +56,16 @@ export default function MyAssignedRecords() {
 
   return (
     <div>
-      <h2 className=\"text-3xl font-semibold tracking-tight text-slate-900 mb-6\">My Assigned Customers</h2>
+      <h2 className="text-3xl font-semibold tracking-tight text-slate-900 mb-6">My Assigned Customers</h2>
 
-      <div className=\"mb-6\">
+      <div className="mb-6">
         <select
           value={selectedProduct}
           onChange={(e) => setSelectedProduct(e.target.value)}
-          data-testid=\"filter-assigned-product\"
-          className=\"flex h-10 w-64 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2\"
+          data-testid="filter-assigned-product"
+          className="flex h-10 w-64 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
         >
-          <option value=\"\">All Products</option>
+          <option value="">All Products</option>
           {products.map((product) => (
             <option key={product.id} value={product.id}>
               {product.name}
