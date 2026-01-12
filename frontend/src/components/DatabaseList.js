@@ -6,18 +6,37 @@ import DatabasePreview from './DatabasePreview';
 
 export default function DatabaseList({ onUpdate, isStaff = false }) {
   const [databases, setDatabases] = useState([]);
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState('');
   const [selectedDb, setSelectedDb] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
+    loadProducts();
+  }, []);
+
+  useEffect(() => {
     loadDatabases();
-  }, [search]);
+  }, [search, selectedProduct]);
+
+  const loadProducts = async () => {
+    try {
+      const response = await api.get('/products');
+      setProducts(response.data);
+    } catch (error) {
+      toast.error('Failed to load products');
+    }
+  };
 
   const loadDatabases = async () => {
     try {
-      const response = await api.get('/databases', { params: { search } });
+      const params = {};
+      if (search) params.search = search;
+      if (selectedProduct) params.product_id = selectedProduct;
+      
+      const response = await api.get('/databases', { params });
       setDatabases(response.data);
     } catch (error) {
       toast.error('Failed to load databases');
