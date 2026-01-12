@@ -381,9 +381,30 @@ async def delete_database(database_id: str, user: User = Depends(get_admin_user)
         os.remove(database['file_path'])
     
     await db.databases.delete_one({'id': database_id})
+    await db.customer_records.delete_many({'database_id': database_id})
     await db.download_requests.delete_many({'database_id': database_id})
     
     return {'message': 'Database deleted successfully'}
+
+@api_router.get("/databases/{database_id}/records", response_model=List[CustomerRecord])
+async def get_database_records(database_id: str, status: Optional[str] = None, user: User = Depends(get_current_user)):
+    database = await db.databases.find_one({'id': database_id})
+    if not database:
+        raise HTTPException(status_code=404, detail="Database not found")
+    
+    query = {'database_id': database_id}
+    if status:
+        query['status'] = status
+    
+    records = await db.customer_records.find(query, {'_id': 0}).sort('row_number', 1).to_list(10000)
+    
+    for record in records:
+        if isinstance(record.get('created_at'), str):
+            record['created_at'] = datetime.fromisoformat(record['created_at'])
+        if record.get('assigned_at') and isinstance(record['assigned_at'], str):
+            record['assigned_at'] = datetime.fromisoformat(record['assigned_at'])
+    
+    return records
 
 @api_router.post("/download-requests", response_model=DownloadRequest)
 async def create_download_request(request_data: DownloadRequestCreate, user: User = Depends(get_current_user)):
