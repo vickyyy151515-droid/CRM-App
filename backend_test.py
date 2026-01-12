@@ -541,15 +541,27 @@ Alice Brown,alice@example.com,28,HR"""
         # First upload another database for this test
         self.test_create_sample_csv()
         
+        # Get first available product for upload
+        if hasattr(self, 'products') and self.products:
+            product_id = self.products[0]['id']
+        elif hasattr(self, 'test_product_id'):
+            product_id = self.test_product_id
+        else:
+            self.log_test("Staff Delete Database Test", False, "No products available for upload")
+            return False
+        
         with open('/tmp/test_database.csv', 'rb') as f:
             files = {'file': ('test_database2.csv', f, 'text/csv')}
-            data = {'description': 'Database for delete test'}
+            data = {
+                'description': 'Database for delete test',
+                'product_id': product_id
+            }
             
             success, response = self.run_api_test(
                 "Upload Database for Delete Test",
                 "POST",
                 "databases",
-                200,
+                201,
                 data=data,
                 files=files,
                 token=self.admin_token
