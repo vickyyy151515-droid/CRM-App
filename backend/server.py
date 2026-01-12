@@ -112,7 +112,7 @@ class DownloadRequest(BaseModel):
 
 class DownloadRequestCreate(BaseModel):
     database_id: str
-    record_ids: List[str]
+    record_count: int
 
 class DownloadHistory(BaseModel):
     model_config = ConfigDict(extra="ignore")
