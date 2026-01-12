@@ -67,8 +67,8 @@ class Database(BaseModel):
     file_type: str
     file_size: int
     description: Optional[str] = None
-    product_id: str
-    product_name: str
+    product_id: Optional[str] = None  # Made optional for backward compatibility
+    product_name: Optional[str] = None  # Made optional for backward compatibility
     uploaded_by: str
     uploaded_by_name: str
     uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
