@@ -149,23 +149,6 @@ export default function DatabaseRecords({ database, isStaff, onRequestSuccess })
                     className="border-b border-slate-100 hover:bg-slate-50"
                     data-testid={`record-row-${record.id}`}
                   >
-                    {isStaff && (
-                      <td className="px-4 py-3">
-                        {record.status === 'available' && (
-                          <button
-                            onClick={() => handleSelectRecord(record.id)}
-                            data-testid={`select-record-${record.id}`}
-                            className="text-slate-600 hover:text-slate-900"
-                          >
-                            {selectedRecords.includes(record.id) ? (
-                              <CheckSquare size={18} className="text-indigo-600" />
-                            ) : (
-                              <Square size={18} />
-                            )}
-                          </button>
-                        )}
-                      </td>
-                    )}
                     <td className="px-4 py-3 text-sm text-slate-900 font-medium">{record.row_number}</td>
                     {columns.map((col, idx) => (
                       <td key={idx} className="px-4 py-3 text-sm text-slate-900">
