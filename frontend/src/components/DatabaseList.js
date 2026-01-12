@@ -191,8 +191,8 @@ export default function DatabaseList({ onUpdate, isStaff = false }) {
                       data-testid={`request-download-${db.id}`}
                       className="bg-slate-900 text-white hover:bg-slate-800 shadow-sm font-medium px-4 py-2 rounded-md transition-all active:scale-95 flex items-center gap-2"
                     >
-                      <Download size={16} />
-                      Request
+                      <Users size={16} />
+                      View Records
                     </button>
                   ) : (
                     <button
