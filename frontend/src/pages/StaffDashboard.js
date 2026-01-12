@@ -3,8 +3,8 @@ import { api } from '../App';
 import DashboardLayout from '../components/DashboardLayout';
 import DatabaseList from '../components/DatabaseList';
 import MyRequests from '../components/MyRequests';
-import DownloadHistory from '../components/DownloadHistory';
-import { LayoutDashboard, FileSpreadsheet, Clock } from 'lucide-react';
+import MyAssignedRecords from '../components/MyAssignedRecords';
+import { LayoutDashboard, FileSpreadsheet, Clock, User } from 'lucide-react';
 
 export default function StaffDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('databases');
