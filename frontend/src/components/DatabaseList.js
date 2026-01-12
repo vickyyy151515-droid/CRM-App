@@ -13,6 +13,7 @@ export default function DatabaseList({ onUpdate, isStaff = false }) {
   const [selectedProduct, setSelectedProduct] = useState('');
   const [selectedDb, setSelectedDb] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [showRecords, setShowRecords] = useState(false);
 
   useEffect(() => {
     loadProducts();
