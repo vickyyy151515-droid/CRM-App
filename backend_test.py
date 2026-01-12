@@ -520,7 +520,7 @@ def main():
                 },
                 'test_results': tester.test_results,
                 'timestamp': datetime.now().isoformat()
-            }, indent=2)
+            }, f, indent=2)
         
         print(f"\n📄 Detailed results saved to: {results_file}")
         
