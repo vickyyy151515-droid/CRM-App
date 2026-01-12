@@ -23,25 +23,7 @@ export default function MyRequests({ onUpdate }) {
   };
 
   const handleDownload = async (request) => {
-    try {
-      const response = await api.get(`/download/${request.id}`, {
-        responseType: 'blob'
-      });
-
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', request.database_name);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-
-      toast.success('Download started!');
-      onUpdate?.();
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Download failed');
-    }
+    toast.info('Records have been assigned to you. Check "My Assigned Customers" tab.');
   };
 
   const formatDate = (dateString) => {
