@@ -25,25 +25,22 @@ export default function DatabaseRecords({ database, isStaff, onRequestSuccess })
   };
 
   const handleSelectRecord = (recordId) => {
-    if (selectedRecords.includes(recordId)) {
-      setSelectedRecords(selectedRecords.filter(id => id !== recordId));
-    } else {
-      setSelectedRecords([...selectedRecords, recordId]);
-    }
+    // Removed - staff cannot select specific records
   };
 
   const handleSelectAll = () => {
-    const availableRecords = records.filter(r => r.status === 'available');
-    if (selectedRecords.length === availableRecords.length) {
-      setSelectedRecords([]);
-    } else {
-      setSelectedRecords(availableRecords.map(r => r.id));
-    }
+    // Removed - staff cannot select specific records
   };
 
   const handleRequest = async () => {
-    if (selectedRecords.length === 0) {
-      toast.error('Please select at least one record');
+    const count = parseInt(requestCount);
+    if (!count || count <= 0) {
+      toast.error('Please enter a valid number');
+      return;
+    }
+
+    if (count > availableCount) {
+      toast.error(`Only ${availableCount} records available`);
       return;
     }
 
@@ -51,10 +48,10 @@ export default function DatabaseRecords({ database, isStaff, onRequestSuccess })
     try {
       await api.post('/download-requests', {
         database_id: database.id,
-        record_ids: selectedRecords
+        record_count: count
       });
-      toast.success(`Requested ${selectedRecords.length} customer records!`);
-      setSelectedRecords([]);
+      toast.success(`Requested ${count} customer records!`);
+      setRequestCount('');
       loadRecords();
       onRequestSuccess?.();
     } catch (error) {
