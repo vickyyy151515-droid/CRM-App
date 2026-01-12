@@ -154,6 +154,9 @@ export default function DatabaseList({ onUpdate, isStaff = false }) {
                     <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-slate-100 text-slate-700">
                       {db.file_type.toUpperCase()}
                     </span>
+                    <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-indigo-50 text-indigo-700 border-indigo-200">
+                      {db.product_name}
+                    </span>
                   </div>
                   {db.description && (
                     <p className="text-sm text-slate-600 mb-3">{db.description}</p>
