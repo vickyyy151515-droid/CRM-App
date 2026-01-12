@@ -7,7 +7,8 @@ import DatabaseList from '../components/DatabaseList';
 import DownloadRequests from '../components/DownloadRequests';
 import DownloadHistory from '../components/DownloadHistory';
 import CreateUser from '../components/CreateUser';
-import { LayoutDashboard, Upload, FileSpreadsheet, Clock, Users } from 'lucide-react';
+import ProductManagement from '../components/ProductManagement';
+import { LayoutDashboard, Upload, FileSpreadsheet, Clock, Users, Package } from 'lucide-react';
 
 export default function AdminDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('overview');
