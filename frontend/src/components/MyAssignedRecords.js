@@ -132,8 +132,8 @@ export default function MyAssignedRecords() {
                               // Remove any non-digit characters except +
                               phoneNumber = phoneNumber.replace(/[^\d+]/g, '');
                               
-                              // Format for WhatsApp Web
-                              const whatsappUrl = `https://web.whatsapp.com/send?phone=${phoneNumber}`;
+                              // Format for WhatsApp using wa.me (universal, works on mobile and desktop)
+                              const whatsappUrl = `https://wa.me/${phoneNumber}`;
                               
                               return (
                                 <td key={idx} className="px-4 py-3 text-sm">
