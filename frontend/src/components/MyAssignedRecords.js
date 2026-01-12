@@ -35,6 +35,18 @@ export default function MyAssignedRecords() {
     }
   };
 
+  const handleWhatsAppStatusChange = async (recordId, status) => {
+    try {
+      await api.patch(`/customer-records/${recordId}/whatsapp-status`, {
+        whatsapp_status: status
+      });
+      toast.success('WhatsApp status updated');
+      loadRecords();
+    } catch (error) {
+      toast.error('Failed to update status');
+    }
+  };
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
