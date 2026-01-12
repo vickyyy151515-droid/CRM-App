@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { User, CheckSquare, Square } from 'lucide-react';
+import { User } from 'lucide-react';
 
 export default function DatabaseRecords({ database, isStaff, onRequestSuccess }) {
   const [records, setRecords] = useState([]);
