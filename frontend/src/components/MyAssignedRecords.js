@@ -197,6 +197,32 @@ export default function MyAssignedRecords() {
                           <td className="px-4 py-3 text-sm text-slate-600">
                             {formatDate(record.assigned_at)}
                           </td>
+                          <td className="px-4 py-3 text-sm">
+                            <div className="flex items-center gap-3">
+                              <label className="flex items-center gap-1.5 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name={`whatsapp-${record.id}`}
+                                  checked={record.whatsapp_status === 'ada'}
+                                  onChange={() => handleWhatsAppStatusChange(record.id, 'ada')}
+                                  data-testid={`whatsapp-ada-${record.id}`}
+                                  className="w-4 h-4 text-emerald-600 focus:ring-emerald-500"
+                                />
+                                <span className="text-sm text-slate-700">Ada</span>
+                              </label>
+                              <label className="flex items-center gap-1.5 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name={`whatsapp-${record.id}`}
+                                  checked={record.whatsapp_status === 'tidak'}
+                                  onChange={() => handleWhatsAppStatusChange(record.id, 'tidak')}
+                                  data-testid={`whatsapp-tidak-${record.id}`}
+                                  className="w-4 h-4 text-rose-600 focus:ring-rose-500"
+                                />
+                                <span className="text-sm text-slate-700">Tidak</span>
+                              </label>
+                            </div>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
