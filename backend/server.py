@@ -415,21 +415,30 @@ async def create_download_request(request_data: DownloadRequestCreate, user: Use
     if not database:
         raise HTTPException(status_code=404, detail="Database not found")
     
-    if not request_data.record_ids or len(request_data.record_ids) == 0:
-        raise HTTPException(status_code=400, detail="No records selected")
+    if request_data.record_count <= 0:
+        raise HTTPException(status_code=400, detail="Record count must be greater than 0")
     
-    for record_id in request_data.record_ids:
-        record = await db.customer_records.find_one({'id': record_id})
-        if not record:
-            raise HTTPException(status_code=404, detail=f"Record {record_id} not found")
-        if record['status'] != 'available':
-            raise HTTPException(status_code=400, detail=f"Record {record_id} is not available")
+    available_records = await db.customer_records.find(
+        {'database_id': request_data.database_id, 'status': 'available'},
+        {'_id': 0}
+    ).sort('row_number', 1).to_list(request_data.record_count)
+    
+    if len(available_records) == 0:
+        raise HTTPException(status_code=400, detail="No available records in this database")
+    
+    if len(available_records) < request_data.record_count:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Only {len(available_records)} records available, but you requested {request_data.record_count}"
+        )
+    
+    record_ids = [record['id'] for record in available_records]
     
     request = DownloadRequest(
         database_id=request_data.database_id,
         database_name=database['filename'],
-        record_ids=request_data.record_ids,
-        record_count=len(request_data.record_ids),
+        record_ids=record_ids,
+        record_count=len(record_ids),
         requested_by=user.id,
         requested_by_name=user.name
     )
@@ -439,7 +448,7 @@ async def create_download_request(request_data: DownloadRequestCreate, user: Use
     
     await db.download_requests.insert_one(doc)
     
-    for record_id in request_data.record_ids:
+    for record_id in record_ids:
         await db.customer_records.update_one(
             {'id': record_id},
             {'$set': {'status': 'requested'}}
