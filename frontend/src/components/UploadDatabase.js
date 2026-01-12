@@ -186,7 +186,7 @@ export default function UploadDatabase({ onUploadSuccess }) {
 
           <button
             type="submit"
-            disabled={uploading || !file}
+            disabled={uploading || !file || !productId}
             data-testid="upload-database-button"
             className="w-full bg-slate-900 text-white hover:bg-slate-800 shadow-sm font-medium px-6 py-2.5 rounded-md transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           >
