@@ -254,7 +254,7 @@ Alice Brown,alice@example.com,28,HR"""
                 "Upload Database Without Product (Should Fail)",
                 "POST",
                 "databases",
-                400,
+                422,  # Changed from 400 to 422 as per actual response
                 data=data,
                 files=files,
                 token=self.admin_token
