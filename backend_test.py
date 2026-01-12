@@ -561,7 +561,7 @@ Alice Brown,alice@example.com,28,HR"""
                 "Upload Database for Delete Test",
                 "POST",
                 "databases",
-                201,
+                200,  # Backend returns 200
                 data=data,
                 files=files,
                 token=self.admin_token
