@@ -140,6 +140,7 @@ export default function DatabaseRecords({ database, isStaff, onRequestSuccess })
                   ))}
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">Status</th>
                   {!isStaff && <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">Assigned To</th>}
+                  {!isStaff && <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">WhatsApp Status</th>}
                 </tr>
               </thead>
               <tbody>
