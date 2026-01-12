@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Search, Eye, Trash2, FileSpreadsheet, Download } from 'lucide-react';
+import { Search, Eye, Trash2, FileSpreadsheet, Users } from 'lucide-react';
 import DatabasePreview from './DatabasePreview';
+import DatabaseRecords from './DatabaseRecords';
 
 export default function DatabaseList({ onUpdate, isStaff = false }) {
   const [databases, setDatabases] = useState([]);
