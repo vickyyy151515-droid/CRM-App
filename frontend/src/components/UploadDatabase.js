@@ -98,6 +98,27 @@ export default function UploadDatabase({ onUploadSuccess }) {
 
       <div className="bg-white border border-slate-200 rounded-xl p-8 shadow-sm">
         <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label htmlFor="product" className="block text-sm font-medium text-slate-700 mb-2">
+              Select Product *
+            </label>
+            <select
+              id="product"
+              value={productId}
+              onChange={(e) => setProductId(e.target.value)}
+              required
+              data-testid="select-product-upload"
+              className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
+            >
+              <option value="">Choose a product...</option>
+              {products.map((product) => (
+                <option key={product.id} value={product.id}>
+                  {product.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
