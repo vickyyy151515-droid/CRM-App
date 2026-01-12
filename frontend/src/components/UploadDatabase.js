@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
 import { Upload, File, X } from 'lucide-react';
@@ -11,7 +11,7 @@ export default function UploadDatabase({ onUploadSuccess }) {
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
 
-  useState(() => {
+  useEffect(() => {
     loadProducts();
   }, []);
 
