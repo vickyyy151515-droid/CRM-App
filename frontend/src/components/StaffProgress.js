@@ -46,6 +46,45 @@ export default function StaffProgress() {
     ? allRecords.filter(r => r.product_id === selectedProduct)
     : allRecords;
 
+  // Filter by date range
+  const getDateFilteredRecords = () => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    return filteredRecords.filter(record => {
+      if (!record.whatsapp_status || !record.whatsapp_status_updated_at) return false;
+      
+      const updatedDate = new Date(record.whatsapp_status_updated_at);
+      
+      switch(dateRange) {
+        case 'today':
+          return updatedDate >= today;
+        case 'yesterday':
+          const yesterday = new Date(today);
+          yesterday.setDate(yesterday.getDate() - 1);
+          return updatedDate >= yesterday && updatedDate < today;
+        case 'last7days':
+          const last7days = new Date(today);
+          last7days.setDate(last7days.getDate() - 7);
+          return updatedDate >= last7days;
+        case 'last30days':
+          const last30days = new Date(today);
+          last30days.setDate(last30days.getDate() - 30);
+          return updatedDate >= last30days;
+        case 'custom':
+          if (!customStartDate || !customEndDate) return false;
+          const start = new Date(customStartDate);
+          const end = new Date(customEndDate);
+          end.setHours(23, 59, 59, 999);
+          return updatedDate >= start && updatedDate <= end;
+        default:
+          return true;
+      }
+    });
+  };
+
+  const dateFilteredRecords = getDateFilteredRecords();
+
   // Calculate staff statistics
   const staffStats = {};
   filteredRecords.forEach(record => {
