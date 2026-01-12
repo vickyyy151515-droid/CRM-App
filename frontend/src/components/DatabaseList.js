@@ -163,12 +163,16 @@ export default function DatabaseList({ onUpdate, isStaff = false }) {
                   {db.description && (
                     <p className="text-sm text-slate-600 mb-3">{db.description}</p>
                   )}
-                  <div className="flex items-center gap-4 text-xs text-slate-500">
+                  <div className="flex items-center gap-4 text-xs text-slate-500 mb-2">
                     <span>Size: {formatFileSize(db.file_size)}</span>
                     <span>•</span>
                     <span>Uploaded by {db.uploaded_by_name}</span>
                     <span>•</span>
                     <span>{formatDate(db.uploaded_at)}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Users className="text-indigo-600" size={16} />
+                    <span className="font-medium text-slate-900">{db.total_records || 0} customer records</span>
                   </div>
                 </div>
 
