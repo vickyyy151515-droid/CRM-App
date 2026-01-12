@@ -232,8 +232,8 @@ async def delete_product(product_id: str, user: User = Depends(get_admin_user)):
 @api_router.post("/databases", response_model=Database)
 async def upload_database(
     file: UploadFile = File(...),
-    description: Optional[str] = None,
-    product_id: str = None,
+    description: Optional[str] = Form(None),
+    product_id: str = Form(...),
     user: User = Depends(get_admin_user)
 ):
     if not file.filename.endswith(('.csv', '.xlsx')):
