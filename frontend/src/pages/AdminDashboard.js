@@ -96,6 +96,7 @@ export default function AdminDashboard({ user, onLogout }) {
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'upload', label: 'Upload Database', icon: Upload },
     { id: 'databases', label: 'Manage Databases', icon: FileSpreadsheet },
+    { id: 'assignments', label: 'View All Assignments', icon: List },
     { id: 'requests', label: 'Download Requests', icon: Clock },
     { id: 'history', label: 'Download History', icon: LayoutDashboard },
     { id: 'products', label: 'Manage Products', icon: Package },
