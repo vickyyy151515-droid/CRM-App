@@ -88,25 +88,25 @@ export default function MyAssignedRecords() {
             const columns = dbRecords.length > 0 ? Object.keys(dbRecords[0].row_data) : [];
             
             return (
-              <div key={dbName} className=\"bg-white border border-slate-200 rounded-xl p-6 shadow-sm\">
-                <div className=\"flex items-center justify-between mb-4\">
+              <div key={dbName} className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className=\"text-xl font-semibold text-slate-900 flex items-center gap-2\">
-                      <Package className=\"text-indigo-600\" size={20} />
+                    <h3 className="text-xl font-semibold text-slate-900 flex items-center gap-2">
+                      <Package className="text-indigo-600" size={20} />
                       {dbName}
                     </h3>
-                    <p className=\"text-sm text-slate-600 mt-1\">
+                    <p className="text-sm text-slate-600 mt-1">
                       {dbRecords.length} customer{dbRecords.length !== 1 ? 's' : ''} assigned
-                      {dbRecords[0] && ` \u2022 ${dbRecords[0].product_name}`}
+                      {dbRecords[0] && ` • ${dbRecords[0].product_name}`}
                     </p>
                   </div>
                 </div>
 
-                <div className=\"overflow-x-auto\">
-                  <table className=\"min-w-full border border-slate-200 rounded-lg\">
-                    <thead className=\"bg-slate-50\">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full border border-slate-200 rounded-lg">
+                    <thead className="bg-slate-50">
                       <tr>
-                        <th className=\"px-4 py-3 text-left text-xs font-semibold text-slate-700\">#</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">#</th>
                         {columns.map((col, idx) => (
                           <th key={idx} className=\"px-4 py-3 text-left text-xs font-semibold text-slate-700\">
                             {col}
