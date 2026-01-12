@@ -132,12 +132,27 @@ export default function MyAssignedRecords() {
                               // Remove any non-digit characters except +
                               phoneNumber = phoneNumber.replace(/[^\d+]/g, '');
                               
-                              const handleCopy = async () => {
+                              const whatsappUrl = `https://wa.me/${phoneNumber}`;
+                              
+                              const handleCopy = (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                
+                                // Create a temporary textarea to copy from
+                                const textarea = document.createElement('textarea');
+                                textarea.value = whatsappUrl;
+                                textarea.style.position = 'fixed';
+                                textarea.style.opacity = '0';
+                                document.body.appendChild(textarea);
+                                textarea.select();
+                                
                                 try {
-                                  await navigator.clipboard.writeText(phoneNumber);
-                                  toast.success('Phone number copied!');
+                                  document.execCommand('copy');
+                                  toast.success('WhatsApp link copied! Paste in browser address bar');
                                 } catch (err) {
                                   toast.error('Failed to copy');
+                                } finally {
+                                  document.body.removeChild(textarea);
                                 }
                               };
                               
@@ -148,8 +163,8 @@ export default function MyAssignedRecords() {
                                     <button
                                       onClick={handleCopy}
                                       data-testid={`copy-number-${record.id}`}
-                                      title="Copy phone number"
-                                      className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 p-1 rounded transition-colors"
+                                      title="Copy WhatsApp link"
+                                      className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 p-1.5 rounded transition-colors"
                                     >
                                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
