@@ -9,7 +9,8 @@ import DownloadHistory from '../components/DownloadHistory';
 import CreateUser from '../components/CreateUser';
 import ProductManagement from '../components/ProductManagement';
 import AllAssignments from '../components/AllAssignments';
-import { LayoutDashboard, Upload, FileSpreadsheet, Clock, Users, Package, List } from 'lucide-react';
+import StaffProgress from '../components/StaffProgress';
+import { LayoutDashboard, Upload, FileSpreadsheet, Clock, Users, Package, List, BarChart } from 'lucide-react';
 
 export default function AdminDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('overview');
