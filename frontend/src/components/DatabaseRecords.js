@@ -94,21 +94,31 @@ export default function DatabaseRecords({ database, isStaff, onRequestSuccess })
           </p>
         </div>
         {isStaff && availableCount > 0 && (
-          <div className="flex gap-2">
-            <button
-              onClick={handleSelectAll}
-              data-testid="select-all-records"
-              className="text-slate-600 hover:bg-slate-100 hover:text-slate-900 px-4 py-2 rounded-md transition-colors text-sm"
-            >
-              {selectedRecords.length === availableCount ? 'Deselect All' : 'Select All Available'}
-            </button>
+          <div className="flex gap-3 items-center">
+            <div className="flex items-center gap-2">
+              <label htmlFor="request-count" className="text-sm font-medium text-slate-700">
+                Request:
+              </label>
+              <input
+                id="request-count"
+                type="number"
+                min="1"
+                max={availableCount}
+                value={requestCount}
+                onChange={(e) => setRequestCount(e.target.value)}
+                placeholder="Enter number"
+                data-testid="request-count-input"
+                className="w-32 h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
+              />
+              <span className="text-sm text-slate-600">of {availableCount}</span>
+            </div>
             <button
               onClick={handleRequest}
-              disabled={requesting || selectedRecords.length === 0}
-              data-testid="request-selected-records"
-              className="bg-slate-900 text-white hover:bg-slate-800 shadow-sm font-medium px-6 py-2 rounded-md transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+              disabled={requesting || !requestCount}
+              data-testid="submit-request-button"
+              className="bg-slate-900 text-white hover:bg-slate-800 shadow-sm font-medium px-6 py-2.5 rounded-md transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
             >
-              Request {selectedRecords.length > 0 && `(${selectedRecords.length})`}
+              {requesting ? 'Submitting...' : 'Submit Request'}
             </button>
           </div>
         )}
