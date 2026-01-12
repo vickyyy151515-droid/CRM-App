@@ -79,7 +79,7 @@ export default function StaffDashboard({ user, onLogout }) {
   const menuItems = [
     { id: 'databases', label: 'Browse Databases', icon: FileSpreadsheet },
     { id: 'requests', label: 'My Requests', icon: Clock },
-    { id: 'history', label: 'Download History', icon: LayoutDashboard }
+    { id: 'assigned', label: 'My Assigned Customers', icon: User }
   ];
 
   return (
