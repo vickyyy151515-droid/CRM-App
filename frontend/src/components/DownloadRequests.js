@@ -96,6 +96,8 @@ export default function DownloadRequests({ onUpdate }) {
                       <div className="flex-1">
                         <h4 className="text-lg font-semibold text-slate-900 mb-1">{request.database_name}</h4>
                         <div className="flex items-center gap-3 text-sm text-slate-600 mb-3">
+                          <span className="font-medium">{request.record_count} customer records</span>
+                          <span>•</span>
                           <span>Requested by: <strong>{request.requested_by_name}</strong></span>
                           <span>•</span>
                           <span>{formatDate(request.requested_at)}</span>
