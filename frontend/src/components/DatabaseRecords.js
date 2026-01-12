@@ -6,7 +6,7 @@ import { User, CheckSquare, Square } from 'lucide-react';
 export default function DatabaseRecords({ database, isStaff, onRequestSuccess }) {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedRecords, setSelectedRecords] = useState([]);
+  const [requestCount, setRequestCount] = useState('');
   const [requesting, setRequesting] = useState(false);
 
   useEffect(() => {
