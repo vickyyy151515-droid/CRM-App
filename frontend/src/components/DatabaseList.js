@@ -102,7 +102,7 @@ export default function DatabaseList({ onUpdate, isStaff = false }) {
         </h2>
       </div>
 
-      <div className="mb-6">
+      <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input
@@ -113,6 +113,21 @@ export default function DatabaseList({ onUpdate, isStaff = false }) {
             data-testid="search-databases-input"
             className="flex h-10 w-full rounded-md border border-slate-200 bg-white pl-10 pr-3 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
           />
+        </div>
+        <div>
+          <select
+            value={selectedProduct}
+            onChange={(e) => setSelectedProduct(e.target.value)}
+            data-testid="filter-product-select"
+            className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
+          >
+            <option value="">All Products</option>
+            {products.map((product) => (
+              <option key={product.id} value={product.id}>
+                {product.name}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
