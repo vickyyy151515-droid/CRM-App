@@ -1,0 +1,155 @@
+{
+  "summary": {
+    "total_tests": 24,
+    "passed_tests": 24,
+    "failed_tests": 0,
+    "success_rate": 100.0
+  },
+  "test_results": [
+    {
+      "test": "Admin Login",
+      "success": true,
+      "details": "Status: 200, Response: {\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYWRtaW4tdXNlci0xIiwiZW1haWwiOiJhZG1pbkBjcm0uY29tIiwicm9sZSI6ImFkbWluIiwiZXhwIjoxNzY4ODI0NDYxfQ.L8znKIkmcO77jSD2VtDDtF529n1-t7CG0LqTPX...",
+      "timestamp": "2026-01-12T12:07:41.382534"
+    },
+    {
+      "test": "Staff Login",
+      "success": true,
+      "details": "Status: 200, Response: {\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoic3RhZmYtdXNlci0xIiwiZW1haWwiOiJzdGFmZkBjcm0uY29tIiwicm9sZSI6InN0YWZmIiwiZXhwIjoxNzY4ODI0NDYxfQ.rNW512kWwGPxN7neZJnhMy9luDQLm0Nn0yeEnW...",
+      "timestamp": "2026-01-12T12:07:41.639888"
+    },
+    {
+      "test": "Invalid Login",
+      "success": true,
+      "details": "Status: 401, Response: {\n  \"detail\": \"Invalid credentials\"\n}...",
+      "timestamp": "2026-01-12T12:07:41.678310"
+    },
+    {
+      "test": "Get Current User (Admin)",
+      "success": true,
+      "details": "Status: 200, Response: {\n  \"id\": \"admin-user-1\",\n  \"email\": \"admin@crm.com\",\n  \"name\": \"Admin User\",\n  \"role\": \"admin\",\n  \"created_at\": \"2025-01-01T00:00:00Z\"\n}...",
+      "timestamp": "2026-01-12T12:07:41.713830"
+    },
+    {
+      "test": "Unauthorized Access",
+      "success": true,
+      "details": "Status: 403, Response: {\n  \"detail\": \"Not authenticated\"\n}...",
+      "timestamp": "2026-01-12T12:07:41.750150"
+    },
+    {
+      "test": "Upload CSV Database",
+      "success": true,
+      "details": "Status: 200, Response: {\n  \"id\": \"7dcb74c8-54a2-404c-96a9-8ac481f60449\",\n  \"filename\": \"test_database.csv\",\n  \"file_type\": \"csv\",\n  \"file_size\": 180,\n  \"description\": null,\n  \"uploaded_by\": \"admin-user-1\",\n  \"uploaded_by_na...",
+      "timestamp": "2026-01-12T12:07:41.788296"
+    },
+    {
+      "test": "Staff Upload (Should Fail)",
+      "success": true,
+      "details": "Status: 403, Response: {\n  \"detail\": \"Admin access required\"\n}...",
+      "timestamp": "2026-01-12T12:07:41.828451"
+    },
+    {
+      "test": "List Databases",
+      "success": true,
+      "details": "Status: 200, Response: [\n  {\n    \"id\": \"7dcb74c8-54a2-404c-96a9-8ac481f60449\",\n    \"filename\": \"test_database.csv\",\n    \"file_type\": \"csv\",\n    \"file_size\": 180,\n    \"description\": null,\n    \"uploaded_by\": \"admin-user-1\",\n ...",
+      "timestamp": "2026-01-12T12:07:41.860200"
+    },
+    {
+      "test": "Search Databases",
+      "success": true,
+      "details": "Status: 200, Response: [\n  {\n    \"id\": \"7dcb74c8-54a2-404c-96a9-8ac481f60449\",\n    \"filename\": \"test_database.csv\",\n    \"file_type\": \"csv\",\n    \"file_size\": 180,\n    \"description\": null,\n    \"uploaded_by\": \"admin-user-1\",\n ...",
+      "timestamp": "2026-01-12T12:07:41.896967"
+    },
+    {
+      "test": "Get Database Details",
+      "success": true,
+      "details": "Status: 200, Response: {\n  \"id\": \"7dcb74c8-54a2-404c-96a9-8ac481f60449\",\n  \"filename\": \"test_database.csv\",\n  \"file_type\": \"csv\",\n  \"file_size\": 180,\n  \"description\": null,\n  \"uploaded_by\": \"admin-user-1\",\n  \"uploaded_by_na...",
+      "timestamp": "2026-01-12T12:07:41.932323"
+    },
+    {
+      "test": "Create Download Request",
+      "success": true,
+      "details": "Status: 200, Response: {\n  \"id\": \"d7a355d5-d69d-4862-949f-d91f81a44b9f\",\n  \"database_id\": \"7dcb74c8-54a2-404c-96a9-8ac481f60449\",\n  \"database_name\": \"test_database.csv\",\n  \"requested_by\": \"staff-user-1\",\n  \"requested_by_nam...",
+      "timestamp": "2026-01-12T12:07:42.010535"
+    },
+    {
+      "test": "Admin Download Request (Should Fail)",
+      "success": true,
+      "details": "Status: 403, Response: {\n  \"detail\": \"Only staff can request downloads\"\n}...",
+      "timestamp": "2026-01-12T12:07:42.042168"
+    },
+    {
+      "test": "List Download Requests (Admin)",
+      "success": true,
+      "details": "Status: 200, Response: [\n  {\n    \"id\": \"d7a355d5-d69d-4862-949f-d91f81a44b9f\",\n    \"database_id\": \"7dcb74c8-54a2-404c-96a9-8ac481f60449\",\n    \"database_name\": \"test_database.csv\",\n    \"requested_by\": \"staff-user-1\",\n    \"re...",
+      "timestamp": "2026-01-12T12:07:42.075230"
+    },
+    {
+      "test": "List Download Requests (Staff)",
+      "success": true,
+      "details": "Status: 200, Response: [\n  {\n    \"id\": \"d7a355d5-d69d-4862-949f-d91f81a44b9f\",\n    \"database_id\": \"7dcb74c8-54a2-404c-96a9-8ac481f60449\",\n    \"database_name\": \"test_database.csv\",\n    \"requested_by\": \"staff-user-1\",\n    \"re...",
+      "timestamp": "2026-01-12T12:07:42.114879"
+    },
+    {
+      "test": "Approve Download Request",
+      "success": true,
+      "details": "Status: 200, Response: {\n  \"message\": \"Request approved\"\n}...",
+      "timestamp": "2026-01-12T12:07:42.149062"
+    },
+    {
+      "test": "Staff Approve Request (Should Fail)",
+      "success": true,
+      "details": "Status: 403, Response: {\n  \"detail\": \"Admin access required\"\n}...",
+      "timestamp": "2026-01-12T12:07:42.180074"
+    },
+    {
+      "test": "Download Approved File",
+      "success": true,
+      "details": "Status: 200, Content-Type: application/octet-stream",
+      "timestamp": "2026-01-12T12:07:42.213163"
+    },
+    {
+      "test": "Get Download History",
+      "success": true,
+      "details": "Status: 200, Response: [\n  {\n    \"id\": \"3257df92-ddf3-49f3-9614-6fb92c127350\",\n    \"database_id\": \"7dcb74c8-54a2-404c-96a9-8ac481f60449\",\n    \"database_name\": \"test_database.csv\",\n    \"downloaded_by\": \"staff-user-1\",\n    \"d...",
+      "timestamp": "2026-01-12T12:07:42.250868"
+    },
+    {
+      "test": "Create New User",
+      "success": true,
+      "details": "Status: 200, Response: {\n  \"id\": \"ce2947b5-0d6a-4001-ad64-c83bf3905f3d\",\n  \"email\": \"testuser_120742@test.com\",\n  \"name\": \"Test User\",\n  \"role\": \"staff\",\n  \"created_at\": \"2026-01-12T12:07:42.505444Z\"\n}...",
+      "timestamp": "2026-01-12T12:07:42.508516"
+    },
+    {
+      "test": "Staff Create User (Should Fail)",
+      "success": true,
+      "details": "Status: 403, Response: {\n  \"detail\": \"Admin access required\"\n}...",
+      "timestamp": "2026-01-12T12:07:42.542096"
+    },
+    {
+      "test": "Upload Database for Delete Test",
+      "success": true,
+      "details": "Status: 200, Response: {\n  \"id\": \"28d2958f-14c8-4695-baa6-2ed4e79bf8c3\",\n  \"filename\": \"test_database2.csv\",\n  \"file_type\": \"csv\",\n  \"file_size\": 180,\n  \"description\": null,\n  \"uploaded_by\": \"admin-user-1\",\n  \"uploaded_by_n...",
+      "timestamp": "2026-01-12T12:07:42.578967"
+    },
+    {
+      "test": "Staff Delete Database (Should Fail)",
+      "success": true,
+      "details": "Status: 403, Response: {\n  \"detail\": \"Admin access required\"\n}...",
+      "timestamp": "2026-01-12T12:07:42.615758"
+    },
+    {
+      "test": "Cleanup Delete Test Database",
+      "success": true,
+      "details": "Status: 200, Response: {\n  \"message\": \"Database deleted successfully\"\n}...",
+      "timestamp": "2026-01-12T12:07:42.650432"
+    },
+    {
+      "test": "Delete Database",
+      "success": true,
+      "details": "Status: 200, Response: {\n  \"message\": \"Database deleted successfully\"\n}...",
+      "timestamp": "2026-01-12T12:07:42.686292"
+    }
+  ],
+  "timestamp": "2026-01-12T12:07:42.687194"
+}
