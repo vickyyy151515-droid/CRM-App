@@ -75,15 +75,15 @@ export default function MyAssignedRecords() {
       </div>
 
       {loading ? (
-        <div className=\"text-center py-12 text-slate-600\">Loading your assigned customers...</div>
+        <div className="text-center py-12 text-slate-600">Loading your assigned customers...</div>
       ) : records.length === 0 ? (
-        <div className=\"text-center py-12\">
-          <User className=\"mx-auto text-slate-300 mb-4\" size={64} />
-          <p className=\"text-slate-600\">No assigned customers yet</p>
-          <p className=\"text-sm text-slate-500 mt-2\">Request customer records from the Browse Databases page</p>
+        <div className="text-center py-12">
+          <User className="mx-auto text-slate-300 mb-4" size={64} />
+          <p className="text-slate-600">No assigned customers yet</p>
+          <p className="text-sm text-slate-500 mt-2">Request customer records from the Browse Databases page</p>
         </div>
       ) : (
-        <div className=\"space-y-6\" data-testid=\"assigned-records-list\">
+        <div className="space-y-6" data-testid="assigned-records-list">
           {Object.entries(groupedRecords).map(([dbName, dbRecords]) => {
             const columns = dbRecords.length > 0 ? Object.keys(dbRecords[0].row_data) : [];
             
