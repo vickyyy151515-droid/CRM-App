@@ -6,8 +6,26 @@ import { Upload, File, X } from 'lucide-react';
 export default function UploadDatabase({ onUploadSuccess }) {
   const [file, setFile] = useState(null);
   const [description, setDescription] = useState('');
+  const [productId, setProductId] = useState('');
+  const [products, setProducts] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+
+  useState(() => {
+    loadProducts();
+  }, []);
+
+  const loadProducts = async () => {
+    try {
+      const response = await api.get('/products');
+      setProducts(response.data);
+      if (response.data.length > 0) {
+        setProductId(response.data[0].id);
+      }
+    } catch (error) {
+      toast.error('Failed to load products');
+    }
+  };
 
   const handleDrag = (e) => {
     e.preventDefault();
