@@ -64,10 +64,15 @@ export default function UploadDatabase({ onUploadSuccess }) {
       toast.error('Please select a file');
       return;
     }
+    if (!productId) {
+      toast.error('Please select a product');
+      return;
+    }
 
     setUploading(true);
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('product_id', productId);
     if (description) {
       formData.append('description', description);
     }
