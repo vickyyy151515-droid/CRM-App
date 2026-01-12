@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Download } from 'lucide-react';
 
 export default function MyRequests({ onUpdate }) {
   const [requests, setRequests] = useState([]);
