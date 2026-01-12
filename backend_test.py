@@ -231,7 +231,7 @@ Alice Brown,alice@example.com,28,HR"""
                 "Upload CSV Database",
                 "POST",
                 "databases",
-                200,
+                201,  # Changed from 200 to 201 as per backend response
                 data=data,
                 files=files,
                 token=self.admin_token
