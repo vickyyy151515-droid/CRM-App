@@ -97,6 +97,7 @@ export default function AdminDashboard({ user, onLogout }) {
 
   const menuItems = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+    { id: 'progress', label: 'Staff Progress & Quality', icon: BarChart },
     { id: 'upload', label: 'Upload Database', icon: Upload },
     { id: 'databases', label: 'Manage Databases', icon: FileSpreadsheet },
     { id: 'assignments', label: 'View All Assignments', icon: List },
