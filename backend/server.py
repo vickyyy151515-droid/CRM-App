@@ -561,6 +561,25 @@ async def get_my_assigned_records(product_id: Optional[str] = None, user: User =
     
     return records
 
+@api_router.patch("/customer-records/{record_id}/whatsapp-status")
+async def update_whatsapp_status(record_id: str, status_update: WhatsAppStatusUpdate, user: User = Depends(get_current_user)):
+    record = await db.customer_records.find_one({'id': record_id})
+    if not record:
+        raise HTTPException(status_code=404, detail="Record not found")
+    
+    if user.role == 'staff' and record.get('assigned_to') != user.id:
+        raise HTTPException(status_code=403, detail="You can only update records assigned to you")
+    
+    if status_update.whatsapp_status not in ['ada', 'tidak', None]:
+        raise HTTPException(status_code=400, detail="Invalid status. Use 'ada' or 'tidak'")
+    
+    await db.customer_records.update_one(
+        {'id': record_id},
+        {'$set': {'whatsapp_status': status_update.whatsapp_status}}
+    )
+    
+    return {'message': 'WhatsApp status updated successfully'}
+
 @api_router.get("/download-history", response_model=List[DownloadHistory])
 async def get_download_history(user: User = Depends(get_current_user)):
     query = {}
