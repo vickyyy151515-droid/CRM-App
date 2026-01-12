@@ -100,6 +100,8 @@ class DownloadRequest(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     database_id: str
     database_name: str
+    record_ids: List[str]
+    record_count: int
     requested_by: str
     requested_by_name: str
     status: str = "pending"
@@ -110,6 +112,7 @@ class DownloadRequest(BaseModel):
 
 class DownloadRequestCreate(BaseModel):
     database_id: str
+    record_ids: List[str]
 
 class DownloadHistory(BaseModel):
     model_config = ConfigDict(extra="ignore")
