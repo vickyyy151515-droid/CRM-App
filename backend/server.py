@@ -301,7 +301,7 @@ async def upload_database(
     with open(file_path, 'wb') as f:
         f.write(content)
     
-    preview_data = parse_file_preview(str(file_path), file_type)
+    records_data, preview_data = parse_file_to_records(str(file_path), file_type)
     
     database = Database(
         filename=file.filename,
@@ -313,13 +313,32 @@ async def upload_database(
         uploaded_by=user.id,
         uploaded_by_name=user.name,
         file_path=str(file_path),
-        preview_data=preview_data
+        preview_data=preview_data,
+        total_records=len(records_data)
     )
     
     doc = database.model_dump()
     doc['uploaded_at'] = doc['uploaded_at'].isoformat()
     
     await db.databases.insert_one(doc)
+    
+    customer_records = []
+    for idx, row_data in enumerate(records_data, start=1):
+        record = CustomerRecord(
+            database_id=database.id,
+            database_name=database.filename,
+            product_id=product_id,
+            product_name=product['name'],
+            row_number=idx,
+            row_data=row_data
+        )
+        rec_doc = record.model_dump()
+        rec_doc['created_at'] = rec_doc['created_at'].isoformat()
+        customer_records.append(rec_doc)
+    
+    if customer_records:
+        await db.customer_records.insert_many(customer_records)
+    
     return database
 
 @api_router.get("/databases", response_model=List[Database])
