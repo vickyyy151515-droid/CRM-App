@@ -314,6 +314,7 @@ export default function StaffProgress() {
             const checkedCount = staff.ada + staff.tidak;
             const progressRate = ((checkedCount / staff.total) * 100).toFixed(1);
             const qualityRate = checkedCount > 0 ? ((staff.ada / checkedCount) * 100).toFixed(1) : 0;
+            const dailyStats = staffDailyStats[Object.keys(staffStats)[idx]];
 
             return (
               <div key={idx} className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
@@ -326,6 +327,27 @@ export default function StaffProgress() {
                     <p className="text-xs text-slate-500">{staff.total} customers assigned</p>
                   </div>
                 </div>
+
+                {/* Daily Progress */}
+                {dateRange !== 'all' && dailyStats && (
+                  <div className="mb-4 p-3 bg-indigo-50 rounded-lg border border-indigo-100">
+                    <p className="text-xs font-semibold text-indigo-900 mb-2">{getDateRangeLabel()}</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <p className="text-lg font-bold text-indigo-600">{dailyStats.checkedToday}</p>
+                        <p className="text-xs text-indigo-600">Checked</p>
+                      </div>
+                      <div>
+                        <p className="text-lg font-bold text-emerald-600">{dailyStats.adaToday}</p>
+                        <p className="text-xs text-emerald-600">Ada</p>
+                      </div>
+                      <div>
+                        <p className="text-lg font-bold text-rose-600">{dailyStats.tidakToday}</p>
+                        <p className="text-xs text-rose-600">Tidak</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-3">
                   <div>
