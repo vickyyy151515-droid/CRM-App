@@ -90,6 +90,8 @@ export default function MyRequests({ onUpdate }) {
                     <h4 className="text-lg font-semibold text-slate-900">{request.database_name}</h4>
                   </div>
                   <div className="flex items-center gap-3 text-sm text-slate-600 mb-3">
+                    <span className="font-medium">{request.record_count} customer records requested</span>
+                    <span>•</span>
                     <span>Requested: {formatDate(request.requested_at)}</span>
                     {request.reviewed_at && (
                       <>
@@ -99,18 +101,12 @@ export default function MyRequests({ onUpdate }) {
                     )}
                   </div>
                   {getStatusBadge(request.status)}
+                  {request.status === 'approved' && (
+                    <p className="text-sm text-emerald-600 mt-2">
+                      ✓ Records assigned! View them in "My Assigned Customers" tab
+                    </p>
+                  )}
                 </div>
-
-                {request.status === 'approved' && (
-                  <button
-                    onClick={() => handleDownload(request)}
-                    data-testid={`download-approved-${request.id}`}
-                    className="bg-slate-900 text-white hover:bg-slate-800 shadow-sm font-medium px-4 py-2 rounded-md transition-all active:scale-95 flex items-center gap-2"
-                  >
-                    <Download size={16} />
-                    Download
-                  </button>
-                )}
               </div>
             </div>
           ))}
