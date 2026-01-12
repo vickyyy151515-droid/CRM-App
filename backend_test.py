@@ -638,6 +638,12 @@ Alice Brown,alice@example.com,28,HR"""
         self.test_staff_cannot_delete_database()
         self.test_delete_database()
 
+        # Product Deletion Tests
+        print("\n📋 Product Deletion Tests")
+        self.test_delete_product_with_databases()
+        self.test_staff_cannot_delete_product()
+        self.test_delete_product_success()
+
         return True
 
     def print_summary(self):
