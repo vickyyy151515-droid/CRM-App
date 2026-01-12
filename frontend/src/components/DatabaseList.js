@@ -62,11 +62,11 @@ export default function DatabaseList({ onUpdate, isStaff = false }) {
 
   const handleRequestDownload = async (database) => {
     try {
-      await api.post('/download-requests', { database_id: database.id });
-      toast.success('Download request submitted successfully');
-      onUpdate?.();
+      const response = await api.get(`/databases/${database.id}/records`);
+      setSelectedDb({...database, records: response.data});
+      setShowRecords(true);
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Failed to submit request');
+      toast.error('Failed to load records');
     }
   };
 
