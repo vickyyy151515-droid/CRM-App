@@ -162,6 +162,23 @@ export default function StaffProgress() {
   const overallQuality = totalChecked > 0 ? ((totalAda / totalChecked) * 100).toFixed(1) : 0;
   const overallProgress = totalAssigned > 0 ? ((totalChecked / totalAssigned) * 100).toFixed(1) : 0;
 
+  // Daily metrics
+  const checkedInPeriod = dateFilteredRecords.length;
+  const adaInPeriod = dateFilteredRecords.filter(r => r.whatsapp_status === 'ada').length;
+  const tidakInPeriod = dateFilteredRecords.filter(r => r.whatsapp_status === 'tidak').length;
+  const periodQuality = checkedInPeriod > 0 ? ((adaInPeriod / checkedInPeriod) * 100).toFixed(1) : 0;
+
+  const getDateRangeLabel = () => {
+    switch(dateRange) {
+      case 'today': return 'Today';
+      case 'yesterday': return 'Yesterday';
+      case 'last7days': return 'Last 7 Days';
+      case 'last30days': return 'Last 30 Days';
+      case 'custom': return 'Custom Range';
+      default: return 'All Time';
+    }
+  };
+
   if (loading) {
     return <div className="text-center py-12 text-slate-600">Loading statistics...</div>;
   }
