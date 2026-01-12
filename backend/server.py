@@ -171,6 +171,34 @@ def parse_file_preview(file_path: str, file_type: str) -> dict:
     except Exception as e:
         return {'error': str(e)}
 
+def parse_file_to_records(file_path: str, file_type: str) -> tuple:
+    try:
+        if file_type == 'csv':
+            df = pd.read_csv(file_path)
+        else:
+            df = pd.read_excel(file_path)
+        
+        records = []
+        for idx, row in df.iterrows():
+            row_dict = {}
+            for col in df.columns:
+                val = row[col]
+                if pd.isna(val):
+                    row_dict[str(col)] = None
+                else:
+                    row_dict[str(col)] = str(val)
+            records.append(row_dict)
+        
+        preview = {
+            'columns': df.columns.tolist(),
+            'rows': df.head(5).values.tolist(),
+            'total_rows': len(df)
+        }
+        
+        return records, preview
+    except Exception as e:
+        return [], {'error': str(e)}
+
 @api_router.post("/auth/register", response_model=User)
 async def register(user_data: UserCreate, admin: User = Depends(get_admin_user)):
     existing = await db.users.find_one({'email': user_data.email})
