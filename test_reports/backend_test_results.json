@@ -1,155 +1,161 @@
 {
   "summary": {
-    "total_tests": 24,
-    "passed_tests": 24,
-    "failed_tests": 0,
-    "success_rate": 100.0
+    "total_tests": 25,
+    "passed_tests": 21,
+    "failed_tests": 4,
+    "success_rate": 84.0
   },
   "test_results": [
     {
       "test": "Admin Login",
       "success": true,
-      "details": "Status: 200, Response: {\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYWRtaW4tdXNlci0xIiwiZW1haWwiOiJhZG1pbkBjcm0uY29tIiwicm9sZSI6ImFkbWluIiwiZXhwIjoxNzY4ODI0NDYxfQ.L8znKIkmcO77jSD2VtDDtF529n1-t7CG0LqTPX...",
-      "timestamp": "2026-01-12T12:07:41.382534"
+      "details": "Status: 200, Response: {\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiYWRtaW4tdXNlci0xIiwiZW1haWwiOiJhZG1pbkBjcm0uY29tIiwicm9sZSI6ImFkbWluIiwiZXhwIjoxNzY4ODI1ODk5fQ.ONFg9tvad1sPKCIdIWZ6B5Y-Gn42chJ_iV1ON-...",
+      "timestamp": "2026-01-12T12:31:39.154407"
     },
     {
       "test": "Staff Login",
       "success": true,
-      "details": "Status: 200, Response: {\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoic3RhZmYtdXNlci0xIiwiZW1haWwiOiJzdGFmZkBjcm0uY29tIiwicm9sZSI6InN0YWZmIiwiZXhwIjoxNzY4ODI0NDYxfQ.rNW512kWwGPxN7neZJnhMy9luDQLm0Nn0yeEnW...",
-      "timestamp": "2026-01-12T12:07:41.639888"
+      "details": "Status: 200, Response: {\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoic3RhZmYtdXNlci0xIiwiZW1haWwiOiJzdGFmZkBjcm0uY29tIiwicm9sZSI6InN0YWZmIiwiZXhwIjoxNzY4ODI1ODk5fQ.yW21ZX1INFsXE6ajeVK3Ng5jOZBMa-zQE8ovXt...",
+      "timestamp": "2026-01-12T12:31:39.415299"
     },
     {
       "test": "Invalid Login",
       "success": true,
       "details": "Status: 401, Response: {\n  \"detail\": \"Invalid credentials\"\n}...",
-      "timestamp": "2026-01-12T12:07:41.678310"
+      "timestamp": "2026-01-12T12:31:39.456951"
     },
     {
       "test": "Get Current User (Admin)",
       "success": true,
       "details": "Status: 200, Response: {\n  \"id\": \"admin-user-1\",\n  \"email\": \"admin@crm.com\",\n  \"name\": \"Admin User\",\n  \"role\": \"admin\",\n  \"created_at\": \"2025-01-01T00:00:00Z\"\n}...",
-      "timestamp": "2026-01-12T12:07:41.713830"
+      "timestamp": "2026-01-12T12:31:39.495659"
     },
     {
       "test": "Unauthorized Access",
       "success": true,
       "details": "Status: 403, Response: {\n  \"detail\": \"Not authenticated\"\n}...",
-      "timestamp": "2026-01-12T12:07:41.750150"
+      "timestamp": "2026-01-12T12:31:39.536723"
+    },
+    {
+      "test": "Get Products List",
+      "success": true,
+      "details": "Status: 200, Response: [\n  {\n    \"id\": \"prod-istana2000\",\n    \"name\": \"ISTANA2000\",\n    \"created_at\": \"2025-01-01T00:00:00Z\"\n  },\n  {\n    \"id\": \"prod-liga2000\",\n    \"name\": \"LIGA2000\",\n    \"created_at\": \"2025-01-01T00:00:00...",
+      "timestamp": "2026-01-12T12:31:39.576927"
+    },
+    {
+      "test": "Create Product TEST2000",
+      "success": true,
+      "details": "Status: 200, Response: {\n  \"id\": \"aa6886c6-fca0-4654-ac61-06b71228a1d7\",\n  \"name\": \"TEST2000\",\n  \"created_at\": \"2026-01-12T12:31:39.611829Z\"\n}...",
+      "timestamp": "2026-01-12T12:31:39.614957"
+    },
+    {
+      "test": "Create Duplicate Product (Should Fail)",
+      "success": true,
+      "details": "Status: 400, Response: {\n  \"detail\": \"Product with this name already exists\"\n}...",
+      "timestamp": "2026-01-12T12:31:39.649525"
+    },
+    {
+      "test": "Staff Create Product (Should Fail)",
+      "success": true,
+      "details": "Status: 403, Response: {\n  \"detail\": \"Admin access required\"\n}...",
+      "timestamp": "2026-01-12T12:31:39.683149"
     },
     {
       "test": "Upload CSV Database",
+      "success": false,
+      "details": "Status: 400, Error: {'detail': 'Product ID is required'}",
+      "timestamp": "2026-01-12T12:31:39.732273"
+    },
+    {
+      "test": "Upload Database Without Product (Should Fail)",
       "success": true,
-      "details": "Status: 200, Response: {\n  \"id\": \"7dcb74c8-54a2-404c-96a9-8ac481f60449\",\n  \"filename\": \"test_database.csv\",\n  \"file_type\": \"csv\",\n  \"file_size\": 180,\n  \"description\": null,\n  \"uploaded_by\": \"admin-user-1\",\n  \"uploaded_by_na...",
-      "timestamp": "2026-01-12T12:07:41.788296"
+      "details": "Status: 400, Response: {\n  \"detail\": \"Product ID is required\"\n}...",
+      "timestamp": "2026-01-12T12:31:39.765113"
     },
     {
       "test": "Staff Upload (Should Fail)",
       "success": true,
       "details": "Status: 403, Response: {\n  \"detail\": \"Admin access required\"\n}...",
-      "timestamp": "2026-01-12T12:07:41.828451"
+      "timestamp": "2026-01-12T12:31:39.808873"
     },
     {
       "test": "List Databases",
-      "success": true,
-      "details": "Status: 200, Response: [\n  {\n    \"id\": \"7dcb74c8-54a2-404c-96a9-8ac481f60449\",\n    \"filename\": \"test_database.csv\",\n    \"file_type\": \"csv\",\n    \"file_size\": 180,\n    \"description\": null,\n    \"uploaded_by\": \"admin-user-1\",\n ...",
-      "timestamp": "2026-01-12T12:07:41.860200"
+      "success": false,
+      "details": "Status: 520, Error: Internal Server Error",
+      "timestamp": "2026-01-12T12:31:39.846444"
     },
     {
       "test": "Search Databases",
       "success": true,
-      "details": "Status: 200, Response: [\n  {\n    \"id\": \"7dcb74c8-54a2-404c-96a9-8ac481f60449\",\n    \"filename\": \"test_database.csv\",\n    \"file_type\": \"csv\",\n    \"file_size\": 180,\n    \"description\": null,\n    \"uploaded_by\": \"admin-user-1\",\n ...",
-      "timestamp": "2026-01-12T12:07:41.896967"
+      "details": "Status: 200, Response: []...",
+      "timestamp": "2026-01-12T12:31:39.889508"
     },
     {
-      "test": "Get Database Details",
+      "test": "Filter Databases by Product",
       "success": true,
-      "details": "Status: 200, Response: {\n  \"id\": \"7dcb74c8-54a2-404c-96a9-8ac481f60449\",\n  \"filename\": \"test_database.csv\",\n  \"file_type\": \"csv\",\n  \"file_size\": 180,\n  \"description\": null,\n  \"uploaded_by\": \"admin-user-1\",\n  \"uploaded_by_na...",
-      "timestamp": "2026-01-12T12:07:41.932323"
-    },
-    {
-      "test": "Create Download Request",
-      "success": true,
-      "details": "Status: 200, Response: {\n  \"id\": \"d7a355d5-d69d-4862-949f-d91f81a44b9f\",\n  \"database_id\": \"7dcb74c8-54a2-404c-96a9-8ac481f60449\",\n  \"database_name\": \"test_database.csv\",\n  \"requested_by\": \"staff-user-1\",\n  \"requested_by_nam...",
-      "timestamp": "2026-01-12T12:07:42.010535"
-    },
-    {
-      "test": "Admin Download Request (Should Fail)",
-      "success": true,
-      "details": "Status: 403, Response: {\n  \"detail\": \"Only staff can request downloads\"\n}...",
-      "timestamp": "2026-01-12T12:07:42.042168"
+      "details": "Status: 200, Response: []...",
+      "timestamp": "2026-01-12T12:31:39.947187"
     },
     {
       "test": "List Download Requests (Admin)",
       "success": true,
-      "details": "Status: 200, Response: [\n  {\n    \"id\": \"d7a355d5-d69d-4862-949f-d91f81a44b9f\",\n    \"database_id\": \"7dcb74c8-54a2-404c-96a9-8ac481f60449\",\n    \"database_name\": \"test_database.csv\",\n    \"requested_by\": \"staff-user-1\",\n    \"re...",
-      "timestamp": "2026-01-12T12:07:42.075230"
+      "details": "Status: 200, Response: [\n  {\n    \"id\": \"01c1f3bd-8f87-4b43-8f69-aaf178e55e71\",\n    \"database_id\": \"6a2c258a-941d-49f4-8866-6841717cc917\",\n    \"database_name\": \"tmp9c4f5ijr.csv\",\n    \"requested_by\": \"staff-user-1\",\n    \"requ...",
+      "timestamp": "2026-01-12T12:31:39.993652"
     },
     {
       "test": "List Download Requests (Staff)",
       "success": true,
-      "details": "Status: 200, Response: [\n  {\n    \"id\": \"d7a355d5-d69d-4862-949f-d91f81a44b9f\",\n    \"database_id\": \"7dcb74c8-54a2-404c-96a9-8ac481f60449\",\n    \"database_name\": \"test_database.csv\",\n    \"requested_by\": \"staff-user-1\",\n    \"re...",
-      "timestamp": "2026-01-12T12:07:42.114879"
-    },
-    {
-      "test": "Approve Download Request",
-      "success": true,
-      "details": "Status: 200, Response: {\n  \"message\": \"Request approved\"\n}...",
-      "timestamp": "2026-01-12T12:07:42.149062"
-    },
-    {
-      "test": "Staff Approve Request (Should Fail)",
-      "success": true,
-      "details": "Status: 403, Response: {\n  \"detail\": \"Admin access required\"\n}...",
-      "timestamp": "2026-01-12T12:07:42.180074"
-    },
-    {
-      "test": "Download Approved File",
-      "success": true,
-      "details": "Status: 200, Content-Type: application/octet-stream",
-      "timestamp": "2026-01-12T12:07:42.213163"
+      "details": "Status: 200, Response: [\n  {\n    \"id\": \"01c1f3bd-8f87-4b43-8f69-aaf178e55e71\",\n    \"database_id\": \"6a2c258a-941d-49f4-8866-6841717cc917\",\n    \"database_name\": \"tmp9c4f5ijr.csv\",\n    \"requested_by\": \"staff-user-1\",\n    \"requ...",
+      "timestamp": "2026-01-12T12:31:40.038390"
     },
     {
       "test": "Get Download History",
       "success": true,
       "details": "Status: 200, Response: [\n  {\n    \"id\": \"3257df92-ddf3-49f3-9614-6fb92c127350\",\n    \"database_id\": \"7dcb74c8-54a2-404c-96a9-8ac481f60449\",\n    \"database_name\": \"test_database.csv\",\n    \"downloaded_by\": \"staff-user-1\",\n    \"d...",
-      "timestamp": "2026-01-12T12:07:42.250868"
+      "timestamp": "2026-01-12T12:31:40.079468"
     },
     {
       "test": "Create New User",
       "success": true,
-      "details": "Status: 200, Response: {\n  \"id\": \"ce2947b5-0d6a-4001-ad64-c83bf3905f3d\",\n  \"email\": \"testuser_120742@test.com\",\n  \"name\": \"Test User\",\n  \"role\": \"staff\",\n  \"created_at\": \"2026-01-12T12:07:42.505444Z\"\n}...",
-      "timestamp": "2026-01-12T12:07:42.508516"
+      "details": "Status: 200, Response: {\n  \"id\": \"51b3b5df-0f37-4b10-87f0-71387cd4f838\",\n  \"email\": \"testuser_123140@test.com\",\n  \"name\": \"Test User\",\n  \"role\": \"staff\",\n  \"created_at\": \"2026-01-12T12:31:40.357519Z\"\n}...",
+      "timestamp": "2026-01-12T12:31:40.362315"
     },
     {
       "test": "Staff Create User (Should Fail)",
       "success": true,
       "details": "Status: 403, Response: {\n  \"detail\": \"Admin access required\"\n}...",
-      "timestamp": "2026-01-12T12:07:42.542096"
+      "timestamp": "2026-01-12T12:31:40.404451"
     },
     {
       "test": "Upload Database for Delete Test",
-      "success": true,
-      "details": "Status: 200, Response: {\n  \"id\": \"28d2958f-14c8-4695-baa6-2ed4e79bf8c3\",\n  \"filename\": \"test_database2.csv\",\n  \"file_type\": \"csv\",\n  \"file_size\": 180,\n  \"description\": null,\n  \"uploaded_by\": \"admin-user-1\",\n  \"uploaded_by_n...",
-      "timestamp": "2026-01-12T12:07:42.578967"
+      "success": false,
+      "details": "Status: 400, Error: {'detail': 'Product ID is required'}",
+      "timestamp": "2026-01-12T12:31:40.447823"
     },
     {
-      "test": "Staff Delete Database (Should Fail)",
+      "test": "Delete Product with Databases (Should Fail)",
+      "success": false,
+      "details": "Status: 200, Error: {'message': 'Product deleted successfully'}",
+      "timestamp": "2026-01-12T12:31:40.484546"
+    },
+    {
+      "test": "Staff Delete Product (Should Fail)",
       "success": true,
       "details": "Status: 403, Response: {\n  \"detail\": \"Admin access required\"\n}...",
-      "timestamp": "2026-01-12T12:07:42.615758"
+      "timestamp": "2026-01-12T12:31:40.522526"
     },
     {
-      "test": "Cleanup Delete Test Database",
+      "test": "Create Product for Deletion",
       "success": true,
-      "details": "Status: 200, Response: {\n  \"message\": \"Database deleted successfully\"\n}...",
-      "timestamp": "2026-01-12T12:07:42.650432"
+      "details": "Status: 200, Response: {\n  \"id\": \"5be346ef-0535-4306-8532-596efa80e355\",\n  \"name\": \"DELETE_TEST_PRODUCT\",\n  \"created_at\": \"2026-01-12T12:31:40.555820Z\"\n}...",
+      "timestamp": "2026-01-12T12:31:40.559274"
     },
     {
-      "test": "Delete Database",
+      "test": "Delete Product Successfully",
       "success": true,
-      "details": "Status: 200, Response: {\n  \"message\": \"Database deleted successfully\"\n}...",
-      "timestamp": "2026-01-12T12:07:42.686292"
+      "details": "Status: 200, Response: {\n  \"message\": \"Product deleted successfully\"\n}...",
+      "timestamp": "2026-01-12T12:31:40.598177"
     }
   ],
-  "timestamp": "2026-01-12T12:07:42.687194"
+  "timestamp": "2026-01-12T12:31:40.599182"
 }
