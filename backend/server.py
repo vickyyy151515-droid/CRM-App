@@ -233,10 +233,18 @@ async def delete_product(product_id: str, user: User = Depends(get_admin_user)):
 async def upload_database(
     file: UploadFile = File(...),
     description: Optional[str] = None,
+    product_id: str = None,
     user: User = Depends(get_admin_user)
 ):
     if not file.filename.endswith(('.csv', '.xlsx')):
         raise HTTPException(status_code=400, detail="Only CSV and Excel files are allowed")
+    
+    if not product_id:
+        raise HTTPException(status_code=400, detail="Product ID is required")
+    
+    product = await db.products.find_one({'id': product_id})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
     
     file_type = 'csv' if file.filename.endswith('.csv') else 'xlsx'
     file_id = str(uuid.uuid4())
@@ -253,6 +261,8 @@ async def upload_database(
         file_type=file_type,
         file_size=len(content),
         description=description,
+        product_id=product_id,
+        product_name=product['name'],
         uploaded_by=user.id,
         uploaded_by_name=user.name,
         file_path=str(file_path),
