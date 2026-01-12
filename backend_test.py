@@ -278,16 +278,15 @@ Alice Brown,alice@example.com,28,HR"""
 
     def test_delete_product_with_databases(self):
         """Test deleting product with databases should fail"""
-        if hasattr(self, 'test_product_id'):
-            success, _ = self.run_api_test(
-                "Delete Product with Databases (Should Fail)",
-                "DELETE",
-                f"products/{self.test_product_id}",
-                400,
-                token=self.admin_token
-            )
-            return success
-        return False
+        # Use prod-liga2000 which has databases
+        success, _ = self.run_api_test(
+            "Delete Product with Databases (Should Fail)",
+            "DELETE",
+            "products/prod-liga2000",
+            400,
+            token=self.admin_token
+        )
+        return success
 
     def test_delete_product_success(self):
         """Test deleting product without databases"""
