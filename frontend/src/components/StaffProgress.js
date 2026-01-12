@@ -231,6 +231,37 @@ export default function StaffProgress() {
         </div>
       </div>
 
+      {/* Daily/Period Performance Banner */}
+      {dateRange !== 'all' && (
+        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl p-6 mb-6 text-white shadow-lg">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-2xl font-bold">{getDateRangeLabel()} Performance</h3>
+              <p className="text-indigo-100 text-sm">Real-time progress tracking</p>
+            </div>
+            <Clock className="text-white opacity-50" size={48} />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-white/10 backdrop-blur rounded-lg p-4">
+              <p className="text-indigo-100 text-sm mb-1">Checked {getDateRangeLabel()}</p>
+              <p className="text-3xl font-bold">{checkedInPeriod}</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur rounded-lg p-4">
+              <p className="text-indigo-100 text-sm mb-1">Ada</p>
+              <p className="text-3xl font-bold">{adaInPeriod}</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur rounded-lg p-4">
+              <p className="text-indigo-100 text-sm mb-1">Tidak</p>
+              <p className="text-3xl font-bold">{tidakInPeriod}</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur rounded-lg p-4">
+              <p className="text-indigo-100 text-sm mb-1">Quality Rate</p>
+              <p className="text-3xl font-bold">{periodQuality}%</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Overall Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
