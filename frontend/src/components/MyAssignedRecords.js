@@ -108,23 +108,23 @@ export default function MyAssignedRecords() {
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">#</th>
                         {columns.map((col, idx) => (
-                          <th key={idx} className=\"px-4 py-3 text-left text-xs font-semibold text-slate-700\">
+                          <th key={idx} className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
                             {col}
                           </th>
                         ))}
-                        <th className=\"px-4 py-3 text-left text-xs font-semibold text-slate-700\">Assigned Date</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">Assigned Date</th>
                       </tr>
                     </thead>
                     <tbody>
                       {dbRecords.map((record) => (
-                        <tr key={record.id} className=\"border-b border-slate-100 hover:bg-slate-50\">
-                          <td className=\"px-4 py-3 text-sm text-slate-900 font-medium\">{record.row_number}</td>
+                        <tr key={record.id} className="border-b border-slate-100 hover:bg-slate-50">
+                          <td className="px-4 py-3 text-sm text-slate-900 font-medium">{record.row_number}</td>
                           {columns.map((col, idx) => (
-                            <td key={idx} className=\"px-4 py-3 text-sm text-slate-900\">
+                            <td key={idx} className="px-4 py-3 text-sm text-slate-900">
                               {record.row_data[col] || '-'}
                             </td>
                           ))}
-                          <td className=\"px-4 py-3 text-sm text-slate-600\">
+                          <td className="px-4 py-3 text-sm text-slate-600">
                             {formatDate(record.assigned_at)}
                           </td>
                         </tr>
