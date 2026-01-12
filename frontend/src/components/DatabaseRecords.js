@@ -132,7 +132,6 @@ export default function DatabaseRecords({ database, isStaff, onRequestSuccess })
             <table className="min-w-full" data-testid="customer-records-table">
               <thead className="bg-slate-50">
                 <tr>
-                  {isStaff && <th className="px-4 py-3 text-left w-12"></th>}
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">#</th>
                   {columns.map((col, idx) => (
                     <th key={idx} className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
