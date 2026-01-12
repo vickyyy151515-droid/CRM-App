@@ -220,6 +220,46 @@ export default function DatabaseList({ onUpdate, isStaff = false }) {
           }}
         />
       )}
+
+      {showRecords && selectedDb && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50" data-testid="records-modal">
+          <div className="bg-white rounded-xl shadow-2xl max-w-7xl w-full max-h-[85vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b border-slate-200">
+              <div>
+                <h3 className="text-2xl font-semibold text-slate-900">{selectedDb.filename}</h3>
+                <p className="text-sm text-slate-600 mt-1">Select customer records to request</p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowRecords(false);
+                  setSelectedDb(null);
+                  loadDatabases();
+                  onUpdate?.();
+                }}
+                data-testid="close-records-button"
+                className="text-slate-400 hover:text-slate-600 p-2"
+              >
+                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto p-6">
+              <DatabaseRecords
+                database={selectedDb}
+                isStaff={isStaff}
+                onRequestSuccess={() => {
+                  setShowRecords(false);
+                  setSelectedDb(null);
+                  loadDatabases();
+                  onUpdate?.();
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
