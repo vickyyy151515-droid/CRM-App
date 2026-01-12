@@ -597,12 +597,21 @@ Alice Brown,alice@example.com,28,HR"""
         self.test_get_current_user()
         self.test_unauthorized_access()
 
+        # Product Management Tests
+        print("\n📋 Product Management Tests")
+        self.test_get_products()
+        self.test_create_product()
+        self.test_create_duplicate_product()
+        self.test_staff_cannot_create_product()
+
         # Database Management Tests
         print("\n📋 Database Management Tests")
         self.test_upload_database()
+        self.test_upload_database_without_product()
         self.test_staff_upload_forbidden()
         self.test_list_databases()
         self.test_search_databases()
+        self.test_filter_databases_by_product()
         self.test_get_database_details()
 
         # Download Request Tests
