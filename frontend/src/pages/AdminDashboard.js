@@ -82,6 +82,8 @@ export default function AdminDashboard({ user, onLogout }) {
         return <DownloadHistory />;
       case 'users':
         return <CreateUser />;
+      case 'products':
+        return <ProductManagement />;
       default:
         return null;
     }
