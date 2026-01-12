@@ -85,8 +85,11 @@ export default function StaffProgress() {
 
   const dateFilteredRecords = getDateFilteredRecords();
 
-  // Calculate staff statistics
+  // Calculate staff statistics with date filter
   const staffStats = {};
+  const staffDailyStats = {};
+  
+  // Overall stats (all time)
   filteredRecords.forEach(record => {
     if (record.status === 'assigned' && record.assigned_to) {
       if (!staffStats[record.assigned_to]) {
@@ -105,6 +108,26 @@ export default function StaffProgress() {
         staffStats[record.assigned_to].tidak++;
       } else {
         staffStats[record.assigned_to].notChecked++;
+      }
+    }
+  });
+
+  // Daily/filtered period stats
+  dateFilteredRecords.forEach(record => {
+    if (record.assigned_to) {
+      if (!staffDailyStats[record.assigned_to]) {
+        staffDailyStats[record.assigned_to] = {
+          name: record.assigned_to_name,
+          checkedToday: 0,
+          adaToday: 0,
+          tidakToday: 0
+        };
+      }
+      staffDailyStats[record.assigned_to].checkedToday++;
+      if (record.whatsapp_status === 'ada') {
+        staffDailyStats[record.assigned_to].adaToday++;
+      } else if (record.whatsapp_status === 'tidak') {
+        staffDailyStats[record.assigned_to].tidakToday++;
       }
     }
   });
