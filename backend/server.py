@@ -77,6 +77,7 @@ class Database(BaseModel):
 
 class DatabaseCreate(BaseModel):
     description: Optional[str] = None
+    product_id: str
 
 class DownloadRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
