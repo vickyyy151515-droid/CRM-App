@@ -193,6 +193,42 @@ async def login(credentials: UserLogin):
 async def get_me(user: User = Depends(get_current_user)):
     return user
 
+@api_router.post("/products", response_model=Product)
+async def create_product(product_data: ProductCreate, user: User = Depends(get_admin_user)):
+    existing = await db.products.find_one({'name': product_data.name})
+    if existing:
+        raise HTTPException(status_code=400, detail="Product with this name already exists")
+    
+    product = Product(name=product_data.name)
+    doc = product.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    
+    await db.products.insert_one(doc)
+    return product
+
+@api_router.get("/products", response_model=List[Product])
+async def get_products(user: User = Depends(get_current_user)):
+    products = await db.products.find({}, {'_id': 0}).sort('name', 1).to_list(1000)
+    
+    for product in products:
+        if isinstance(product['created_at'], str):
+            product['created_at'] = datetime.fromisoformat(product['created_at'])
+    
+    return products
+
+@api_router.delete("/products/{product_id}")
+async def delete_product(product_id: str, user: User = Depends(get_admin_user)):
+    product = await db.products.find_one({'id': product_id})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    databases_count = await db.databases.count_documents({'product_id': product_id})
+    if databases_count > 0:
+        raise HTTPException(status_code=400, detail=f"Cannot delete product with {databases_count} associated databases")
+    
+    await db.products.delete_one({'id': product_id})
+    return {'message': 'Product deleted successfully'}
+
 @api_router.post("/databases", response_model=Database)
 async def upload_database(
     file: UploadFile = File(...),
