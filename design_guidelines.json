@@ -1,0 +1,150 @@
+{
+  "design_system": {
+    "identity": {
+      "name": "CRM Pro",
+      "persona": "E1 - Soft Utility Archetype",
+      "vibe": "Professional, Clean, Trustworthy, Efficient",
+      "principles": [
+        "Fusion over Imitation: Mix Swiss precision with Soft UI warmth",
+        "Content is King: Data legibility is paramount",
+        "Negative Space: Generous padding to reduce cognitive load",
+        "Contrast: High contrast for text, subtle contrast for containers"
+      ]
+    },
+    "typography": {
+      "font_family": {
+        "headings": "Manrope, sans-serif",
+        "body": "Inter, sans-serif",
+        "mono": "JetBrains Mono, monospace"
+      },
+      "imports": [
+        "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap');"
+      ],
+      "scale": {
+        "h1": "text-4xl md:text-5xl font-bold tracking-tight",
+        "h2": "text-3xl font-semibold tracking-tight",
+        "h3": "text-2xl font-semibold tracking-tight",
+        "body": "text-base leading-relaxed",
+        "small": "text-sm text-muted-foreground"
+      }
+    },
+    "colors": {
+      "palette": {
+        "primary": {
+          "name": "Slate 900",
+          "hex": "#0f172a",
+          "tailwind": "bg-slate-900 text-white hover:bg-slate-800"
+        },
+        "accent": {
+          "name": "Indigo 600",
+          "hex": "#4f46e5",
+          "tailwind": "text-indigo-600 bg-indigo-50 hover:bg-indigo-100"
+        },
+        "success": {
+          "name": "Emerald 500",
+          "hex": "#10b981",
+          "tailwind": "text-emerald-600 bg-emerald-50 border-emerald-200"
+        },
+        "warning": {
+          "name": "Amber 500",
+          "hex": "#f59e0b",
+          "tailwind": "text-amber-600 bg-amber-50 border-amber-200"
+        },
+        "background": {
+          "main": "bg-slate-50",
+          "card": "bg-white",
+          "sidebar": "bg-white border-r border-slate-200"
+        }
+      },
+      "gradients": {
+        "subtle_glow": "bg-gradient-to-tr from-indigo-50 to-slate-50",
+        "login_overlay": "bg-gradient-to-t from-slate-900/80 to-slate-900/20"
+      }
+    },
+    "spacing": {
+      "container_padding": "p-6 md:p-8 lg:p-12",
+      "element_gap": "gap-4 md:gap-6",
+      "section_gap": "gap-8 md:gap-12",
+      "radius": {
+        "default": "rounded-lg",
+        "button": "rounded-md",
+        "card": "rounded-xl"
+      }
+    },
+    "shadows": {
+      "card": "shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] transition-shadow duration-300",
+      "dropdown": "shadow-lg border border-slate-100",
+      "modal": "shadow-2xl"
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-slate-900 text-white hover:bg-slate-800 shadow-sm font-medium px-6 py-2.5 rounded-md transition-all active:scale-95",
+      "secondary": "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 font-medium px-6 py-2.5 rounded-md transition-all active:scale-95",
+      "ghost": "text-slate-600 hover:bg-slate-100 hover:text-slate-900 px-4 py-2 rounded-md transition-colors",
+      "danger": "bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200"
+    },
+    "cards": {
+      "base": "bg-white border border-slate-200 rounded-xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.04)]",
+      "interactive": "bg-white border border-slate-200 rounded-xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer"
+    },
+    "inputs": {
+      "base": "flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+    },
+    "badges": {
+      "base": "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+      "success": "border-transparent bg-emerald-100 text-emerald-700 hover:bg-emerald-200",
+      "pending": "border-transparent bg-amber-100 text-amber-700 hover:bg-amber-200",
+      "rejected": "border-transparent bg-rose-100 text-rose-700 hover:bg-rose-200"
+    }
+  },
+  "layout_strategies": {
+    "dashboard": {
+      "structure": "Sidebar (fixed left) + Header (fixed top) + Main Content (scrollable)",
+      "grid": "grid grid-cols-1 md:grid-cols-12 gap-6",
+      "bento_grid": {
+        "hero": "col-span-12 lg:col-span-8",
+        "side_panel": "col-span-12 lg:col-span-4",
+        "stat_card": "col-span-12 md:col-span-6 lg:col-span-3"
+      }
+    },
+    "login": {
+      "structure": "Split Screen: Left (Form) 40% - Right (Image/Brand) 60%",
+      "mobile": "Stack: Image (Top) - Form (Bottom)"
+    }
+  },
+  "assets": {
+    "images": {
+      "login_hero": {
+        "url": "https://images.unsplash.com/photo-1758873271761-6cfe9b4f000c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTJ8MHwxfHNlYXJjaHwxfHxjb3Jwb3JhdGUlMjBvZmZpY2UlMjB0ZWFtJTIwd29ya2luZyUyMGRpdmVyc2V8ZW58MHx8fHwxNzY4MjE5MjEwfDA&ixlib=rb-4.1.0&q=85",
+        "alt": "Diverse corporate team collaborating",
+        "usage": "Right side of login page, full height, object-cover"
+      },
+      "dashboard_bg": {
+        "url": "https://images.unsplash.com/photo-1765046255517-412341954c4c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzh8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGRhdGElMjBmbG93JTIwdGVjaG5vbG9neSUyMG1pbmltYWwlMjB3aGl0ZSUyMGJhY2tncm91bmR8ZW58MHx8fHwxNzY4MjE5MjEzfDA&ixlib=rb-4.1.0&q=85",
+        "alt": "Abstract data flow",
+        "usage": "Subtle background for empty states or header banners (low opacity)"
+      }
+    },
+    "icons": {
+      "library": "lucide-react",
+      "preferred": ["LayoutDashboard", "FileSpreadsheet", "Users", "Settings", "Download", "Upload", "Search", "Filter", "CheckCircle", "XCircle", "Clock"]
+    }
+  },
+  "universal_guidelines": {
+    "testing": "ALL interactive elements (buttons, inputs, links) MUST have a 'data-testid' attribute in kebab-case (e.g., 'login-submit-btn').",
+    "accessibility": "Ensure 4.5:1 contrast ratio. Use 'sr-only' for icon-only buttons.",
+    "motion": "Use 'framer-motion' for page transitions and list entrance animations. No 'transition: all'.",
+    "glassmorphism": "Use 'backdrop-blur-md bg-white/70 border border-white/20' for sticky headers and overlays.",
+    "empty_states": "Never leave a list empty. Show a helpful illustration or text with a call to action."
+  },
+  "instructions_to_main_agent": [
+    "1. INSTALL FONTS: Add the Google Fonts import to /app/frontend/src/index.css immediately.",
+    "2. SETUP TAILWIND: Ensure tailwind.config.js extends the theme with the colors defined above.",
+    "3. CREATE LAYOUTS: Build a 'DashboardLayout' component with a sidebar and header.",
+    "4. USE SHADCN: Use Shadcn UI components for complex interactions (Dialog, Dropdown, Form), but style them with the 'Soft Utility' classes.",
+    "5. DATA-TESTID: Do not forget data-testid on ANY interactive element.",
+    "6. NO MOCKING: Implement actual API calls, but if backend is not ready, structure the frontend to easily swap mocks for real data.",
+    "7. FILE HANDLING: Use 'react-dropzone' or standard input for file uploads, styled as a large drag-and-drop area."
+  ]
+}
