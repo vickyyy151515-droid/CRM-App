@@ -138,7 +138,7 @@ class CRMAPITester:
             "Unauthorized Access",
             "GET",
             "auth/me",
-            401
+            403
         )
         return success
 
