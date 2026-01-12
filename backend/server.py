@@ -469,6 +469,9 @@ async def approve_request(request_id: str, user: User = Depends(get_admin_user))
     if not request:
         raise HTTPException(status_code=404, detail="Request not found")
     
+    if request['status'] != 'pending':
+        raise HTTPException(status_code=400, detail="Request already processed")
+    
     await db.download_requests.update_one(
         {'id': request_id},
         {'$set': {
@@ -479,13 +482,27 @@ async def approve_request(request_id: str, user: User = Depends(get_admin_user))
         }}
     )
     
-    return {'message': 'Request approved'}
+    for record_id in request['record_ids']:
+        await db.customer_records.update_one(
+            {'id': record_id},
+            {'$set': {
+                'status': 'assigned',
+                'assigned_to': request['requested_by'],
+                'assigned_to_name': request['requested_by_name'],
+                'assigned_at': datetime.now(timezone.utc).isoformat()
+            }}
+        )
+    
+    return {'message': 'Request approved and records assigned'}
 
 @api_router.patch("/download-requests/{request_id}/reject")
 async def reject_request(request_id: str, user: User = Depends(get_admin_user)):
     request = await db.download_requests.find_one({'id': request_id})
     if not request:
         raise HTTPException(status_code=404, detail="Request not found")
+    
+    if request['status'] != 'pending':
+        raise HTTPException(status_code=400, detail="Request already processed")
     
     await db.download_requests.update_one(
         {'id': request_id},
@@ -496,6 +513,12 @@ async def reject_request(request_id: str, user: User = Depends(get_admin_user)):
             'reviewed_by_name': user.name
         }}
     )
+    
+    for record_id in request['record_ids']:
+        await db.customer_records.update_one(
+            {'id': record_id},
+            {'$set': {'status': 'available'}}
+        )
     
     return {'message': 'Request rejected'}
 
