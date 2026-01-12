@@ -87,6 +87,7 @@ class CustomerRecord(BaseModel):
     row_data: dict
     status: str = "available"
     whatsapp_status: Optional[str] = None
+    whatsapp_status_updated_at: Optional[datetime] = None
     assigned_to: Optional[str] = None
     assigned_to_name: Optional[str] = None
     assigned_at: Optional[datetime] = None
