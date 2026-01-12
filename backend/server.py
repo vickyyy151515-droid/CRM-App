@@ -524,36 +524,29 @@ async def reject_request(request_id: str, user: User = Depends(get_admin_user)):
 
 @api_router.get("/download/{request_id}")
 async def download_database(request_id: str, user: User = Depends(get_current_user)):
-    request = await db.download_requests.find_one({'id': request_id})
-    if not request:
-        raise HTTPException(status_code=404, detail="Request not found")
+    raise HTTPException(status_code=410, detail="File download is no longer supported. Use assigned records instead.")
+
+@api_router.get("/my-assigned-records", response_model=List[CustomerRecord])
+async def get_my_assigned_records(product_id: Optional[str] = None, user: User = Depends(get_current_user)):
+    if user.role != 'staff':
+        raise HTTPException(status_code=403, detail="Only staff can view assigned records")
     
-    if request['requested_by'] != user.id:
-        raise HTTPException(status_code=403, detail="Not authorized")
+    query = {
+        'assigned_to': user.id,
+        'status': 'assigned'
+    }
+    if product_id:
+        query['product_id'] = product_id
     
-    if request['status'] != 'approved':
-        raise HTTPException(status_code=400, detail="Request not approved")
+    records = await db.customer_records.find(query, {'_id': 0}).sort('assigned_at', -1).to_list(10000)
     
-    database = await db.databases.find_one({'id': request['database_id']})
-    if not database:
-        raise HTTPException(status_code=404, detail="Database not found")
+    for record in records:
+        if isinstance(record.get('created_at'), str):
+            record['created_at'] = datetime.fromisoformat(record['created_at'])
+        if record.get('assigned_at') and isinstance(record['assigned_at'], str):
+            record['assigned_at'] = datetime.fromisoformat(record['assigned_at'])
     
-    history = DownloadHistory(
-        database_id=database['id'],
-        database_name=database['filename'],
-        downloaded_by=user.id,
-        downloaded_by_name=user.name
-    )
-    
-    doc = history.model_dump()
-    doc['downloaded_at'] = doc['downloaded_at'].isoformat()
-    await db.download_history.insert_one(doc)
-    
-    return FileResponse(
-        path=database['file_path'],
-        filename=database['filename'],
-        media_type='application/octet-stream'
-    )
+    return records
 
 @api_router.get("/download-history", response_model=List[DownloadHistory])
 async def get_download_history(user: User = Depends(get_current_user)):
