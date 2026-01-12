@@ -227,7 +227,7 @@ export default function DatabaseList({ onUpdate, isStaff = false }) {
             <div className="flex items-center justify-between p-6 border-b border-slate-200">
               <div>
                 <h3 className="text-2xl font-semibold text-slate-900">{selectedDb.filename}</h3>
-                <p className="text-sm text-slate-600 mt-1">Select customer records to request</p>
+                <p className="text-sm text-slate-600 mt-1">Enter how many customer records you want to request</p>
               </div>
               <button
                 onClick={() => {
