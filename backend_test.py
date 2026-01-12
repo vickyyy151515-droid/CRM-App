@@ -154,13 +154,78 @@ Alice Brown,alice@example.com,28,HR"""
             f.write(csv_content)
         return True
 
+    def test_get_products(self):
+        """Test getting products list"""
+        success, response = self.run_api_test(
+            "Get Products List",
+            "GET",
+            "products",
+            200,
+            token=self.admin_token
+        )
+        if success and isinstance(response, list):
+            self.products = response
+            return True
+        return False
+
+    def test_create_product(self):
+        """Test creating a new product"""
+        success, response = self.run_api_test(
+            "Create Product TEST2000",
+            "POST",
+            "products",
+            200,
+            data={"name": "TEST2000"},
+            token=self.admin_token
+        )
+        if success and 'id' in response:
+            self.test_product_id = response['id']
+            return True
+        return False
+
+    def test_create_duplicate_product(self):
+        """Test creating duplicate product should fail"""
+        success, _ = self.run_api_test(
+            "Create Duplicate Product (Should Fail)",
+            "POST",
+            "products",
+            400,
+            data={"name": "TEST2000"},
+            token=self.admin_token
+        )
+        return success
+
+    def test_staff_cannot_create_product(self):
+        """Test that staff cannot create products"""
+        success, _ = self.run_api_test(
+            "Staff Create Product (Should Fail)",
+            "POST",
+            "products",
+            403,
+            data={"name": "STAFF_PRODUCT"},
+            token=self.staff_token
+        )
+        return success
+
     def test_upload_database(self):
-        """Test database upload"""
+        """Test database upload with product"""
         self.test_create_sample_csv()
+        
+        # Get first available product for upload
+        if hasattr(self, 'products') and self.products:
+            product_id = self.products[0]['id']
+        elif hasattr(self, 'test_product_id'):
+            product_id = self.test_product_id
+        else:
+            self.log_test("Upload CSV Database", False, "No products available for upload")
+            return False
         
         with open('/tmp/test_database.csv', 'rb') as f:
             files = {'file': ('test_database.csv', f, 'text/csv')}
-            data = {'description': 'Test CSV database for automated testing'}
+            data = {
+                'description': 'Test CSV database for automated testing',
+                'product_id': product_id
+            }
             
             success, response = self.run_api_test(
                 "Upload CSV Database",
@@ -175,6 +240,90 @@ Alice Brown,alice@example.com,28,HR"""
             if success and 'id' in response:
                 self.uploaded_db_id = response['id']
                 return True
+        return False
+
+    def test_upload_database_without_product(self):
+        """Test database upload without product should fail"""
+        self.test_create_sample_csv()
+        
+        with open('/tmp/test_database.csv', 'rb') as f:
+            files = {'file': ('test_database_no_product.csv', f, 'text/csv')}
+            data = {'description': 'Test CSV without product'}
+            
+            success, _ = self.run_api_test(
+                "Upload Database Without Product (Should Fail)",
+                "POST",
+                "databases",
+                400,
+                data=data,
+                files=files,
+                token=self.admin_token
+            )
+            return success
+
+    def test_filter_databases_by_product(self):
+        """Test filtering databases by product"""
+        if hasattr(self, 'products') and self.products:
+            product_id = self.products[0]['id']
+            success, _ = self.run_api_test(
+                "Filter Databases by Product",
+                "GET",
+                "databases",
+                200,
+                data={"product_id": product_id},
+                token=self.admin_token
+            )
+            return success
+        return False
+
+    def test_delete_product_with_databases(self):
+        """Test deleting product with databases should fail"""
+        if hasattr(self, 'test_product_id'):
+            success, _ = self.run_api_test(
+                "Delete Product with Databases (Should Fail)",
+                "DELETE",
+                f"products/{self.test_product_id}",
+                400,
+                token=self.admin_token
+            )
+            return success
+        return False
+
+    def test_delete_product_success(self):
+        """Test deleting product without databases"""
+        # Create a new product for deletion
+        success, response = self.run_api_test(
+            "Create Product for Deletion",
+            "POST",
+            "products",
+            200,
+            data={"name": "DELETE_TEST_PRODUCT"},
+            token=self.admin_token
+        )
+        
+        if success and 'id' in response:
+            product_id = response['id']
+            success, _ = self.run_api_test(
+                "Delete Product Successfully",
+                "DELETE",
+                f"products/{product_id}",
+                200,
+                token=self.admin_token
+            )
+            return success
+        return False
+
+    def test_staff_cannot_delete_product(self):
+        """Test that staff cannot delete products"""
+        if hasattr(self, 'test_product_id'):
+            success, _ = self.run_api_test(
+                "Staff Delete Product (Should Fail)",
+                "DELETE",
+                f"products/{self.test_product_id}",
+                403,
+                token=self.staff_token
+            )
+            return success
         return False
 
     def test_staff_upload_forbidden(self):
