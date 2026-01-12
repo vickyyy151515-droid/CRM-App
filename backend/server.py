@@ -576,7 +576,10 @@ async def update_whatsapp_status(record_id: str, status_update: WhatsAppStatusUp
     
     await db.customer_records.update_one(
         {'id': record_id},
-        {'$set': {'whatsapp_status': status_update.whatsapp_status}}
+        {'$set': {
+            'whatsapp_status': status_update.whatsapp_status,
+            'whatsapp_status_updated_at': datetime.now(timezone.utc).isoformat()
+        }}
     )
     
     return {'message': 'WhatsApp status updated successfully'}
