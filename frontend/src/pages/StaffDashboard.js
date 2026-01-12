@@ -69,8 +69,8 @@ export default function StaffDashboard({ user, onLogout }) {
         );
       case 'requests':
         return <MyRequests onUpdate={loadStats} />;
-      case 'history':
-        return <DownloadHistory />;
+      case 'assigned':
+        return <MyAssignedRecords />;
       default:
         return null;
     }
