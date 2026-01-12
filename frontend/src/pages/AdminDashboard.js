@@ -88,6 +88,8 @@ export default function AdminDashboard({ user, onLogout }) {
         return <ProductManagement />;
       case 'assignments':
         return <AllAssignments />;
+      case 'progress':
+        return <StaffProgress />;
       default:
         return null;
     }
