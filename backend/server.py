@@ -276,13 +276,15 @@ async def upload_database(
     return database
 
 @api_router.get("/databases", response_model=List[Database])
-async def get_databases(search: Optional[str] = None, user: User = Depends(get_current_user)):
+async def get_databases(search: Optional[str] = None, product_id: Optional[str] = None, user: User = Depends(get_current_user)):
     query = {}
     if search:
         query['$or'] = [
             {'filename': {'$regex': search, '$options': 'i'}},
             {'description': {'$regex': search, '$options': 'i'}}
         ]
+    if product_id:
+        query['product_id'] = product_id
     
     databases = await db.databases.find(query, {'_id': 0}).sort('uploaded_at', -1).to_list(1000)
     
