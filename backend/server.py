@@ -689,6 +689,67 @@ async def reject_request(request_id: str, user: User = Depends(get_admin_user)):
     
     return {'message': 'Request rejected'}
 
+@api_router.get("/my-request-batches")
+async def get_my_request_batches(user: User = Depends(get_current_user)):
+    """Get all approved request batches for the current staff member"""
+    if user.role != 'staff':
+        raise HTTPException(status_code=403, detail="Only staff can view request batches")
+    
+    # Get all approved requests for this user
+    requests = await db.download_requests.find(
+        {'requested_by': user.id, 'status': 'approved'},
+        {'_id': 0}
+    ).sort('reviewed_at', -1).to_list(1000)
+    
+    # Get record counts and stats for each request
+    batches = []
+    for req in requests:
+        # Count records in this batch
+        record_count = await db.customer_records.count_documents({
+            'request_id': req['id'],
+            'assigned_to': user.id
+        })
+        
+        # Get database info
+        database = await db.databases.find_one({'id': req['database_id']}, {'_id': 0, 'name': 1, 'product_name': 1})
+        
+        batches.append({
+            'id': req['id'],
+            'database_id': req['database_id'],
+            'database_name': database['name'] if database else 'Unknown',
+            'product_name': database.get('product_name', 'Unknown') if database else 'Unknown',
+            'quantity': req['quantity'],
+            'record_count': record_count,
+            'requested_at': req['requested_at'],
+            'approved_at': req.get('reviewed_at')
+        })
+    
+    return batches
+
+@api_router.get("/my-assigned-records-by-batch")
+async def get_my_assigned_records_by_batch(request_id: str, user: User = Depends(get_current_user)):
+    """Get assigned records for a specific request batch"""
+    if user.role != 'staff':
+        raise HTTPException(status_code=403, detail="Only staff can view assigned records")
+    
+    # Verify this request belongs to the user
+    request = await db.download_requests.find_one({'id': request_id, 'requested_by': user.id})
+    if not request:
+        raise HTTPException(status_code=404, detail="Request batch not found")
+    
+    records = await db.customer_records.find(
+        {'request_id': request_id, 'assigned_to': user.id},
+        {'_id': 0}
+    ).sort('assigned_at', -1).to_list(10000)
+    
+    for record in records:
+        if isinstance(record.get('created_at'), str):
+            record['created_at'] = datetime.fromisoformat(record['created_at'])
+        if record.get('assigned_at') and isinstance(record['assigned_at'], str):
+            record['assigned_at'] = datetime.fromisoformat(record['assigned_at'])
+    
+    return records
+
 @api_router.get("/download/{request_id}")
 async def download_database(request_id: str, user: User = Depends(get_current_user)):
     raise HTTPException(status_code=410, detail="File download is no longer supported. Use assigned records instead.")
