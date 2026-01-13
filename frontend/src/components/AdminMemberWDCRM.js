@@ -3,7 +3,7 @@ import { api } from '../App';
 import { toast } from 'sonner';
 import { Upload, Database, Users, Trash2, ChevronDown, ChevronUp, Check, X, Search, Shuffle } from 'lucide-react';
 
-export default function AdminDBMemberWD() {
+export default function AdminMemberWDCRM() {
   const [databases, setDatabases] = useState([]);
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
