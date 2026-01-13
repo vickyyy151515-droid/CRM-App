@@ -25,7 +25,7 @@ Build a Customer Relationship Management (CRM) application where:
 
 ### Phase 3: WhatsApp Integration (Completed)
 - Copy full WhatsApp URL button (bypasses network blocks)
-- WhatsApp reachability status tracking (Ada/Tidak)
+- WhatsApp reachability status tracking (Ada/Tidak/Ceklis1)
 - **Response status tracking (Ya/Tidak)** - track if customer responded
 - Staff marks customer WhatsApp status and response status
 - Admin sees all statuses in dashboards
@@ -61,6 +61,26 @@ Build a Customer Relationship Management (CRM) application where:
   - Product summary with averages
 - **Admin Detail View**: Expandable daily records with full details
 - **Filters**: Date range (Today/Yesterday/Last 7/30 days/Custom), Product, Staff
+
+### Phase 7: Batch System (Completed - Jan 13, 2026)
+- **Batch-based Record Grouping**: Staff's assigned customers organized into selectable "batches"
+- **Legacy Batch**: Records assigned before this feature grouped into "Legacy" batch
+- **Live Stats**: Batch cards display WhatsApp status (Ada, Ceklis 1, Tidak) and Respond status (Ya, Tidak) counts
+- **Custom Titles**: Staff can set custom titles for each batch
+
+### Phase 8: DB Bonanza & Member WD CRM (Completed - Jan 13, 2026)
+- **Admin Upload**: Upload CSV/Excel files with product selection
+- **Product Categorization**: Each database linked to a specific product
+- **Quick Random Assignment**: Assign random records to staff, excluding reserved members
+- **Manual Selection**: Admin can manually select and assign specific records
+- **Staff View**: Staff see their assigned records grouped by database with product filtering
+- **Separate Collections**: DB Bonanza and Member WD CRM operate on separate MongoDB collections
+
+### Phase 9: Product Selection for DB Bonanza & Member WD CRM (Completed - Jan 13, 2026)
+- **Admin Upload with Product**: Product selection required when uploading new databases
+- **Product Filter for Admin**: Filter databases by product in admin view
+- **Product Filter for Staff**: Filter assigned records by product in staff view
+- **Legacy Data Handling**: Databases without product show "Unknown" as product name
 
 ## Tech Stack
 - **Frontend**: React + TailwindCSS + Shadcn/UI
