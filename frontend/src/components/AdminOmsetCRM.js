@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Calendar, Package, DollarSign, TrendingUp, Users, Filter, ChevronDown, ChevronUp, UserPlus, RefreshCw } from 'lucide-react';
+import { Calendar, Package, DollarSign, TrendingUp, Users, Filter, ChevronDown, ChevronUp, UserPlus, RefreshCw, Download } from 'lucide-react';
 
 export default function AdminOmsetCRM() {
   const [products, setProducts] = useState([]);
@@ -88,6 +88,59 @@ export default function AdminOmsetCRM() {
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('id-ID').format(value || 0);
+  };
+
+  const handleExportDetails = async () => {
+    try {
+      const dateParams = getDateParams();
+      const response = await api.get('/omset/export', {
+        params: {
+          ...dateParams,
+          ...(selectedProduct && { product_id: selectedProduct }),
+          ...(selectedStaff && { staff_id: selectedStaff })
+        },
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `omset_details_${dateRange}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Export successful');
+    } catch (error) {
+      toast.error('Failed to export');
+    }
+  };
+
+  const handleExportSummary = async () => {
+    try {
+      const dateParams = getDateParams();
+      const response = await api.get('/omset/export-summary', {
+        params: {
+          ...dateParams,
+          ...(selectedProduct && { product_id: selectedProduct })
+        },
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `omset_summary_${dateRange}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Export successful');
+    } catch (error) {
+      toast.error('Failed to export');
+    }
   };
 
   const toggleDateExpand = (date) => {
@@ -253,24 +306,44 @@ export default function AdminOmsetCRM() {
         </div>
       )}
 
-      {/* View Toggle */}
-      <div className="flex gap-2 mb-6">
-        <button
-          onClick={() => setViewMode('summary')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            viewMode === 'summary' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-          }`}
-        >
-          Summary View
-        </button>
-        <button
-          onClick={() => setViewMode('details')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            viewMode === 'details' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-          }`}
-        >
-          Detail View
-        </button>
+      {/* View Toggle and Export */}
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setViewMode('summary')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              viewMode === 'summary' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            Summary View
+          </button>
+          <button
+            onClick={() => setViewMode('details')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              viewMode === 'details' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            Detail View
+          </button>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={handleExportSummary}
+            className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-2 transition-colors text-sm"
+            data-testid="btn-export-summary"
+          >
+            <Download size={16} />
+            Export Summary
+          </button>
+          <button
+            onClick={handleExportDetails}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-colors text-sm"
+            data-testid="btn-export-details"
+          >
+            <Download size={16} />
+            Export Details
+          </button>
+        </div>
       </div>
 
       {viewMode === 'summary' && summary && (
