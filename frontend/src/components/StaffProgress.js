@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Users, TrendingUp, CheckCircle, XCircle, Clock, Package } from 'lucide-react';
+import { Users, TrendingUp, CheckCircle, XCircle, Clock, Package, MessageCircle } from 'lucide-react';
 
 export default function StaffProgress() {
   const [databases, setDatabases] = useState([]);
@@ -52,9 +52,16 @@ export default function StaffProgress() {
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     
     return filteredRecords.filter(record => {
-      if (!record.whatsapp_status || !record.whatsapp_status_updated_at) return false;
+      // Check if either whatsapp or respond status was updated
+      const whatsappDate = record.whatsapp_status_updated_at ? new Date(record.whatsapp_status_updated_at) : null;
+      const respondDate = record.respond_status_updated_at ? new Date(record.respond_status_updated_at) : null;
       
-      const updatedDate = new Date(record.whatsapp_status_updated_at);
+      if (!whatsappDate && !respondDate) return false;
+      
+      // Use the most recent update date
+      const updatedDate = whatsappDate && respondDate 
+        ? (whatsappDate > respondDate ? whatsappDate : respondDate)
+        : (whatsappDate || respondDate);
       
       switch(dateRange) {
         case 'today':
@@ -96,18 +103,34 @@ export default function StaffProgress() {
         staffStats[record.assigned_to] = {
           name: record.assigned_to_name,
           total: 0,
+          // WhatsApp stats
           ada: 0,
           tidak: 0,
-          notChecked: 0
+          waNotChecked: 0,
+          // Respond stats
+          respondYa: 0,
+          respondTidak: 0,
+          respondNotChecked: 0
         };
       }
       staffStats[record.assigned_to].total++;
+      
+      // WhatsApp status
       if (record.whatsapp_status === 'ada') {
         staffStats[record.assigned_to].ada++;
       } else if (record.whatsapp_status === 'tidak') {
         staffStats[record.assigned_to].tidak++;
       } else {
-        staffStats[record.assigned_to].notChecked++;
+        staffStats[record.assigned_to].waNotChecked++;
+      }
+      
+      // Respond status
+      if (record.respond_status === 'ya') {
+        staffStats[record.assigned_to].respondYa++;
+      } else if (record.respond_status === 'tidak') {
+        staffStats[record.assigned_to].respondTidak++;
+      } else {
+        staffStats[record.assigned_to].respondNotChecked++;
       }
     }
   });
@@ -120,7 +143,9 @@ export default function StaffProgress() {
           name: record.assigned_to_name,
           checkedToday: 0,
           adaToday: 0,
-          tidakToday: 0
+          tidakToday: 0,
+          respondYaToday: 0,
+          respondTidakToday: 0
         };
       }
       staffDailyStats[record.assigned_to].checkedToday++;
@@ -129,6 +154,11 @@ export default function StaffProgress() {
       } else if (record.whatsapp_status === 'tidak') {
         staffDailyStats[record.assigned_to].tidakToday++;
       }
+      if (record.respond_status === 'ya') {
+        staffDailyStats[record.assigned_to].respondYaToday++;
+      } else if (record.respond_status === 'tidak') {
+        staffDailyStats[record.assigned_to].respondTidakToday++;
+      }
     }
   });
 
@@ -136,11 +166,20 @@ export default function StaffProgress() {
   const databaseStats = databases.map(db => {
     const dbRecords = allRecords.filter(r => r.database_id === db.id);
     const assignedRecords = dbRecords.filter(r => r.status === 'assigned');
+    
+    // WhatsApp stats
     const ada = assignedRecords.filter(r => r.whatsapp_status === 'ada').length;
     const tidak = assignedRecords.filter(r => r.whatsapp_status === 'tidak').length;
-    const checked = ada + tidak;
-    const qualityRate = checked > 0 ? ((ada / checked) * 100).toFixed(1) : 0;
-    const checkProgress = assignedRecords.length > 0 ? ((checked / assignedRecords.length) * 100).toFixed(1) : 0;
+    const waChecked = ada + tidak;
+    const qualityRate = waChecked > 0 ? ((ada / waChecked) * 100).toFixed(1) : 0;
+    const checkProgress = assignedRecords.length > 0 ? ((waChecked / assignedRecords.length) * 100).toFixed(1) : 0;
+    
+    // Respond stats
+    const respondYa = assignedRecords.filter(r => r.respond_status === 'ya').length;
+    const respondTidak = assignedRecords.filter(r => r.respond_status === 'tidak').length;
+    const respondChecked = respondYa + respondTidak;
+    const respondRate = respondChecked > 0 ? ((respondYa / respondChecked) * 100).toFixed(1) : 0;
+    const respondProgress = assignedRecords.length > 0 ? ((respondChecked / assignedRecords.length) * 100).toFixed(1) : 0;
 
     return {
       ...db,
@@ -148,25 +187,43 @@ export default function StaffProgress() {
       assigned: assignedRecords.length,
       ada,
       tidak,
-      notChecked: assignedRecords.length - checked,
+      waNotChecked: assignedRecords.length - waChecked,
       qualityRate: parseFloat(qualityRate),
-      checkProgress: parseFloat(checkProgress)
+      checkProgress: parseFloat(checkProgress),
+      respondYa,
+      respondTidak,
+      respondNotChecked: assignedRecords.length - respondChecked,
+      respondRate: parseFloat(respondRate),
+      respondProgress: parseFloat(respondProgress)
     };
   }).filter(db => !selectedProduct || db.product_id === selectedProduct);
 
   // Overall statistics
   const totalAssigned = filteredRecords.filter(r => r.status === 'assigned').length;
+  
+  // WhatsApp overall
   const totalAda = filteredRecords.filter(r => r.whatsapp_status === 'ada').length;
   const totalTidak = filteredRecords.filter(r => r.whatsapp_status === 'tidak').length;
-  const totalChecked = totalAda + totalTidak;
-  const overallQuality = totalChecked > 0 ? ((totalAda / totalChecked) * 100).toFixed(1) : 0;
-  const overallProgress = totalAssigned > 0 ? ((totalChecked / totalAssigned) * 100).toFixed(1) : 0;
+  const totalWaChecked = totalAda + totalTidak;
+  const overallQuality = totalWaChecked > 0 ? ((totalAda / totalWaChecked) * 100).toFixed(1) : 0;
+  
+  // Respond overall
+  const totalRespondYa = filteredRecords.filter(r => r.respond_status === 'ya').length;
+  const totalRespondTidak = filteredRecords.filter(r => r.respond_status === 'tidak').length;
+  const totalRespondChecked = totalRespondYa + totalRespondTidak;
+  const overallRespondRate = totalRespondChecked > 0 ? ((totalRespondYa / totalRespondChecked) * 100).toFixed(1) : 0;
 
   // Daily metrics
   const checkedInPeriod = dateFilteredRecords.length;
   const adaInPeriod = dateFilteredRecords.filter(r => r.whatsapp_status === 'ada').length;
   const tidakInPeriod = dateFilteredRecords.filter(r => r.whatsapp_status === 'tidak').length;
   const periodQuality = checkedInPeriod > 0 ? ((adaInPeriod / checkedInPeriod) * 100).toFixed(1) : 0;
+  
+  // Respond period metrics
+  const respondYaInPeriod = dateFilteredRecords.filter(r => r.respond_status === 'ya').length;
+  const respondTidakInPeriod = dateFilteredRecords.filter(r => r.respond_status === 'tidak').length;
+  const respondInPeriod = respondYaInPeriod + respondTidakInPeriod;
+  const periodRespondRate = respondInPeriod > 0 ? ((respondYaInPeriod / respondInPeriod) * 100).toFixed(1) : 0;
 
   const getDateRangeLabel = () => {
     switch(dateRange) {
@@ -241,63 +298,91 @@ export default function StaffProgress() {
             </div>
             <Clock className="text-white opacity-50" size={48} />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
             <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-              <p className="text-indigo-100 text-sm mb-1">Checked {getDateRangeLabel()}</p>
-              <p className="text-3xl font-bold">{checkedInPeriod}</p>
+              <p className="text-indigo-100 text-xs mb-1">Total Checked</p>
+              <p className="text-2xl font-bold">{checkedInPeriod}</p>
             </div>
             <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-              <p className="text-indigo-100 text-sm mb-1">Ada</p>
-              <p className="text-3xl font-bold">{adaInPeriod}</p>
+              <p className="text-indigo-100 text-xs mb-1">WA Ada</p>
+              <p className="text-2xl font-bold">{adaInPeriod}</p>
             </div>
             <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-              <p className="text-indigo-100 text-sm mb-1">Tidak</p>
-              <p className="text-3xl font-bold">{tidakInPeriod}</p>
+              <p className="text-indigo-100 text-xs mb-1">WA Tidak</p>
+              <p className="text-2xl font-bold">{tidakInPeriod}</p>
             </div>
             <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-              <p className="text-indigo-100 text-sm mb-1">Quality Rate</p>
-              <p className="text-3xl font-bold">{periodQuality}%</p>
+              <p className="text-indigo-100 text-xs mb-1">WA Quality</p>
+              <p className="text-2xl font-bold">{periodQuality}%</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur rounded-lg p-4 border-l-2 border-white/30">
+              <p className="text-indigo-100 text-xs mb-1">Respond Ya</p>
+              <p className="text-2xl font-bold">{respondYaInPeriod}</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur rounded-lg p-4">
+              <p className="text-indigo-100 text-xs mb-1">Respond Tidak</p>
+              <p className="text-2xl font-bold">{respondTidakInPeriod}</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur rounded-lg p-4">
+              <p className="text-indigo-100 text-xs mb-1">Respond Rate</p>
+              <p className="text-2xl font-bold">{periodRespondRate}%</p>
             </div>
           </div>
         </div>
       )}
 
       {/* Overall Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <Users className="text-indigo-600" size={24} />
-            <span className="text-3xl font-bold text-slate-900">{totalAssigned}</span>
+            <Users className="text-indigo-600" size={20} />
+            <span className="text-2xl font-bold text-slate-900">{totalAssigned}</span>
           </div>
-          <p className="text-sm text-slate-600">Total Assigned Customers</p>
+          <p className="text-xs text-slate-600">Total Assigned</p>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <CheckCircle className="text-emerald-600" size={24} />
-            <span className="text-3xl font-bold text-emerald-700">{totalAda}</span>
+            <CheckCircle className="text-emerald-600" size={20} />
+            <span className="text-2xl font-bold text-emerald-700">{totalAda}</span>
           </div>
-          <p className="text-sm text-slate-600">WhatsApp Active (Ada)</p>
+          <p className="text-xs text-slate-600">WhatsApp Ada</p>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <XCircle className="text-rose-600" size={24} />
-            <span className="text-3xl font-bold text-rose-700">{totalTidak}</span>
+            <XCircle className="text-rose-600" size={20} />
+            <span className="text-2xl font-bold text-rose-700">{totalTidak}</span>
           </div>
-          <p className="text-sm text-slate-600">WhatsApp Inactive (Tidak)</p>
+          <p className="text-xs text-slate-600">WhatsApp Tidak</p>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <TrendingUp className="text-indigo-600" size={24} />
-            <span className="text-3xl font-bold text-indigo-700">{overallQuality}%</span>
+            <MessageCircle className="text-blue-600" size={20} />
+            <span className="text-2xl font-bold text-blue-700">{totalRespondYa}</span>
           </div>
-          <p className="text-sm text-slate-600">Overall Quality Rate</p>
-          <div className="mt-2 w-full bg-slate-200 rounded-full h-2">
+          <p className="text-xs text-slate-600">Respond Ya</p>
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <MessageCircle className="text-orange-600" size={20} />
+            <span className="text-2xl font-bold text-orange-700">{totalRespondTidak}</span>
+          </div>
+          <p className="text-xs text-slate-600">Respond Tidak</p>
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <TrendingUp className="text-indigo-600" size={20} />
+            <span className="text-2xl font-bold text-indigo-700">{overallRespondRate}%</span>
+          </div>
+          <p className="text-xs text-slate-600">Response Rate</p>
+          <div className="mt-2 w-full bg-slate-200 rounded-full h-1.5">
             <div 
-              className="bg-indigo-600 h-2 rounded-full transition-all" 
-              style={{width: `${overallQuality}%`}}
+              className="bg-indigo-600 h-1.5 rounded-full transition-all" 
+              style={{width: `${overallRespondRate}%`}}
             ></div>
           </div>
         </div>
@@ -311,9 +396,14 @@ export default function StaffProgress() {
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {Object.values(staffStats).map((staff, idx) => {
-            const checkedCount = staff.ada + staff.tidak;
-            const progressRate = ((checkedCount / staff.total) * 100).toFixed(1);
-            const qualityRate = checkedCount > 0 ? ((staff.ada / checkedCount) * 100).toFixed(1) : 0;
+            const waCheckedCount = staff.ada + staff.tidak;
+            const waProgressRate = ((waCheckedCount / staff.total) * 100).toFixed(1);
+            const waQualityRate = waCheckedCount > 0 ? ((staff.ada / waCheckedCount) * 100).toFixed(1) : 0;
+            
+            const respondCheckedCount = staff.respondYa + staff.respondTidak;
+            const respondProgressRate = ((respondCheckedCount / staff.total) * 100).toFixed(1);
+            const respondRate = respondCheckedCount > 0 ? ((staff.respondYa / respondCheckedCount) * 100).toFixed(1) : 0;
+            
             const dailyStats = staffDailyStats[Object.keys(staffStats)[idx]];
 
             return (
@@ -332,62 +422,105 @@ export default function StaffProgress() {
                 {dateRange !== 'all' && dailyStats && (
                   <div className="mb-4 p-3 bg-indigo-50 rounded-lg border border-indigo-100">
                     <p className="text-xs font-semibold text-indigo-900 mb-2">{getDateRangeLabel()}</p>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-5 gap-1 text-center">
                       <div>
-                        <p className="text-lg font-bold text-indigo-600">{dailyStats.checkedToday}</p>
-                        <p className="text-xs text-indigo-600">Checked</p>
+                        <p className="text-sm font-bold text-indigo-600">{dailyStats.checkedToday}</p>
+                        <p className="text-[10px] text-indigo-600">Checked</p>
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-emerald-600">{dailyStats.adaToday}</p>
-                        <p className="text-xs text-emerald-600">Ada</p>
+                        <p className="text-sm font-bold text-emerald-600">{dailyStats.adaToday}</p>
+                        <p className="text-[10px] text-emerald-600">WA Ada</p>
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-rose-600">{dailyStats.tidakToday}</p>
-                        <p className="text-xs text-rose-600">Tidak</p>
+                        <p className="text-sm font-bold text-rose-600">{dailyStats.tidakToday}</p>
+                        <p className="text-[10px] text-rose-600">WA Tidak</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-blue-600">{dailyStats.respondYaToday}</p>
+                        <p className="text-[10px] text-blue-600">Resp Ya</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-orange-600">{dailyStats.respondTidakToday}</p>
+                        <p className="text-[10px] text-orange-600">Resp Tidak</p>
                       </div>
                     </div>
                   </div>
                 )}
 
                 <div className="space-y-3">
-                  <div>
+                  {/* WhatsApp Section */}
+                  <div className="pb-3 border-b border-slate-100">
+                    <p className="text-xs font-medium text-slate-500 mb-2">WhatsApp Status</p>
                     <div className="flex items-center justify-between text-sm mb-1">
                       <span className="text-slate-600">Check Progress</span>
-                      <span className="font-semibold text-slate-900">{progressRate}%</span>
+                      <span className="font-semibold text-slate-900">{waProgressRate}%</span>
                     </div>
-                    <div className="w-full bg-slate-200 rounded-full h-2">
+                    <div className="w-full bg-slate-200 rounded-full h-2 mb-2">
                       <div 
-                        className="bg-indigo-600 h-2 rounded-full transition-all" 
-                        style={{width: `${progressRate}%`}}
+                        className="bg-emerald-500 h-2 rounded-full transition-all" 
+                        style={{width: `${waProgressRate}%`}}
                       ></div>
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2 pt-3 border-t border-slate-100">
-                    <div className="text-center">
-                      <p className="text-lg font-bold text-emerald-600">{staff.ada}</p>
-                      <p className="text-xs text-slate-600">Ada</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-lg font-bold text-rose-600">{staff.tidak}</p>
-                      <p className="text-xs text-slate-600">Tidak</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-lg font-bold text-slate-400">{staff.notChecked}</p>
-                      <p className="text-xs text-slate-600">Pending</p>
-                    </div>
-                  </div>
-
-                  {checkedCount > 0 && (
-                    <div className="pt-2 border-t border-slate-100">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-slate-600">Quality Rate:</span>
-                        <span className={`text-sm font-semibold ${parseFloat(qualityRate) >= 70 ? 'text-emerald-600' : parseFloat(qualityRate) >= 50 ? 'text-amber-600' : 'text-rose-600'}`}>
-                          {qualityRate}%
-                        </span>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="text-center">
+                        <p className="text-sm font-bold text-emerald-600">{staff.ada}</p>
+                        <p className="text-[10px] text-slate-600">Ada</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm font-bold text-rose-600">{staff.tidak}</p>
+                        <p className="text-[10px] text-slate-600">Tidak</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm font-bold text-slate-400">{staff.waNotChecked}</p>
+                        <p className="text-[10px] text-slate-600">Pending</p>
                       </div>
                     </div>
-                  )}
+                  </div>
+
+                  {/* Respond Section */}
+                  <div className="pb-3 border-b border-slate-100">
+                    <p className="text-xs font-medium text-slate-500 mb-2">Respond Status</p>
+                    <div className="flex items-center justify-between text-sm mb-1">
+                      <span className="text-slate-600">Check Progress</span>
+                      <span className="font-semibold text-slate-900">{respondProgressRate}%</span>
+                    </div>
+                    <div className="w-full bg-slate-200 rounded-full h-2 mb-2">
+                      <div 
+                        className="bg-blue-500 h-2 rounded-full transition-all" 
+                        style={{width: `${respondProgressRate}%`}}
+                      ></div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="text-center">
+                        <p className="text-sm font-bold text-blue-600">{staff.respondYa}</p>
+                        <p className="text-[10px] text-slate-600">Ya</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm font-bold text-orange-600">{staff.respondTidak}</p>
+                        <p className="text-[10px] text-slate-600">Tidak</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm font-bold text-slate-400">{staff.respondNotChecked}</p>
+                        <p className="text-[10px] text-slate-600">Pending</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quality Rates */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="text-center p-2 bg-emerald-50 rounded-lg">
+                      <p className={`text-lg font-bold ${parseFloat(waQualityRate) >= 70 ? 'text-emerald-600' : parseFloat(waQualityRate) >= 50 ? 'text-amber-600' : 'text-rose-600'}`}>
+                        {waQualityRate}%
+                      </p>
+                      <p className="text-[10px] text-slate-600">WA Quality</p>
+                    </div>
+                    <div className="text-center p-2 bg-blue-50 rounded-lg">
+                      <p className={`text-lg font-bold ${parseFloat(respondRate) >= 70 ? 'text-blue-600' : parseFloat(respondRate) >= 50 ? 'text-amber-600' : 'text-orange-600'}`}>
+                        {respondRate}%
+                      </p>
+                      <p className="text-[10px] text-slate-600">Respond Rate</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             );
@@ -409,53 +542,48 @@ export default function StaffProgress() {
             <table className="min-w-full">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">Database</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">Product</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">Total Records</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">Assigned</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">Check Progress</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">Ada</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">Tidak</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">Quality Rate</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700">Database</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700">Product</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700">Assigned</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700">WA Ada</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700">WA Tidak</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700">WA Quality</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700">Resp Ya</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700">Resp Tidak</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700">Resp Rate</th>
                 </tr>
               </thead>
               <tbody>
                 {databaseStats.map((db) => (
                   <tr key={db.id} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="px-4 py-3 text-sm text-slate-900 font-medium">{db.filename}</td>
-                    <td className="px-4 py-3 text-sm">
-                      <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-indigo-50 text-indigo-700 border-indigo-200">
+                    <td className="px-3 py-3 text-sm text-slate-900 font-medium">{db.filename}</td>
+                    <td className="px-3 py-3 text-sm">
+                      <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold bg-indigo-50 text-indigo-700 border-indigo-200">
                         {db.product_name}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-900">{db.totalRecords}</td>
-                    <td className="px-4 py-3 text-sm text-slate-900">{db.assigned}</td>
-                    <td className="px-4 py-3 text-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 bg-slate-200 rounded-full h-2">
-                          <div 
-                            className="bg-indigo-600 h-2 rounded-full" 
-                            style={{width: `${db.checkProgress}%`}}
-                          ></div>
-                        </div>
-                        <span className="text-xs text-slate-600">{db.checkProgress}%</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-3 py-3 text-sm text-slate-900">{db.assigned}</td>
+                    <td className="px-3 py-3 text-sm">
                       <span className="text-emerald-600 font-semibold">{db.ada}</span>
                     </td>
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-3 py-3 text-sm">
                       <span className="text-rose-600 font-semibold">{db.tidak}</span>
                     </td>
-                    <td className="px-4 py-3 text-sm">
-                      <div className="flex items-center gap-2">
-                        <span className={`font-semibold ${db.qualityRate >= 70 ? 'text-emerald-600' : db.qualityRate >= 50 ? 'text-amber-600' : 'text-rose-600'}`}>
-                          {db.qualityRate}%
-                        </span>
-                        {db.qualityRate >= 70 && <span className="text-emerald-600 text-xs">✓ Good</span>}
-                        {db.qualityRate >= 50 && db.qualityRate < 70 && <span className="text-amber-600 text-xs">⚠ Fair</span>}
-                        {db.qualityRate < 50 && db.qualityRate > 0 && <span className="text-rose-600 text-xs">✗ Poor</span>}
-                      </div>
+                    <td className="px-3 py-3 text-sm">
+                      <span className={`font-semibold ${db.qualityRate >= 70 ? 'text-emerald-600' : db.qualityRate >= 50 ? 'text-amber-600' : 'text-rose-600'}`}>
+                        {db.qualityRate}%
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 text-sm">
+                      <span className="text-blue-600 font-semibold">{db.respondYa}</span>
+                    </td>
+                    <td className="px-3 py-3 text-sm">
+                      <span className="text-orange-600 font-semibold">{db.respondTidak}</span>
+                    </td>
+                    <td className="px-3 py-3 text-sm">
+                      <span className={`font-semibold ${db.respondRate >= 70 ? 'text-blue-600' : db.respondRate >= 50 ? 'text-amber-600' : 'text-orange-600'}`}>
+                        {db.respondRate}%
+                      </span>
                     </td>
                   </tr>
                 ))}
