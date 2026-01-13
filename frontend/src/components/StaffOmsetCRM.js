@@ -164,38 +164,17 @@ export default function StaffOmsetCRM() {
     setShowForm(false);
   };
 
-  const handleExport = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const params = new URLSearchParams({
-        product_id: selectedProduct,
-        record_date: selectedDate
-      });
-      
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/omset/export?${params}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (!response.ok) throw new Error('Export failed');
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `omset_${selectedDate}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      
-      toast.success('Export successful');
-    } catch (error) {
-      console.error('Export error:', error);
-      toast.error('Failed to export');
-    }
+  const handleExport = () => {
+    const token = localStorage.getItem('token');
+    const params = new URLSearchParams({
+      product_id: selectedProduct,
+      record_date: selectedDate,
+      token: token
+    });
+    
+    // Open in new window to bypass sandbox download restrictions
+    window.open(`${process.env.REACT_APP_BACKEND_URL}/api/omset/export?${params}`, '_blank');
+    toast.success('Export started - check your new tab');
   };
 
   const formatCurrency = (value) => {
