@@ -723,8 +723,8 @@ async def update_whatsapp_status(record_id: str, status_update: WhatsAppStatusUp
     if user.role == 'staff' and record.get('assigned_to') != user.id:
         raise HTTPException(status_code=403, detail="You can only update records assigned to you")
     
-    if status_update.whatsapp_status not in ['ada', 'tidak', None]:
-        raise HTTPException(status_code=400, detail="Invalid status. Use 'ada' or 'tidak'")
+    if status_update.whatsapp_status not in ['ada', 'ceklis1', 'tidak', None]:
+        raise HTTPException(status_code=400, detail="Invalid status. Use 'ada', 'ceklis1', or 'tidak'")
     
     await db.customer_records.update_one(
         {'id': record_id},
