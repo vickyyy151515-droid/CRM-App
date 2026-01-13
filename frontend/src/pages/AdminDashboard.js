@@ -124,6 +124,8 @@ export default function AdminDashboard({ user, onLogout }) {
         return <AdminOmsetCRM />;
       case 'bonanza':
         return <AdminDBBonanza />;
+      case 'memberwd':
+        return <AdminMemberWDCRM />;
       default:
         return null;
     }
@@ -135,6 +137,7 @@ export default function AdminDashboard({ user, onLogout }) {
     { id: 'omset', label: 'OMSET CRM', icon: DollarSign, badge: 0 },
     { id: 'reserved', label: 'Reserved Member CRM', icon: UserCheck, badge: stats.pendingReservations },
     { id: 'bonanza', label: 'DB Bonanza', icon: Gift, badge: 0 },
+    { id: 'memberwd', label: 'Member WD CRM', icon: CreditCard, badge: 0 },
     { id: 'upload', label: 'Upload Database', icon: Upload, badge: 0 },
     { id: 'databases', label: 'Manage Databases', icon: FileSpreadsheet, badge: 0 },
     { id: 'assignments', label: 'View All Assignments', icon: List, badge: 0 },
