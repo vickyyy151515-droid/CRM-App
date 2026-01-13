@@ -126,7 +126,15 @@ export default function StaffMemberWDCRM() {
                     </div>
                     <div>
                       <h3 className="font-semibold text-slate-900">{dbName}</h3>
-                      <p className="text-sm text-slate-500">{dbRecords.length} records assigned to you</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm text-slate-500">{dbRecords.length} records assigned to you</p>
+                        {dbRecords[0]?.product_name && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                            <Package size={10} className="mr-1" />
+                            {dbRecords[0].product_name}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 text-sm text-slate-500">
