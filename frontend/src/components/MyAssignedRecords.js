@@ -227,6 +227,17 @@ export default function MyAssignedRecords() {
                                 <input
                                   type="radio"
                                   name={`whatsapp-${record.id}`}
+                                  checked={record.whatsapp_status === 'ceklis1'}
+                                  onChange={() => handleWhatsAppStatusChange(record.id, 'ceklis1')}
+                                  data-testid={`whatsapp-ceklis1-${record.id}`}
+                                  className="w-4 h-4 text-amber-600 focus:ring-amber-500"
+                                />
+                                <span className="text-sm text-slate-700">Ceklis 1</span>
+                              </label>
+                              <label className="flex items-center gap-1.5 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name={`whatsapp-${record.id}`}
                                   checked={record.whatsapp_status === 'tidak'}
                                   onChange={() => handleWhatsAppStatusChange(record.id, 'tidak')}
                                   data-testid={`whatsapp-tidak-${record.id}`}
