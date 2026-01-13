@@ -304,21 +304,54 @@ export default function AdminDBBonanza() {
               {/* Expanded Records */}
               {expandedDb === database.id && (
                 <div className="border-t border-slate-200 p-4">
-                  {/* Assignment Controls */}
-                  <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-slate-50 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <Users size={18} className="text-slate-500" />
+                  {/* Random Assignment Controls */}
+                  <div className="mb-4 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg">
+                    <h4 className="text-sm font-semibold text-purple-800 mb-3 flex items-center gap-2">
+                      <Shuffle size={16} />
+                      Quick Random Assignment
+                    </h4>
+                    <div className="flex flex-wrap items-center gap-3">
                       <select
                         value={selectedStaff}
                         onChange={(e) => setSelectedStaff(e.target.value)}
-                        className="h-9 px-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        data-testid="select-staff"
+                        className="h-9 px-3 rounded-lg border border-purple-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        data-testid="select-staff-random"
                       >
                         <option value="">Select Staff...</option>
                         {staff.map(s => (
                           <option key={s.id} value={s.id}>{s.name}</option>
                         ))}
                       </select>
+                      <input
+                        type="number"
+                        placeholder="Quantity"
+                        value={randomQuantity}
+                        onChange={(e) => setRandomQuantity(e.target.value)}
+                        min="1"
+                        max={records.filter(r => r.status === 'available').length}
+                        className="h-9 w-24 px-3 rounded-lg border border-purple-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        data-testid="random-quantity-input"
+                      />
+                      <span className="text-sm text-purple-600">
+                        of {records.filter(r => r.status === 'available').length} available
+                      </span>
+                      <button
+                        onClick={handleRandomAssign}
+                        disabled={assigning || !selectedStaff || !randomQuantity}
+                        className="h-9 px-4 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50 rounded-lg transition-colors flex items-center gap-2"
+                        data-testid="random-assign-btn"
+                      >
+                        <Shuffle size={14} />
+                        {assigning ? 'Assigning...' : 'Assign Random'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Manual Assignment Controls */}
+                  <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-slate-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Users size={18} className="text-slate-500" />
+                      <span className="text-sm text-slate-600 font-medium">Manual Selection:</span>
                     </div>
                     <button
                       onClick={selectAllAvailable}
@@ -341,7 +374,7 @@ export default function AdminDBBonanza() {
                       className="h-9 px-4 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-lg transition-colors"
                       data-testid="assign-records-btn"
                     >
-                      {assigning ? 'Assigning...' : 'Assign to Staff'}
+                      {assigning ? 'Assigning...' : 'Assign Selected'}
                     </button>
                   </div>
 
