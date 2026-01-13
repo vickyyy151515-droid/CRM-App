@@ -283,21 +283,17 @@ export default function StaffOmsetCRM() {
 
       {/* Daily Summary with NDP/RDP */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        {/* Total Unique Customers */}
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <Calendar className="text-indigo-600" size={18} />
-            <span className="text-xl font-bold text-slate-900">{totalForm}</span>
+            <Package className="text-purple-600" size={18} />
+            <span className="text-xl font-bold text-purple-700">
+              {(ndpRdpStats?.ndp_count || 0) + (ndpRdpStats?.rdp_count || 0)}
+            </span>
           </div>
-          <p className="text-xs text-slate-600">Total Form</p>
+          <p className="text-xs text-slate-600">Total Customers</p>
         </div>
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <TrendingUp className="text-blue-600" size={18} />
-            <span className="text-lg font-bold text-blue-700">{formatCurrency(dailyTotal)}</span>
-          </div>
-          <p className="text-xs text-slate-600">Total OMSET</p>
-        </div>
-        
+
         {/* NDP Stats */}
         <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 shadow-sm text-white">
           <div className="flex items-center justify-between mb-2">
@@ -318,15 +314,22 @@ export default function StaffOmsetCRM() {
           <p className="text-sm font-semibold mt-1">Rp {formatCurrency(ndpRdpStats?.rdp_total || 0)}</p>
         </div>
 
-        {/* Total Unique Customers */}
+        {/* Total Form */}
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <Package className="text-purple-600" size={18} />
-            <span className="text-xl font-bold text-purple-700">
-              {(ndpRdpStats?.ndp_count || 0) + (ndpRdpStats?.rdp_count || 0)}
-            </span>
+            <Calendar className="text-indigo-600" size={18} />
+            <span className="text-xl font-bold text-slate-900">{totalForm}</span>
           </div>
-          <p className="text-xs text-slate-600">Total Customers</p>
+          <p className="text-xs text-slate-600">Total Form</p>
+        </div>
+
+        {/* Total OMSET - Gold */}
+        <div className="bg-gradient-to-br from-amber-400 to-yellow-500 rounded-xl p-4 shadow-sm text-white">
+          <div className="flex items-center justify-between mb-2">
+            <TrendingUp className="opacity-90" size={18} />
+            <span className="text-lg font-bold">{formatCurrency(dailyTotal)}</span>
+          </div>
+          <p className="text-xs text-amber-100">Total OMSET</p>
         </div>
       </div>
 
