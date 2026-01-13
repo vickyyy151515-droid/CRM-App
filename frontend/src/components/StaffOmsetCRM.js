@@ -464,7 +464,7 @@ export default function StaffOmsetCRM() {
               <tfoot className="bg-slate-50 border-t border-slate-200">
                 <tr>
                   <td colSpan={3} className="px-4 py-3 text-sm font-semibold text-slate-900">TOTAL</td>
-                  <td className="px-4 py-3 text-sm text-right font-bold text-slate-900">Rp {formatCurrency(dailyNominal)}</td>
+                  <td className="px-4 py-3 text-sm text-right font-bold text-slate-900">{totalForm} Form</td>
                   <td className="px-4 py-3"></td>
                   <td className="px-4 py-3 text-sm text-right font-bold text-emerald-600">Rp {formatCurrency(dailyTotal)}</td>
                   <td colSpan={2}></td>
