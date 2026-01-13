@@ -305,6 +305,98 @@ async def login(credentials: UserLogin):
 async def get_me(user: User = Depends(get_current_user)):
     return user
 
+# User Management Endpoints (Admin only)
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
+    password: Optional[str] = None
+    role: Optional[str] = None
+
+@api_router.get("/users")
+async def get_all_users(user: User = Depends(get_admin_user)):
+    """Get all users (admin only)"""
+    users = await db.users.find({}, {'_id': 0, 'password': 0}).sort('created_at', -1).to_list(1000)
+    
+    # Get activity stats for each user
+    for u in users:
+        # Count assigned records
+        assigned_count = await db.customer_records.count_documents({'assigned_to': u['id']})
+        u['assigned_records'] = assigned_count
+        
+        # Count OMSET records
+        omset_count = await db.omset_records.count_documents({'staff_id': u['id']})
+        u['omset_records'] = omset_count
+        
+        # Get last activity (last OMSET record creation)
+        last_omset = await db.omset_records.find_one(
+            {'staff_id': u['id']},
+            {'_id': 0, 'created_at': 1},
+            sort=[('created_at', -1)]
+        )
+        u['last_activity'] = last_omset['created_at'] if last_omset else None
+    
+    return users
+
+@api_router.put("/users/{user_id}")
+async def update_user(user_id: str, user_data: UserUpdate, user: User = Depends(get_admin_user)):
+    """Update a user (admin only)"""
+    existing = await db.users.find_one({'id': user_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Prevent admin from modifying themselves in certain ways
+    if user_id == user.id and user_data.role and user_data.role != 'admin':
+        raise HTTPException(status_code=400, detail="Cannot change your own role")
+    
+    update_data = {}
+    
+    if user_data.name:
+        update_data['name'] = user_data.name
+    
+    if user_data.email:
+        # Check if email is already taken by another user
+        email_exists = await db.users.find_one({'email': user_data.email, 'id': {'$ne': user_id}})
+        if email_exists:
+            raise HTTPException(status_code=400, detail="Email already in use")
+        update_data['email'] = user_data.email
+    
+    if user_data.password:
+        update_data['password'] = bcrypt.hashpw(user_data.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    
+    if user_data.role:
+        update_data['role'] = user_data.role
+    
+    if update_data:
+        await db.users.update_one({'id': user_id}, {'$set': update_data})
+    
+    updated_user = await db.users.find_one({'id': user_id}, {'_id': 0, 'password': 0})
+    return updated_user
+
+@api_router.delete("/users/{user_id}")
+async def delete_user(user_id: str, user: User = Depends(get_admin_user)):
+    """Delete a user (admin only)"""
+    existing = await db.users.find_one({'id': user_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Prevent admin from deleting themselves
+    if user_id == user.id:
+        raise HTTPException(status_code=400, detail="Cannot delete your own account")
+    
+    # Check if user has assigned records
+    assigned_count = await db.customer_records.count_documents({'assigned_to': user_id})
+    omset_count = await db.omset_records.count_documents({'staff_id': user_id})
+    
+    if assigned_count > 0 or omset_count > 0:
+        # Instead of deleting, we could mark as inactive, but for now return error
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Cannot delete user with existing data ({assigned_count} assigned records, {omset_count} OMSET records). Consider deactivating instead."
+        )
+    
+    await db.users.delete_one({'id': user_id})
+    return {"message": "User deleted successfully"}
+
 @api_router.post("/products", response_model=Product)
 async def create_product(product_data: ProductCreate, user: User = Depends(get_admin_user)):
     existing = await db.products.find_one({'name': product_data.name})
