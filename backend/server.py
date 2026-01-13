@@ -2549,6 +2549,34 @@ async def create_notification(user_id: str, type: str, title: str, message: str,
     await db.notifications.insert_one(notification)
     return notification
 
+# ==================== USER PREFERENCES ENDPOINTS ====================
+
+class WidgetLayoutUpdate(BaseModel):
+    widget_order: List[str]
+
+@api_router.get("/user/preferences/widget-layout")
+async def get_widget_layout(user: User = Depends(get_current_user)):
+    """Get user's saved widget layout order"""
+    prefs = await db.user_preferences.find_one({'user_id': user.id, 'type': 'widget_layout'}, {'_id': 0})
+    if prefs:
+        return {'widget_order': prefs.get('widget_order', [])}
+    return {'widget_order': []}
+
+@api_router.put("/user/preferences/widget-layout")
+async def save_widget_layout(layout: WidgetLayoutUpdate, user: User = Depends(get_current_user)):
+    """Save user's widget layout order"""
+    await db.user_preferences.update_one(
+        {'user_id': user.id, 'type': 'widget_layout'},
+        {'$set': {
+            'user_id': user.id,
+            'type': 'widget_layout',
+            'widget_order': layout.widget_order,
+            'updated_at': datetime.now(timezone.utc).isoformat()
+        }},
+        upsert=True
+    )
+    return {'message': 'Layout saved successfully', 'widget_order': layout.widget_order}
+
 # ==================== ADVANCED ANALYTICS ENDPOINTS ====================
 
 def get_date_range(period: str):
