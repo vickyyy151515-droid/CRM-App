@@ -154,10 +154,10 @@ Build a Customer Relationship Management (CRM) application where:
 - `/api/bonanza/*` - DB Bonanza endpoints (upload, databases, records, assign)
 - `/api/memberwd/*` - Member WD CRM endpoints (upload, databases, records, assign)
 - `/api/notifications` - Notification system (GET/PATCH/DELETE)
-- `/api/bulk/requests` - Bulk approve/reject download requests
-- `/api/bulk/bonanza-records` - Bulk delete bonanza records
-- `/api/bulk/memberwd-records` - Bulk delete member WD records
-- `/api/bulk/status-update` - Bulk update record status
+- `/api/analytics/staff-performance` - Staff performance analytics
+- `/api/analytics/business` - Business analytics (OMSET, utilization)
+- `/api/export/*` - Export endpoints (customer-records, omset, staff-report, reserved-members, bonanza-records, memberwd-records)
+- `/api/bulk/*` - Bulk operations (requests, status-update, bonanza-records, memberwd-records)
 
 ## Credentials
 - **Admin**: admin@crm.com / admin123
@@ -169,5 +169,5 @@ Build a Customer Relationship Management (CRM) application where:
 
 ### P2: Potential Enhancements
 - Email notifications for important updates
-- Advanced analytics dashboard
-- Data export to Excel with custom filters
+- Real-time notifications with WebSockets
+- Custom dashboard layouts (drag & drop widgets)
