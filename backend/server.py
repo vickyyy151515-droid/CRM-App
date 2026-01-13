@@ -774,11 +774,13 @@ async def get_my_request_batches(user: User = Depends(get_current_user)):
         
         # Add legacy batches
         for db_id, info in legacy_by_db.items():
+            batch_id = f'legacy_{db_id}'
             batches.append({
-                'id': f'legacy_{db_id}',
+                'id': batch_id,
                 'database_id': db_id,
                 'database_name': info['database_name'],
                 'product_name': info['product_name'],
+                'custom_title': legacy_titles.get(batch_id),
                 'quantity': info['count'],
                 'record_count': info['count'],
                 'ada_count': info['ada_count'],
