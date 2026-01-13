@@ -169,7 +169,7 @@ export default function StaffOmsetCRM() {
   };
 
   const dailyTotal = records.reduce((sum, r) => sum + (r.depo_total || 0), 0);
-  const dailyNominal = records.reduce((sum, r) => sum + (r.nominal || 0), 0);
+  const totalForm = records.reduce((sum, r) => sum + (r.depo_kelipatan || 0), 0);
 
   if (loading) {
     return (
@@ -247,9 +247,9 @@ export default function StaffOmsetCRM() {
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <Calendar className="text-indigo-600" size={18} />
-            <span className="text-xl font-bold text-slate-900">{records.length}</span>
+            <span className="text-xl font-bold text-slate-900">{totalForm}</span>
           </div>
-          <p className="text-xs text-slate-600">Total Records</p>
+          <p className="text-xs text-slate-600">Total Form</p>
         </div>
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between mb-2">
