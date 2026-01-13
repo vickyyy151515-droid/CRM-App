@@ -1744,6 +1744,150 @@ async def get_omset_record_types(
     
     return date_records
 
+# ==================== DB BONANZA ENDPOINTS ====================
+
+@api_router.post("/bonanza/upload")
+async def upload_bonanza_database(
+    file: UploadFile = File(...),
+    name: str = Form(...),
+    user: User = Depends(get_admin_user)
+):
+    """Upload a new Bonanza database (Admin only)"""
+    if not file.filename.endswith(('.csv', '.xlsx', '.xls')):
+        raise HTTPException(status_code=400, detail="Only CSV and Excel files are supported")
+    
+    contents = await file.read()
+    
+    try:
+        if file.filename.endswith('.csv'):
+            df = pd.read_csv(io.BytesIO(contents))
+        else:
+            df = pd.read_excel(io.BytesIO(contents))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error reading file: {str(e)}")
+    
+    # Create database record
+    database_id = str(uuid.uuid4())
+    database_doc = {
+        'id': database_id,
+        'name': name,
+        'filename': file.filename,
+        'file_type': 'csv' if file.filename.endswith('.csv') else 'excel',
+        'total_records': len(df),
+        'uploaded_by': user.id,
+        'uploaded_by_name': user.name,
+        'uploaded_at': datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.bonanza_databases.insert_one(database_doc)
+    
+    # Create records
+    records = []
+    for idx, row in df.iterrows():
+        record = {
+            'id': str(uuid.uuid4()),
+            'database_id': database_id,
+            'database_name': name,
+            'row_number': idx + 1,
+            'row_data': row.to_dict(),
+            'status': 'available',
+            'assigned_to': None,
+            'assigned_to_name': None,
+            'assigned_at': None,
+            'assigned_by': None,
+            'assigned_by_name': None,
+            'created_at': datetime.now(timezone.utc).isoformat()
+        }
+        records.append(record)
+    
+    if records:
+        await db.bonanza_records.insert_many(records)
+    
+    return {
+        'id': database_id,
+        'name': name,
+        'total_records': len(df),
+        'columns': list(df.columns)
+    }
+
+@api_router.get("/bonanza/databases")
+async def get_bonanza_databases(user: User = Depends(get_admin_user)):
+    """Get all Bonanza databases (Admin only)"""
+    databases = await db.bonanza_databases.find({}, {'_id': 0}).sort('uploaded_at', -1).to_list(1000)
+    
+    for database in databases:
+        # Get counts
+        total = await db.bonanza_records.count_documents({'database_id': database['id']})
+        assigned = await db.bonanza_records.count_documents({'database_id': database['id'], 'status': 'assigned'})
+        database['total_records'] = total
+        database['assigned_count'] = assigned
+        database['available_count'] = total - assigned
+    
+    return databases
+
+@api_router.get("/bonanza/databases/{database_id}/records")
+async def get_bonanza_records(
+    database_id: str,
+    status: Optional[str] = None,
+    user: User = Depends(get_admin_user)
+):
+    """Get all records from a Bonanza database (Admin only)"""
+    query = {'database_id': database_id}
+    if status:
+        query['status'] = status
+    
+    records = await db.bonanza_records.find(query, {'_id': 0}).sort('row_number', 1).to_list(100000)
+    return records
+
+@api_router.post("/bonanza/assign")
+async def assign_bonanza_records(assignment: BonanzaAssignment, user: User = Depends(get_admin_user)):
+    """Assign Bonanza records to a staff member (Admin only)"""
+    # Get staff info
+    staff = await db.users.find_one({'id': assignment.staff_id}, {'_id': 0})
+    if not staff:
+        raise HTTPException(status_code=404, detail="Staff not found")
+    
+    # Update records
+    result = await db.bonanza_records.update_many(
+        {'id': {'$in': assignment.record_ids}, 'status': 'available'},
+        {'$set': {
+            'status': 'assigned',
+            'assigned_to': staff['id'],
+            'assigned_to_name': staff['name'],
+            'assigned_at': datetime.now(timezone.utc).isoformat(),
+            'assigned_by': user.id,
+            'assigned_by_name': user.name
+        }}
+    )
+    
+    return {'message': f'{result.modified_count} records assigned to {staff["name"]}'}
+
+@api_router.delete("/bonanza/databases/{database_id}")
+async def delete_bonanza_database(database_id: str, user: User = Depends(get_admin_user)):
+    """Delete a Bonanza database and all its records (Admin only)"""
+    await db.bonanza_records.delete_many({'database_id': database_id})
+    await db.bonanza_databases.delete_one({'id': database_id})
+    return {'message': 'Database deleted successfully'}
+
+@api_router.get("/bonanza/staff/records")
+async def get_staff_bonanza_records(user: User = Depends(get_current_user)):
+    """Get Bonanza records assigned to the current staff"""
+    if user.role != 'staff':
+        raise HTTPException(status_code=403, detail="Only staff can access this endpoint")
+    
+    records = await db.bonanza_records.find(
+        {'assigned_to': user.id, 'status': 'assigned'},
+        {'_id': 0}
+    ).sort('assigned_at', -1).to_list(10000)
+    
+    return records
+
+@api_router.get("/bonanza/staff")
+async def get_staff_list(user: User = Depends(get_admin_user)):
+    """Get list of staff members for assignment"""
+    staff = await db.users.find({'role': 'staff'}, {'_id': 0, 'password_hash': 0}).to_list(1000)
+    return staff
+
 app.include_router(api_router)
 
 app.add_middleware(
