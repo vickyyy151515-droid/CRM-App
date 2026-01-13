@@ -81,6 +81,8 @@ export default function StaffDashboard({ user, onLogout }) {
         return <StaffOmsetCRM />;
       case 'bonanza':
         return <StaffDBBonanza />;
+      case 'memberwd':
+        return <StaffMemberWDCRM />;
       default:
         return null;
     }
@@ -92,7 +94,8 @@ export default function StaffDashboard({ user, onLogout }) {
     { id: 'assigned', label: 'My Assigned Customers', icon: User },
     { id: 'reserved', label: 'Reserved Member CRM', icon: UserCheck },
     { id: 'omset', label: 'OMSET CRM', icon: DollarSign },
-    { id: 'bonanza', label: 'DB Bonanza', icon: Gift }
+    { id: 'bonanza', label: 'DB Bonanza', icon: Gift },
+    { id: 'memberwd', label: 'Member WD CRM', icon: CreditCard }
   ];
 
   return (
