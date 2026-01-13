@@ -709,12 +709,14 @@ async def get_my_request_batches(user: User = Depends(get_current_user)):
         batch_records = await db.customer_records.find({
             'request_id': req['id'],
             'assigned_to': user.id
-        }, {'_id': 0, 'whatsapp_status': 1}).to_list(10000)
+        }, {'_id': 0, 'whatsapp_status': 1, 'respond_status': 1}).to_list(10000)
         
         record_count = len(batch_records)
         ada_count = sum(1 for r in batch_records if r.get('whatsapp_status') == 'ada')
         ceklis1_count = sum(1 for r in batch_records if r.get('whatsapp_status') == 'ceklis1')
         tidak_count = sum(1 for r in batch_records if r.get('whatsapp_status') == 'tidak')
+        respond_ya_count = sum(1 for r in batch_records if r.get('respond_status') == 'ya')
+        respond_tidak_count = sum(1 for r in batch_records if r.get('respond_status') == 'tidak')
         
         # Get database info
         database = await db.databases.find_one({'id': req['database_id']}, {'_id': 0})
@@ -730,6 +732,8 @@ async def get_my_request_batches(user: User = Depends(get_current_user)):
             'ada_count': ada_count,
             'ceklis1_count': ceklis1_count,
             'tidak_count': tidak_count,
+            'respond_ya_count': respond_ya_count,
+            'respond_tidak_count': respond_tidak_count,
             'requested_at': req.get('requested_at'),
             'approved_at': req.get('reviewed_at')
         })
