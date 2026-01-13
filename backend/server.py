@@ -1960,6 +1960,205 @@ async def get_staff_list(user: User = Depends(get_admin_user)):
     staff = await db.users.find({'role': 'staff'}, {'_id': 0, 'password_hash': 0}).to_list(1000)
     return staff
 
+# ==================== MEMBER WD CRM ENDPOINTS ====================
+
+@api_router.post("/memberwd/upload")
+async def upload_memberwd_database(
+    file: UploadFile = File(...),
+    name: str = Form(...),
+    user: User = Depends(get_admin_user)
+):
+    """Upload a new Member WD database (Admin only)"""
+    if not file.filename.endswith(('.csv', '.xlsx', '.xls')):
+        raise HTTPException(status_code=400, detail="Only CSV and Excel files are supported")
+    
+    contents = await file.read()
+    
+    try:
+        if file.filename.endswith('.csv'):
+            df = pd.read_csv(io.BytesIO(contents))
+        else:
+            df = pd.read_excel(io.BytesIO(contents))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error reading file: {str(e)}")
+    
+    database_id = str(uuid.uuid4())
+    database_doc = {
+        'id': database_id,
+        'name': name,
+        'filename': file.filename,
+        'file_type': 'csv' if file.filename.endswith('.csv') else 'excel',
+        'total_records': len(df),
+        'uploaded_by': user.id,
+        'uploaded_by_name': user.name,
+        'uploaded_at': datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.memberwd_databases.insert_one(database_doc)
+    
+    records = []
+    for idx, row in df.iterrows():
+        record = {
+            'id': str(uuid.uuid4()),
+            'database_id': database_id,
+            'database_name': name,
+            'row_number': idx + 1,
+            'row_data': row.to_dict(),
+            'status': 'available',
+            'assigned_to': None,
+            'assigned_to_name': None,
+            'assigned_at': None,
+            'assigned_by': None,
+            'assigned_by_name': None,
+            'created_at': datetime.now(timezone.utc).isoformat()
+        }
+        records.append(record)
+    
+    if records:
+        await db.memberwd_records.insert_many(records)
+    
+    return {
+        'id': database_id,
+        'name': name,
+        'total_records': len(df),
+        'columns': list(df.columns)
+    }
+
+@api_router.get("/memberwd/databases")
+async def get_memberwd_databases(user: User = Depends(get_admin_user)):
+    """Get all Member WD databases (Admin only)"""
+    databases = await db.memberwd_databases.find({}, {'_id': 0}).sort('uploaded_at', -1).to_list(1000)
+    
+    for database in databases:
+        total = await db.memberwd_records.count_documents({'database_id': database['id']})
+        assigned = await db.memberwd_records.count_documents({'database_id': database['id'], 'status': 'assigned'})
+        database['total_records'] = total
+        database['assigned_count'] = assigned
+        database['available_count'] = total - assigned
+    
+    return databases
+
+@api_router.get("/memberwd/databases/{database_id}/records")
+async def get_memberwd_records(
+    database_id: str,
+    status: Optional[str] = None,
+    user: User = Depends(get_admin_user)
+):
+    """Get all records from a Member WD database (Admin only)"""
+    query = {'database_id': database_id}
+    if status:
+        query['status'] = status
+    
+    records = await db.memberwd_records.find(query, {'_id': 0}).sort('row_number', 1).to_list(100000)
+    return records
+
+@api_router.post("/memberwd/assign")
+async def assign_memberwd_records(assignment: BonanzaAssignment, user: User = Depends(get_admin_user)):
+    """Assign Member WD records to a staff member (Admin only)"""
+    staff = await db.users.find_one({'id': assignment.staff_id}, {'_id': 0})
+    if not staff:
+        raise HTTPException(status_code=404, detail="Staff not found")
+    
+    result = await db.memberwd_records.update_many(
+        {'id': {'$in': assignment.record_ids}, 'status': 'available'},
+        {'$set': {
+            'status': 'assigned',
+            'assigned_to': staff['id'],
+            'assigned_to_name': staff['name'],
+            'assigned_at': datetime.now(timezone.utc).isoformat(),
+            'assigned_by': user.id,
+            'assigned_by_name': user.name
+        }}
+    )
+    
+    return {'message': f'{result.modified_count} records assigned to {staff["name"]}'}
+
+@api_router.post("/memberwd/assign-random")
+async def assign_random_memberwd_records(assignment: RandomBonanzaAssignment, user: User = Depends(get_admin_user)):
+    """Randomly assign Member WD records to a staff member, skipping reserved members (Admin only)"""
+    import random
+    
+    staff = await db.users.find_one({'id': assignment.staff_id}, {'_id': 0})
+    if not staff:
+        raise HTTPException(status_code=404, detail="Staff not found")
+    
+    reserved_members = await db.reserved_members.find({}, {'_id': 0, 'customer_name': 1}).to_list(100000)
+    reserved_names = set(m['customer_name'].lower().strip() for m in reserved_members if m.get('customer_name'))
+    
+    available_records = await db.memberwd_records.find(
+        {'database_id': assignment.database_id, 'status': 'available'},
+        {'_id': 0}
+    ).to_list(100000)
+    
+    eligible_records = []
+    skipped_count = 0
+    for record in available_records:
+        username = record.get('row_data', {}).get(assignment.username_field, '')
+        if username and username.lower().strip() in reserved_names:
+            skipped_count += 1
+            continue
+        eligible_records.append(record)
+    
+    if len(eligible_records) == 0:
+        raise HTTPException(status_code=400, detail="No eligible records available (all either assigned or in reserved members)")
+    
+    if assignment.quantity > len(eligible_records):
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Only {len(eligible_records)} eligible records available (requested {assignment.quantity}, {skipped_count} skipped due to reserved members)"
+        )
+    
+    random.shuffle(eligible_records)
+    selected_records = eligible_records[:assignment.quantity]
+    selected_ids = [r['id'] for r in selected_records]
+    
+    result = await db.memberwd_records.update_many(
+        {'id': {'$in': selected_ids}},
+        {'$set': {
+            'status': 'assigned',
+            'assigned_to': staff['id'],
+            'assigned_to_name': staff['name'],
+            'assigned_at': datetime.now(timezone.utc).isoformat(),
+            'assigned_by': user.id,
+            'assigned_by_name': user.name
+        }}
+    )
+    
+    return {
+        'message': f'{result.modified_count} records assigned to {staff["name"]}',
+        'assigned_count': result.modified_count,
+        'total_reserved_in_db': skipped_count,
+        'remaining_eligible': len(eligible_records) - assignment.quantity,
+        'total_available': len(available_records),
+        'total_eligible': len(eligible_records)
+    }
+
+@api_router.delete("/memberwd/databases/{database_id}")
+async def delete_memberwd_database(database_id: str, user: User = Depends(get_admin_user)):
+    """Delete a Member WD database and all its records (Admin only)"""
+    await db.memberwd_records.delete_many({'database_id': database_id})
+    await db.memberwd_databases.delete_one({'id': database_id})
+    return {'message': 'Database deleted successfully'}
+
+@api_router.get("/memberwd/staff/records")
+async def get_staff_memberwd_records(user: User = Depends(get_current_user)):
+    """Get Member WD records assigned to the current staff"""
+    if user.role != 'staff':
+        raise HTTPException(status_code=403, detail="Only staff can access this endpoint")
+    
+    records = await db.memberwd_records.find(
+        {'assigned_to': user.id, 'status': 'assigned'},
+        {'_id': 0}
+    ).sort('assigned_at', -1).to_list(10000)
+    
+    return records
+
+@api_router.get("/memberwd/staff")
+async def get_memberwd_staff_list(user: User = Depends(get_admin_user)):
+    """Get list of staff members for assignment"""
+    staff = await db.users.find({'role': 'staff'}, {'_id': 0, 'password_hash': 0}).to_list(1000)
+    return staff
+
 app.include_router(api_router)
 
 app.add_middleware(
