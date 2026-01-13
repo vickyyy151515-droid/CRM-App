@@ -1132,18 +1132,34 @@ async def get_omset_dates(product_id: Optional[str] = None, user: User = Depends
 
 @api_router.get("/omset/export")
 async def export_omset_records(
+    request: Request,
     product_id: Optional[str] = None,
     record_date: Optional[str] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     staff_id: Optional[str] = None,
     format: str = "csv",
-    user: User = Depends(get_current_user)
+    token: Optional[str] = None
 ):
     """Export OMSET records to CSV format"""
     from fastapi.responses import StreamingResponse
     import io
     import csv
+    
+    # Support token from query param for window.open() downloads
+    if token:
+        try:
+            payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+            user_data = await db.users.find_one({"id": payload["user_id"]}, {"_id": 0})
+            if not user_data:
+                raise HTTPException(status_code=401, detail="User not found")
+            user = User(**user_data)
+        except jwt.ExpiredSignatureError:
+            raise HTTPException(status_code=401, detail="Token expired")
+        except jwt.InvalidTokenError:
+            raise HTTPException(status_code=401, detail="Invalid token")
+    else:
+        user = await get_current_user(request)
     
     query = {}
     
