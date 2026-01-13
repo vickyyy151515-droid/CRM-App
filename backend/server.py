@@ -88,6 +88,8 @@ class CustomerRecord(BaseModel):
     status: str = "available"
     whatsapp_status: Optional[str] = None
     whatsapp_status_updated_at: Optional[datetime] = None
+    respond_status: Optional[str] = None
+    respond_status_updated_at: Optional[datetime] = None
     assigned_to: Optional[str] = None
     assigned_to_name: Optional[str] = None
     assigned_at: Optional[datetime] = None
@@ -95,6 +97,9 @@ class CustomerRecord(BaseModel):
 
 class WhatsAppStatusUpdate(BaseModel):
     whatsapp_status: str
+
+class RespondStatusUpdate(BaseModel):
+    respond_status: str
 
 class ReservedMember(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -604,6 +609,28 @@ async def update_whatsapp_status(record_id: str, status_update: WhatsAppStatusUp
     )
     
     return {'message': 'WhatsApp status updated successfully'}
+
+@api_router.patch("/customer-records/{record_id}/respond-status")
+async def update_respond_status(record_id: str, status_update: RespondStatusUpdate, user: User = Depends(get_current_user)):
+    record = await db.customer_records.find_one({'id': record_id})
+    if not record:
+        raise HTTPException(status_code=404, detail="Record not found")
+    
+    if user.role == 'staff' and record.get('assigned_to') != user.id:
+        raise HTTPException(status_code=403, detail="You can only update records assigned to you")
+    
+    if status_update.respond_status not in ['ya', 'tidak', None]:
+        raise HTTPException(status_code=400, detail="Invalid status. Use 'ya' or 'tidak'")
+    
+    await db.customer_records.update_one(
+        {'id': record_id},
+        {'$set': {
+            'respond_status': status_update.respond_status,
+            'respond_status_updated_at': datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {'message': 'Respond status updated successfully'}
 
 @api_router.post("/reserved-members", response_model=ReservedMember)
 async def create_reserved_member(member_data: ReservedMemberCreate, user: User = Depends(get_current_user)):
