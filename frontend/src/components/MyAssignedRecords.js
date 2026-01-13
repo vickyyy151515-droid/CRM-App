@@ -244,7 +244,6 @@ export default function MyAssignedRecords() {
               <p className="text-sm text-slate-600 mt-1">
                 {records.length} customer{records.length !== 1 ? 's' : ''} assigned
                 {` • ${selectedBatch.product_name}`}
-                {` • Approved: ${formatShortDate(selectedBatch.approved_at)}`}
               </p>
             </div>
           </div>
