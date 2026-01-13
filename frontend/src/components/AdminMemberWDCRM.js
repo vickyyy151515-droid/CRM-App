@@ -561,11 +561,20 @@ export default function AdminMemberWDCRM() {
                     >
                       {assigning ? 'Assigning...' : 'Assign Selected'}
                     </button>
+                    <button
+                      onClick={handleBulkDeleteRecords}
+                      disabled={selectedRecords.length === 0}
+                      className="h-9 px-4 text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-lg transition-colors flex items-center gap-1"
+                      data-testid="bulk-delete-records-btn"
+                    >
+                      <Trash2 size={14} />
+                      Delete Selected
+                    </button>
                   </div>
 
                   {/* Filters */}
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="relative flex-1 max-w-xs">
+                  <div className="flex flex-wrap items-center gap-4 mb-4">
+                    <div className="relative flex-1 min-w-[200px] max-w-xs">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                       <input
                         type="text"
