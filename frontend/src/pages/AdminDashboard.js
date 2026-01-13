@@ -121,6 +121,8 @@ export default function AdminDashboard({ user, onLogout }) {
         return <AdminReservedMembers onUpdate={loadStats} />;
       case 'omset':
         return <AdminOmsetCRM />;
+      case 'bonanza':
+        return <AdminDBBonanza />;
       default:
         return null;
     }
@@ -131,6 +133,7 @@ export default function AdminDashboard({ user, onLogout }) {
     { id: 'progress', label: 'Staff Progress & Quality', icon: BarChart, badge: 0 },
     { id: 'omset', label: 'OMSET CRM', icon: DollarSign, badge: 0 },
     { id: 'reserved', label: 'Reserved Member CRM', icon: UserCheck, badge: stats.pendingReservations },
+    { id: 'bonanza', label: 'DB Bonanza', icon: Gift, badge: 0 },
     { id: 'upload', label: 'Upload Database', icon: Upload, badge: 0 },
     { id: 'databases', label: 'Manage Databases', icon: FileSpreadsheet, badge: 0 },
     { id: 'assignments', label: 'View All Assignments', icon: List, badge: 0 },
