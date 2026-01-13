@@ -157,6 +157,37 @@ class OmsetRecordUpdate(BaseModel):
     depo_kelipatan: Optional[float] = None
     keterangan: Optional[str] = None
 
+# DB Bonanza Models
+class BonanzaDatabase(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    filename: str
+    file_type: str
+    total_records: int = 0
+    uploaded_by: str
+    uploaded_by_name: str
+    uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class BonanzaRecord(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    database_id: str
+    database_name: str
+    row_number: int
+    row_data: dict
+    status: str = "available"  # available, assigned
+    assigned_to: Optional[str] = None
+    assigned_to_name: Optional[str] = None
+    assigned_at: Optional[datetime] = None
+    assigned_by: Optional[str] = None
+    assigned_by_name: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class BonanzaAssignment(BaseModel):
+    record_ids: List[str]
+    staff_id: str
+
 class DatabaseCreate(BaseModel):
     description: Optional[str] = None
     product_id: str
