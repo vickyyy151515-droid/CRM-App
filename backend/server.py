@@ -1340,8 +1340,12 @@ async def export_omset_summary(
     
     return StreamingResponse(
         iter([output.getvalue()]),
-        media_type="text/csv",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
+        media_type="application/octet-stream",
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}",
+            "Content-Type": "application/octet-stream",
+            "Cache-Control": "no-cache"
+        }
     )
 
 @api_router.get("/omset/ndp-rdp")
