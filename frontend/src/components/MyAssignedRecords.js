@@ -209,12 +209,6 @@ export default function MyAssignedRecords() {
                     Assigned before batch tracking
                   </div>
                 )}
-                  <span className="flex items-center gap-1">
-                    <Clock size={14} />
-                    Approved:
-                  </span>
-                  <span>{formatShortDate(batch.approved_at)}</span>
-                </div>
               </div>
             </div>
           ))}
