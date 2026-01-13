@@ -330,44 +330,66 @@ export default function AdminDBBonanza() {
               {expandedDb === database.id && (
                 <div className="border-t border-slate-200 p-4">
                   {/* Random Assignment Controls */}
-                  <div className="mb-4 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg">
-                    <h4 className="text-sm font-semibold text-purple-800 mb-3 flex items-center gap-2">
-                      <Shuffle size={16} />
-                      Quick Random Assignment
-                    </h4>
-                    <div className="flex flex-wrap items-center gap-3">
-                      <select
-                        value={selectedStaff}
-                        onChange={(e) => setSelectedStaff(e.target.value)}
-                        className="h-9 px-3 rounded-lg border border-purple-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        data-testid="select-staff-random"
-                      >
-                        <option value="">Select Staff...</option>
-                        {staff.map(s => (
-                          <option key={s.id} value={s.id}>{s.name}</option>
-                        ))}
-                      </select>
-                      <input
-                        type="number"
-                        placeholder="Quantity"
-                        value={randomQuantity}
-                        onChange={(e) => setRandomQuantity(e.target.value)}
-                        min="1"
-                        max={records.filter(r => r.status === 'available').length}
-                        className="h-9 w-24 px-3 rounded-lg border border-purple-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        data-testid="random-quantity-input"
-                      />
-                      <span className="text-sm text-purple-600">
-                        of {records.filter(r => r.status === 'available').length} available
-                      </span>
-                      <button
-                        onClick={handleRandomAssign}
-                        disabled={assigning || !selectedStaff || !randomQuantity}
-                        className="h-9 px-4 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50 rounded-lg transition-colors flex items-center gap-2"
-                        data-testid="random-assign-btn"
-                      >
-                        <Shuffle size={14} />
-                        {assigning ? 'Assigning...' : 'Assign Random'}
+                  {(() => {
+                    const columns = records.length > 0 ? Object.keys(records[0]?.row_data || {}) : [];
+                    const usernameField = columns.find(col => 
+                      col.toLowerCase().includes('username') || 
+                      col.toLowerCase().includes('user') ||
+                      col.toLowerCase() === 'nama'
+                    ) || columns[0];
+                    
+                    const availableRecords = records.filter(r => r.status === 'available');
+                    const eligibleRecords = availableRecords.filter(r => {
+                      const username = r.row_data?.[usernameField];
+                      return !username || !reservedNames.includes(username.toLowerCase().trim());
+                    });
+                    const reservedInDb = availableRecords.length - eligibleRecords.length;
+                    
+                    return (
+                      <div className="mb-4 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg">
+                        <h4 className="text-sm font-semibold text-purple-800 mb-3 flex items-center gap-2">
+                          <Shuffle size={16} />
+                          Quick Random Assignment
+                        </h4>
+                        <div className="flex flex-wrap items-center gap-3">
+                          <select
+                            value={selectedStaff}
+                            onChange={(e) => setSelectedStaff(e.target.value)}
+                            className="h-9 px-3 rounded-lg border border-purple-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            data-testid="select-staff-random"
+                          >
+                            <option value="">Select Staff...</option>
+                            {staff.map(s => (
+                              <option key={s.id} value={s.id}>{s.name}</option>
+                            ))}
+                          </select>
+                          <input
+                            type="number"
+                            placeholder="Qty"
+                            value={randomQuantity}
+                            onChange={(e) => setRandomQuantity(e.target.value)}
+                            min="1"
+                            max={eligibleRecords.length}
+                            className="h-9 w-20 px-3 rounded-lg border border-purple-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            data-testid="random-quantity-input"
+                          />
+                          <div className="text-sm">
+                            <span className="text-purple-600 font-medium">{eligibleRecords.length}</span>
+                            <span className="text-purple-500"> eligible</span>
+                            {reservedInDb > 0 && (
+                              <span className="text-amber-600 ml-1">
+                                ({reservedInDb} excluded - in Reserved Members)
+                              </span>
+                            )}
+                          </div>
+                          <button
+                            onClick={handleRandomAssign}
+                            disabled={assigning || !selectedStaff || !randomQuantity}
+                            className="h-9 px-4 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50 rounded-lg transition-colors flex items-center gap-2"
+                            data-testid="random-assign-btn"
+                          >
+                            <Shuffle size={14} />
+                            {assigning ? 'Assigning...' : 'Assign Random'}
                       </button>
                     </div>
                   </div>
