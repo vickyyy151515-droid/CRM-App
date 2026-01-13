@@ -111,9 +111,35 @@ Build a Customer Relationship Management (CRM) application where:
 - **Inline Editing**: Click edit, select new product from dropdown, save
 - **Cascading Update**: Updates product on database and all associated records
 
+### Phase 14: Advanced Analytics Dashboard (Completed - Jan 13, 2026)
+- **Staff Performance Analytics**:
+  - Records processed per period (daily, weekly, monthly charts)
+  - WhatsApp reachability rate (Ada vs Tidak vs Ceklis1)
+  - Response rate (Respond Ya vs Tidak)
+  - Staff comparison bar charts
+  - Completion rate metrics
+- **Business Analytics**:
+  - OMSET trends over time (line charts)
+  - Top performing products by OMSET (bar charts)
+  - NDP vs RDP analysis (pie charts)
+  - Database utilization rate (table with progress bars)
+- **Configurable Widgets**: Show/hide toggle for all 8 widget types
+- **Filters**: Period (Today/Week/Month/Quarter/Year), Product, Staff
+
+### Phase 15: Export Center (Completed - Jan 13, 2026)
+- **Export Types**:
+  - Customer Records (with product, status, staff, date filters)
+  - OMSET Data (with product, staff, customer type, date filters)
+  - Staff Performance Report (with period filter)
+  - Reserved Members (with product, staff, status filters)
+  - DB Bonanza Records (with database, product, staff, status filters)
+  - Member WD Records (with database, product, staff, status filters)
+- **Formats**: Both Excel (.xlsx) and CSV (.csv) supported
+- **Dynamic Filters**: Filter options change based on export type
+
 ## Tech Stack
-- **Frontend**: React + TailwindCSS + Shadcn/UI
-- **Backend**: FastAPI + PyMongo
+- **Frontend**: React + TailwindCSS + Shadcn/UI + Recharts
+- **Backend**: FastAPI + PyMongo + Pandas + Openpyxl
 - **Database**: MongoDB
 
 ## Key API Endpoints
