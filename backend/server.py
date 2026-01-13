@@ -602,6 +602,108 @@ async def update_whatsapp_status(record_id: str, status_update: WhatsAppStatusUp
     
     return {'message': 'WhatsApp status updated successfully'}
 
+@api_router.post("/reserved-members", response_model=ReservedMember)
+async def create_reserved_member(member_data: ReservedMemberCreate, user: User = Depends(get_current_user)):
+    if user.role == 'admin':
+        if not member_data.staff_id:
+            raise HTTPException(status_code=400, detail="Staff ID is required for admin")
+        
+        staff = await db.users.find_one({'id': member_data.staff_id})
+        if not staff:
+            raise HTTPException(status_code=404, detail="Staff not found")
+        
+        member = ReservedMember(
+            customer_name=member_data.customer_name,
+            staff_id=member_data.staff_id,
+            staff_name=staff['name'],
+            status='approved',
+            created_by=user.id,
+            created_by_name=user.name,
+            approved_at=datetime.now(timezone.utc),
+            approved_by=user.id,
+            approved_by_name=user.name
+        )
+    else:
+        member = ReservedMember(
+            customer_name=member_data.customer_name,
+            staff_id=user.id,
+            staff_name=user.name,
+            status='pending',
+            created_by=user.id,
+            created_by_name=user.name
+        )
+    
+    doc = member.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    if doc.get('approved_at'):
+        doc['approved_at'] = doc['approved_at'].isoformat()
+    
+    await db.reserved_members.insert_one(doc)
+    return member
+
+@api_router.get("/reserved-members", response_model=List[ReservedMember])
+async def get_reserved_members(status: Optional[str] = None, user: User = Depends(get_current_user)):
+    query = {}
+    if status:
+        query['status'] = status
+    
+    members = await db.reserved_members.find(query, {'_id': 0}).sort('created_at', -1).to_list(10000)
+    
+    for member in members:
+        if isinstance(member.get('created_at'), str):
+            member['created_at'] = datetime.fromisoformat(member['created_at'])
+        if member.get('approved_at') and isinstance(member['approved_at'], str):
+            member['approved_at'] = datetime.fromisoformat(member['approved_at'])
+    
+    return members
+
+@api_router.patch("/reserved-members/{member_id}/approve")
+async def approve_reserved_member(member_id: str, user: User = Depends(get_admin_user)):
+    member = await db.reserved_members.find_one({'id': member_id})
+    if not member:
+        raise HTTPException(status_code=404, detail="Reserved member not found")
+    
+    if member['status'] != 'pending':
+        raise HTTPException(status_code=400, detail="Member already processed")
+    
+    await db.reserved_members.update_one(
+        {'id': member_id},
+        {'$set': {
+            'status': 'approved',
+            'approved_at': datetime.now(timezone.utc).isoformat(),
+            'approved_by': user.id,
+            'approved_by_name': user.name
+        }}
+    )
+    
+    return {'message': 'Reserved member approved'}
+
+@api_router.patch("/reserved-members/{member_id}/reject")
+async def reject_reserved_member(member_id: str, user: User = Depends(get_admin_user)):
+    member = await db.reserved_members.find_one({'id': member_id})
+    if not member:
+        raise HTTPException(status_code=404, detail="Reserved member not found")
+    
+    if member['status'] != 'pending':
+        raise HTTPException(status_code=400, detail="Member already processed")
+    
+    await db.reserved_members.delete_one({'id': member_id})
+    
+    return {'message': 'Reserved member request rejected'}
+
+@api_router.delete("/reserved-members/{member_id}")
+async def delete_reserved_member(member_id: str, user: User = Depends(get_current_user)):
+    member = await db.reserved_members.find_one({'id': member_id})
+    if not member:
+        raise HTTPException(status_code=404, detail="Reserved member not found")
+    
+    if user.role != 'admin' and member['created_by'] != user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this reservation")
+    
+    await db.reserved_members.delete_one({'id': member_id})
+    
+    return {'message': 'Reserved member deleted'}
+
 @api_router.get("/download-history", response_model=List[DownloadHistory])
 async def get_download_history(user: User = Depends(get_current_user)):
     query = {}
