@@ -480,7 +480,7 @@ export default function StaffOmsetCRM() {
               {records.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
-                    No records for this date. Click "Add Record" to create one.
+                    No records for this date. Click &quot;Add Record&quot; to create one.
                   </td>
                 </tr>
               ) : (
