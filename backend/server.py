@@ -1862,6 +1862,76 @@ async def assign_bonanza_records(assignment: BonanzaAssignment, user: User = Dep
     
     return {'message': f'{result.modified_count} records assigned to {staff["name"]}'}
 
+class RandomBonanzaAssignment(BaseModel):
+    database_id: str
+    staff_id: str
+    quantity: int
+    username_field: str = "Username"  # The field name in row_data that contains the username
+
+@api_router.post("/bonanza/assign-random")
+async def assign_random_bonanza_records(assignment: RandomBonanzaAssignment, user: User = Depends(get_admin_user)):
+    """Randomly assign Bonanza records to a staff member, skipping reserved members (Admin only)"""
+    import random
+    
+    # Get staff info
+    staff = await db.users.find_one({'id': assignment.staff_id}, {'_id': 0})
+    if not staff:
+        raise HTTPException(status_code=404, detail="Staff not found")
+    
+    # Get all reserved member customer names (case-insensitive comparison)
+    reserved_members = await db.reserved_members.find({}, {'_id': 0, 'customer_name': 1}).to_list(100000)
+    reserved_names = set(m['customer_name'].lower().strip() for m in reserved_members if m.get('customer_name'))
+    
+    # Get available records from this database
+    available_records = await db.bonanza_records.find(
+        {'database_id': assignment.database_id, 'status': 'available'},
+        {'_id': 0}
+    ).to_list(100000)
+    
+    # Filter out records whose username is in reserved members
+    eligible_records = []
+    skipped_count = 0
+    for record in available_records:
+        username = record.get('row_data', {}).get(assignment.username_field, '')
+        if username and username.lower().strip() in reserved_names:
+            skipped_count += 1
+            continue
+        eligible_records.append(record)
+    
+    if len(eligible_records) == 0:
+        raise HTTPException(status_code=400, detail="No eligible records available (all either assigned or in reserved members)")
+    
+    if assignment.quantity > len(eligible_records):
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Only {len(eligible_records)} eligible records available (requested {assignment.quantity}, {skipped_count} skipped due to reserved members)"
+        )
+    
+    # Randomly select records
+    random.shuffle(eligible_records)
+    selected_records = eligible_records[:assignment.quantity]
+    selected_ids = [r['id'] for r in selected_records]
+    
+    # Update records
+    result = await db.bonanza_records.update_many(
+        {'id': {'$in': selected_ids}},
+        {'$set': {
+            'status': 'assigned',
+            'assigned_to': staff['id'],
+            'assigned_to_name': staff['name'],
+            'assigned_at': datetime.now(timezone.utc).isoformat(),
+            'assigned_by': user.id,
+            'assigned_by_name': user.name
+        }}
+    )
+    
+    return {
+        'message': f'{result.modified_count} records assigned to {staff["name"]}',
+        'assigned_count': result.modified_count,
+        'skipped_reserved': skipped_count,
+        'remaining_eligible': len(eligible_records) - assignment.quantity
+    }
+
 @api_router.delete("/bonanza/databases/{database_id}")
 async def delete_bonanza_database(database_id: str, user: User = Depends(get_admin_user)):
     """Delete a Bonanza database and all its records (Admin only)"""
