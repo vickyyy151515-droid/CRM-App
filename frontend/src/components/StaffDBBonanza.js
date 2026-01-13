@@ -80,16 +80,30 @@ export default function StaffDBBonanza() {
     <div data-testid="staff-db-bonanza">
       <h2 className="text-3xl font-semibold tracking-tight text-slate-900 mb-6">DB Bonanza</h2>
 
-      {/* Search */}
-      <div className="mb-6">
+      {/* Filters */}
+      <div className="mb-6 flex flex-col sm:flex-row gap-4">
         <input
           type="text"
           placeholder="Search records..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full max-w-md h-10 px-4 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="flex-1 max-w-md h-10 px-4 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           data-testid="bonanza-search"
         />
+        <div className="flex items-center gap-2">
+          <Package size={18} className="text-slate-500" />
+          <select
+            value={filterProduct}
+            onChange={(e) => setFilterProduct(e.target.value)}
+            className="h-10 px-4 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[180px]"
+            data-testid="bonanza-filter-product"
+          >
+            <option value="">All Products</option>
+            {products.map(p => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {loading ? (
