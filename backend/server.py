@@ -361,7 +361,7 @@ async def update_user(user_id: str, user_data: UserUpdate, user: User = Depends(
         update_data['email'] = user_data.email
     
     if user_data.password:
-        update_data['password'] = bcrypt.hashpw(user_data.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        update_data['password_hash'] = bcrypt.hashpw(user_data.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     
     if user_data.role:
         update_data['role'] = user_data.role
