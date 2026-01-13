@@ -655,7 +655,8 @@ async def approve_request(request_id: str, user: User = Depends(get_admin_user))
                 'status': 'assigned',
                 'assigned_to': request['requested_by'],
                 'assigned_to_name': request['requested_by_name'],
-                'assigned_at': datetime.now(timezone.utc).isoformat()
+                'assigned_at': datetime.now(timezone.utc).isoformat(),
+                'request_id': request_id
             }}
         )
     
