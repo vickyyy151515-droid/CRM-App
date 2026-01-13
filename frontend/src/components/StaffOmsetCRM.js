@@ -13,7 +13,6 @@ export default function StaffOmsetCRM() {
   const [showForm, setShowForm] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
   const [formData, setFormData] = useState({
-    customer_name: '',
     customer_id: '',
     nominal: '',
     depo_kelipatan: '1',
@@ -74,17 +73,20 @@ export default function StaffOmsetCRM() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.customer_name || !formData.customer_id || !formData.nominal) {
+    if (!formData.customer_id || !formData.nominal) {
       toast.error('Please fill required fields');
       return;
     }
 
+    // Multiply nominal by 1000 (100 → 100,000)
+    const actualNominal = parseFloat(formData.nominal) * 1000;
+
     try {
       if (editingRecord) {
         await api.put(`/omset/${editingRecord.id}`, {
-          customer_name: formData.customer_name,
+          customer_name: formData.customer_id, // Use customer_id as name
           customer_id: formData.customer_id,
-          nominal: parseFloat(formData.nominal),
+          nominal: actualNominal,
           depo_kelipatan: parseFloat(formData.depo_kelipatan) || 1,
           keterangan: formData.keterangan
         });
@@ -93,9 +95,9 @@ export default function StaffOmsetCRM() {
         await api.post('/omset', {
           product_id: selectedProduct,
           record_date: selectedDate,
-          customer_name: formData.customer_name,
+          customer_name: formData.customer_id, // Use customer_id as name
           customer_id: formData.customer_id,
-          nominal: parseFloat(formData.nominal),
+          nominal: actualNominal,
           depo_kelipatan: parseFloat(formData.depo_kelipatan) || 1,
           keterangan: formData.keterangan
         });
@@ -113,9 +115,8 @@ export default function StaffOmsetCRM() {
   const handleEdit = (record) => {
     setEditingRecord(record);
     setFormData({
-      customer_name: record.customer_name,
       customer_id: record.customer_id,
-      nominal: record.nominal.toString(),
+      nominal: (record.nominal / 1000).toString(), // Convert back to input format
       depo_kelipatan: record.depo_kelipatan.toString(),
       keterangan: record.keterangan || ''
     });
@@ -137,7 +138,6 @@ export default function StaffOmsetCRM() {
 
   const resetForm = () => {
     setFormData({
-      customer_name: '',
       customer_id: '',
       nominal: '',
       depo_kelipatan: '1',

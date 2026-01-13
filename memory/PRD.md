@@ -45,6 +45,23 @@ Build a Customer Relationship Management (CRM) application where:
 - **Filtering**: Filter by product and status (All/Pending/Approved)
 - **Notification Badges**: Red badges in sidebar showing pending counts (auto-refresh every 30s)
 
+### Phase 6: OMSET CRM (Completed - Jan 13, 2026)
+- **Staff Data Entry**: Staff can add customer deposits with:
+  - Customer Name and ID (manual entry)
+  - Nominal amount and Kelipatan (multiplier)
+  - Auto-calculated Depo Total (Nominal × Kelipatan)
+  - Keterangan (notes)
+- **Product Separation**: Each deposit is linked to a specific product
+- **Date-based Sheets**: Records organized by date with quick date selector
+- **Edit/Delete**: Staff can modify their own records
+- **Admin Summary View**: 
+  - Overall totals (Records, Nominal, OMSET)
+  - Daily summary with OMSET per day
+  - Staff performance breakdown
+  - Product summary with averages
+- **Admin Detail View**: Expandable daily records with full details
+- **Filters**: Date range (Today/Yesterday/Last 7/30 days/Custom), Product, Staff
+
 ## Tech Stack
 - **Frontend**: React + TailwindCSS + Shadcn/UI
 - **Backend**: FastAPI + PyMongo
