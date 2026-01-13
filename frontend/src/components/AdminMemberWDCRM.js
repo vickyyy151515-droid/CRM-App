@@ -243,7 +243,7 @@ export default function AdminMemberWDCRM() {
 
   return (
     <div data-testid="admin-db-memberwd">
-      <h2 className="text-3xl font-semibold tracking-tight text-slate-900 mb-6">DB MemberWD</h2>
+      <h2 className="text-3xl font-semibold tracking-tight text-slate-900 mb-6">Member WD CRM</h2>
 
       {/* Upload Section */}
       <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm mb-6">
