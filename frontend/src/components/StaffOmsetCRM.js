@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Plus, Edit2, Trash2, Calendar, Package, TrendingUp, Save, X, UserPlus, RefreshCw } from 'lucide-react';
+import { Plus, Edit2, Trash2, Calendar, Package, TrendingUp, Save, X, UserPlus, RefreshCw, Download } from 'lucide-react';
 
 export default function StaffOmsetCRM() {
   const [products, setProducts] = useState([]);
@@ -164,6 +164,31 @@ export default function StaffOmsetCRM() {
     setShowForm(false);
   };
 
+  const handleExport = async () => {
+    try {
+      const response = await api.get('/omset/export', {
+        params: { 
+          product_id: selectedProduct, 
+          record_date: selectedDate 
+        },
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `omset_${selectedDate}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Export successful');
+    } catch (error) {
+      toast.error('Failed to export');
+    }
+  };
+
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('id-ID').format(value);
   };
@@ -208,7 +233,7 @@ export default function StaffOmsetCRM() {
             data-testid="select-date"
           />
         </div>
-        <div className="flex items-end">
+        <div className="flex items-end gap-2">
           <button
             onClick={() => { resetForm(); setShowForm(true); }}
             className="h-10 px-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2 transition-colors"
@@ -216,6 +241,14 @@ export default function StaffOmsetCRM() {
           >
             <Plus size={18} />
             Add Record
+          </button>
+          <button
+            onClick={handleExport}
+            className="h-10 px-4 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-2 transition-colors"
+            data-testid="btn-export"
+          >
+            <Download size={18} />
+            Export CSV
           </button>
         </div>
       </div>
