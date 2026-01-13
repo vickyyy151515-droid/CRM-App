@@ -125,6 +125,8 @@ Build a Customer Relationship Management (CRM) application where:
   - Database utilization rate (table with progress bars)
 - **Configurable Widgets**: Show/hide toggle for all 8 widget types
 - **Filters**: Period (Today/Week/Month/Quarter/Year), Product, Staff
+- **Drag & Drop Reorder**: Reorder widgets by dragging grip handle
+- **Layout Persistence**: Widget order saved to database per user account
 
 ### Phase 15: Export Center (Completed - Jan 13, 2026)
 - **Export Types**:
