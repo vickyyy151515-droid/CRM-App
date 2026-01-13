@@ -1047,6 +1047,95 @@ async def get_omset_dates(product_id: Optional[str] = None, user: User = Depends
     dates = sorted(set(r['record_date'] for r in records), reverse=True)
     return dates
 
+@api_router.get("/omset/ndp-rdp")
+async def get_omset_ndp_rdp(
+    product_id: str,
+    record_date: str,
+    user: User = Depends(get_current_user)
+):
+    """Calculate NDP and RDP for a specific date and product"""
+    query = {'product_id': product_id}
+    
+    if user.role == 'staff':
+        query['staff_id'] = user.id
+    
+    # Get all records for this product
+    all_records = await db.omset_records.find(query, {'_id': 0}).to_list(100000)
+    
+    # Group records by date and customer_id
+    customer_first_date = {}  # customer_id -> first date they appeared
+    
+    for record in sorted(all_records, key=lambda x: x['record_date']):
+        cid = record['customer_id']
+        if cid not in customer_first_date:
+            customer_first_date[cid] = record['record_date']
+    
+    # Get records for the specific date
+    date_records = [r for r in all_records if r['record_date'] == record_date]
+    
+    # Calculate NDP and RDP
+    ndp_customers = set()  # Unique customers that are NDP
+    rdp_count = 0
+    ndp_total = 0
+    rdp_total = 0
+    
+    for record in date_records:
+        cid = record['customer_id']
+        first_date = customer_first_date.get(cid)
+        
+        if first_date == record_date:
+            # This customer first appeared on this date = NDP
+            ndp_customers.add(cid)
+            ndp_total += record.get('depo_total', 0)
+        else:
+            # Customer appeared before = RDP
+            rdp_count += 1
+            rdp_total += record.get('depo_total', 0)
+    
+    return {
+        'date': record_date,
+        'product_id': product_id,
+        'ndp_count': len(ndp_customers),  # Unique new customers
+        'ndp_total': ndp_total,
+        'rdp_count': rdp_count,  # Total redepo records
+        'rdp_total': rdp_total,
+        'total_records': len(date_records)
+    }
+
+@api_router.get("/omset/record-types")
+async def get_omset_record_types(
+    product_id: str,
+    record_date: str,
+    user: User = Depends(get_current_user)
+):
+    """Get all records with NDP/RDP classification for a specific date"""
+    query = {'product_id': product_id}
+    
+    if user.role == 'staff':
+        query['staff_id'] = user.id
+    
+    # Get all records for this product to determine first appearance
+    all_records = await db.omset_records.find(query, {'_id': 0}).to_list(100000)
+    
+    # Find first date each customer appeared
+    customer_first_date = {}
+    for record in sorted(all_records, key=lambda x: x['record_date']):
+        cid = record['customer_id']
+        if cid not in customer_first_date:
+            customer_first_date[cid] = record['record_date']
+    
+    # Get records for the specific date and add type
+    date_records = [r for r in all_records if r['record_date'] == record_date]
+    
+    for record in date_records:
+        cid = record['customer_id']
+        first_date = customer_first_date.get(cid)
+        record['record_type'] = 'NDP' if first_date == record_date else 'RDP'
+        if isinstance(record.get('created_at'), str):
+            record['created_at'] = datetime.fromisoformat(record['created_at'])
+    
+    return date_records
+
 app.include_router(api_router)
 
 app.add_middleware(
