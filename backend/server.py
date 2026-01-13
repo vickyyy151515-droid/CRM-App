@@ -725,6 +725,50 @@ async def get_my_request_batches(user: User = Depends(get_current_user)):
             'approved_at': req.get('reviewed_at')
         })
     
+    # Check for legacy records (assigned before batch tracking)
+    legacy_count = await db.customer_records.count_documents({
+        'assigned_to': user.id,
+        'status': 'assigned',
+        '$or': [{'request_id': {'$exists': False}}, {'request_id': None}]
+    })
+    
+    if legacy_count > 0:
+        # Group legacy records by database
+        legacy_records = await db.customer_records.find(
+            {
+                'assigned_to': user.id,
+                'status': 'assigned',
+                '$or': [{'request_id': {'$exists': False}}, {'request_id': None}]
+            },
+            {'_id': 0, 'database_id': 1, 'database_name': 1, 'product_name': 1}
+        ).to_list(10000)
+        
+        # Group by database
+        legacy_by_db = {}
+        for rec in legacy_records:
+            db_id = rec['database_id']
+            if db_id not in legacy_by_db:
+                legacy_by_db[db_id] = {
+                    'database_name': rec.get('database_name', 'Unknown'),
+                    'product_name': rec.get('product_name', 'Unknown'),
+                    'count': 0
+                }
+            legacy_by_db[db_id]['count'] += 1
+        
+        # Add legacy batches
+        for db_id, info in legacy_by_db.items():
+            batches.append({
+                'id': f'legacy_{db_id}',
+                'database_id': db_id,
+                'database_name': info['database_name'],
+                'product_name': info['product_name'],
+                'quantity': info['count'],
+                'record_count': info['count'],
+                'requested_at': None,
+                'approved_at': None,
+                'is_legacy': True
+            })
+    
     return batches
 
 @api_router.get("/my-assigned-records-by-batch")
