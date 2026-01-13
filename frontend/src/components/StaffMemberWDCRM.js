@@ -3,7 +3,7 @@ import { api } from '../App';
 import { toast } from 'sonner';
 import { Gift, FileSpreadsheet, Calendar } from 'lucide-react';
 
-export default function StaffDBMemberWD() {
+export default function StaffMemberWDCRM() {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
