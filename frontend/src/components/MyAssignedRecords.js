@@ -187,17 +187,57 @@ export default function MyAssignedRecords() {
                     )}
                   </div>
                 </div>
-                <ChevronLeft className={`rotate-180 transition-colors ${
-                  batch.is_legacy 
-                    ? 'text-amber-400 group-hover:text-amber-600' 
-                    : 'text-slate-400 group-hover:text-indigo-600'
-                }`} size={20} />
+                {editingBatchId !== batch.id && (
+                  <ChevronLeft className={`rotate-180 transition-colors ${
+                    batch.is_legacy 
+                      ? 'text-amber-400 group-hover:text-amber-600' 
+                      : 'text-slate-400 group-hover:text-indigo-600'
+                  }`} size={20} />
+                )}
               </div>
               
-              <h3 className="font-semibold text-slate-900 mb-2 flex items-center gap-2">
-                <FileSpreadsheet size={16} className="text-slate-500" />
-                {batch.database_name}
-              </h3>
+              {/* Editable Title */}
+              {editingBatchId === batch.id ? (
+                <div className="mb-2" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      className="flex-1 h-8 px-2 text-sm font-semibold border border-indigo-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      autoFocus
+                      data-testid="edit-batch-title-input"
+                    />
+                    <button
+                      onClick={(e) => handleSaveTitle(e, batch.id)}
+                      className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
+                      data-testid="save-batch-title"
+                    >
+                      <Check size={18} />
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      className="p-1.5 text-slate-400 hover:bg-slate-100 rounded transition-colors"
+                      data-testid="cancel-edit-title"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <h3 className="font-semibold text-slate-900 mb-2 flex items-center gap-2 group/title">
+                  <FileSpreadsheet size={16} className="text-slate-500" />
+                  <span className="flex-1">{batch.custom_title || batch.database_name}</span>
+                  <button
+                    onClick={(e) => handleEditTitle(e, batch)}
+                    className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded opacity-0 group-hover:opacity-100 transition-all"
+                    title="Edit title"
+                    data-testid={`edit-title-${batch.id}`}
+                  >
+                    <Edit2 size={14} />
+                  </button>
+                </h3>
+              )}
               
               <div className="space-y-1.5 text-sm">
                 <div className="flex items-center justify-between text-slate-600">
