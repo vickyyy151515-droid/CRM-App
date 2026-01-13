@@ -427,7 +427,7 @@ export default function AdminOmsetCRM() {
         </div>
       )}
 
-      {/* Detail View - Records by Date */}
+      {/* Detail View - Records by Date (Aggregated by Customer) */}
       {viewMode === 'details' && (
         <div className="space-y-4">
           {Object.keys(recordsByDate).length === 0 ? (
@@ -439,11 +439,29 @@ export default function AdminOmsetCRM() {
               .sort(([a], [b]) => b.localeCompare(a))
               .map(([date, dateRecords]) => {
                 const dayTotal = dateRecords.reduce((sum, r) => sum + (r.depo_total || 0), 0);
-                const dayNominal = dateRecords.reduce((sum, r) => sum + (r.nominal || 0), 0);
                 const isExpanded = expandedDates[date] !== false;
                 
                 // Get NDP/RDP stats for this date from summary
                 const daySummary = summary?.daily.find(d => d.date === date);
+                
+                // Aggregate records by customer
+                const customerTotals = {};
+                dateRecords.forEach(record => {
+                  const key = `${record.customer_id}_${record.staff_id}_${record.product_id}`;
+                  if (!customerTotals[key]) {
+                    customerTotals[key] = {
+                      customer_id: record.customer_id,
+                      staff_name: record.staff_name,
+                      product_name: record.product_name,
+                      total_depo: 0,
+                      record_count: 0
+                    };
+                  }
+                  customerTotals[key].total_depo += record.depo_total || 0;
+                  customerTotals[key].record_count += 1;
+                });
+                
+                const aggregatedCustomers = Object.values(customerTotals).sort((a, b) => b.total_depo - a.total_depo);
 
                 return (
                   <div key={date} className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
@@ -458,7 +476,7 @@ export default function AdminOmsetCRM() {
                             {new Date(date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                           </p>
                           <div className="flex items-center gap-3 mt-1">
-                            <span className="text-sm text-slate-500">{dateRecords.length} records</span>
+                            <span className="text-sm text-slate-500">{aggregatedCustomers.length} customers</span>
                             {daySummary && (
                               <>
                                 <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-green-100 text-green-800">
@@ -490,37 +508,28 @@ export default function AdminOmsetCRM() {
                               <th className="px-4 py-2 text-left text-xs font-semibold text-slate-700">Staff</th>
                               <th className="px-4 py-2 text-left text-xs font-semibold text-slate-700">Product</th>
                               <th className="px-4 py-2 text-left text-xs font-semibold text-slate-700">Customer ID</th>
-                              <th className="px-4 py-2 text-right text-xs font-semibold text-slate-700">Nominal</th>
-                              <th className="px-4 py-2 text-right text-xs font-semibold text-slate-700">Kelipatan</th>
-                              <th className="px-4 py-2 text-right text-xs font-semibold text-slate-700">Depo Total</th>
-                              <th className="px-4 py-2 text-left text-xs font-semibold text-slate-700">Notes</th>
+                              <th className="px-4 py-2 text-right text-xs font-semibold text-slate-700">Total OMSET</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100">
-                            {dateRecords.map((record, idx) => (
-                              <tr key={record.id} className="hover:bg-slate-50">
+                            {aggregatedCustomers.map((customer, idx) => (
+                              <tr key={`${customer.customer_id}_${idx}`} className="hover:bg-slate-50">
                                 <td className="px-4 py-2 text-sm text-slate-600">{idx + 1}</td>
-                                <td className="px-4 py-2 text-sm font-medium text-slate-900">{record.staff_name}</td>
+                                <td className="px-4 py-2 text-sm font-medium text-slate-900">{customer.staff_name}</td>
                                 <td className="px-4 py-2">
                                   <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
-                                    {record.product_name}
+                                    {customer.product_name}
                                   </span>
                                 </td>
-                                <td className="px-4 py-2 text-sm text-slate-900">{record.customer_id}</td>
-                                <td className="px-4 py-2 text-sm text-right text-slate-900">Rp {formatCurrency(record.nominal)}</td>
-                                <td className="px-4 py-2 text-sm text-right text-slate-600">{record.depo_kelipatan}x</td>
-                                <td className="px-4 py-2 text-sm text-right font-semibold text-emerald-600">Rp {formatCurrency(record.depo_total)}</td>
-                                <td className="px-4 py-2 text-sm text-slate-500">{record.keterangan || '-'}</td>
+                                <td className="px-4 py-2 text-sm text-slate-900">{customer.customer_id}</td>
+                                <td className="px-4 py-2 text-sm text-right font-semibold text-emerald-600">Rp {formatCurrency(customer.total_depo)}</td>
                               </tr>
                             ))}
                           </tbody>
                           <tfoot className="bg-slate-50 border-t border-slate-200">
                             <tr>
                               <td colSpan={4} className="px-4 py-2 text-sm font-semibold text-slate-900">DAY TOTAL</td>
-                              <td className="px-4 py-2 text-sm text-right font-bold text-slate-900">Rp {formatCurrency(dayNominal)}</td>
-                              <td></td>
                               <td className="px-4 py-2 text-sm text-right font-bold text-emerald-600">Rp {formatCurrency(dayTotal)}</td>
-                              <td></td>
                             </tr>
                           </tfoot>
                         </table>
