@@ -719,9 +719,9 @@ async def get_my_request_batches(user: User = Depends(get_current_user)):
             'database_id': req['database_id'],
             'database_name': database.get('name', 'Unknown') if database else 'Unknown',
             'product_name': database.get('product_name', 'Unknown') if database else 'Unknown',
-            'quantity': req['quantity'],
+            'quantity': req.get('quantity', 0),
             'record_count': record_count,
-            'requested_at': req['requested_at'],
+            'requested_at': req.get('requested_at'),
             'approved_at': req.get('reviewed_at')
         })
     
