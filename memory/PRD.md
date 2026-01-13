@@ -26,8 +26,9 @@ Build a Customer Relationship Management (CRM) application where:
 ### Phase 3: WhatsApp Integration (Completed)
 - Copy full WhatsApp URL button (bypasses network blocks)
 - WhatsApp reachability status tracking (Ada/Tidak)
-- Staff marks customer WhatsApp status
-- Admin sees all status in dashboards
+- **Response status tracking (Ya/Tidak)** - track if customer responded
+- Staff marks customer WhatsApp status and response status
+- Admin sees all statuses in dashboards
 
 ### Phase 4: Admin Dashboards (Completed)
 - **All Assignments View**: Global view of all assigned records
