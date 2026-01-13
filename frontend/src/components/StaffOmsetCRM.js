@@ -363,8 +363,7 @@ export default function StaffOmsetCRM() {
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">No</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">Customer Name</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">ID</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">Customer ID</th>
                 <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700">Nominal</th>
                 <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700">Kelipatan</th>
                 <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700">Depo Total</th>
@@ -375,7 +374,7 @@ export default function StaffOmsetCRM() {
             <tbody className="divide-y divide-slate-100">
               {records.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
+                  <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
                     No records for this date. Click "Add Record" to create one.
                   </td>
                 </tr>
@@ -383,8 +382,7 @@ export default function StaffOmsetCRM() {
                 records.map((record, idx) => (
                   <tr key={record.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3 text-sm text-slate-900">{idx + 1}</td>
-                    <td className="px-4 py-3 text-sm font-medium text-slate-900">{record.customer_name}</td>
-                    <td className="px-4 py-3 text-sm text-slate-600">{record.customer_id}</td>
+                    <td className="px-4 py-3 text-sm font-medium text-slate-900">{record.customer_id}</td>
                     <td className="px-4 py-3 text-sm text-right text-slate-900">Rp {formatCurrency(record.nominal)}</td>
                     <td className="px-4 py-3 text-sm text-right text-slate-600">{record.depo_kelipatan}x</td>
                     <td className="px-4 py-3 text-sm text-right font-semibold text-emerald-600">Rp {formatCurrency(record.depo_total)}</td>
@@ -414,7 +412,7 @@ export default function StaffOmsetCRM() {
             {records.length > 0 && (
               <tfoot className="bg-slate-50 border-t border-slate-200">
                 <tr>
-                  <td colSpan={3} className="px-4 py-3 text-sm font-semibold text-slate-900">TOTAL</td>
+                  <td colSpan={2} className="px-4 py-3 text-sm font-semibold text-slate-900">TOTAL</td>
                   <td className="px-4 py-3 text-sm text-right font-bold text-slate-900">Rp {formatCurrency(dailyNominal)}</td>
                   <td className="px-4 py-3"></td>
                   <td className="px-4 py-3 text-sm text-right font-bold text-emerald-600">Rp {formatCurrency(dailyTotal)}</td>
