@@ -1149,7 +1149,7 @@ async def export_omset_records(
     # Support token from query param for window.open() downloads
     if token:
         try:
-            payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+            payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
             user_data = await db.users.find_one({"id": payload["user_id"]}, {"_id": 0})
             if not user_data:
                 raise HTTPException(status_code=401, detail="User not found")
@@ -1249,7 +1249,7 @@ async def export_omset_summary(
     # Support token from query param for window.open() downloads
     if token:
         try:
-            payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+            payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
             user_data = await db.users.find_one({"id": payload["user_id"]}, {"_id": 0})
             if not user_data:
                 raise HTTPException(status_code=401, detail="User not found")
