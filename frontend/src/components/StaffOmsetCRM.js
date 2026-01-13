@@ -294,6 +294,15 @@ export default function StaffOmsetCRM() {
           <p className="text-xs text-slate-600">Total Customers</p>
         </div>
 
+        {/* Total Form */}
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <Calendar className="text-indigo-600" size={18} />
+            <span className="text-xl font-bold text-slate-900">{totalForm}</span>
+          </div>
+          <p className="text-xs text-slate-600">Total Form</p>
+        </div>
+
         {/* NDP Stats */}
         <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 shadow-sm text-white">
           <div className="flex items-center justify-between mb-2">
@@ -312,15 +321,6 @@ export default function StaffOmsetCRM() {
           </div>
           <p className="text-xs text-orange-100">RDP (Redepo)</p>
           <p className="text-sm font-semibold mt-1">Rp {formatCurrency(ndpRdpStats?.rdp_total || 0)}</p>
-        </div>
-
-        {/* Total Form */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <Calendar className="text-indigo-600" size={18} />
-            <span className="text-xl font-bold text-slate-900">{totalForm}</span>
-          </div>
-          <p className="text-xs text-slate-600">Total Form</p>
         </div>
 
         {/* Total OMSET - Gold */}
