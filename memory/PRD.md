@@ -139,6 +139,14 @@ Build a Customer Relationship Management (CRM) application where:
 - **Formats**: Both Excel (.xlsx) and CSV (.csv) supported
 - **Dynamic Filters**: Filter options change based on export type
 
+### Phase 16: Timezone Bug Fix (Completed - Jan 14, 2026)
+- **Issue**: OMSET CRM date filters (Today/Yesterday) were showing incorrect data due to timezone mismatch
+- **Root Cause**: Frontend was using browser's local time (`new Date()`) instead of Jakarta timezone
+- **Fix**: Frontend now fetches server time (`/api/server-time`) on mount and uses Jakarta date (UTC+7) for all date calculations
+- **Components Updated**:
+  - `AdminOmsetCRM.js`: Now uses server date for Today/Yesterday/Last7/Last30/ThisMonth filters
+  - `StaffOmsetCRM.js`: Now initializes date picker with server date (Jakarta timezone)
+
 ## Tech Stack
 - **Frontend**: React + TailwindCSS + Shadcn/UI + Recharts
 - **Backend**: FastAPI + PyMongo + Pandas + Openpyxl
