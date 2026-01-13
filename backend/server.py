@@ -751,7 +751,7 @@ async def get_my_request_batches(user: User = Depends(get_current_user)):
             'status': 'assigned',
             '$or': [{'request_id': {'$exists': False}}, {'request_id': None}]
         },
-        {'_id': 0, 'database_id': 1, 'database_name': 1, 'product_name': 1, 'whatsapp_status': 1}
+        {'_id': 0, 'database_id': 1, 'database_name': 1, 'product_name': 1, 'whatsapp_status': 1, 'respond_status': 1}
     ).to_list(10000)
     
     if legacy_records_all:
@@ -766,7 +766,9 @@ async def get_my_request_batches(user: User = Depends(get_current_user)):
                     'count': 0,
                     'ada_count': 0,
                     'ceklis1_count': 0,
-                    'tidak_count': 0
+                    'tidak_count': 0,
+                    'respond_ya_count': 0,
+                    'respond_tidak_count': 0
                 }
             legacy_by_db[db_id]['count'] += 1
             if rec.get('whatsapp_status') == 'ada':
@@ -775,6 +777,10 @@ async def get_my_request_batches(user: User = Depends(get_current_user)):
                 legacy_by_db[db_id]['ceklis1_count'] += 1
             elif rec.get('whatsapp_status') == 'tidak':
                 legacy_by_db[db_id]['tidak_count'] += 1
+            if rec.get('respond_status') == 'ya':
+                legacy_by_db[db_id]['respond_ya_count'] += 1
+            elif rec.get('respond_status') == 'tidak':
+                legacy_by_db[db_id]['respond_tidak_count'] += 1
         
         # Add legacy batches
         for db_id, info in legacy_by_db.items():
@@ -790,6 +796,8 @@ async def get_my_request_batches(user: User = Depends(get_current_user)):
                 'ada_count': info['ada_count'],
                 'ceklis1_count': info['ceklis1_count'],
                 'tidak_count': info['tidak_count'],
+                'respond_ya_count': info['respond_ya_count'],
+                'respond_tidak_count': info['respond_tidak_count'],
                 'requested_at': None,
                 'approved_at': None,
                 'is_legacy': True
