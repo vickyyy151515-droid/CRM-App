@@ -720,6 +720,15 @@ async def approve_request(request_id: str, user: User = Depends(get_admin_user))
             }}
         )
     
+    # Create notification for staff
+    await create_notification(
+        user_id=request['requested_by'],
+        type='request_approved',
+        title='Request Approved',
+        message=f'Your request for {request["record_count"]} records from {request["database_name"]} has been approved',
+        data={'request_id': request_id, 'record_count': request['record_count'], 'database_name': request['database_name']}
+    )
+    
     return {'message': 'Request approved and records assigned'}
 
 @api_router.patch("/download-requests/{request_id}/reject")
@@ -746,6 +755,15 @@ async def reject_request(request_id: str, user: User = Depends(get_admin_user)):
             {'id': record_id},
             {'$set': {'status': 'available'}}
         )
+    
+    # Create notification for staff
+    await create_notification(
+        user_id=request['requested_by'],
+        type='request_rejected',
+        title='Request Rejected',
+        message=f'Your request for {request["record_count"]} records from {request["database_name"]} has been rejected',
+        data={'request_id': request_id, 'database_name': request['database_name']}
+    )
     
     return {'message': 'Request rejected'}
 
