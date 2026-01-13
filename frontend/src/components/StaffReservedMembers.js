@@ -1,26 +1,33 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { UserPlus, Search, Clock, CheckCircle, Users } from 'lucide-react';
+import { UserPlus, Search, Clock, CheckCircle, Users, Package } from 'lucide-react';
 
 export default function StaffReservedMembers() {
   const [members, setMembers] = useState([]);
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [customerName, setCustomerName] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [filter, setFilter] = useState('all');
+  const [productFilter, setProductFilter] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    loadMembers();
+    loadData();
   }, []);
 
-  const loadMembers = async () => {
+  const loadData = async () => {
     try {
-      const response = await api.get('/reserved-members');
-      setMembers(response.data);
+      const [membersRes, productsRes] = await Promise.all([
+        api.get('/reserved-members'),
+        api.get('/products')
+      ]);
+      setMembers(membersRes.data);
+      setProducts(productsRes.data);
     } catch (error) {
-      toast.error('Failed to load reserved members');
+      toast.error('Failed to load data');
     } finally {
       setLoading(false);
     }
@@ -32,15 +39,21 @@ export default function StaffReservedMembers() {
       toast.error('Please enter a customer name');
       return;
     }
+    if (!selectedProduct) {
+      toast.error('Please select a product');
+      return;
+    }
 
     setSubmitting(true);
     try {
       await api.post('/reserved-members', {
-        customer_name: customerName.trim()
+        customer_name: customerName.trim(),
+        product_id: selectedProduct
       });
       toast.success('Reservation request submitted! Waiting for admin approval.');
       setCustomerName('');
-      loadMembers();
+      setSelectedProduct('');
+      loadData();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to submit request');
     } finally {
@@ -48,31 +61,16 @@ export default function StaffReservedMembers() {
     }
   };
 
-  const filteredMembers = members.filter(m => {
-    // Only show approved members (visible to all staff)
-    if (m.status !== 'approved' && filter !== 'my-requests') return false;
-    
-    // For "my-requests" filter, show pending requests by current user
-    if (filter === 'my-requests') {
-      // We'll show all approved + pending that belong to this user
-      // Since we don't have user ID on frontend, we show all pending
-      if (m.status === 'pending') return true;
-      return false;
-    }
-    
-    const matchesSearch = m.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          m.staff_name.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSearch;
-  });
-
   // Get all approved members for display
   const approvedMembers = members.filter(m => m.status === 'approved');
   const pendingMembers = members.filter(m => m.status === 'pending');
 
   const displayMembers = filter === 'my-requests' ? pendingMembers : approvedMembers.filter(m => {
     const matchesSearch = m.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          m.staff_name.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSearch;
+                          m.staff_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (m.product_name || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesProduct = !productFilter || m.product_id === productFilter;
+    return matchesSearch && matchesProduct;
   });
 
   if (loading) {
@@ -121,7 +119,7 @@ export default function StaffReservedMembers() {
           Request New Reservation
         </h3>
         <p className="text-slate-600 text-sm mb-4">
-          Enter the customer name you want to reserve. Your request will be sent to admin for approval.
+          Enter the customer name and select the product. Your request will be sent to admin for approval.
         </p>
         <form onSubmit={handleRequestReservation} className="flex flex-col md:flex-row gap-4">
           <input
@@ -132,6 +130,17 @@ export default function StaffReservedMembers() {
             className="flex-1 px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             data-testid="input-customer-name"
           />
+          <select
+            value={selectedProduct}
+            onChange={(e) => setSelectedProduct(e.target.value)}
+            className="px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white min-w-[200px]"
+            data-testid="select-product"
+          >
+            <option value="">Select Product</option>
+            {products.map(product => (
+              <option key={product.id} value={product.id}>{product.name}</option>
+            ))}
+          </select>
           <button
             type="submit"
             disabled={submitting}
@@ -150,13 +159,24 @@ export default function StaffReservedMembers() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input
             type="text"
-            placeholder="Search by customer or staff name..."
+            placeholder="Search by customer, staff or product..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             data-testid="search-reservations"
           />
         </div>
+        <select
+          value={productFilter}
+          onChange={(e) => setProductFilter(e.target.value)}
+          className="px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+          data-testid="filter-product"
+        >
+          <option value="">All Products</option>
+          {products.map(product => (
+            <option key={product.id} value={product.id}>{product.name}</option>
+          ))}
+        </select>
         <div className="flex gap-2">
           <button
             onClick={() => setFilter('all')}
@@ -189,6 +209,7 @@ export default function StaffReservedMembers() {
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
               <th className="text-left px-6 py-4 text-sm font-medium text-slate-600">Customer Name</th>
+              <th className="text-left px-6 py-4 text-sm font-medium text-slate-600">Product</th>
               <th className="text-left px-6 py-4 text-sm font-medium text-slate-600">Reserved By</th>
               <th className="text-left px-6 py-4 text-sm font-medium text-slate-600">Status</th>
               <th className="text-left px-6 py-4 text-sm font-medium text-slate-600">Date</th>
@@ -197,7 +218,7 @@ export default function StaffReservedMembers() {
           <tbody className="divide-y divide-slate-100">
             {displayMembers.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-6 py-12 text-center text-slate-500">
+                <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
                   {filter === 'my-requests' ? 'No pending requests' : 'No reservations found'}
                 </td>
               </tr>
@@ -205,6 +226,12 @@ export default function StaffReservedMembers() {
               displayMembers.map(member => (
                 <tr key={member.id} className="hover:bg-slate-50" data-testid={`reservation-row-${member.id}`}>
                   <td className="px-6 py-4 font-medium text-slate-900">{member.customer_name}</td>
+                  <td className="px-6 py-4">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                      <Package size={12} className="mr-1" />
+                      {member.product_name || 'Unknown'}
+                    </span>
+                  </td>
                   <td className="px-6 py-4 text-slate-600">{member.staff_name}</td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -229,7 +256,7 @@ export default function StaffReservedMembers() {
       <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
         <p className="text-blue-800 text-sm">
           <strong>Note:</strong> All approved reserved customers are visible to all staff members. 
-          If you try to request a customer that's already reserved by another staff, 
+          If you try to request a customer that's already reserved by another staff in the same product, 
           the system will notify you.
         </p>
       </div>

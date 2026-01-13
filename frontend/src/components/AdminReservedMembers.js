@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { UserPlus, Check, X, Trash2, ArrowRight, Search, Users, Clock, CheckCircle } from 'lucide-react';
+import { UserPlus, Check, X, Trash2, ArrowRight, Search, Users, Clock, CheckCircle, Package } from 'lucide-react';
 
 export default function AdminReservedMembers() {
   const [members, setMembers] = useState([]);
   const [staffList, setStaffList] = useState([]);
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [customerName, setCustomerName] = useState('');
   const [selectedStaff, setSelectedStaff] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [filter, setFilter] = useState('all');
+  const [productFilter, setProductFilter] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [moveModal, setMoveModal] = useState({ open: false, member: null });
   const [newStaffId, setNewStaffId] = useState('');
@@ -21,12 +24,14 @@ export default function AdminReservedMembers() {
 
   const loadData = async () => {
     try {
-      const [membersRes, staffRes] = await Promise.all([
+      const [membersRes, staffRes, productsRes] = await Promise.all([
         api.get('/reserved-members'),
-        api.get('/staff-users')
+        api.get('/staff-users'),
+        api.get('/products')
       ]);
       setMembers(membersRes.data);
       setStaffList(staffRes.data);
+      setProducts(productsRes.data);
     } catch (error) {
       toast.error('Failed to load data');
     } finally {
@@ -36,7 +41,7 @@ export default function AdminReservedMembers() {
 
   const handleAddMember = async (e) => {
     e.preventDefault();
-    if (!customerName.trim() || !selectedStaff) {
+    if (!customerName.trim() || !selectedStaff || !selectedProduct) {
       toast.error('Please fill all fields');
       return;
     }
@@ -45,11 +50,13 @@ export default function AdminReservedMembers() {
     try {
       await api.post('/reserved-members', {
         customer_name: customerName.trim(),
-        staff_id: selectedStaff
+        staff_id: selectedStaff,
+        product_id: selectedProduct
       });
       toast.success('Customer reserved successfully');
       setCustomerName('');
       setSelectedStaff('');
+      setSelectedProduct('');
       loadData();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to add reserved member');
@@ -109,9 +116,11 @@ export default function AdminReservedMembers() {
 
   const filteredMembers = members.filter(m => {
     const matchesFilter = filter === 'all' || m.status === filter;
+    const matchesProduct = !productFilter || m.product_id === productFilter;
     const matchesSearch = m.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          m.staff_name.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesFilter && matchesSearch;
+                          m.staff_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (m.product_name || '').toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesFilter && matchesProduct && matchesSearch;
   });
 
   const pendingCount = members.filter(m => m.status === 'pending').length;
@@ -160,15 +169,26 @@ export default function AdminReservedMembers() {
           <UserPlus size={20} className="text-indigo-600" />
           Add New Reservation
         </h3>
-        <form onSubmit={handleAddMember} className="flex flex-col md:flex-row gap-4">
+        <form onSubmit={handleAddMember} className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <input
             type="text"
             placeholder="Customer Name"
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
-            className="flex-1 px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             data-testid="input-customer-name"
           />
+          <select
+            value={selectedProduct}
+            onChange={(e) => setSelectedProduct(e.target.value)}
+            className="px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+            data-testid="select-product"
+          >
+            <option value="">Select Product</option>
+            {products.map(product => (
+              <option key={product.id} value={product.id}>{product.name}</option>
+            ))}
+          </select>
           <select
             value={selectedStaff}
             onChange={(e) => setSelectedStaff(e.target.value)}
@@ -183,7 +203,7 @@ export default function AdminReservedMembers() {
           <button
             type="submit"
             disabled={submitting}
-            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors flex items-center gap-2"
+            className="md:col-span-2 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
             data-testid="btn-add-reservation"
           >
             <UserPlus size={18} />
@@ -198,13 +218,24 @@ export default function AdminReservedMembers() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input
             type="text"
-            placeholder="Search by customer or staff name..."
+            placeholder="Search by customer, staff or product..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             data-testid="search-reservations"
           />
         </div>
+        <select
+          value={productFilter}
+          onChange={(e) => setProductFilter(e.target.value)}
+          className="px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+          data-testid="filter-product"
+        >
+          <option value="">All Products</option>
+          {products.map(product => (
+            <option key={product.id} value={product.id}>{product.name}</option>
+          ))}
+        </select>
         <div className="flex gap-2">
           {['all', 'pending', 'approved'].map(f => (
             <button
@@ -229,6 +260,7 @@ export default function AdminReservedMembers() {
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
               <th className="text-left px-6 py-4 text-sm font-medium text-slate-600">Customer Name</th>
+              <th className="text-left px-6 py-4 text-sm font-medium text-slate-600">Product</th>
               <th className="text-left px-6 py-4 text-sm font-medium text-slate-600">Staff</th>
               <th className="text-left px-6 py-4 text-sm font-medium text-slate-600">Status</th>
               <th className="text-left px-6 py-4 text-sm font-medium text-slate-600">Requested By</th>
@@ -239,7 +271,7 @@ export default function AdminReservedMembers() {
           <tbody className="divide-y divide-slate-100">
             {filteredMembers.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
+                <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
                   No reservations found
                 </td>
               </tr>
@@ -247,6 +279,12 @@ export default function AdminReservedMembers() {
               filteredMembers.map(member => (
                 <tr key={member.id} className="hover:bg-slate-50" data-testid={`reservation-row-${member.id}`}>
                   <td className="px-6 py-4 font-medium text-slate-900">{member.customer_name}</td>
+                  <td className="px-6 py-4">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                      <Package size={12} className="mr-1" />
+                      {member.product_name || 'Unknown'}
+                    </span>
+                  </td>
                   <td className="px-6 py-4 text-slate-600">{member.staff_name}</td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
