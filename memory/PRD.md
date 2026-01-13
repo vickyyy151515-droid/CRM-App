@@ -42,6 +42,7 @@ Build a Customer Relationship Management (CRM) application where:
 - **Admin Controls**: Approve/Reject requests, Move reservations, Delete
 - **Visibility**: All approved reservations visible to all staff
 - **Filtering**: Filter by product and status (All/Pending/Approved)
+- **Notification Badges**: Red badges in sidebar showing pending counts (auto-refresh every 30s)
 
 ## Tech Stack
 - **Frontend**: React + TailwindCSS + Shadcn/UI
