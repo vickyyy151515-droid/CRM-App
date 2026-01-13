@@ -1123,6 +1123,15 @@ async def approve_reserved_member(member_id: str, user: User = Depends(get_admin
         }}
     )
     
+    # Create notification for staff
+    await create_notification(
+        user_id=member['staff_id'],
+        type='reserved_approved',
+        title='Reservation Approved',
+        message=f'Your reservation for "{member["customer_name"]}" in {member.get("product_name", "Unknown")} has been approved',
+        data={'member_id': member_id, 'customer_name': member['customer_name']}
+    )
+    
     return {'message': 'Reserved member approved'}
 
 @api_router.patch("/reserved-members/{member_id}/reject")
@@ -1133,6 +1142,15 @@ async def reject_reserved_member(member_id: str, user: User = Depends(get_admin_
     
     if member['status'] != 'pending':
         raise HTTPException(status_code=400, detail="Member already processed")
+    
+    # Create notification for staff before deleting
+    await create_notification(
+        user_id=member['staff_id'],
+        type='reserved_rejected',
+        title='Reservation Rejected',
+        message=f'Your reservation for "{member["customer_name"]}" in {member.get("product_name", "Unknown")} has been rejected',
+        data={'customer_name': member['customer_name']}
+    )
     
     await db.reserved_members.delete_one({'id': member_id})
     
