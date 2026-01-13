@@ -390,9 +390,11 @@ export default function AdminDBBonanza() {
                           >
                             <Shuffle size={14} />
                             {assigning ? 'Assigning...' : 'Assign Random'}
-                      </button>
-                    </div>
-                  </div>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* Manual Assignment Controls */}
                   <div className="flex flex-wrap items-center gap-4 mb-4 p-4 bg-slate-50 rounded-lg">
