@@ -186,26 +186,32 @@ export default function MyAssignedRecords() {
                   <span>Records:</span>
                   <span className="font-semibold text-slate-900">{batch.record_count} customers</span>
                 </div>
-                {!batch.is_legacy && (
-                  <>
-                    <div className="flex items-center justify-between text-slate-600">
-                      <span className="flex items-center gap-1">
-                        <Calendar size={14} />
-                        Requested:
-                      </span>
-                      <span>{formatShortDate(batch.requested_at)}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-slate-600">
-                      <span className="flex items-center gap-1">
-                        <Clock size={14} />
-                        Approved:
-                      </span>
-                      <span>{formatShortDate(batch.approved_at)}</span>
-                    </div>
-                  </>
-                )}
+                
+                {/* WhatsApp Status Counts */}
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100 mt-2">
+                  <div className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span className="text-slate-600">Ada:</span>
+                  </div>
+                  <span className="font-semibold text-emerald-600">{batch.ada_count || 0}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                    <span className="text-slate-600">Ceklis 1:</span>
+                  </div>
+                  <span className="font-semibold text-amber-600">{batch.ceklis1_count || 0}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+                    <span className="text-slate-600">Tidak:</span>
+                  </div>
+                  <span className="font-semibold text-rose-600">{batch.tidak_count || 0}</span>
+                </div>
+                
                 {batch.is_legacy && (
-                  <div className="text-xs text-amber-600 mt-2">
+                  <div className="text-xs text-amber-600 mt-2 pt-2 border-t border-slate-100">
                     Assigned before batch tracking
                   </div>
                 )}
