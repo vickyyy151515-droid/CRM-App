@@ -173,4 +173,3 @@ Build a Customer Relationship Management (CRM) application where:
 ### P2: Potential Enhancements
 - Email notifications for important updates
 - Real-time notifications with WebSockets
-- Custom dashboard layouts (drag & drop widgets)
