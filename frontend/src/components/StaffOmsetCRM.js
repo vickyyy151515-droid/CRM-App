@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Plus, Edit2, Trash2, Calendar, Package, DollarSign, TrendingUp, Save, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, Calendar, Package, DollarSign, TrendingUp, Save, X, UserPlus, RefreshCw } from 'lucide-react';
 
 export default function StaffOmsetCRM() {
   const [products, setProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [records, setRecords] = useState([]);
+  const [ndpRdpStats, setNdpRdpStats] = useState(null);
   const [existingDates, setExistingDates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -27,6 +28,7 @@ export default function StaffOmsetCRM() {
     if (selectedProduct) {
       loadRecords();
       loadExistingDates();
+      loadNdpRdpStats();
     }
   }, [selectedProduct, selectedDate]);
 
@@ -48,12 +50,25 @@ export default function StaffOmsetCRM() {
     if (!selectedProduct) return;
     
     try {
-      const response = await api.get('/omset', {
+      const response = await api.get('/omset/record-types', {
         params: { product_id: selectedProduct, record_date: selectedDate }
       });
       setRecords(response.data);
     } catch (error) {
       toast.error('Failed to load records');
+    }
+  };
+
+  const loadNdpRdpStats = async () => {
+    if (!selectedProduct) return;
+    
+    try {
+      const response = await api.get('/omset/ndp-rdp', {
+        params: { product_id: selectedProduct, record_date: selectedDate }
+      });
+      setNdpRdpStats(response.data);
+    } catch (error) {
+      console.error('Failed to load NDP/RDP stats');
     }
   };
 
@@ -84,7 +99,7 @@ export default function StaffOmsetCRM() {
     try {
       if (editingRecord) {
         await api.put(`/omset/${editingRecord.id}`, {
-          customer_name: formData.customer_id, // Use customer_id as name
+          customer_name: formData.customer_id,
           customer_id: formData.customer_id,
           nominal: actualNominal,
           depo_kelipatan: parseFloat(formData.depo_kelipatan) || 1,
@@ -95,7 +110,7 @@ export default function StaffOmsetCRM() {
         await api.post('/omset', {
           product_id: selectedProduct,
           record_date: selectedDate,
-          customer_name: formData.customer_id, // Use customer_id as name
+          customer_name: formData.customer_id,
           customer_id: formData.customer_id,
           nominal: actualNominal,
           depo_kelipatan: parseFloat(formData.depo_kelipatan) || 1,
@@ -107,6 +122,7 @@ export default function StaffOmsetCRM() {
       resetForm();
       loadRecords();
       loadExistingDates();
+      loadNdpRdpStats();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to save record');
     }
@@ -116,7 +132,7 @@ export default function StaffOmsetCRM() {
     setEditingRecord(record);
     setFormData({
       customer_id: record.customer_id,
-      nominal: (record.nominal / 1000).toString(), // Convert back to input format
+      nominal: (record.nominal / 1000).toString(),
       depo_kelipatan: record.depo_kelipatan.toString(),
       keterangan: record.keterangan || ''
     });
@@ -131,6 +147,7 @@ export default function StaffOmsetCRM() {
       toast.success('Record deleted');
       loadRecords();
       loadExistingDates();
+      loadNdpRdpStats();
     } catch (error) {
       toast.error('Failed to delete record');
     }
@@ -225,28 +242,59 @@ export default function StaffOmsetCRM() {
         </div>
       )}
 
-      {/* Daily Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+      {/* Daily Summary with NDP/RDP */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <Calendar className="text-indigo-600" size={20} />
-            <span className="text-2xl font-bold text-slate-900">{records.length}</span>
+            <Calendar className="text-indigo-600" size={18} />
+            <span className="text-xl font-bold text-slate-900">{records.length}</span>
           </div>
-          <p className="text-sm text-slate-600">Records Today</p>
+          <p className="text-xs text-slate-600">Total Records</p>
         </div>
-        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <DollarSign className="text-emerald-600" size={20} />
-            <span className="text-2xl font-bold text-emerald-700">{formatCurrency(dailyNominal)}</span>
+            <DollarSign className="text-emerald-600" size={18} />
+            <span className="text-lg font-bold text-emerald-700">{formatCurrency(dailyNominal)}</span>
           </div>
-          <p className="text-sm text-slate-600">Total Nominal</p>
+          <p className="text-xs text-slate-600">Total Nominal</p>
         </div>
-        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <TrendingUp className="text-blue-600" size={20} />
-            <span className="text-2xl font-bold text-blue-700">{formatCurrency(dailyTotal)}</span>
+            <TrendingUp className="text-blue-600" size={18} />
+            <span className="text-lg font-bold text-blue-700">{formatCurrency(dailyTotal)}</span>
           </div>
-          <p className="text-sm text-slate-600">Total Depo (OMSET)</p>
+          <p className="text-xs text-slate-600">Total OMSET</p>
+        </div>
+        
+        {/* NDP Stats */}
+        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 shadow-sm text-white">
+          <div className="flex items-center justify-between mb-2">
+            <UserPlus className="opacity-80" size={18} />
+            <span className="text-xl font-bold">{ndpRdpStats?.ndp_count || 0}</span>
+          </div>
+          <p className="text-xs text-green-100">NDP (New Depo)</p>
+          <p className="text-sm font-semibold mt-1">Rp {formatCurrency(ndpRdpStats?.ndp_total || 0)}</p>
+        </div>
+        
+        {/* RDP Stats */}
+        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-4 shadow-sm text-white">
+          <div className="flex items-center justify-between mb-2">
+            <RefreshCw className="opacity-80" size={18} />
+            <span className="text-xl font-bold">{ndpRdpStats?.rdp_count || 0}</span>
+          </div>
+          <p className="text-xs text-orange-100">RDP (Redepo)</p>
+          <p className="text-sm font-semibold mt-1">Rp {formatCurrency(ndpRdpStats?.rdp_total || 0)}</p>
+        </div>
+
+        {/* Total Unique Customers */}
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <Package className="text-purple-600" size={18} />
+            <span className="text-xl font-bold text-purple-700">
+              {(ndpRdpStats?.ndp_count || 0) + (ndpRdpStats?.rdp_count || 0)}
+            </span>
+          </div>
+          <p className="text-xs text-slate-600">Total Customers</p>
         </div>
       </div>
 
@@ -363,6 +411,7 @@ export default function StaffOmsetCRM() {
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">No</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">Type</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">Customer ID</th>
                 <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700">Nominal</th>
                 <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700">Kelipatan</th>
@@ -374,7 +423,7 @@ export default function StaffOmsetCRM() {
             <tbody className="divide-y divide-slate-100">
               {records.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
+                  <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
                     No records for this date. Click "Add Record" to create one.
                   </td>
                 </tr>
@@ -382,6 +431,15 @@ export default function StaffOmsetCRM() {
                 records.map((record, idx) => (
                   <tr key={record.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3 text-sm text-slate-900">{idx + 1}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${
+                        record.record_type === 'NDP' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-orange-100 text-orange-800'
+                      }`}>
+                        {record.record_type}
+                      </span>
+                    </td>
                     <td className="px-4 py-3 text-sm font-medium text-slate-900">{record.customer_id}</td>
                     <td className="px-4 py-3 text-sm text-right text-slate-900">Rp {formatCurrency(record.nominal)}</td>
                     <td className="px-4 py-3 text-sm text-right text-slate-600">{record.depo_kelipatan}x</td>
@@ -412,7 +470,7 @@ export default function StaffOmsetCRM() {
             {records.length > 0 && (
               <tfoot className="bg-slate-50 border-t border-slate-200">
                 <tr>
-                  <td colSpan={2} className="px-4 py-3 text-sm font-semibold text-slate-900">TOTAL</td>
+                  <td colSpan={3} className="px-4 py-3 text-sm font-semibold text-slate-900">TOTAL</td>
                   <td className="px-4 py-3 text-sm text-right font-bold text-slate-900">Rp {formatCurrency(dailyNominal)}</td>
                   <td className="px-4 py-3"></td>
                   <td className="px-4 py-3 text-sm text-right font-bold text-emerald-600">Rp {formatCurrency(dailyTotal)}</td>
@@ -421,6 +479,18 @@ export default function StaffOmsetCRM() {
               </tfoot>
             )}
           </table>
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div className="mt-4 flex gap-4 text-sm text-slate-600">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-green-100 text-green-800">NDP</span>
+          <span>= New Depo (Customer baru)</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-orange-100 text-orange-800">RDP</span>
+          <span>= Redepo (Customer lama)</span>
         </div>
       </div>
     </div>
