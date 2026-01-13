@@ -76,8 +76,8 @@ export default function AdminDBBonanza() {
 
   const handleUpload = async (e) => {
     e.preventDefault();
-    if (!selectedFile || !uploadName.trim()) {
-      toast.error('Please provide a name and select a file');
+    if (!selectedFile || !uploadName.trim() || !uploadProductId) {
+      toast.error('Please provide a name, select a product, and select a file');
       return;
     }
 
@@ -85,6 +85,7 @@ export default function AdminDBBonanza() {
     const formData = new FormData();
     formData.append('file', selectedFile);
     formData.append('name', uploadName);
+    formData.append('product_id', uploadProductId);
 
     try {
       await api.post('/bonanza/upload', formData, {
@@ -93,6 +94,7 @@ export default function AdminDBBonanza() {
       toast.success('Database uploaded successfully');
       setSelectedFile(null);
       setUploadName('');
+      setUploadProductId('');
       loadDatabases();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to upload database');
