@@ -7,7 +7,8 @@ import MyAssignedRecords from '../components/MyAssignedRecords';
 import StaffReservedMembers from '../components/StaffReservedMembers';
 import StaffOmsetCRM from '../components/StaffOmsetCRM';
 import StaffDBBonanza from '../components/StaffDBBonanza';
-import { LayoutDashboard, FileSpreadsheet, Clock, User, UserCheck, DollarSign, Gift } from 'lucide-react';
+import StaffMemberWDCRM from '../components/StaffMemberWDCRM';
+import { LayoutDashboard, FileSpreadsheet, Clock, User, UserCheck, DollarSign, Gift, CreditCard } from 'lucide-react';
 
 export default function StaffDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('databases');
