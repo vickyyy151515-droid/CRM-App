@@ -705,11 +705,16 @@ async def get_my_request_batches(user: User = Depends(get_current_user)):
     # Get record counts and stats for each request
     batches = []
     for req in requests:
-        # Count records in this batch
-        record_count = await db.customer_records.count_documents({
+        # Get records in this batch
+        batch_records = await db.customer_records.find({
             'request_id': req['id'],
             'assigned_to': user.id
-        })
+        }, {'_id': 0, 'whatsapp_status': 1}).to_list(10000)
+        
+        record_count = len(batch_records)
+        ada_count = sum(1 for r in batch_records if r.get('whatsapp_status') == 'ada')
+        ceklis1_count = sum(1 for r in batch_records if r.get('whatsapp_status') == 'ceklis1')
+        tidak_count = sum(1 for r in batch_records if r.get('whatsapp_status') == 'tidak')
         
         # Get database info
         database = await db.databases.find_one({'id': req['database_id']}, {'_id': 0})
@@ -721,39 +726,44 @@ async def get_my_request_batches(user: User = Depends(get_current_user)):
             'product_name': database.get('product_name', 'Unknown') if database else 'Unknown',
             'quantity': req.get('quantity', 0),
             'record_count': record_count,
+            'ada_count': ada_count,
+            'ceklis1_count': ceklis1_count,
+            'tidak_count': tidak_count,
             'requested_at': req.get('requested_at'),
             'approved_at': req.get('reviewed_at')
         })
     
     # Check for legacy records (assigned before batch tracking)
-    legacy_count = await db.customer_records.count_documents({
-        'assigned_to': user.id,
-        'status': 'assigned',
-        '$or': [{'request_id': {'$exists': False}}, {'request_id': None}]
-    })
+    legacy_records_all = await db.customer_records.find(
+        {
+            'assigned_to': user.id,
+            'status': 'assigned',
+            '$or': [{'request_id': {'$exists': False}}, {'request_id': None}]
+        },
+        {'_id': 0, 'database_id': 1, 'database_name': 1, 'product_name': 1, 'whatsapp_status': 1}
+    ).to_list(10000)
     
-    if legacy_count > 0:
-        # Group legacy records by database
-        legacy_records = await db.customer_records.find(
-            {
-                'assigned_to': user.id,
-                'status': 'assigned',
-                '$or': [{'request_id': {'$exists': False}}, {'request_id': None}]
-            },
-            {'_id': 0, 'database_id': 1, 'database_name': 1, 'product_name': 1}
-        ).to_list(10000)
-        
+    if legacy_records_all:
         # Group by database
         legacy_by_db = {}
-        for rec in legacy_records:
+        for rec in legacy_records_all:
             db_id = rec['database_id']
             if db_id not in legacy_by_db:
                 legacy_by_db[db_id] = {
                     'database_name': rec.get('database_name', 'Unknown'),
                     'product_name': rec.get('product_name', 'Unknown'),
-                    'count': 0
+                    'count': 0,
+                    'ada_count': 0,
+                    'ceklis1_count': 0,
+                    'tidak_count': 0
                 }
             legacy_by_db[db_id]['count'] += 1
+            if rec.get('whatsapp_status') == 'ada':
+                legacy_by_db[db_id]['ada_count'] += 1
+            elif rec.get('whatsapp_status') == 'ceklis1':
+                legacy_by_db[db_id]['ceklis1_count'] += 1
+            elif rec.get('whatsapp_status') == 'tidak':
+                legacy_by_db[db_id]['tidak_count'] += 1
         
         # Add legacy batches
         for db_id, info in legacy_by_db.items():
@@ -764,6 +774,9 @@ async def get_my_request_batches(user: User = Depends(get_current_user)):
                 'product_name': info['product_name'],
                 'quantity': info['count'],
                 'record_count': info['count'],
+                'ada_count': info['ada_count'],
+                'ceklis1_count': info['ceklis1_count'],
+                'tidak_count': info['tidak_count'],
                 'requested_at': None,
                 'approved_at': None,
                 'is_legacy': True
