@@ -127,6 +127,11 @@ Build a Customer Relationship Management (CRM) application where:
 - `/api/staff-users` - Get list of staff members
 - `/api/bonanza/*` - DB Bonanza endpoints (upload, databases, records, assign)
 - `/api/memberwd/*` - Member WD CRM endpoints (upload, databases, records, assign)
+- `/api/notifications` - Notification system (GET/PATCH/DELETE)
+- `/api/bulk/requests` - Bulk approve/reject download requests
+- `/api/bulk/bonanza-records` - Bulk delete bonanza records
+- `/api/bulk/memberwd-records` - Bulk delete member WD records
+- `/api/bulk/status-update` - Bulk update record status
 
 ## Credentials
 - **Admin**: admin@crm.com / admin123
@@ -137,6 +142,6 @@ Build a Customer Relationship Management (CRM) application where:
 ## Backlog / Upcoming Tasks
 
 ### P2: Potential Enhancements
-- Bulk operations for admin
-- Mobile-responsive improvements
-- Notification system for request updates
+- Email notifications for important updates
+- Advanced analytics dashboard
+- Data export to Excel with custom filters
