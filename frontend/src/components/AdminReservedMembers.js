@@ -3,7 +3,7 @@ import { api } from '../App';
 import { toast } from 'sonner';
 import { UserPlus, Check, X, Trash2, ArrowRight, Search, Users, Clock, CheckCircle, Package } from 'lucide-react';
 
-export default function AdminReservedMembers() {
+export default function AdminReservedMembers({ onUpdate }) {
   const [members, setMembers] = useState([]);
   const [staffList, setStaffList] = useState([]);
   const [products, setProducts] = useState([]);
@@ -58,6 +58,7 @@ export default function AdminReservedMembers() {
       setSelectedStaff('');
       setSelectedProduct('');
       loadData();
+      onUpdate?.();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to add reserved member');
     } finally {
@@ -70,6 +71,7 @@ export default function AdminReservedMembers() {
       await api.patch(`/reserved-members/${memberId}/approve`);
       toast.success('Request approved');
       loadData();
+      onUpdate?.();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to approve');
     }
@@ -80,6 +82,7 @@ export default function AdminReservedMembers() {
       await api.patch(`/reserved-members/${memberId}/reject`);
       toast.success('Request rejected');
       loadData();
+      onUpdate?.();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to reject');
     }
@@ -92,6 +95,7 @@ export default function AdminReservedMembers() {
       await api.delete(`/reserved-members/${memberId}`);
       toast.success('Reservation deleted');
       loadData();
+      onUpdate?.();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to delete');
     }
