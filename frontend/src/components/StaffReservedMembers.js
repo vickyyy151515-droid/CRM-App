@@ -1,0 +1,238 @@
+import { useState, useEffect } from 'react';
+import { api } from '../App';
+import { toast } from 'sonner';
+import { UserPlus, Search, Clock, CheckCircle, Users } from 'lucide-react';
+
+export default function StaffReservedMembers() {
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [customerName, setCustomerName] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [filter, setFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    loadMembers();
+  }, []);
+
+  const loadMembers = async () => {
+    try {
+      const response = await api.get('/reserved-members');
+      setMembers(response.data);
+    } catch (error) {
+      toast.error('Failed to load reserved members');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRequestReservation = async (e) => {
+    e.preventDefault();
+    if (!customerName.trim()) {
+      toast.error('Please enter a customer name');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await api.post('/reserved-members', {
+        customer_name: customerName.trim()
+      });
+      toast.success('Reservation request submitted! Waiting for admin approval.');
+      setCustomerName('');
+      loadMembers();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to submit request');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const filteredMembers = members.filter(m => {
+    // Only show approved members (visible to all staff)
+    if (m.status !== 'approved' && filter !== 'my-requests') return false;
+    
+    // For "my-requests" filter, show pending requests by current user
+    if (filter === 'my-requests') {
+      // We'll show all approved + pending that belong to this user
+      // Since we don't have user ID on frontend, we show all pending
+      if (m.status === 'pending') return true;
+      return false;
+    }
+    
+    const matchesSearch = m.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          m.staff_name.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch;
+  });
+
+  // Get all approved members for display
+  const approvedMembers = members.filter(m => m.status === 'approved');
+  const pendingMembers = members.filter(m => m.status === 'pending');
+
+  const displayMembers = filter === 'my-requests' ? pendingMembers : approvedMembers.filter(m => {
+    const matchesSearch = m.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          m.staff_name.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch;
+  });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div data-testid="staff-reserved-members">
+      <h2 className="text-3xl font-semibold tracking-tight text-slate-900 mb-6">Reserved Member CRM</h2>
+      
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <Users className="text-indigo-600" size={20} />
+            <span className="text-2xl font-bold text-slate-900">{approvedMembers.length}</span>
+          </div>
+          <p className="text-sm text-slate-600 mt-1">Total Reserved Customers</p>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <Clock className="text-amber-600" size={20} />
+            <span className="text-2xl font-bold text-slate-900">{pendingMembers.length}</span>
+          </div>
+          <p className="text-sm text-slate-600 mt-1">My Pending Requests</p>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <CheckCircle className="text-emerald-600" size={20} />
+            <span className="text-2xl font-bold text-slate-900">
+              {approvedMembers.filter(m => m.created_by_name === m.staff_name).length}
+            </span>
+          </div>
+          <p className="text-sm text-slate-600 mt-1">Self-Requested Approved</p>
+        </div>
+      </div>
+
+      {/* Request New Reservation Form */}
+      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm mb-6">
+        <h3 className="text-lg font-medium text-slate-900 mb-4 flex items-center gap-2">
+          <UserPlus size={20} className="text-indigo-600" />
+          Request New Reservation
+        </h3>
+        <p className="text-slate-600 text-sm mb-4">
+          Enter the customer name you want to reserve. Your request will be sent to admin for approval.
+        </p>
+        <form onSubmit={handleRequestReservation} className="flex flex-col md:flex-row gap-4">
+          <input
+            type="text"
+            placeholder="Customer Name"
+            value={customerName}
+            onChange={(e) => setCustomerName(e.target.value)}
+            className="flex-1 px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            data-testid="input-customer-name"
+          />
+          <button
+            type="submit"
+            disabled={submitting}
+            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors flex items-center gap-2"
+            data-testid="btn-request-reservation"
+          >
+            <UserPlus size={18} />
+            {submitting ? 'Submitting...' : 'Request Reservation'}
+          </button>
+        </form>
+      </div>
+
+      {/* Filter and Search */}
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <input
+            type="text"
+            placeholder="Search by customer or staff name..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            data-testid="search-reservations"
+          />
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setFilter('all')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              filter === 'all' 
+                ? 'bg-indigo-600 text-white' 
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+            data-testid="filter-all"
+          >
+            All Reserved
+          </button>
+          <button
+            onClick={() => setFilter('my-requests')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              filter === 'my-requests' 
+                ? 'bg-indigo-600 text-white' 
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+            data-testid="filter-my-requests"
+          >
+            My Pending Requests
+          </button>
+        </div>
+      </div>
+
+      {/* Reservations Table */}
+      <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+        <table className="w-full" data-testid="reservations-table">
+          <thead className="bg-slate-50 border-b border-slate-200">
+            <tr>
+              <th className="text-left px-6 py-4 text-sm font-medium text-slate-600">Customer Name</th>
+              <th className="text-left px-6 py-4 text-sm font-medium text-slate-600">Reserved By</th>
+              <th className="text-left px-6 py-4 text-sm font-medium text-slate-600">Status</th>
+              <th className="text-left px-6 py-4 text-sm font-medium text-slate-600">Date</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {displayMembers.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="px-6 py-12 text-center text-slate-500">
+                  {filter === 'my-requests' ? 'No pending requests' : 'No reservations found'}
+                </td>
+              </tr>
+            ) : (
+              displayMembers.map(member => (
+                <tr key={member.id} className="hover:bg-slate-50" data-testid={`reservation-row-${member.id}`}>
+                  <td className="px-6 py-4 font-medium text-slate-900">{member.customer_name}</td>
+                  <td className="px-6 py-4 text-slate-600">{member.staff_name}</td>
+                  <td className="px-6 py-4">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      member.status === 'approved' 
+                        ? 'bg-emerald-100 text-emerald-800' 
+                        : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      {member.status === 'approved' ? 'Reserved' : 'Pending Approval'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-slate-500 text-sm">
+                    {new Date(member.created_at).toLocaleDateString()}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Info Box */}
+      <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
+        <p className="text-blue-800 text-sm">
+          <strong>Note:</strong> All approved reserved customers are visible to all staff members. 
+          If you try to request a customer that's already reserved by another staff, 
+          the system will notify you.
+        </p>
+      </div>
+    </div>
+  );
+}

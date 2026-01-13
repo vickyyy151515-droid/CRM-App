@@ -604,6 +604,20 @@ async def update_whatsapp_status(record_id: str, status_update: WhatsAppStatusUp
 
 @api_router.post("/reserved-members", response_model=ReservedMember)
 async def create_reserved_member(member_data: ReservedMemberCreate, user: User = Depends(get_current_user)):
+    # Check for duplicate customer name (case-insensitive)
+    existing = await db.reserved_members.find_one({
+        'customer_name': {'$regex': f'^{member_data.customer_name}$', '$options': 'i'},
+        'status': {'$in': ['pending', 'approved']}
+    })
+    
+    if existing:
+        owner = await db.users.find_one({'id': existing['staff_id']})
+        owner_name = owner['name'] if owner else 'Unknown'
+        raise HTTPException(
+            status_code=409, 
+            detail=f"Customer '{member_data.customer_name}' is already reserved by {owner_name}"
+        )
+    
     if user.role == 'admin':
         if not member_data.staff_id:
             raise HTTPException(status_code=400, detail="Staff ID is required for admin")
@@ -692,17 +706,39 @@ async def reject_reserved_member(member_id: str, user: User = Depends(get_admin_
     return {'message': 'Reserved member request rejected'}
 
 @api_router.delete("/reserved-members/{member_id}")
-async def delete_reserved_member(member_id: str, user: User = Depends(get_current_user)):
+async def delete_reserved_member(member_id: str, user: User = Depends(get_admin_user)):
     member = await db.reserved_members.find_one({'id': member_id})
     if not member:
         raise HTTPException(status_code=404, detail="Reserved member not found")
     
-    if user.role != 'admin' and member['created_by'] != user.id:
-        raise HTTPException(status_code=403, detail="Not authorized to delete this reservation")
-    
     await db.reserved_members.delete_one({'id': member_id})
     
     return {'message': 'Reserved member deleted'}
+
+@api_router.patch("/reserved-members/{member_id}/move")
+async def move_reserved_member(member_id: str, new_staff_id: str, user: User = Depends(get_admin_user)):
+    member = await db.reserved_members.find_one({'id': member_id})
+    if not member:
+        raise HTTPException(status_code=404, detail="Reserved member not found")
+    
+    staff = await db.users.find_one({'id': new_staff_id})
+    if not staff:
+        raise HTTPException(status_code=404, detail="Staff not found")
+    
+    await db.reserved_members.update_one(
+        {'id': member_id},
+        {'$set': {
+            'staff_id': new_staff_id,
+            'staff_name': staff['name']
+        }}
+    )
+    
+    return {'message': f"Reserved member moved to {staff['name']}"}
+
+@api_router.get("/staff-users")
+async def get_staff_users(user: User = Depends(get_current_user)):
+    staff = await db.users.find({'role': 'staff'}, {'_id': 0, 'password_hash': 0}).to_list(1000)
+    return staff
 
 @api_router.get("/download-history", response_model=List[DownloadHistory])
 async def get_download_history(user: User = Depends(get_current_user)):
