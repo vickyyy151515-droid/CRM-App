@@ -100,6 +100,8 @@ class ReservedMember(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     customer_name: str
+    product_id: str
+    product_name: str
     staff_id: str
     staff_name: str
     status: str = "approved"
@@ -112,6 +114,7 @@ class ReservedMember(BaseModel):
 
 class ReservedMemberCreate(BaseModel):
     customer_name: str
+    product_id: str
     staff_id: Optional[str] = None
 
 class DatabaseCreate(BaseModel):
@@ -604,9 +607,15 @@ async def update_whatsapp_status(record_id: str, status_update: WhatsAppStatusUp
 
 @api_router.post("/reserved-members", response_model=ReservedMember)
 async def create_reserved_member(member_data: ReservedMemberCreate, user: User = Depends(get_current_user)):
-    # Check for duplicate customer name (case-insensitive)
+    # Validate product
+    product = await db.products.find_one({'id': member_data.product_id})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Check for duplicate customer name within same product (case-insensitive)
     existing = await db.reserved_members.find_one({
         'customer_name': {'$regex': f'^{member_data.customer_name}$', '$options': 'i'},
+        'product_id': member_data.product_id,
         'status': {'$in': ['pending', 'approved']}
     })
     
@@ -615,7 +624,7 @@ async def create_reserved_member(member_data: ReservedMemberCreate, user: User =
         owner_name = owner['name'] if owner else 'Unknown'
         raise HTTPException(
             status_code=409, 
-            detail=f"Customer '{member_data.customer_name}' is already reserved by {owner_name}"
+            detail=f"Customer '{member_data.customer_name}' is already reserved by {owner_name} in {product['name']}"
         )
     
     if user.role == 'admin':
@@ -628,6 +637,8 @@ async def create_reserved_member(member_data: ReservedMemberCreate, user: User =
         
         member = ReservedMember(
             customer_name=member_data.customer_name,
+            product_id=member_data.product_id,
+            product_name=product['name'],
             staff_id=member_data.staff_id,
             staff_name=staff['name'],
             status='approved',
@@ -640,6 +651,8 @@ async def create_reserved_member(member_data: ReservedMemberCreate, user: User =
     else:
         member = ReservedMember(
             customer_name=member_data.customer_name,
+            product_id=member_data.product_id,
+            product_name=product['name'],
             staff_id=user.id,
             staff_name=user.name,
             status='pending',
@@ -656,10 +669,12 @@ async def create_reserved_member(member_data: ReservedMemberCreate, user: User =
     return member
 
 @api_router.get("/reserved-members", response_model=List[ReservedMember])
-async def get_reserved_members(status: Optional[str] = None, user: User = Depends(get_current_user)):
+async def get_reserved_members(status: Optional[str] = None, product_id: Optional[str] = None, user: User = Depends(get_current_user)):
     query = {}
     if status:
         query['status'] = status
+    if product_id:
+        query['product_id'] = product_id
     
     members = await db.reserved_members.find(query, {'_id': 0}).sort('created_at', -1).to_list(10000)
     
@@ -668,6 +683,10 @@ async def get_reserved_members(status: Optional[str] = None, user: User = Depend
             member['created_at'] = datetime.fromisoformat(member['created_at'])
         if member.get('approved_at') and isinstance(member['approved_at'], str):
             member['approved_at'] = datetime.fromisoformat(member['approved_at'])
+        # Handle legacy data without product fields
+        if 'product_id' not in member:
+            member['product_id'] = ''
+            member['product_name'] = 'Unknown'
     
     return members
 
