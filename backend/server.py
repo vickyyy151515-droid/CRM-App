@@ -1750,11 +1750,17 @@ async def get_omset_record_types(
 async def upload_bonanza_database(
     file: UploadFile = File(...),
     name: str = Form(...),
+    product_id: str = Form(...),
     user: User = Depends(get_admin_user)
 ):
     """Upload a new Bonanza database (Admin only)"""
     if not file.filename.endswith(('.csv', '.xlsx', '.xls')):
         raise HTTPException(status_code=400, detail="Only CSV and Excel files are supported")
+    
+    # Validate product
+    product = await db.products.find_one({'id': product_id})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
     
     contents = await file.read()
     
@@ -1774,6 +1780,8 @@ async def upload_bonanza_database(
         'filename': file.filename,
         'file_type': 'csv' if file.filename.endswith('.csv') else 'excel',
         'total_records': len(df),
+        'product_id': product_id,
+        'product_name': product['name'],
         'uploaded_by': user.id,
         'uploaded_by_name': user.name,
         'uploaded_at': datetime.now(timezone.utc).isoformat()
@@ -1788,6 +1796,8 @@ async def upload_bonanza_database(
             'id': str(uuid.uuid4()),
             'database_id': database_id,
             'database_name': name,
+            'product_id': product_id,
+            'product_name': product['name'],
             'row_number': idx + 1,
             'row_data': row.to_dict(),
             'status': 'available',
@@ -1806,14 +1816,20 @@ async def upload_bonanza_database(
     return {
         'id': database_id,
         'name': name,
+        'product_id': product_id,
+        'product_name': product['name'],
         'total_records': len(df),
         'columns': list(df.columns)
     }
 
 @api_router.get("/bonanza/databases")
-async def get_bonanza_databases(user: User = Depends(get_admin_user)):
+async def get_bonanza_databases(product_id: Optional[str] = None, user: User = Depends(get_admin_user)):
     """Get all Bonanza databases (Admin only)"""
-    databases = await db.bonanza_databases.find({}, {'_id': 0}).sort('uploaded_at', -1).to_list(1000)
+    query = {}
+    if product_id:
+        query['product_id'] = product_id
+    
+    databases = await db.bonanza_databases.find(query, {'_id': 0}).sort('uploaded_at', -1).to_list(1000)
     
     for database in databases:
         # Get counts
@@ -1822,6 +1838,10 @@ async def get_bonanza_databases(user: User = Depends(get_admin_user)):
         database['total_records'] = total
         database['assigned_count'] = assigned
         database['available_count'] = total - assigned
+        # Handle legacy data without product fields
+        if 'product_id' not in database:
+            database['product_id'] = ''
+            database['product_name'] = 'Unknown'
     
     return databases
 
@@ -1942,15 +1962,22 @@ async def delete_bonanza_database(database_id: str, user: User = Depends(get_adm
     return {'message': 'Database deleted successfully'}
 
 @api_router.get("/bonanza/staff/records")
-async def get_staff_bonanza_records(user: User = Depends(get_current_user)):
+async def get_staff_bonanza_records(product_id: Optional[str] = None, user: User = Depends(get_current_user)):
     """Get Bonanza records assigned to the current staff"""
     if user.role != 'staff':
         raise HTTPException(status_code=403, detail="Only staff can access this endpoint")
     
-    records = await db.bonanza_records.find(
-        {'assigned_to': user.id, 'status': 'assigned'},
-        {'_id': 0}
-    ).sort('assigned_at', -1).to_list(10000)
+    query = {'assigned_to': user.id, 'status': 'assigned'}
+    if product_id:
+        query['product_id'] = product_id
+    
+    records = await db.bonanza_records.find(query, {'_id': 0}).sort('assigned_at', -1).to_list(10000)
+    
+    # Handle legacy data without product fields
+    for record in records:
+        if 'product_id' not in record:
+            record['product_id'] = ''
+            record['product_name'] = 'Unknown'
     
     return records
 
