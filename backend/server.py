@@ -265,6 +265,18 @@ def hash_password(password: str) -> str:
 def verify_password(password: str, hashed: str) -> bool:
     return bcrypt.checkpw(password.encode(), hashed.encode())
 
+@api_router.get("/server-time")
+async def get_server_time():
+    """Get current server time in Jakarta timezone"""
+    jakarta_now = get_jakarta_now()
+    return {
+        'timezone': 'Asia/Jakarta (UTC+7)',
+        'datetime': jakarta_now.isoformat(),
+        'date': jakarta_now.strftime('%Y-%m-%d'),
+        'time': jakarta_now.strftime('%H:%M:%S'),
+        'formatted': jakarta_now.strftime('%A, %d %B %Y %H:%M:%S WIB')
+    }
+
 def create_token(user_id: str, email: str, role: str) -> str:
     payload = {
         'user_id': user_id,
