@@ -11,7 +11,8 @@ import ProductManagement from '../components/ProductManagement';
 import AllAssignments from '../components/AllAssignments';
 import StaffProgress from '../components/StaffProgress';
 import AdminReservedMembers from '../components/AdminReservedMembers';
-import { LayoutDashboard, Upload, FileSpreadsheet, Clock, Users, Package, List, BarChart, UserCheck } from 'lucide-react';
+import AdminOmsetCRM from '../components/AdminOmsetCRM';
+import { LayoutDashboard, Upload, FileSpreadsheet, Clock, Users, Package, List, BarChart, UserCheck, DollarSign } from 'lucide-react';
 
 export default function AdminDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('overview');
@@ -114,6 +115,8 @@ export default function AdminDashboard({ user, onLogout }) {
         return <StaffProgress />;
       case 'reserved':
         return <AdminReservedMembers onUpdate={loadStats} />;
+      case 'omset':
+        return <AdminOmsetCRM />;
       default:
         return null;
     }
@@ -122,6 +125,7 @@ export default function AdminDashboard({ user, onLogout }) {
   const menuItems = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard, badge: 0 },
     { id: 'progress', label: 'Staff Progress & Quality', icon: BarChart, badge: 0 },
+    { id: 'omset', label: 'OMSET CRM', icon: DollarSign, badge: 0 },
     { id: 'reserved', label: 'Reserved Member CRM', icon: UserCheck, badge: stats.pendingReservations },
     { id: 'upload', label: 'Upload Database', icon: Upload, badge: 0 },
     { id: 'databases', label: 'Manage Databases', icon: FileSpreadsheet, badge: 0 },
