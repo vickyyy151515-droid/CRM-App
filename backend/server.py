@@ -50,7 +50,7 @@ class User(BaseModel):
     email: EmailStr
     name: str
     role: str
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: get_jakarta_now())
 
 class UserCreate(BaseModel):
     email: EmailStr
@@ -66,7 +66,7 @@ class Product(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: get_jakarta_now())
 
 class ProductCreate(BaseModel):
     name: str
@@ -82,7 +82,7 @@ class Database(BaseModel):
     product_name: Optional[str] = None
     uploaded_by: str
     uploaded_by_name: str
-    uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    uploaded_at: datetime = Field(default_factory=lambda: get_jakarta_now())
     file_path: str
     preview_data: Optional[dict] = None
     total_records: int = 0
@@ -105,7 +105,7 @@ class CustomerRecord(BaseModel):
     assigned_to_name: Optional[str] = None
     assigned_at: Optional[datetime] = None
     request_id: Optional[str] = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: get_jakarta_now())
 
 class WhatsAppStatusUpdate(BaseModel):
     whatsapp_status: str
@@ -124,7 +124,7 @@ class ReservedMember(BaseModel):
     status: str = "approved"
     created_by: str
     created_by_name: str
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: get_jakarta_now())
     approved_at: Optional[datetime] = None
     approved_by: Optional[str] = None
     approved_by_name: Optional[str] = None
@@ -149,7 +149,7 @@ class OmsetRecord(BaseModel):
     depo_kelipatan: float = 1.0
     depo_total: float
     keterangan: Optional[str] = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: get_jakarta_now())
     updated_at: Optional[datetime] = None
 
 class OmsetRecordCreate(BaseModel):
@@ -178,7 +178,7 @@ class BonanzaDatabase(BaseModel):
     total_records: int = 0
     uploaded_by: str
     uploaded_by_name: str
-    uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    uploaded_at: datetime = Field(default_factory=lambda: get_jakarta_now())
 
 class BonanzaRecord(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -193,7 +193,7 @@ class BonanzaRecord(BaseModel):
     assigned_at: Optional[datetime] = None
     assigned_by: Optional[str] = None
     assigned_by_name: Optional[str] = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: get_jakarta_now())
 
 class BonanzaAssignment(BaseModel):
     record_ids: List[str]
@@ -213,7 +213,7 @@ class DownloadRequest(BaseModel):
     requested_by: str
     requested_by_name: str
     status: str = "pending"
-    requested_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    requested_at: datetime = Field(default_factory=lambda: get_jakarta_now())
     reviewed_at: Optional[datetime] = None
     reviewed_by: Optional[str] = None
     reviewed_by_name: Optional[str] = None
@@ -229,7 +229,7 @@ class DownloadHistory(BaseModel):
     database_name: str
     downloaded_by: str
     downloaded_by_name: str
-    downloaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    downloaded_at: datetime = Field(default_factory=lambda: get_jakarta_now())
 
 # Notification Model
 class Notification(BaseModel):
@@ -241,7 +241,7 @@ class Notification(BaseModel):
     message: str
     data: Optional[dict] = None  # Additional data like request_id, record_count, etc.
     read: bool = False
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: get_jakarta_now())
 
 # Bulk Operation Models
 class BulkRequestAction(BaseModel):
@@ -270,7 +270,7 @@ def create_token(user_id: str, email: str, role: str) -> str:
         'user_id': user_id,
         'email': email,
         'role': role,
-        'exp': datetime.now(timezone.utc) + timedelta(days=7)
+        'exp': get_jakarta_now() + timedelta(days=7)
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
@@ -713,7 +713,7 @@ async def approve_request(request_id: str, user: User = Depends(get_admin_user))
         {'id': request_id},
         {'$set': {
             'status': 'approved',
-            'reviewed_at': datetime.now(timezone.utc).isoformat(),
+            'reviewed_at': get_jakarta_now().isoformat(),
             'reviewed_by': user.id,
             'reviewed_by_name': user.name
         }}
@@ -726,7 +726,7 @@ async def approve_request(request_id: str, user: User = Depends(get_admin_user))
                 'status': 'assigned',
                 'assigned_to': request['requested_by'],
                 'assigned_to_name': request['requested_by_name'],
-                'assigned_at': datetime.now(timezone.utc).isoformat(),
+                'assigned_at': get_jakarta_now().isoformat(),
                 'request_id': request_id
             }}
         )
@@ -755,7 +755,7 @@ async def reject_request(request_id: str, user: User = Depends(get_admin_user)):
         {'id': request_id},
         {'$set': {
             'status': 'rejected',
-            'reviewed_at': datetime.now(timezone.utc).isoformat(),
+            'reviewed_at': get_jakarta_now().isoformat(),
             'reviewed_by': user.id,
             'reviewed_by_name': user.name
         }}
@@ -1002,7 +1002,7 @@ async def update_whatsapp_status(record_id: str, status_update: WhatsAppStatusUp
         {'id': record_id},
         {'$set': {
             'whatsapp_status': status_update.whatsapp_status,
-            'whatsapp_status_updated_at': datetime.now(timezone.utc).isoformat()
+            'whatsapp_status_updated_at': get_jakarta_now().isoformat()
         }}
     )
     
@@ -1024,7 +1024,7 @@ async def update_respond_status(record_id: str, status_update: RespondStatusUpda
         {'id': record_id},
         {'$set': {
             'respond_status': status_update.respond_status,
-            'respond_status_updated_at': datetime.now(timezone.utc).isoformat()
+            'respond_status_updated_at': get_jakarta_now().isoformat()
         }}
     )
     
@@ -1069,7 +1069,7 @@ async def create_reserved_member(member_data: ReservedMemberCreate, user: User =
             status='approved',
             created_by=user.id,
             created_by_name=user.name,
-            approved_at=datetime.now(timezone.utc),
+            approved_at=get_jakarta_now(),
             approved_by=user.id,
             approved_by_name=user.name
         )
@@ -1139,7 +1139,7 @@ async def approve_reserved_member(member_id: str, user: User = Depends(get_admin
         {'id': member_id},
         {'$set': {
             'status': 'approved',
-            'approved_at': datetime.now(timezone.utc).isoformat(),
+            'approved_at': get_jakarta_now().isoformat(),
             'approved_by': user.id,
             'approved_by_name': user.name
         }}
@@ -1324,7 +1324,7 @@ async def update_omset_record(record_id: str, update_data: OmsetRecordUpdate, us
     nominal = update_data.nominal if update_data.nominal is not None else record['nominal']
     kelipatan = update_data.depo_kelipatan if update_data.depo_kelipatan is not None else record['depo_kelipatan']
     update_fields['depo_total'] = nominal * kelipatan
-    update_fields['updated_at'] = datetime.now(timezone.utc).isoformat()
+    update_fields['updated_at'] = get_jakarta_now().isoformat()
     
     await db.omset_records.update_one({'id': record_id}, {'$set': update_fields})
     
@@ -1870,7 +1870,7 @@ async def upload_bonanza_database(
         'product_name': product['name'],
         'uploaded_by': user.id,
         'uploaded_by_name': user.name,
-        'uploaded_at': datetime.now(timezone.utc).isoformat()
+        'uploaded_at': get_jakarta_now().isoformat()
     }
     
     await db.bonanza_databases.insert_one(database_doc)
@@ -1892,7 +1892,7 @@ async def upload_bonanza_database(
             'assigned_at': None,
             'assigned_by': None,
             'assigned_by_name': None,
-            'created_at': datetime.now(timezone.utc).isoformat()
+            'created_at': get_jakarta_now().isoformat()
         }
         records.append(record)
     
@@ -1960,7 +1960,7 @@ async def assign_bonanza_records(assignment: BonanzaAssignment, user: User = Dep
             'status': 'assigned',
             'assigned_to': staff['id'],
             'assigned_to_name': staff['name'],
-            'assigned_at': datetime.now(timezone.utc).isoformat(),
+            'assigned_at': get_jakarta_now().isoformat(),
             'assigned_by': user.id,
             'assigned_by_name': user.name
         }}
@@ -2025,7 +2025,7 @@ async def assign_random_bonanza_records(assignment: RandomBonanzaAssignment, use
             'status': 'assigned',
             'assigned_to': staff['id'],
             'assigned_to_name': staff['name'],
-            'assigned_at': datetime.now(timezone.utc).isoformat(),
+            'assigned_at': get_jakarta_now().isoformat(),
             'assigned_by': user.id,
             'assigned_by_name': user.name
         }}
@@ -2112,7 +2112,7 @@ async def upload_memberwd_database(
         'product_name': product['name'],
         'uploaded_by': user.id,
         'uploaded_by_name': user.name,
-        'uploaded_at': datetime.now(timezone.utc).isoformat()
+        'uploaded_at': get_jakarta_now().isoformat()
     }
     
     await db.memberwd_databases.insert_one(database_doc)
@@ -2133,7 +2133,7 @@ async def upload_memberwd_database(
             'assigned_at': None,
             'assigned_by': None,
             'assigned_by_name': None,
-            'created_at': datetime.now(timezone.utc).isoformat()
+            'created_at': get_jakarta_now().isoformat()
         }
         records.append(record)
     
@@ -2198,7 +2198,7 @@ async def assign_memberwd_records(assignment: BonanzaAssignment, user: User = De
             'status': 'assigned',
             'assigned_to': staff['id'],
             'assigned_to_name': staff['name'],
-            'assigned_at': datetime.now(timezone.utc).isoformat(),
+            'assigned_at': get_jakarta_now().isoformat(),
             'assigned_by': user.id,
             'assigned_by_name': user.name
         }}
@@ -2251,7 +2251,7 @@ async def assign_random_memberwd_records(assignment: RandomBonanzaAssignment, us
             'status': 'assigned',
             'assigned_to': staff['id'],
             'assigned_to_name': staff['name'],
-            'assigned_at': datetime.now(timezone.utc).isoformat(),
+            'assigned_at': get_jakarta_now().isoformat(),
             'assigned_by': user.id,
             'assigned_by_name': user.name
         }}
@@ -2395,7 +2395,7 @@ async def bulk_request_action(bulk: BulkRequestAction, user: User = Depends(get_
                     'status': 'assigned',
                     'assigned_to': request['requested_by'],
                     'assigned_to_name': request['requested_by_name'],
-                    'assigned_at': datetime.now(timezone.utc).isoformat(),
+                    'assigned_at': get_jakarta_now().isoformat(),
                     'request_id': request_id
                 }}
             )
@@ -2405,7 +2405,7 @@ async def bulk_request_action(bulk: BulkRequestAction, user: User = Depends(get_
                 {'id': request_id},
                 {'$set': {
                     'status': 'approved',
-                    'reviewed_at': datetime.now(timezone.utc).isoformat(),
+                    'reviewed_at': get_jakarta_now().isoformat(),
                     'reviewed_by': user.id,
                     'reviewed_by_name': user.name,
                     'record_ids': selected_ids
@@ -2421,7 +2421,7 @@ async def bulk_request_action(bulk: BulkRequestAction, user: User = Depends(get_
                 'message': f'Your request for {request["record_count"]} records from {request["database_name"]} has been approved',
                 'data': {'request_id': request_id, 'record_count': request['record_count']},
                 'read': False,
-                'created_at': datetime.now(timezone.utc).isoformat()
+                'created_at': get_jakarta_now().isoformat()
             })
         else:
             # Reject
@@ -2429,7 +2429,7 @@ async def bulk_request_action(bulk: BulkRequestAction, user: User = Depends(get_
                 {'id': request_id},
                 {'$set': {
                     'status': 'rejected',
-                    'reviewed_at': datetime.now(timezone.utc).isoformat(),
+                    'reviewed_at': get_jakarta_now().isoformat(),
                     'reviewed_by': user.id,
                     'reviewed_by_name': user.name
                 }}
@@ -2443,7 +2443,7 @@ async def bulk_request_action(bulk: BulkRequestAction, user: User = Depends(get_
                 'message': f'Your request for {request["record_count"]} records from {request["database_name"]} has been rejected',
                 'data': {'request_id': request_id},
                 'read': False,
-                'created_at': datetime.now(timezone.utc).isoformat()
+                'created_at': get_jakarta_now().isoformat()
             })
         
         processed += 1
@@ -2474,7 +2474,7 @@ async def bulk_status_update(bulk: BulkStatusUpdate, user: User = Depends(get_cu
     if not update_fields:
         raise HTTPException(status_code=400, detail="No status fields to update")
     
-    update_fields['updated_at'] = datetime.now(timezone.utc).isoformat()
+    update_fields['updated_at'] = get_jakarta_now().isoformat()
     
     # Build query based on user role
     query = {'id': {'$in': bulk.record_ids}}
@@ -2555,7 +2555,7 @@ async def create_notification(user_id: str, type: str, title: str, message: str,
         'message': message,
         'data': data or {},
         'read': False,
-        'created_at': datetime.now(timezone.utc).isoformat()
+        'created_at': get_jakarta_now().isoformat()
     }
     await db.notifications.insert_one(notification)
     return notification
@@ -2582,7 +2582,7 @@ async def save_widget_layout(layout: WidgetLayoutUpdate, user: User = Depends(ge
             'user_id': user.id,
             'type': 'widget_layout',
             'widget_order': layout.widget_order,
-            'updated_at': datetime.now(timezone.utc).isoformat()
+            'updated_at': get_jakarta_now().isoformat()
         }},
         upsert=True
     )
@@ -2592,7 +2592,7 @@ async def save_widget_layout(layout: WidgetLayoutUpdate, user: User = Depends(ge
 
 def get_date_range(period: str):
     """Get start and end dates for a period"""
-    now = datetime.now(timezone.utc)
+    now = get_jakarta_now()
     if period == 'today':
         start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     elif period == 'yesterday':
