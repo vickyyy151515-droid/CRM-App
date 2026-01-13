@@ -279,6 +279,17 @@ export default function AdminMemberWDCRM() {
             className="flex-1 h-10 px-4 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             data-testid="memberwd-db-name"
           />
+          <select
+            value={uploadProductId}
+            onChange={(e) => setUploadProductId(e.target.value)}
+            className="h-10 px-4 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[180px]"
+            data-testid="memberwd-product-select"
+          >
+            <option value="">Select Product...</option>
+            {products.map(p => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
           <input
             type="file"
             accept=".csv,.xlsx,.xls"
@@ -295,6 +306,25 @@ export default function AdminMemberWDCRM() {
             {uploading ? 'Uploading...' : 'Upload'}
           </button>
         </form>
+      </div>
+
+      {/* Filter by Product */}
+      <div className="mb-6 flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <Package size={18} className="text-slate-500" />
+          <span className="text-sm font-medium text-slate-600">Filter by Product:</span>
+        </div>
+        <select
+          value={filterProduct}
+          onChange={(e) => setFilterProduct(e.target.value)}
+          className="h-10 px-4 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[200px]"
+          data-testid="memberwd-filter-product"
+        >
+          <option value="">All Products</option>
+          {products.map(p => (
+            <option key={p.id} value={p.id}>{p.name}</option>
+          ))}
+        </select>
       </div>
 
       {/* Databases List */}
