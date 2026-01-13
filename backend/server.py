@@ -2835,12 +2835,10 @@ async def export_customer_records(
         output = io.BytesIO()
         df.to_csv(output, index=False, encoding='utf-8')
         output.seek(0)
-        return FileResponse(
-            path=None,
-            media_type='text/csv',
-            filename=f"{filename}.csv",
-            content=output.getvalue()
-        )
+        temp_path = f"/tmp/{filename}.csv"
+        with open(temp_path, 'wb') as f:
+            f.write(output.getvalue())
+        return FileResponse(path=temp_path, media_type='text/csv', filename=f"{filename}.csv")
     else:
         output = io.BytesIO()
         df.to_excel(output, index=False, engine='openpyxl')
