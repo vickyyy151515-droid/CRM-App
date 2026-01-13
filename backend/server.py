@@ -724,6 +724,7 @@ async def get_my_request_batches(user: User = Depends(get_current_user)):
             'database_id': req['database_id'],
             'database_name': database.get('name', 'Unknown') if database else 'Unknown',
             'product_name': database.get('product_name', 'Unknown') if database else 'Unknown',
+            'custom_title': req.get('custom_title'),
             'quantity': req.get('quantity', 0),
             'record_count': record_count,
             'ada_count': ada_count,
@@ -732,6 +733,12 @@ async def get_my_request_batches(user: User = Depends(get_current_user)):
             'requested_at': req.get('requested_at'),
             'approved_at': req.get('reviewed_at')
         })
+    
+    # Get legacy batch titles
+    legacy_titles = {}
+    legacy_title_docs = await db.batch_titles.find({'user_id': user.id}, {'_id': 0}).to_list(100)
+    for doc in legacy_title_docs:
+        legacy_titles[doc['batch_id']] = doc.get('title')
     
     # Check for legacy records (assigned before batch tracking)
     legacy_records_all = await db.customer_records.find(
