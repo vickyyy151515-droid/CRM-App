@@ -3,14 +3,22 @@ import { api } from '../App';
 import { toast } from 'sonner';
 import { Calendar, Package, DollarSign, TrendingUp, Users, Filter, ChevronDown, ChevronUp, UserPlus, RefreshCw, Download } from 'lucide-react';
 
+// Helper function to get local date in YYYY-MM-DD format
+const getLocalDateString = (date = new Date()) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export default function AdminOmsetCRM() {
   const [products, setProducts] = useState([]);
   const [staffList, setStaffList] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState('');
   const [selectedStaff, setSelectedStaff] = useState('');
   const [dateRange, setDateRange] = useState('today');
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
-  const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+  const [startDate, setStartDate] = useState(getLocalDateString());
+  const [endDate, setEndDate] = useState(getLocalDateString());
   const [records, setRecords] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -41,23 +49,35 @@ export default function AdminOmsetCRM() {
   };
 
   const getDateParams = () => {
-    const today = new Date().toISOString().split('T')[0];
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-    const last7 = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
-    const last30 = new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0];
-    const thisMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+    const today = new Date();
+    const todayStr = getLocalDateString(today);
+    
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = getLocalDateString(yesterday);
+    
+    const last7 = new Date(today);
+    last7.setDate(last7.getDate() - 7);
+    const last7Str = getLocalDateString(last7);
+    
+    const last30 = new Date(today);
+    last30.setDate(last30.getDate() - 30);
+    const last30Str = getLocalDateString(last30);
+    
+    const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const thisMonthStr = getLocalDateString(thisMonth);
     
     switch (dateRange) {
       case 'today':
-        return { start_date: today, end_date: today };
+        return { start_date: todayStr, end_date: todayStr };
       case 'yesterday':
-        return { start_date: yesterday, end_date: yesterday };
+        return { start_date: yesterdayStr, end_date: yesterdayStr };
       case 'last7':
-        return { start_date: last7, end_date: today };
+        return { start_date: last7Str, end_date: todayStr };
       case 'last30':
-        return { start_date: last30, end_date: today };
+        return { start_date: last30Str, end_date: todayStr };
       case 'thisMonth':
-        return { start_date: thisMonth, end_date: today };
+        return { start_date: thisMonthStr, end_date: todayStr };
       case 'custom':
         return { start_date: startDate, end_date: endDate };
       default:
