@@ -100,9 +100,19 @@ export default function AdminOmsetCRM() {
       token: token
     });
     
-    // Open in new window to bypass sandbox download restrictions
-    window.open(`${process.env.REACT_APP_BACKEND_URL}/api/omset/export?${params}`, '_blank');
-    toast.success('Export started - check your new tab');
+    // Use hidden iframe to trigger download (bypasses sandbox restrictions)
+    const url = `${process.env.REACT_APP_BACKEND_URL}/api/omset/export?${params}`;
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = url;
+    document.body.appendChild(iframe);
+    
+    // Clean up iframe after download starts
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+    }, 5000);
+    
+    toast.success('Download starting...');
   };
 
   const handleExportSummary = () => {
@@ -114,9 +124,19 @@ export default function AdminOmsetCRM() {
       token: token
     });
     
-    // Open in new window to bypass sandbox download restrictions
-    window.open(`${process.env.REACT_APP_BACKEND_URL}/api/omset/export-summary?${params}`, '_blank');
-    toast.success('Export started - check your new tab');
+    // Use hidden iframe to trigger download (bypasses sandbox restrictions)
+    const url = `${process.env.REACT_APP_BACKEND_URL}/api/omset/export-summary?${params}`;
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = url;
+    document.body.appendChild(iframe);
+    
+    // Clean up iframe after download starts
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+    }, 5000);
+    
+    toast.success('Download starting...');
   };
 
   const toggleDateExpand = (date) => {
