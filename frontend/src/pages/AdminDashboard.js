@@ -7,12 +7,13 @@ import DatabaseList from '../components/DatabaseList';
 import DownloadRequests from '../components/DownloadRequests';
 import DownloadHistory from '../components/DownloadHistory';
 import CreateUser from '../components/CreateUser';
+import ManageUsers from '../components/ManageUsers';
 import ProductManagement from '../components/ProductManagement';
 import AllAssignments from '../components/AllAssignments';
 import StaffProgress from '../components/StaffProgress';
 import AdminReservedMembers from '../components/AdminReservedMembers';
 import AdminOmsetCRM from '../components/AdminOmsetCRM';
-import { LayoutDashboard, Upload, FileSpreadsheet, Clock, Users, Package, List, BarChart, UserCheck, DollarSign } from 'lucide-react';
+import { LayoutDashboard, Upload, FileSpreadsheet, Clock, Users, Package, List, BarChart, UserCheck, DollarSign, UserCog } from 'lucide-react';
 
 export default function AdminDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('overview');
