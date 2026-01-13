@@ -220,6 +220,34 @@ class DownloadHistory(BaseModel):
     downloaded_by_name: str
     downloaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+# Notification Model
+class Notification(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str  # Target user
+    type: str  # request_approved, request_rejected, records_assigned, new_reserved_request
+    title: str
+    message: str
+    data: Optional[dict] = None  # Additional data like request_id, record_count, etc.
+    read: bool = False
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+# Bulk Operation Models
+class BulkRequestAction(BaseModel):
+    request_ids: List[str]
+    action: str  # approve or reject
+
+class BulkStatusUpdate(BaseModel):
+    record_ids: List[str]
+    whatsapp_status: Optional[str] = None
+    respond_status: Optional[str] = None
+
+class BulkDeleteRecords(BaseModel):
+    record_ids: List[str]
+
+class DatabaseProductUpdate(BaseModel):
+    product_id: str
+
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
