@@ -777,15 +777,28 @@ async def get_my_assigned_records_by_batch(request_id: str, user: User = Depends
     if user.role != 'staff':
         raise HTTPException(status_code=403, detail="Only staff can view assigned records")
     
-    # Verify this request belongs to the user
-    request = await db.download_requests.find_one({'id': request_id, 'requested_by': user.id})
-    if not request:
-        raise HTTPException(status_code=404, detail="Request batch not found")
-    
-    records = await db.customer_records.find(
-        {'request_id': request_id, 'assigned_to': user.id},
-        {'_id': 0}
-    ).sort('assigned_at', -1).to_list(10000)
+    # Handle legacy batches
+    if request_id.startswith('legacy_'):
+        database_id = request_id.replace('legacy_', '')
+        records = await db.customer_records.find(
+            {
+                'assigned_to': user.id,
+                'database_id': database_id,
+                'status': 'assigned',
+                '$or': [{'request_id': {'$exists': False}}, {'request_id': None}]
+            },
+            {'_id': 0}
+        ).sort('assigned_at', -1).to_list(10000)
+    else:
+        # Verify this request belongs to the user
+        request = await db.download_requests.find_one({'id': request_id, 'requested_by': user.id})
+        if not request:
+            raise HTTPException(status_code=404, detail="Request batch not found")
+        
+        records = await db.customer_records.find(
+            {'request_id': request_id, 'assigned_to': user.id},
+            {'_id': 0}
+        ).sort('assigned_at', -1).to_list(10000)
     
     for record in records:
         if isinstance(record.get('created_at'), str):
