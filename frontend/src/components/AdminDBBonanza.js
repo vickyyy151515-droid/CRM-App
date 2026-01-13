@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Upload, Database, Users, Trash2, ChevronDown, ChevronUp, Check, X, Search, Shuffle } from 'lucide-react';
+import { Upload, Database, Users, Trash2, ChevronDown, ChevronUp, Check, X, Search, Shuffle, Package } from 'lucide-react';
 
 export default function AdminDBBonanza() {
   const [databases, setDatabases] = useState([]);
+  const [products, setProducts] = useState([]);
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [uploadName, setUploadName] = useState('');
+  const [uploadProductId, setUploadProductId] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [expandedDb, setExpandedDb] = useState(null);
   const [records, setRecords] = useState([]);
@@ -17,15 +19,20 @@ export default function AdminDBBonanza() {
   const [selectedStaff, setSelectedStaff] = useState('');
   const [assigning, setAssigning] = useState(false);
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterProduct, setFilterProduct] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [randomQuantity, setRandomQuantity] = useState('');
   const [reservedNames, setReservedNames] = useState([]);
 
   useEffect(() => {
-    loadDatabases();
+    loadProducts();
     loadStaff();
     loadReservedNames();
   }, []);
+
+  useEffect(() => {
+    loadDatabases();
+  }, [filterProduct]);
 
   const loadReservedNames = async () => {
     try {
