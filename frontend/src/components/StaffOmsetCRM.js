@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Plus, Edit2, Trash2, Calendar, Package, DollarSign, TrendingUp, Save, X, UserPlus, RefreshCw } from 'lucide-react';
+import { Plus, Edit2, Trash2, Calendar, Package, TrendingUp, Save, X, UserPlus, RefreshCw } from 'lucide-react';
 
 export default function StaffOmsetCRM() {
   const [products, setProducts] = useState([]);
@@ -243,20 +243,13 @@ export default function StaffOmsetCRM() {
       )}
 
       {/* Daily Summary with NDP/RDP */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <Calendar className="text-indigo-600" size={18} />
             <span className="text-xl font-bold text-slate-900">{records.length}</span>
           </div>
           <p className="text-xs text-slate-600">Total Records</p>
-        </div>
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <DollarSign className="text-emerald-600" size={18} />
-            <span className="text-lg font-bold text-emerald-700">{formatCurrency(dailyNominal)}</span>
-          </div>
-          <p className="text-xs text-slate-600">Total Nominal</p>
         </div>
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between mb-2">

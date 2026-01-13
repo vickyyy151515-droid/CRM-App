@@ -389,15 +389,13 @@ export default function AdminOmsetCRM() {
                     <th className="px-4 py-2 text-right text-xs font-semibold text-slate-700">Records</th>
                     <th className="px-4 py-2 text-right text-xs font-semibold text-green-700">NDP</th>
                     <th className="px-4 py-2 text-right text-xs font-semibold text-orange-700">RDP</th>
-                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-700">Total Nominal</th>
                     <th className="px-4 py-2 text-right text-xs font-semibold text-slate-700">Total OMSET</th>
-                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-700">Avg/Record</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {summary.by_product.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center text-slate-500">No data</td>
+                      <td colSpan={5} className="px-4 py-8 text-center text-slate-500">No data</td>
                     </tr>
                   ) : (
                     summary.by_product.map(product => (
@@ -418,11 +416,7 @@ export default function AdminOmsetCRM() {
                             {product.rdp_count}
                           </span>
                         </td>
-                        <td className="px-4 py-2 text-sm text-right text-slate-900">Rp {formatCurrency(product.total_nominal)}</td>
                         <td className="px-4 py-2 text-sm text-right font-semibold text-emerald-600">Rp {formatCurrency(product.total_depo)}</td>
-                        <td className="px-4 py-2 text-sm text-right text-blue-600">
-                          Rp {formatCurrency(product.count > 0 ? product.total_depo / product.count : 0)}
-                        </td>
                       </tr>
                     ))
                   )}
