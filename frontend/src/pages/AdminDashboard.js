@@ -108,6 +108,8 @@ export default function AdminDashboard({ user, onLogout }) {
         return <DownloadHistory />;
       case 'users':
         return <CreateUser />;
+      case 'manage-users':
+        return <ManageUsers />;
       case 'products':
         return <ProductManagement />;
       case 'assignments':
@@ -134,6 +136,7 @@ export default function AdminDashboard({ user, onLogout }) {
     { id: 'requests', label: 'Download Requests', icon: Clock, badge: stats.pendingRequests },
     { id: 'history', label: 'Download History', icon: LayoutDashboard, badge: 0 },
     { id: 'products', label: 'Manage Products', icon: Package, badge: 0 },
+    { id: 'manage-users', label: 'Manage Users', icon: UserCog, badge: 0 },
     { id: 'users', label: 'Create User', icon: Users, badge: 0 }
   ];
 
