@@ -93,26 +93,35 @@ export default function AdminOmsetCRM() {
   const handleExportDetails = async () => {
     try {
       const dateParams = getDateParams();
-      const response = await api.get('/omset/export', {
-        params: {
-          ...dateParams,
-          ...(selectedProduct && { product_id: selectedProduct }),
-          ...(selectedStaff && { staff_id: selectedStaff })
-        },
-        responseType: 'blob'
+      const token = localStorage.getItem('token');
+      const params = new URLSearchParams({
+        ...dateParams,
+        ...(selectedProduct && { product_id: selectedProduct }),
+        ...(selectedStaff && { staff_id: selectedStaff })
       });
       
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/omset/export?${params}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) throw new Error('Export failed');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `omset_details_${dateRange}.csv`);
+      link.download = `omset_details_${dateRange}.csv`;
       document.body.appendChild(link);
       link.click();
-      link.remove();
+      document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
       
       toast.success('Export successful');
     } catch (error) {
+      console.error('Export error:', error);
       toast.error('Failed to export');
     }
   };
@@ -120,25 +129,34 @@ export default function AdminOmsetCRM() {
   const handleExportSummary = async () => {
     try {
       const dateParams = getDateParams();
-      const response = await api.get('/omset/export-summary', {
-        params: {
-          ...dateParams,
-          ...(selectedProduct && { product_id: selectedProduct })
-        },
-        responseType: 'blob'
+      const token = localStorage.getItem('token');
+      const params = new URLSearchParams({
+        ...dateParams,
+        ...(selectedProduct && { product_id: selectedProduct })
       });
       
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/omset/export-summary?${params}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) throw new Error('Export failed');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `omset_summary_${dateRange}.csv`);
+      link.download = `omset_summary_${dateRange}.csv`;
       document.body.appendChild(link);
       link.click();
-      link.remove();
+      document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
       
       toast.success('Export successful');
     } catch (error) {
+      console.error('Export error:', error);
       toast.error('Failed to export');
     }
   };
