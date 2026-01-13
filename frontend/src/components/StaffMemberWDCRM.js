@@ -62,7 +62,7 @@ export default function StaffMemberWDCRM() {
 
   return (
     <div data-testid="staff-db-memberwd">
-      <h2 className="text-3xl font-semibold tracking-tight text-slate-900 mb-6">DB MemberWD</h2>
+      <h2 className="text-3xl font-semibold tracking-tight text-slate-900 mb-6">Member WD CRM</h2>
 
       {/* Search */}
       <div className="mb-6">
