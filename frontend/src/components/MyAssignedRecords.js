@@ -47,6 +47,18 @@ export default function MyAssignedRecords() {
     }
   };
 
+  const handleRespondStatusChange = async (recordId, status) => {
+    try {
+      await api.patch(`/customer-records/${recordId}/respond-status`, {
+        respond_status: status
+      });
+      toast.success('Respond status updated');
+      loadRecords();
+    } catch (error) {
+      toast.error('Failed to update status');
+    }
+  };
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -126,6 +138,7 @@ export default function MyAssignedRecords() {
                         ))}
                         <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">Assigned Date</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">WhatsApp Ada/Tidak</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">Respond Ya/Tidak</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -217,6 +230,32 @@ export default function MyAssignedRecords() {
                                   checked={record.whatsapp_status === 'tidak'}
                                   onChange={() => handleWhatsAppStatusChange(record.id, 'tidak')}
                                   data-testid={`whatsapp-tidak-${record.id}`}
+                                  className="w-4 h-4 text-rose-600 focus:ring-rose-500"
+                                />
+                                <span className="text-sm text-slate-700">Tidak</span>
+                              </label>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            <div className="flex items-center gap-3">
+                              <label className="flex items-center gap-1.5 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name={`respond-${record.id}`}
+                                  checked={record.respond_status === 'ya'}
+                                  onChange={() => handleRespondStatusChange(record.id, 'ya')}
+                                  data-testid={`respond-ya-${record.id}`}
+                                  className="w-4 h-4 text-emerald-600 focus:ring-emerald-500"
+                                />
+                                <span className="text-sm text-slate-700">Ya</span>
+                              </label>
+                              <label className="flex items-center gap-1.5 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name={`respond-${record.id}`}
+                                  checked={record.respond_status === 'tidak'}
+                                  onChange={() => handleRespondStatusChange(record.id, 'tidak')}
+                                  data-testid={`respond-tidak-${record.id}`}
                                   className="w-4 h-4 text-rose-600 focus:ring-rose-500"
                                 />
                                 <span className="text-sm text-slate-700">Tidak</span>
