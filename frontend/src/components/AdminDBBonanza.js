@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Upload, Database, Users, Trash2, ChevronDown, ChevronUp, Check, X, Search } from 'lucide-react';
+import { Upload, Database, Users, Trash2, ChevronDown, ChevronUp, Check, X, Search, Shuffle } from 'lucide-react';
 
 export default function AdminDBBonanza() {
   const [databases, setDatabases] = useState([]);
@@ -18,6 +18,7 @@ export default function AdminDBBonanza() {
   const [assigning, setAssigning] = useState(false);
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [randomQuantity, setRandomQuantity] = useState('');
 
   useEffect(() => {
     loadDatabases();
