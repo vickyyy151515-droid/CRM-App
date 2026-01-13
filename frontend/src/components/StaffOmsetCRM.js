@@ -264,42 +264,32 @@ export default function StaffOmsetCRM() {
             </div>
             
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Customer Name *</label>
-                  <input
-                    type="text"
-                    value={formData.customer_name}
-                    onChange={(e) => setFormData({...formData, customer_name: e.target.value})}
-                    className="w-full h-10 px-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="Enter name"
-                    data-testid="input-customer-name"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Customer ID *</label>
-                  <input
-                    type="text"
-                    value={formData.customer_id}
-                    onChange={(e) => setFormData({...formData, customer_id: e.target.value})}
-                    className="w-full h-10 px-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="Enter ID"
-                    data-testid="input-customer-id"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Customer ID *</label>
+                <input
+                  type="text"
+                  value={formData.customer_id}
+                  onChange={(e) => setFormData({...formData, customer_id: e.target.value})}
+                  className="w-full h-10 px-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Enter customer ID"
+                  data-testid="input-customer-id"
+                />
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Nominal (Rp) *</label>
-                  <input
-                    type="number"
-                    value={formData.nominal}
-                    onChange={(e) => setFormData({...formData, nominal: e.target.value})}
-                    className="w-full h-10 px-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="0"
-                    data-testid="input-nominal"
-                  />
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Nominal (dalam ribuan) *</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={formData.nominal}
+                      onChange={(e) => setFormData({...formData, nominal: e.target.value})}
+                      className="w-full h-10 px-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      placeholder="100 = 100.000"
+                      data-testid="input-nominal"
+                    />
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">Contoh: 100 = Rp 100.000</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Kelipatan</label>
@@ -318,7 +308,10 @@ export default function StaffOmsetCRM() {
               {formData.nominal && (
                 <div className="bg-indigo-50 rounded-lg p-3">
                   <p className="text-sm text-indigo-700">
-                    Depo Total: <span className="font-bold">Rp {formatCurrency((parseFloat(formData.nominal) || 0) * (parseFloat(formData.depo_kelipatan) || 1))}</span>
+                    Nominal: <span className="font-bold">Rp {formatCurrency((parseFloat(formData.nominal) || 0) * 1000)}</span>
+                  </p>
+                  <p className="text-sm text-indigo-700">
+                    Depo Total: <span className="font-bold">Rp {formatCurrency((parseFloat(formData.nominal) || 0) * 1000 * (parseFloat(formData.depo_kelipatan) || 1))}</span>
                   </p>
                 </div>
               )}
