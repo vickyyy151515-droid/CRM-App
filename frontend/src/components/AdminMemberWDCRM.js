@@ -388,24 +388,60 @@ export default function AdminMemberWDCRM() {
             <div key={database.id} className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
               {/* Database Header */}
               <div 
-                className="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50"
+                className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer hover:bg-slate-50"
                 onClick={() => loadRecords(database.id)}
                 data-testid={`memberwd-db-${database.id}`}
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0">
                     <Database className="text-indigo-600" size={24} />
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-slate-900">{database.name}</h4>
-                    <p className="text-sm text-slate-500">{database.filename}</p>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 mt-1">
-                      <Package size={12} className="mr-1" />
-                      {database.product_name || 'Unknown'}
-                    </span>
+                  <div className="min-w-0">
+                    <h4 className="font-semibold text-slate-900 truncate">{database.name}</h4>
+                    <p className="text-sm text-slate-500 truncate">{database.filename}</p>
+                    {editingProduct === database.id ? (
+                      <div className="flex items-center gap-2 mt-1" onClick={(e) => e.stopPropagation()}>
+                        <select
+                          value={newProductId}
+                          onChange={(e) => setNewProductId(e.target.value)}
+                          className="h-7 px-2 rounded border border-purple-300 text-xs focus:outline-none focus:ring-1 focus:ring-purple-500"
+                        >
+                          <option value="">Select...</option>
+                          {products.map(p => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                          ))}
+                        </select>
+                        <button
+                          onClick={() => handleSaveProduct(database.id)}
+                          className="p-1 text-emerald-600 hover:bg-emerald-50 rounded"
+                        >
+                          <Check size={14} />
+                        </button>
+                        <button
+                          onClick={() => setEditingProduct(null)}
+                          className="p-1 text-slate-400 hover:bg-slate-100 rounded"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                          <Package size={12} className="mr-1" />
+                          {database.product_name || 'Unknown'}
+                        </span>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleEditProduct(database); }}
+                          className="p-1 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded"
+                          title="Edit product"
+                        >
+                          <Edit2 size={12} />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center gap-6">
+                <div className="flex items-center gap-4 sm:gap-6">
                   <div className="text-right">
                     <p className="text-sm text-slate-600">
                       <span className="font-semibold text-slate-900">{database.total_records}</span> total
