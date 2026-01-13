@@ -3,10 +3,18 @@ import { api } from '../App';
 import { toast } from 'sonner';
 import { Plus, Edit2, Trash2, Calendar, Package, TrendingUp, Save, X, UserPlus, RefreshCw, Download } from 'lucide-react';
 
+// Helper function to get local date in YYYY-MM-DD format
+const getLocalDateString = (date = new Date()) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export default function StaffOmsetCRM() {
   const [products, setProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState('');
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(getLocalDateString());
   const [records, setRecords] = useState([]);
   const [ndpRdpStats, setNdpRdpStats] = useState(null);
   const [existingDates, setExistingDates] = useState([]);
