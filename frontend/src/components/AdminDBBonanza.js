@@ -19,11 +19,23 @@ export default function AdminDBBonanza() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [randomQuantity, setRandomQuantity] = useState('');
+  const [reservedNames, setReservedNames] = useState([]);
 
   useEffect(() => {
     loadDatabases();
     loadStaff();
+    loadReservedNames();
   }, []);
+
+  const loadReservedNames = async () => {
+    try {
+      const response = await api.get('/reserved-members');
+      const names = response.data.map(m => m.customer_name?.toLowerCase().trim()).filter(Boolean);
+      setReservedNames(names);
+    } catch (error) {
+      console.error('Failed to load reserved names');
+    }
+  };
 
   const loadDatabases = async () => {
     try {
