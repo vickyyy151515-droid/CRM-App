@@ -5,7 +5,8 @@ import DatabaseList from '../components/DatabaseList';
 import MyRequests from '../components/MyRequests';
 import MyAssignedRecords from '../components/MyAssignedRecords';
 import StaffReservedMembers from '../components/StaffReservedMembers';
-import { LayoutDashboard, FileSpreadsheet, Clock, User, UserCheck } from 'lucide-react';
+import StaffOmsetCRM from '../components/StaffOmsetCRM';
+import { LayoutDashboard, FileSpreadsheet, Clock, User, UserCheck, DollarSign } from 'lucide-react';
 
 export default function StaffDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('databases');
@@ -74,6 +75,8 @@ export default function StaffDashboard({ user, onLogout }) {
         return <MyAssignedRecords />;
       case 'reserved':
         return <StaffReservedMembers />;
+      case 'omset':
+        return <StaffOmsetCRM />;
       default:
         return null;
     }
@@ -83,7 +86,8 @@ export default function StaffDashboard({ user, onLogout }) {
     { id: 'databases', label: 'Browse Databases', icon: FileSpreadsheet },
     { id: 'requests', label: 'My Requests', icon: Clock },
     { id: 'assigned', label: 'My Assigned Customers', icon: User },
-    { id: 'reserved', label: 'Reserved Member CRM', icon: UserCheck }
+    { id: 'reserved', label: 'Reserved Member CRM', icon: UserCheck },
+    { id: 'omset', label: 'OMSET CRM', icon: DollarSign }
   ];
 
   return (
