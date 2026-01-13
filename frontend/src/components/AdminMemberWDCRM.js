@@ -142,6 +142,51 @@ export default function AdminMemberWDCRM() {
     }
   };
 
+  const handleEditProduct = (database) => {
+    setEditingProduct(database.id);
+    setNewProductId(database.product_id || '');
+  };
+
+  const handleSaveProduct = async (databaseId) => {
+    if (!newProductId) {
+      toast.error('Please select a product');
+      return;
+    }
+
+    try {
+      await api.patch(`/memberwd/databases/${databaseId}/product`, {
+        product_id: newProductId
+      });
+      toast.success('Product updated successfully');
+      setEditingProduct(null);
+      loadDatabases();
+      if (expandedDb === databaseId) {
+        const response = await api.get(`/memberwd/databases/${databaseId}/records`);
+        setRecords(response.data);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to update product');
+    }
+  };
+
+  const handleBulkDeleteRecords = async () => {
+    if (selectedRecords.length === 0) {
+      toast.error('Please select records to delete');
+      return;
+    }
+    if (!window.confirm(`Are you sure you want to delete ${selectedRecords.length} records?`)) return;
+
+    try {
+      await api.delete('/bulk/memberwd-records', { data: { record_ids: selectedRecords } });
+      toast.success(`${selectedRecords.length} records deleted`);
+      setSelectedRecords([]);
+      loadRecords(expandedDb);
+      loadDatabases();
+    } catch (error) {
+      toast.error('Failed to delete records');
+    }
+  };
+
   const toggleSelectRecord = (recordId) => {
     setSelectedRecords(prev => 
       prev.includes(recordId) 
