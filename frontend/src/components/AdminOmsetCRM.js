@@ -188,30 +188,50 @@ export default function AdminOmsetCRM() {
         </div>
       </div>
 
-      {/* Overall Summary */}
+      {/* Overall Summary - OMSET per Product */}
       {summary && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl p-5 text-white shadow-lg">
-            <div className="flex items-center justify-between mb-2">
-              <BarChart3 className="opacity-80" size={24} />
-              <span className="text-3xl font-bold">{summary.total.total_records}</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {summary.by_product.length === 0 ? (
+            <div className="col-span-full bg-white border border-slate-200 rounded-xl p-6 text-center text-slate-500">
+              No OMSET data for selected filters
             </div>
-            <p className="text-indigo-100">Total Records</p>
-          </div>
-          <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-5 text-white shadow-lg">
-            <div className="flex items-center justify-between mb-2">
-              <DollarSign className="opacity-80" size={24} />
-              <span className="text-2xl font-bold">Rp {formatCurrency(summary.total.total_nominal)}</span>
-            </div>
-            <p className="text-emerald-100">Total Nominal</p>
-          </div>
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-5 text-white shadow-lg">
-            <div className="flex items-center justify-between mb-2">
-              <TrendingUp className="opacity-80" size={24} />
-              <span className="text-2xl font-bold">Rp {formatCurrency(summary.total.total_depo)}</span>
-            </div>
-            <p className="text-blue-100">Total OMSET (Depo)</p>
-          </div>
+          ) : (
+            <>
+              {summary.by_product.map((product, idx) => {
+                const colors = [
+                  'from-indigo-500 to-indigo-600',
+                  'from-emerald-500 to-emerald-600',
+                  'from-blue-500 to-blue-600',
+                  'from-purple-500 to-purple-600',
+                  'from-amber-500 to-amber-600',
+                  'from-rose-500 to-rose-600',
+                  'from-cyan-500 to-cyan-600',
+                  'from-teal-500 to-teal-600'
+                ];
+                const colorClass = colors[idx % colors.length];
+                
+                return (
+                  <div key={product.product_id} className={`bg-gradient-to-br ${colorClass} rounded-xl p-5 text-white shadow-lg`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <Package className="opacity-80" size={24} />
+                      <span className="text-xs bg-white/20 px-2 py-1 rounded-full">{product.count} records</span>
+                    </div>
+                    <p className="text-white/80 text-sm font-medium mb-1">{product.product_name}</p>
+                    <p className="text-2xl font-bold">Rp {formatCurrency(product.total_depo)}</p>
+                  </div>
+                );
+              })}
+              {/* Grand Total Card */}
+              <div className="bg-gradient-to-br from-slate-700 to-slate-800 rounded-xl p-5 text-white shadow-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <TrendingUp className="opacity-80" size={24} />
+                  <span className="text-xs bg-white/20 px-2 py-1 rounded-full">{summary.total.total_records} total</span>
+                </div>
+                <p className="text-white/80 text-sm font-medium mb-1">GRAND TOTAL OMSET</p>
+                <p className="text-2xl font-bold">Rp {formatCurrency(summary.total.total_depo)}</p>
+              </div>
+            </>
+          )}
         </div>
       )}
 
