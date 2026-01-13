@@ -166,25 +166,34 @@ export default function StaffOmsetCRM() {
 
   const handleExport = async () => {
     try {
-      const response = await api.get('/omset/export', {
-        params: { 
-          product_id: selectedProduct, 
-          record_date: selectedDate 
-        },
-        responseType: 'blob'
+      const token = localStorage.getItem('token');
+      const params = new URLSearchParams({
+        product_id: selectedProduct,
+        record_date: selectedDate
       });
       
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/omset/export?${params}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) throw new Error('Export failed');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `omset_${selectedDate}.csv`);
+      link.download = `omset_${selectedDate}.csv`;
       document.body.appendChild(link);
       link.click();
-      link.remove();
+      document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
       
       toast.success('Export successful');
     } catch (error) {
+      console.error('Export error:', error);
       toast.error('Failed to export');
     }
   };
