@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
 import { Calendar, Package, DollarSign, TrendingUp, Users, Filter, ChevronDown, ChevronUp, UserPlus, RefreshCw, Download } from 'lucide-react';
 
-// Helper function to get local date in YYYY-MM-DD format
+// Helper function to get local date in YYYY-MM-DD format (fallback only)
 const getLocalDateString = (date = new Date()) => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -17,21 +17,38 @@ export default function AdminOmsetCRM() {
   const [selectedProduct, setSelectedProduct] = useState('');
   const [selectedStaff, setSelectedStaff] = useState('');
   const [dateRange, setDateRange] = useState('today');
-  const [startDate, setStartDate] = useState(getLocalDateString());
-  const [endDate, setEndDate] = useState(getLocalDateString());
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [records, setRecords] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [expandedDates, setExpandedDates] = useState({});
   const [viewMode, setViewMode] = useState('summary');
+  const [serverDate, setServerDate] = useState(null); // Jakarta timezone date from server
+
+  // Fetch server time (Jakarta timezone) on mount
+  useEffect(() => {
+    const fetchServerTime = async () => {
+      try {
+        const response = await api.get('/server-time');
+        setServerDate(response.data.date); // YYYY-MM-DD in Jakarta timezone
+      } catch (error) {
+        console.error('Failed to fetch server time, using local time as fallback');
+        setServerDate(getLocalDateString());
+      }
+    };
+    fetchServerTime();
+  }, []);
 
   useEffect(() => {
     loadInitialData();
   }, []);
 
   useEffect(() => {
-    loadData();
-  }, [selectedProduct, selectedStaff, dateRange, startDate, endDate]);
+    if (serverDate) {
+      loadData();
+    }
+  }, [selectedProduct, selectedStaff, dateRange, startDate, endDate, serverDate]);
 
   const loadInitialData = async () => {
     try {
@@ -48,24 +65,28 @@ export default function AdminOmsetCRM() {
     }
   };
 
-  const getDateParams = () => {
-    const today = new Date();
-    const todayStr = getLocalDateString(today);
+  const getDateParams = useCallback(() => {
+    // Use server date (Jakarta timezone) as the reference point
+    const todayStr = serverDate || getLocalDateString();
+    
+    // Parse server date to calculate other dates
+    const [year, month, day] = todayStr.split('-').map(Number);
+    const today = new Date(year, month - 1, day);
     
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = getLocalDateString(yesterday);
+    const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
     
     const last7 = new Date(today);
     last7.setDate(last7.getDate() - 7);
-    const last7Str = getLocalDateString(last7);
+    const last7Str = `${last7.getFullYear()}-${String(last7.getMonth() + 1).padStart(2, '0')}-${String(last7.getDate()).padStart(2, '0')}`;
     
     const last30 = new Date(today);
     last30.setDate(last30.getDate() - 30);
-    const last30Str = getLocalDateString(last30);
+    const last30Str = `${last30.getFullYear()}-${String(last30.getMonth() + 1).padStart(2, '0')}-${String(last30.getDate()).padStart(2, '0')}`;
     
-    const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    const thisMonthStr = getLocalDateString(thisMonth);
+    const thisMonth = new Date(year, month - 1, 1);
+    const thisMonthStr = `${thisMonth.getFullYear()}-${String(thisMonth.getMonth() + 1).padStart(2, '0')}-01`;
     
     switch (dateRange) {
       case 'today':
@@ -83,7 +104,7 @@ export default function AdminOmsetCRM() {
       default:
         return {};
     }
-  };
+  }, [serverDate, dateRange, startDate, endDate]);
 
   const loadData = async () => {
     try {

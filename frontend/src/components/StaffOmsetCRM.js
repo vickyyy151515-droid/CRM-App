@@ -3,7 +3,7 @@ import { api } from '../App';
 import { toast } from 'sonner';
 import { Plus, Edit2, Trash2, Calendar, Package, TrendingUp, Save, X, UserPlus, RefreshCw, Download } from 'lucide-react';
 
-// Helper function to get local date in YYYY-MM-DD format
+// Helper function to get local date in YYYY-MM-DD format (fallback only)
 const getLocalDateString = (date = new Date()) => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -14,7 +14,7 @@ const getLocalDateString = (date = new Date()) => {
 export default function StaffOmsetCRM() {
   const [products, setProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState('');
-  const [selectedDate, setSelectedDate] = useState(getLocalDateString());
+  const [selectedDate, setSelectedDate] = useState(''); // Will be set from server time
   const [records, setRecords] = useState([]);
   const [ndpRdpStats, setNdpRdpStats] = useState(null);
   const [existingDates, setExistingDates] = useState([]);
@@ -27,10 +27,31 @@ export default function StaffOmsetCRM() {
     depo_kelipatan: '1',
     keterangan: ''
   });
+  const [serverDate, setServerDate] = useState(null); // Jakarta timezone date from server
+
+  // Fetch server time (Jakarta timezone) on mount
+  useEffect(() => {
+    const fetchServerTime = async () => {
+      try {
+        const response = await api.get('/server-time');
+        const jakartaDate = response.data.date; // YYYY-MM-DD in Jakarta timezone
+        setServerDate(jakartaDate);
+        setSelectedDate(jakartaDate);
+      } catch (error) {
+        console.error('Failed to fetch server time, using local time as fallback');
+        const localDate = getLocalDateString();
+        setServerDate(localDate);
+        setSelectedDate(localDate);
+      }
+    };
+    fetchServerTime();
+  }, []);
 
   useEffect(() => {
-    loadProducts();
-  }, []);
+    if (serverDate) {
+      loadProducts();
+    }
+  }, [serverDate]);
 
   useEffect(() => {
     if (selectedProduct) {
