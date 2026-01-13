@@ -17,14 +17,28 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
                 data-testid={`nav-${item.id}`}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
+                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
                   activeTab === item.id
                     ? 'bg-slate-900 text-white'
                     : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                 }`}
               >
-                <Icon size={18} />
-                {item.label}
+                <span className="flex items-center gap-3">
+                  <Icon size={18} />
+                  {item.label}
+                </span>
+                {item.badge > 0 && (
+                  <span 
+                    className={`min-w-[20px] h-5 px-1.5 rounded-full text-xs font-bold flex items-center justify-center ${
+                      activeTab === item.id
+                        ? 'bg-white text-slate-900'
+                        : 'bg-red-500 text-white'
+                    }`}
+                    data-testid={`badge-${item.id}`}
+                  >
+                    {item.badge > 99 ? '99+' : item.badge}
+                  </span>
+                )}
               </button>
             );
           })}
