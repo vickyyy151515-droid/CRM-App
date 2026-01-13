@@ -128,6 +128,10 @@ export default function AdminDashboard({ user, onLogout }) {
         return <AdminDBBonanza />;
       case 'memberwd':
         return <AdminMemberWDCRM />;
+      case 'analytics':
+        return <AdvancedAnalytics />;
+      case 'export':
+        return <ExportCenter />;
       default:
         return null;
     }
