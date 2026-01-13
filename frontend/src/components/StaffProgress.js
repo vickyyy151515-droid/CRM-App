@@ -146,6 +146,7 @@ export default function StaffProgress() {
           name: record.assigned_to_name,
           checkedToday: 0,
           adaToday: 0,
+          ceklis1Today: 0,
           tidakToday: 0,
           respondYaToday: 0,
           respondTidakToday: 0
@@ -154,6 +155,8 @@ export default function StaffProgress() {
       staffDailyStats[record.assigned_to].checkedToday++;
       if (record.whatsapp_status === 'ada') {
         staffDailyStats[record.assigned_to].adaToday++;
+      } else if (record.whatsapp_status === 'ceklis1') {
+        staffDailyStats[record.assigned_to].ceklis1Today++;
       } else if (record.whatsapp_status === 'tidak') {
         staffDailyStats[record.assigned_to].tidakToday++;
       }
