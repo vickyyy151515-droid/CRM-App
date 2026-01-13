@@ -2241,6 +2241,267 @@ async def get_memberwd_staff_list(user: User = Depends(get_admin_user)):
     staff = await db.users.find({'role': 'staff'}, {'_id': 0, 'password_hash': 0}).to_list(1000)
     return staff
 
+# ==================== EDIT PRODUCT ENDPOINTS ====================
+
+@api_router.patch("/bonanza/databases/{database_id}/product")
+async def update_bonanza_database_product(database_id: str, update: DatabaseProductUpdate, user: User = Depends(get_admin_user)):
+    """Update the product of a Bonanza database (Admin only)"""
+    # Validate product
+    product = await db.products.find_one({'id': update.product_id})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Update database
+    result = await db.bonanza_databases.update_one(
+        {'id': database_id},
+        {'$set': {'product_id': update.product_id, 'product_name': product['name']}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Database not found")
+    
+    # Update all records in this database
+    await db.bonanza_records.update_many(
+        {'database_id': database_id},
+        {'$set': {'product_id': update.product_id, 'product_name': product['name']}}
+    )
+    
+    return {'message': f'Database product updated to {product["name"]}'}
+
+@api_router.patch("/memberwd/databases/{database_id}/product")
+async def update_memberwd_database_product(database_id: str, update: DatabaseProductUpdate, user: User = Depends(get_admin_user)):
+    """Update the product of a Member WD database (Admin only)"""
+    # Validate product
+    product = await db.products.find_one({'id': update.product_id})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Update database
+    result = await db.memberwd_databases.update_one(
+        {'id': database_id},
+        {'$set': {'product_id': update.product_id, 'product_name': product['name']}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Database not found")
+    
+    # Update all records in this database
+    await db.memberwd_records.update_many(
+        {'database_id': database_id},
+        {'$set': {'product_id': update.product_id, 'product_name': product['name']}}
+    )
+    
+    return {'message': f'Database product updated to {product["name"]}'}
+
+# ==================== BULK OPERATIONS ENDPOINTS ====================
+
+@api_router.post("/bulk/requests")
+async def bulk_request_action(bulk: BulkRequestAction, user: User = Depends(get_admin_user)):
+    """Bulk approve or reject download requests (Admin only)"""
+    if bulk.action not in ['approve', 'reject']:
+        raise HTTPException(status_code=400, detail="Action must be 'approve' or 'reject'")
+    
+    processed = 0
+    errors = []
+    notifications = []
+    
+    for request_id in bulk.request_ids:
+        request = await db.download_requests.find_one({'id': request_id, 'status': 'pending'})
+        if not request:
+            errors.append(f"Request {request_id} not found or not pending")
+            continue
+        
+        if bulk.action == 'approve':
+            # Get random available records
+            database = await db.databases.find_one({'id': request['database_id']})
+            if not database:
+                errors.append(f"Database not found for request {request_id}")
+                continue
+            
+            available_records = await db.customer_records.find({
+                'database_id': request['database_id'],
+                'status': 'available'
+            }, {'_id': 0}).to_list(request['record_count'])
+            
+            if len(available_records) < request['record_count']:
+                errors.append(f"Not enough records for request {request_id}")
+                continue
+            
+            import random
+            random.shuffle(available_records)
+            selected = available_records[:request['record_count']]
+            selected_ids = [r['id'] for r in selected]
+            
+            # Update records
+            await db.customer_records.update_many(
+                {'id': {'$in': selected_ids}},
+                {'$set': {
+                    'status': 'assigned',
+                    'assigned_to': request['requested_by'],
+                    'assigned_to_name': request['requested_by_name'],
+                    'assigned_at': datetime.now(timezone.utc).isoformat(),
+                    'request_id': request_id
+                }}
+            )
+            
+            # Update request
+            await db.download_requests.update_one(
+                {'id': request_id},
+                {'$set': {
+                    'status': 'approved',
+                    'reviewed_at': datetime.now(timezone.utc).isoformat(),
+                    'reviewed_by': user.id,
+                    'reviewed_by_name': user.name,
+                    'record_ids': selected_ids
+                }}
+            )
+            
+            # Create notification
+            notifications.append({
+                'id': str(uuid.uuid4()),
+                'user_id': request['requested_by'],
+                'type': 'request_approved',
+                'title': 'Request Approved',
+                'message': f'Your request for {request["record_count"]} records from {request["database_name"]} has been approved',
+                'data': {'request_id': request_id, 'record_count': request['record_count']},
+                'read': False,
+                'created_at': datetime.now(timezone.utc).isoformat()
+            })
+        else:
+            # Reject
+            await db.download_requests.update_one(
+                {'id': request_id},
+                {'$set': {
+                    'status': 'rejected',
+                    'reviewed_at': datetime.now(timezone.utc).isoformat(),
+                    'reviewed_by': user.id,
+                    'reviewed_by_name': user.name
+                }}
+            )
+            
+            notifications.append({
+                'id': str(uuid.uuid4()),
+                'user_id': request['requested_by'],
+                'type': 'request_rejected',
+                'title': 'Request Rejected',
+                'message': f'Your request for {request["record_count"]} records from {request["database_name"]} has been rejected',
+                'data': {'request_id': request_id},
+                'read': False,
+                'created_at': datetime.now(timezone.utc).isoformat()
+            })
+        
+        processed += 1
+    
+    # Insert notifications
+    if notifications:
+        await db.notifications.insert_many(notifications)
+    
+    return {
+        'message': f'{processed} requests {bulk.action}d successfully',
+        'processed': processed,
+        'errors': errors
+    }
+
+@api_router.post("/bulk/status-update")
+async def bulk_status_update(bulk: BulkStatusUpdate, user: User = Depends(get_current_user)):
+    """Bulk update WhatsApp/Respond status for multiple records"""
+    update_fields = {}
+    if bulk.whatsapp_status:
+        if bulk.whatsapp_status not in ['ada', 'tidak', 'ceklis1']:
+            raise HTTPException(status_code=400, detail="Invalid whatsapp_status")
+        update_fields['whatsapp_status'] = bulk.whatsapp_status
+    if bulk.respond_status:
+        if bulk.respond_status not in ['ya', 'tidak']:
+            raise HTTPException(status_code=400, detail="Invalid respond_status")
+        update_fields['respond_status'] = bulk.respond_status
+    
+    if not update_fields:
+        raise HTTPException(status_code=400, detail="No status fields to update")
+    
+    update_fields['updated_at'] = datetime.now(timezone.utc).isoformat()
+    
+    # Build query based on user role
+    query = {'id': {'$in': bulk.record_ids}}
+    if user.role == 'staff':
+        query['assigned_to'] = user.id
+    
+    result = await db.customer_records.update_many(query, {'$set': update_fields})
+    
+    return {
+        'message': f'{result.modified_count} records updated',
+        'modified_count': result.modified_count
+    }
+
+@api_router.delete("/bulk/bonanza-records")
+async def bulk_delete_bonanza_records(bulk: BulkDeleteRecords, user: User = Depends(get_admin_user)):
+    """Bulk delete Bonanza records (Admin only)"""
+    result = await db.bonanza_records.delete_many({'id': {'$in': bulk.record_ids}})
+    return {'message': f'{result.deleted_count} records deleted', 'deleted_count': result.deleted_count}
+
+@api_router.delete("/bulk/memberwd-records")
+async def bulk_delete_memberwd_records(bulk: BulkDeleteRecords, user: User = Depends(get_admin_user)):
+    """Bulk delete Member WD records (Admin only)"""
+    result = await db.memberwd_records.delete_many({'id': {'$in': bulk.record_ids}})
+    return {'message': f'{result.deleted_count} records deleted', 'deleted_count': result.deleted_count}
+
+# ==================== NOTIFICATION ENDPOINTS ====================
+
+@api_router.get("/notifications")
+async def get_notifications(unread_only: bool = False, limit: int = 50, user: User = Depends(get_current_user)):
+    """Get notifications for current user"""
+    query = {'user_id': user.id}
+    if unread_only:
+        query['read'] = False
+    
+    notifications = await db.notifications.find(query, {'_id': 0}).sort('created_at', -1).limit(limit).to_list(limit)
+    unread_count = await db.notifications.count_documents({'user_id': user.id, 'read': False})
+    
+    return {
+        'notifications': notifications,
+        'unread_count': unread_count
+    }
+
+@api_router.patch("/notifications/{notification_id}/read")
+async def mark_notification_read(notification_id: str, user: User = Depends(get_current_user)):
+    """Mark a notification as read"""
+    result = await db.notifications.update_one(
+        {'id': notification_id, 'user_id': user.id},
+        {'$set': {'read': True}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    return {'message': 'Notification marked as read'}
+
+@api_router.patch("/notifications/read-all")
+async def mark_all_notifications_read(user: User = Depends(get_current_user)):
+    """Mark all notifications as read for current user"""
+    result = await db.notifications.update_many(
+        {'user_id': user.id, 'read': False},
+        {'$set': {'read': True}}
+    )
+    return {'message': f'{result.modified_count} notifications marked as read'}
+
+@api_router.delete("/notifications/{notification_id}")
+async def delete_notification(notification_id: str, user: User = Depends(get_current_user)):
+    """Delete a notification"""
+    result = await db.notifications.delete_one({'id': notification_id, 'user_id': user.id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    return {'message': 'Notification deleted'}
+
+# Helper function to create notification
+async def create_notification(user_id: str, type: str, title: str, message: str, data: dict = None):
+    notification = {
+        'id': str(uuid.uuid4()),
+        'user_id': user_id,
+        'type': type,
+        'title': title,
+        'message': message,
+        'data': data or {},
+        'read': False,
+        'created_at': datetime.now(timezone.utc).isoformat()
+    }
+    await db.notifications.insert_one(notification)
+    return notification
+
 app.include_router(api_router)
 
 app.add_middleware(
