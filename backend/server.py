@@ -1130,6 +1130,182 @@ async def get_omset_dates(product_id: Optional[str] = None, user: User = Depends
     dates = sorted(set(r['record_date'] for r in records), reverse=True)
     return dates
 
+@api_router.get("/omset/export")
+async def export_omset_records(
+    product_id: Optional[str] = None,
+    record_date: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    staff_id: Optional[str] = None,
+    format: str = "csv",
+    user: User = Depends(get_current_user)
+):
+    """Export OMSET records to CSV format"""
+    from fastapi.responses import StreamingResponse
+    import io
+    import csv
+    
+    query = {}
+    
+    # Staff can only export their own records
+    if user.role == 'staff':
+        query['staff_id'] = user.id
+    elif staff_id:
+        query['staff_id'] = staff_id
+    
+    if product_id:
+        query['product_id'] = product_id
+    
+    if record_date:
+        query['record_date'] = record_date
+    elif start_date and end_date:
+        query['record_date'] = {'$gte': start_date, '$lte': end_date}
+    elif start_date:
+        query['record_date'] = {'$gte': start_date}
+    elif end_date:
+        query['record_date'] = {'$lte': end_date}
+    
+    records = await db.omset_records.find(query, {'_id': 0}).sort([('record_date', -1), ('created_at', -1)]).to_list(100000)
+    
+    # Calculate NDP/RDP for each record
+    all_query = {'product_id': product_id} if product_id else {}
+    if user.role == 'staff':
+        all_query['staff_id'] = user.id
+    
+    all_records = await db.omset_records.find(all_query, {'_id': 0}).to_list(100000)
+    
+    customer_first_date = {}
+    for record in sorted(all_records, key=lambda x: x['record_date']):
+        key = (record['customer_id'], record['product_id'])
+        if key not in customer_first_date:
+            customer_first_date[key] = record['record_date']
+    
+    # Create CSV
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Header
+    writer.writerow(['Date', 'Product', 'Staff', 'Customer ID', 'Nominal', 'Kelipatan', 'Depo Total', 'Type', 'Keterangan'])
+    
+    # Data rows
+    for record in records:
+        key = (record['customer_id'], record['product_id'])
+        first_date = customer_first_date.get(key)
+        record_type = 'NDP' if first_date == record['record_date'] else 'RDP'
+        
+        writer.writerow([
+            record['record_date'],
+            record['product_name'],
+            record['staff_name'],
+            record['customer_id'],
+            record.get('nominal', 0),
+            record.get('depo_kelipatan', 1),
+            record.get('depo_total', 0),
+            record_type,
+            record.get('keterangan', '')
+        ])
+    
+    output.seek(0)
+    
+    # Generate filename
+    date_part = record_date if record_date else f"{start_date or 'all'}_to_{end_date or 'now'}"
+    filename = f"omset_export_{date_part}.csv"
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+@api_router.get("/omset/export-summary")
+async def export_omset_summary(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    product_id: Optional[str] = None,
+    user: User = Depends(get_admin_user)
+):
+    """Export OMSET summary to CSV (Admin only)"""
+    from fastapi.responses import StreamingResponse
+    import io
+    import csv
+    
+    query = {}
+    
+    if product_id:
+        query['product_id'] = product_id
+    
+    if start_date and end_date:
+        query['record_date'] = {'$gte': start_date, '$lte': end_date}
+    elif start_date:
+        query['record_date'] = {'$gte': start_date}
+    elif end_date:
+        query['record_date'] = {'$lte': end_date}
+    
+    records = await db.omset_records.find(query, {'_id': 0}).to_list(100000)
+    
+    # Calculate NDP/RDP
+    all_records = await db.omset_records.find({} if not product_id else {'product_id': product_id}, {'_id': 0}).to_list(100000)
+    
+    customer_first_date = {}
+    for record in sorted(all_records, key=lambda x: x['record_date']):
+        key = (record['customer_id'], record['product_id'])
+        if key not in customer_first_date:
+            customer_first_date[key] = record['record_date']
+    
+    # Aggregate by date
+    daily_summary = {}
+    for record in records:
+        date = record['record_date']
+        key = (record['customer_id'], record['product_id'])
+        first_date = customer_first_date.get(key)
+        is_ndp = first_date == date
+        
+        if date not in daily_summary:
+            daily_summary[date] = {
+                'date': date,
+                'total_depo': 0,
+                'ndp_customers': set(),
+                'rdp_count': 0,
+                'total_form': 0
+            }
+        
+        daily_summary[date]['total_depo'] += record.get('depo_total', 0)
+        daily_summary[date]['total_form'] += record.get('depo_kelipatan', 1)
+        
+        if is_ndp:
+            daily_summary[date]['ndp_customers'].add(record['customer_id'])
+        else:
+            daily_summary[date]['rdp_count'] += 1
+    
+    # Create CSV
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Header
+    writer.writerow(['Date', 'Total Form', 'NDP', 'RDP', 'Total OMSET'])
+    
+    # Data rows
+    for date in sorted(daily_summary.keys(), reverse=True):
+        data = daily_summary[date]
+        writer.writerow([
+            date,
+            data['total_form'],
+            len(data['ndp_customers']),
+            data['rdp_count'],
+            data['total_depo']
+        ])
+    
+    output.seek(0)
+    
+    date_part = f"{start_date or 'all'}_to_{end_date or 'now'}"
+    filename = f"omset_summary_{date_part}.csv"
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
 @api_router.get("/omset/ndp-rdp")
 async def get_omset_ndp_rdp(
     product_id: str,
