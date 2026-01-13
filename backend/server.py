@@ -2746,7 +2746,7 @@ async def get_business_analytics(
         available = total_records - assigned
         db_utilization.append({
             'database_id': database['id'],
-            'database_name': database['name'],
+            'database_name': database.get('filename', 'Unknown'),
             'product_name': database.get('product_name', 'Unknown'),
             'total_records': total_records,
             'assigned': assigned,
