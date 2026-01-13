@@ -89,15 +89,6 @@ export default function MyAssignedRecords() {
     });
   };
 
-  const formatShortDate = (dateString) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
-  };
-
   // Filter batches by product
   const filteredBatches = selectedProduct 
     ? batches.filter(b => b.product_name === products.find(p => p.id === selectedProduct)?.name)
