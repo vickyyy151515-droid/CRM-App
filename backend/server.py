@@ -784,6 +784,36 @@ async def get_my_request_batches(user: User = Depends(get_current_user)):
     
     return batches
 
+class BatchTitleUpdate(BaseModel):
+    title: str
+
+@api_router.patch("/my-request-batches/{batch_id}/title")
+async def update_batch_title(batch_id: str, title_update: BatchTitleUpdate, user: User = Depends(get_current_user)):
+    """Update the custom title for a batch"""
+    if user.role != 'staff':
+        raise HTTPException(status_code=403, detail="Only staff can update batch titles")
+    
+    # Handle legacy batches - store in a separate collection
+    if batch_id.startswith('legacy_'):
+        database_id = batch_id.replace('legacy_', '')
+        await db.batch_titles.update_one(
+            {'batch_id': batch_id, 'user_id': user.id},
+            {'$set': {'title': title_update.title, 'database_id': database_id}},
+            upsert=True
+        )
+    else:
+        # Verify this request belongs to the user
+        request = await db.download_requests.find_one({'id': batch_id, 'requested_by': user.id})
+        if not request:
+            raise HTTPException(status_code=404, detail="Batch not found")
+        
+        await db.download_requests.update_one(
+            {'id': batch_id},
+            {'$set': {'custom_title': title_update.title}}
+        )
+    
+    return {'message': 'Title updated successfully'}
+
 @api_router.get("/my-assigned-records-by-batch")
 async def get_my_assigned_records_by_batch(request_id: str, user: User = Depends(get_current_user)):
     """Get assigned records for a specific request batch"""
