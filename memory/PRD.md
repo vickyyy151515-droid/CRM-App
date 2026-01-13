@@ -35,11 +35,13 @@ Build a Customer Relationship Management (CRM) application where:
 - Performance metrics: records checked, quality rate
 
 ### Phase 5: Reserved Member CRM (Completed - Jan 13, 2026)
-- **Staff Request Flow**: Staff requests customer name → pending → admin approval
-- **Admin Direct Add**: Admin assigns customer directly to staff (auto-approved)
-- **Duplicate Prevention**: Case-insensitive check, shows which staff owns the name
+- **Staff Request Flow**: Staff requests customer name + selects product → pending → admin approval
+- **Admin Direct Add**: Admin assigns customer to staff with product selection (auto-approved)
+- **Product Categorization**: Each reservation belongs to a specific product
+- **Duplicate Prevention**: Case-insensitive check within same product, shows which staff owns the name
 - **Admin Controls**: Approve/Reject requests, Move reservations, Delete
 - **Visibility**: All approved reservations visible to all staff
+- **Filtering**: Filter by product and status (All/Pending/Approved)
 
 ## Tech Stack
 - **Frontend**: React + TailwindCSS + Shadcn/UI
