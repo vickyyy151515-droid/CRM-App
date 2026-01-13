@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { User, Package, ChevronLeft, FileSpreadsheet } from 'lucide-react';
+import { User, Package, ChevronLeft, FileSpreadsheet, Edit2, Check, X } from 'lucide-react';
 
 export default function MyAssignedRecords() {
   const [batches, setBatches] = useState([]);
@@ -11,6 +11,8 @@ export default function MyAssignedRecords() {
   const [selectedProduct, setSelectedProduct] = useState('');
   const [loading, setLoading] = useState(true);
   const [loadingRecords, setLoadingRecords] = useState(false);
+  const [editingBatchId, setEditingBatchId] = useState(null);
+  const [editTitle, setEditTitle] = useState('');
 
   useEffect(() => {
     loadProducts();
@@ -37,7 +39,32 @@ export default function MyAssignedRecords() {
     }
   };
 
+  const handleEditTitle = (e, batch) => {
+    e.stopPropagation();
+    setEditingBatchId(batch.id);
+    setEditTitle(batch.custom_title || batch.database_name);
+  };
+
+  const handleSaveTitle = async (e, batchId) => {
+    e.stopPropagation();
+    try {
+      await api.patch(`/my-request-batches/${batchId}/title`, { title: editTitle });
+      toast.success('Title updated');
+      setEditingBatchId(null);
+      loadBatches();
+    } catch (error) {
+      toast.error('Failed to update title');
+    }
+  };
+
+  const handleCancelEdit = (e) => {
+    e.stopPropagation();
+    setEditingBatchId(null);
+    setEditTitle('');
+  };
+
   const loadBatchRecords = async (batchId) => {
+    if (editingBatchId) return; // Don't navigate while editing
     setLoadingRecords(true);
     try {
       const response = await api.get('/my-assigned-records-by-batch', { params: { request_id: batchId } });
