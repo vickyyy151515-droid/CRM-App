@@ -128,6 +128,47 @@ export default function AdminDBBonanza() {
     setSelectedRecords([]);
   };
 
+  const handleRandomAssign = async () => {
+    const quantity = parseInt(randomQuantity);
+    if (!selectedStaff || !quantity || quantity <= 0) {
+      toast.error('Please select staff and enter a valid quantity');
+      return;
+    }
+
+    // Get available records
+    const availableRecords = records.filter(r => r.status === 'available');
+    if (availableRecords.length === 0) {
+      toast.error('No available records to assign');
+      return;
+    }
+
+    if (quantity > availableRecords.length) {
+      toast.error(`Only ${availableRecords.length} records available`);
+      return;
+    }
+
+    // Shuffle and pick random records
+    const shuffled = [...availableRecords].sort(() => Math.random() - 0.5);
+    const randomRecordIds = shuffled.slice(0, quantity).map(r => r.id);
+
+    setAssigning(true);
+    try {
+      await api.post('/bonanza/assign', {
+        record_ids: randomRecordIds,
+        staff_id: selectedStaff
+      });
+      toast.success(`${quantity} random records assigned successfully`);
+      setRandomQuantity('');
+      setSelectedStaff('');
+      loadRecords(expandedDb);
+      loadDatabases();
+    } catch (error) {
+      toast.error('Failed to assign records');
+    } finally {
+      setAssigning(false);
+    }
+  };
+
   const handleAssign = async () => {
     if (!selectedStaff || selectedRecords.length === 0) {
       toast.error('Please select staff and records to assign');
