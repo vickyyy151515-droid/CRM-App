@@ -352,6 +352,10 @@ export default function AdminDBBonanza() {
                   <div>
                     <h4 className="font-semibold text-slate-900">{database.name}</h4>
                     <p className="text-sm text-slate-500">{database.filename}</p>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 mt-1">
+                      <Package size={12} className="mr-1" />
+                      {database.product_name || 'Unknown'}
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-6">
