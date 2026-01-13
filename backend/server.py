@@ -712,12 +712,12 @@ async def get_my_request_batches(user: User = Depends(get_current_user)):
         })
         
         # Get database info
-        database = await db.databases.find_one({'id': req['database_id']}, {'_id': 0, 'name': 1, 'product_name': 1})
+        database = await db.databases.find_one({'id': req['database_id']}, {'_id': 0})
         
         batches.append({
             'id': req['id'],
             'database_id': req['database_id'],
-            'database_name': database['name'] if database else 'Unknown',
+            'database_name': database.get('name', 'Unknown') if database else 'Unknown',
             'product_name': database.get('product_name', 'Unknown') if database else 'Unknown',
             'quantity': req['quantity'],
             'record_count': record_count,
