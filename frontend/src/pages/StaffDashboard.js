@@ -4,7 +4,8 @@ import DashboardLayout from '../components/DashboardLayout';
 import DatabaseList from '../components/DatabaseList';
 import MyRequests from '../components/MyRequests';
 import MyAssignedRecords from '../components/MyAssignedRecords';
-import { LayoutDashboard, FileSpreadsheet, Clock, User } from 'lucide-react';
+import StaffReservedMembers from '../components/StaffReservedMembers';
+import { LayoutDashboard, FileSpreadsheet, Clock, User, UserCheck } from 'lucide-react';
 
 export default function StaffDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('databases');
@@ -71,6 +72,8 @@ export default function StaffDashboard({ user, onLogout }) {
         return <MyRequests onUpdate={loadStats} />;
       case 'assigned':
         return <MyAssignedRecords />;
+      case 'reserved':
+        return <StaffReservedMembers />;
       default:
         return null;
     }
@@ -79,7 +82,8 @@ export default function StaffDashboard({ user, onLogout }) {
   const menuItems = [
     { id: 'databases', label: 'Browse Databases', icon: FileSpreadsheet },
     { id: 'requests', label: 'My Requests', icon: Clock },
-    { id: 'assigned', label: 'My Assigned Customers', icon: User }
+    { id: 'assigned', label: 'My Assigned Customers', icon: User },
+    { id: 'reserved', label: 'Reserved Member CRM', icon: UserCheck }
   ];
 
   return (

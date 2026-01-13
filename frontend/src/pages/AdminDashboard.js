@@ -10,7 +10,8 @@ import CreateUser from '../components/CreateUser';
 import ProductManagement from '../components/ProductManagement';
 import AllAssignments from '../components/AllAssignments';
 import StaffProgress from '../components/StaffProgress';
-import { LayoutDashboard, Upload, FileSpreadsheet, Clock, Users, Package, List, BarChart } from 'lucide-react';
+import AdminReservedMembers from '../components/AdminReservedMembers';
+import { LayoutDashboard, Upload, FileSpreadsheet, Clock, Users, Package, List, BarChart, UserCheck } from 'lucide-react';
 
 export default function AdminDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('overview');
@@ -90,6 +91,8 @@ export default function AdminDashboard({ user, onLogout }) {
         return <AllAssignments />;
       case 'progress':
         return <StaffProgress />;
+      case 'reserved':
+        return <AdminReservedMembers />;
       default:
         return null;
     }
@@ -98,6 +101,7 @@ export default function AdminDashboard({ user, onLogout }) {
   const menuItems = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'progress', label: 'Staff Progress & Quality', icon: BarChart },
+    { id: 'reserved', label: 'Reserved Member CRM', icon: UserCheck },
     { id: 'upload', label: 'Upload Database', icon: Upload },
     { id: 'databases', label: 'Manage Databases', icon: FileSpreadsheet },
     { id: 'assignments', label: 'View All Assignments', icon: List },
