@@ -90,75 +90,33 @@ export default function AdminOmsetCRM() {
     return new Intl.NumberFormat('id-ID').format(value || 0);
   };
 
-  const handleExportDetails = async () => {
-    try {
-      const dateParams = getDateParams();
-      const token = localStorage.getItem('token');
-      const params = new URLSearchParams({
-        ...dateParams,
-        ...(selectedProduct && { product_id: selectedProduct }),
-        ...(selectedStaff && { staff_id: selectedStaff })
-      });
-      
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/omset/export?${params}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (!response.ok) throw new Error('Export failed');
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `omset_details_${dateRange}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      
-      toast.success('Export successful');
-    } catch (error) {
-      console.error('Export error:', error);
-      toast.error('Failed to export');
-    }
+  const handleExportDetails = () => {
+    const dateParams = getDateParams();
+    const token = localStorage.getItem('token');
+    const params = new URLSearchParams({
+      ...dateParams,
+      ...(selectedProduct && { product_id: selectedProduct }),
+      ...(selectedStaff && { staff_id: selectedStaff }),
+      token: token
+    });
+    
+    // Open in new window to bypass sandbox download restrictions
+    window.open(`${process.env.REACT_APP_BACKEND_URL}/api/omset/export?${params}`, '_blank');
+    toast.success('Export started - check your new tab');
   };
 
-  const handleExportSummary = async () => {
-    try {
-      const dateParams = getDateParams();
-      const token = localStorage.getItem('token');
-      const params = new URLSearchParams({
-        ...dateParams,
-        ...(selectedProduct && { product_id: selectedProduct })
-      });
-      
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/omset/export-summary?${params}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (!response.ok) throw new Error('Export failed');
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `omset_summary_${dateRange}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      
-      toast.success('Export successful');
-    } catch (error) {
-      console.error('Export error:', error);
-      toast.error('Failed to export');
-    }
+  const handleExportSummary = () => {
+    const dateParams = getDateParams();
+    const token = localStorage.getItem('token');
+    const params = new URLSearchParams({
+      ...dateParams,
+      ...(selectedProduct && { product_id: selectedProduct }),
+      token: token
+    });
+    
+    // Open in new window to bypass sandbox download restrictions
+    window.open(`${process.env.REACT_APP_BACKEND_URL}/api/omset/export-summary?${params}`, '_blank');
+    toast.success('Export started - check your new tab');
   };
 
   const toggleDateExpand = (date) => {
