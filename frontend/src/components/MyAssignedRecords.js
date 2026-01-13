@@ -138,21 +138,42 @@ export default function MyAssignedRecords() {
             <div
               key={batch.id}
               onClick={() => loadBatchRecords(batch.id)}
-              className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-indigo-300 cursor-pointer transition-all group"
+              className={`bg-white border rounded-xl p-5 shadow-sm hover:shadow-md cursor-pointer transition-all group ${
+                batch.is_legacy 
+                  ? 'border-amber-200 hover:border-amber-400' 
+                  : 'border-slate-200 hover:border-indigo-300'
+              }`}
               data-testid={`batch-card-${batch.id}`}
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold">
-                    #{filteredBatches.length - index}
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold ${
+                    batch.is_legacy 
+                      ? 'bg-amber-100 text-amber-600' 
+                      : 'bg-indigo-100 text-indigo-600'
+                  }`}>
+                    {batch.is_legacy ? '★' : `#${filteredBatches.filter(b => !b.is_legacy).length - filteredBatches.filter(b => !b.is_legacy).indexOf(batch)}`}
                   </div>
                   <div>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                      batch.is_legacy 
+                        ? 'bg-amber-100 text-amber-800' 
+                        : 'bg-indigo-100 text-indigo-800'
+                    }`}>
                       {batch.product_name}
                     </span>
+                    {batch.is_legacy && (
+                      <span className="ml-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600">
+                        Legacy
+                      </span>
+                    )}
                   </div>
                 </div>
-                <ChevronLeft className="text-slate-400 group-hover:text-indigo-600 rotate-180 transition-colors" size={20} />
+                <ChevronLeft className={`rotate-180 transition-colors ${
+                  batch.is_legacy 
+                    ? 'text-amber-400 group-hover:text-amber-600' 
+                    : 'text-slate-400 group-hover:text-indigo-600'
+                }`} size={20} />
               </div>
               
               <h3 className="font-semibold text-slate-900 mb-2 flex items-center gap-2">
@@ -165,14 +186,29 @@ export default function MyAssignedRecords() {
                   <span>Records:</span>
                   <span className="font-semibold text-slate-900">{batch.record_count} customers</span>
                 </div>
-                <div className="flex items-center justify-between text-slate-600">
-                  <span className="flex items-center gap-1">
-                    <Calendar size={14} />
-                    Requested:
-                  </span>
-                  <span>{formatShortDate(batch.requested_at)}</span>
-                </div>
-                <div className="flex items-center justify-between text-slate-600">
+                {!batch.is_legacy && (
+                  <>
+                    <div className="flex items-center justify-between text-slate-600">
+                      <span className="flex items-center gap-1">
+                        <Calendar size={14} />
+                        Requested:
+                      </span>
+                      <span>{formatShortDate(batch.requested_at)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-slate-600">
+                      <span className="flex items-center gap-1">
+                        <Clock size={14} />
+                        Approved:
+                      </span>
+                      <span>{formatShortDate(batch.approved_at)}</span>
+                    </div>
+                  </>
+                )}
+                {batch.is_legacy && (
+                  <div className="text-xs text-amber-600 mt-2">
+                    Assigned before batch tracking
+                  </div>
+                )}
                   <span className="flex items-center gap-1">
                     <Clock size={14} />
                     Approved:
