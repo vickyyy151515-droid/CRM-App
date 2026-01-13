@@ -105,6 +105,7 @@ export default function StaffProgress() {
           total: 0,
           // WhatsApp stats
           ada: 0,
+          ceklis1: 0,
           tidak: 0,
           waNotChecked: 0,
           // Respond stats
@@ -118,6 +119,8 @@ export default function StaffProgress() {
       // WhatsApp status
       if (record.whatsapp_status === 'ada') {
         staffStats[record.assigned_to].ada++;
+      } else if (record.whatsapp_status === 'ceklis1') {
+        staffStats[record.assigned_to].ceklis1++;
       } else if (record.whatsapp_status === 'tidak') {
         staffStats[record.assigned_to].tidak++;
       } else {
