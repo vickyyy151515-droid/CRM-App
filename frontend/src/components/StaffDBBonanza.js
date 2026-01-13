@@ -1,20 +1,36 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Gift, FileSpreadsheet, Calendar } from 'lucide-react';
+import { Gift, FileSpreadsheet, Calendar, Package } from 'lucide-react';
 
 export default function StaffDBBonanza() {
   const [records, setRecords] = useState([]);
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterProduct, setFilterProduct] = useState('');
+
+  useEffect(() => {
+    loadProducts();
+  }, []);
 
   useEffect(() => {
     loadRecords();
-  }, []);
+  }, [filterProduct]);
+
+  const loadProducts = async () => {
+    try {
+      const response = await api.get('/products');
+      setProducts(response.data);
+    } catch (error) {
+      console.error('Failed to load products');
+    }
+  };
 
   const loadRecords = async () => {
     try {
-      const response = await api.get('/bonanza/staff/records');
+      const params = filterProduct ? `?product_id=${filterProduct}` : '';
+      const response = await api.get(`/bonanza/staff/records${params}`);
       setRecords(response.data);
     } catch (error) {
       toast.error('Failed to load records');
