@@ -1235,15 +1235,33 @@ async def export_omset_records(
 
 @api_router.get("/omset/export-summary")
 async def export_omset_summary(
+    request: Request,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     product_id: Optional[str] = None,
-    user: User = Depends(get_admin_user)
+    token: Optional[str] = None
 ):
     """Export OMSET summary to CSV (Admin only)"""
     from fastapi.responses import StreamingResponse
     import io
     import csv
+    
+    # Support token from query param for window.open() downloads
+    if token:
+        try:
+            payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+            user_data = await db.users.find_one({"id": payload["user_id"]}, {"_id": 0})
+            if not user_data:
+                raise HTTPException(status_code=401, detail="User not found")
+            user = User(**user_data)
+            if user.role != 'admin':
+                raise HTTPException(status_code=403, detail="Admin access required")
+        except jwt.ExpiredSignatureError:
+            raise HTTPException(status_code=401, detail="Token expired")
+        except jwt.InvalidTokenError:
+            raise HTTPException(status_code=401, detail="Invalid token")
+    else:
+        user = await get_admin_user(request)
     
     query = {}
     
