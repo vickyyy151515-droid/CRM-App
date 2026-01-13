@@ -175,8 +175,9 @@ export default function StaffProgress() {
     
     // WhatsApp stats
     const ada = assignedRecords.filter(r => r.whatsapp_status === 'ada').length;
+    const ceklis1 = assignedRecords.filter(r => r.whatsapp_status === 'ceklis1').length;
     const tidak = assignedRecords.filter(r => r.whatsapp_status === 'tidak').length;
-    const waChecked = ada + tidak;
+    const waChecked = ada + ceklis1 + tidak;
     const qualityRate = waChecked > 0 ? ((ada / waChecked) * 100).toFixed(1) : 0;
     const checkProgress = assignedRecords.length > 0 ? ((waChecked / assignedRecords.length) * 100).toFixed(1) : 0;
     
@@ -192,6 +193,7 @@ export default function StaffProgress() {
       totalRecords: dbRecords.length,
       assigned: assignedRecords.length,
       ada,
+      ceklis1,
       tidak,
       waNotChecked: assignedRecords.length - waChecked,
       qualityRate: parseFloat(qualityRate),
@@ -209,8 +211,9 @@ export default function StaffProgress() {
   
   // WhatsApp overall
   const totalAda = filteredRecords.filter(r => r.whatsapp_status === 'ada').length;
+  const totalCeklis1 = filteredRecords.filter(r => r.whatsapp_status === 'ceklis1').length;
   const totalTidak = filteredRecords.filter(r => r.whatsapp_status === 'tidak').length;
-  const totalWaChecked = totalAda + totalTidak;
+  const totalWaChecked = totalAda + totalCeklis1 + totalTidak;
   const overallQuality = totalWaChecked > 0 ? ((totalAda / totalWaChecked) * 100).toFixed(1) : 0;
   
   // Respond overall
@@ -222,6 +225,7 @@ export default function StaffProgress() {
   // Daily metrics
   const checkedInPeriod = dateFilteredRecords.length;
   const adaInPeriod = dateFilteredRecords.filter(r => r.whatsapp_status === 'ada').length;
+  const ceklis1InPeriod = dateFilteredRecords.filter(r => r.whatsapp_status === 'ceklis1').length;
   const tidakInPeriod = dateFilteredRecords.filter(r => r.whatsapp_status === 'tidak').length;
   const periodQuality = checkedInPeriod > 0 ? ((adaInPeriod / checkedInPeriod) * 100).toFixed(1) : 0;
   
