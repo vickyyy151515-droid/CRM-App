@@ -834,6 +834,219 @@ async def get_download_history(user: User = Depends(get_current_user)):
     
     return history
 
+# ============== OMSET CRM API ==============
+
+@api_router.post("/omset", response_model=OmsetRecord)
+async def create_omset_record(record_data: OmsetRecordCreate, user: User = Depends(get_current_user)):
+    # Validate product
+    product = await db.products.find_one({'id': record_data.product_id})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Calculate depo_total
+    depo_total = record_data.nominal * record_data.depo_kelipatan
+    
+    record = OmsetRecord(
+        product_id=record_data.product_id,
+        product_name=product['name'],
+        staff_id=user.id,
+        staff_name=user.name,
+        record_date=record_data.record_date,
+        customer_name=record_data.customer_name,
+        customer_id=record_data.customer_id,
+        nominal=record_data.nominal,
+        depo_kelipatan=record_data.depo_kelipatan,
+        depo_total=depo_total,
+        keterangan=record_data.keterangan
+    )
+    
+    doc = record.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    
+    await db.omset_records.insert_one(doc)
+    return record
+
+@api_router.get("/omset")
+async def get_omset_records(
+    product_id: Optional[str] = None,
+    record_date: Optional[str] = None,
+    staff_id: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
+    query = {}
+    
+    # Staff can only see their own records, admin sees all
+    if user.role == 'staff':
+        query['staff_id'] = user.id
+    elif staff_id:
+        query['staff_id'] = staff_id
+    
+    if product_id:
+        query['product_id'] = product_id
+    
+    if record_date:
+        query['record_date'] = record_date
+    elif start_date and end_date:
+        query['record_date'] = {'$gte': start_date, '$lte': end_date}
+    elif start_date:
+        query['record_date'] = {'$gte': start_date}
+    elif end_date:
+        query['record_date'] = {'$lte': end_date}
+    
+    records = await db.omset_records.find(query, {'_id': 0}).sort([('record_date', -1), ('created_at', -1)]).to_list(10000)
+    
+    for record in records:
+        if isinstance(record.get('created_at'), str):
+            record['created_at'] = datetime.fromisoformat(record['created_at'])
+        if record.get('updated_at') and isinstance(record['updated_at'], str):
+            record['updated_at'] = datetime.fromisoformat(record['updated_at'])
+    
+    return records
+
+@api_router.put("/omset/{record_id}")
+async def update_omset_record(record_id: str, update_data: OmsetRecordUpdate, user: User = Depends(get_current_user)):
+    record = await db.omset_records.find_one({'id': record_id})
+    if not record:
+        raise HTTPException(status_code=404, detail="Record not found")
+    
+    # Staff can only update their own records
+    if user.role == 'staff' and record['staff_id'] != user.id:
+        raise HTTPException(status_code=403, detail="You can only update your own records")
+    
+    update_fields = {}
+    if update_data.customer_name is not None:
+        update_fields['customer_name'] = update_data.customer_name
+    if update_data.customer_id is not None:
+        update_fields['customer_id'] = update_data.customer_id
+    if update_data.nominal is not None:
+        update_fields['nominal'] = update_data.nominal
+    if update_data.depo_kelipatan is not None:
+        update_fields['depo_kelipatan'] = update_data.depo_kelipatan
+    if update_data.keterangan is not None:
+        update_fields['keterangan'] = update_data.keterangan
+    
+    # Recalculate depo_total if nominal or kelipatan changed
+    nominal = update_data.nominal if update_data.nominal is not None else record['nominal']
+    kelipatan = update_data.depo_kelipatan if update_data.depo_kelipatan is not None else record['depo_kelipatan']
+    update_fields['depo_total'] = nominal * kelipatan
+    update_fields['updated_at'] = datetime.now(timezone.utc).isoformat()
+    
+    await db.omset_records.update_one({'id': record_id}, {'$set': update_fields})
+    
+    return {'message': 'Record updated successfully'}
+
+@api_router.delete("/omset/{record_id}")
+async def delete_omset_record(record_id: str, user: User = Depends(get_current_user)):
+    record = await db.omset_records.find_one({'id': record_id})
+    if not record:
+        raise HTTPException(status_code=404, detail="Record not found")
+    
+    # Staff can only delete their own records
+    if user.role == 'staff' and record['staff_id'] != user.id:
+        raise HTTPException(status_code=403, detail="You can only delete your own records")
+    
+    await db.omset_records.delete_one({'id': record_id})
+    
+    return {'message': 'Record deleted successfully'}
+
+@api_router.get("/omset/summary")
+async def get_omset_summary(
+    product_id: Optional[str] = None,
+    staff_id: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
+    query = {}
+    
+    # Staff can only see their own summary, admin sees all
+    if user.role == 'staff':
+        query['staff_id'] = user.id
+    elif staff_id:
+        query['staff_id'] = staff_id
+    
+    if product_id:
+        query['product_id'] = product_id
+    
+    if start_date and end_date:
+        query['record_date'] = {'$gte': start_date, '$lte': end_date}
+    elif start_date:
+        query['record_date'] = {'$gte': start_date}
+    elif end_date:
+        query['record_date'] = {'$lte': end_date}
+    
+    records = await db.omset_records.find(query, {'_id': 0}).to_list(100000)
+    
+    # Calculate summaries
+    daily_summary = {}
+    staff_summary = {}
+    product_summary = {}
+    total_nominal = 0
+    total_depo = 0
+    total_records = len(records)
+    
+    for record in records:
+        date = record['record_date']
+        staff_name = record['staff_name']
+        staff_id_rec = record['staff_id']
+        product_name = record['product_name']
+        product_id_rec = record['product_id']
+        nominal = record.get('nominal', 0) or 0
+        depo_total = record.get('depo_total', 0) or 0
+        
+        total_nominal += nominal
+        total_depo += depo_total
+        
+        # Daily summary
+        if date not in daily_summary:
+            daily_summary[date] = {'date': date, 'total_nominal': 0, 'total_depo': 0, 'count': 0}
+        daily_summary[date]['total_nominal'] += nominal
+        daily_summary[date]['total_depo'] += depo_total
+        daily_summary[date]['count'] += 1
+        
+        # Staff summary
+        if staff_id_rec not in staff_summary:
+            staff_summary[staff_id_rec] = {'staff_id': staff_id_rec, 'staff_name': staff_name, 'total_nominal': 0, 'total_depo': 0, 'count': 0}
+        staff_summary[staff_id_rec]['total_nominal'] += nominal
+        staff_summary[staff_id_rec]['total_depo'] += depo_total
+        staff_summary[staff_id_rec]['count'] += 1
+        
+        # Product summary
+        if product_id_rec not in product_summary:
+            product_summary[product_id_rec] = {'product_id': product_id_rec, 'product_name': product_name, 'total_nominal': 0, 'total_depo': 0, 'count': 0}
+        product_summary[product_id_rec]['total_nominal'] += nominal
+        product_summary[product_id_rec]['total_depo'] += depo_total
+        product_summary[product_id_rec]['count'] += 1
+    
+    return {
+        'total': {
+            'total_nominal': total_nominal,
+            'total_depo': total_depo,
+            'total_records': total_records
+        },
+        'daily': sorted(daily_summary.values(), key=lambda x: x['date'], reverse=True),
+        'by_staff': sorted(staff_summary.values(), key=lambda x: x['total_depo'], reverse=True),
+        'by_product': sorted(product_summary.values(), key=lambda x: x['total_depo'], reverse=True)
+    }
+
+@api_router.get("/omset/dates")
+async def get_omset_dates(product_id: Optional[str] = None, user: User = Depends(get_current_user)):
+    """Get list of dates that have omset records"""
+    query = {}
+    
+    if user.role == 'staff':
+        query['staff_id'] = user.id
+    
+    if product_id:
+        query['product_id'] = product_id
+    
+    records = await db.omset_records.find(query, {'_id': 0, 'record_date': 1}).to_list(100000)
+    
+    dates = sorted(set(r['record_date'] for r in records), reverse=True)
+    return dates
+
 app.include_router(api_router)
 
 app.add_middleware(
