@@ -165,9 +165,9 @@ export default function AdminDBBonanza() {
       });
       
       const data = response.data;
-      let message = `${data.assigned_count} random records assigned successfully`;
-      if (data.skipped_reserved > 0) {
-        message += ` (${data.skipped_reserved} skipped - already in Reserved Members)`;
+      let message = `${data.assigned_count} records assigned successfully!`;
+      if (data.total_reserved_in_db > 0) {
+        message += ` (${data.total_reserved_in_db} names in Reserved Members were automatically excluded)`;
       }
       toast.success(message);
       
