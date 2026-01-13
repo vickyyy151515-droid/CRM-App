@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Upload, Database, Users, Trash2, ChevronDown, ChevronUp, Check, X, Search, Shuffle, Package } from 'lucide-react';
+import { Upload, Database, Users, Trash2, ChevronDown, ChevronUp, Check, X, Search, Shuffle, Package, Edit2 } from 'lucide-react';
 
 export default function AdminMemberWDCRM() {
   const [databases, setDatabases] = useState([]);
@@ -23,6 +23,8 @@ export default function AdminMemberWDCRM() {
   const [searchTerm, setSearchTerm] = useState('');
   const [randomQuantity, setRandomQuantity] = useState('');
   const [reservedNames, setReservedNames] = useState([]);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [newProductId, setNewProductId] = useState('');
 
   useEffect(() => {
     loadProducts();
