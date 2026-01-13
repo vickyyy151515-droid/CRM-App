@@ -1073,6 +1073,17 @@ async def create_reserved_member(member_data: ReservedMemberCreate, user: User =
             created_by=user.id,
             created_by_name=user.name
         )
+        
+        # Notify all admins about new pending request
+        admins = await db.users.find({'role': 'admin'}, {'_id': 0, 'id': 1}).to_list(100)
+        for admin in admins:
+            await create_notification(
+                user_id=admin['id'],
+                type='new_reserved_request',
+                title='New Reservation Request',
+                message=f'{user.name} requested to reserve "{member_data.customer_name}" in {product["name"]}',
+                data={'customer_name': member_data.customer_name, 'staff_name': user.name, 'product_name': product['name']}
+            )
     
     doc = member.model_dump()
     doc['created_at'] = doc['created_at'].isoformat()
