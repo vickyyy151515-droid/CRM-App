@@ -1928,8 +1928,10 @@ async def assign_random_bonanza_records(assignment: RandomBonanzaAssignment, use
     return {
         'message': f'{result.modified_count} records assigned to {staff["name"]}',
         'assigned_count': result.modified_count,
-        'skipped_reserved': skipped_count,
-        'remaining_eligible': len(eligible_records) - assignment.quantity
+        'total_reserved_in_db': skipped_count,
+        'remaining_eligible': len(eligible_records) - assignment.quantity,
+        'total_available': len(available_records),
+        'total_eligible': len(eligible_records)
     }
 
 @api_router.delete("/bonanza/databases/{database_id}")
