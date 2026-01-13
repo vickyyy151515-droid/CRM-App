@@ -122,6 +122,40 @@ class ReservedMemberCreate(BaseModel):
     product_id: str
     staff_id: Optional[str] = None
 
+# OMSET CRM Models
+class OmsetRecord(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    product_id: str
+    product_name: str
+    staff_id: str
+    staff_name: str
+    record_date: str  # YYYY-MM-DD format
+    customer_name: str
+    customer_id: str
+    nominal: float
+    depo_kelipatan: float = 1.0
+    depo_total: float
+    keterangan: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: Optional[datetime] = None
+
+class OmsetRecordCreate(BaseModel):
+    product_id: str
+    record_date: str
+    customer_name: str
+    customer_id: str
+    nominal: float
+    depo_kelipatan: float = 1.0
+    keterangan: Optional[str] = None
+
+class OmsetRecordUpdate(BaseModel):
+    customer_name: Optional[str] = None
+    customer_id: Optional[str] = None
+    nominal: Optional[float] = None
+    depo_kelipatan: Optional[float] = None
+    keterangan: Optional[str] = None
+
 class DatabaseCreate(BaseModel):
     description: Optional[str] = None
     product_id: str
