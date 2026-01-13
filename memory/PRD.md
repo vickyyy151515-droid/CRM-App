@@ -96,6 +96,8 @@ Build a Customer Relationship Management (CRM) application where:
 - `/api/customer-records/{id}/whatsapp-status` - Update WhatsApp status
 - `/api/reserved-members` - Reserved member CRM (POST/GET/PATCH/DELETE)
 - `/api/staff-users` - Get list of staff members
+- `/api/bonanza/*` - DB Bonanza endpoints (upload, databases, records, assign)
+- `/api/memberwd/*` - Member WD CRM endpoints (upload, databases, records, assign)
 
 ## Credentials
 - **Admin**: admin@crm.com / admin123
@@ -105,13 +107,7 @@ Build a Customer Relationship Management (CRM) application where:
 
 ## Backlog / Upcoming Tasks
 
-### P1: OMSET CRM Page
-- Analyze Excel file `/app/artifacts/90xd5vgy_MASTER OMSET CRM .xlsx`
-- Implement new page in Staff panel replicating Excel functionality
-- Likely involves forms for data entry and tables with calculations
-
 ### P2: Potential Enhancements
-- Export functionality for reports
 - Bulk operations for admin
 - Mobile-responsive improvements
 - Notification system for request updates
