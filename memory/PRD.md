@@ -1,0 +1,76 @@
+# CRM Application - Product Requirements Document
+
+## Original Problem Statement
+Build a Customer Relationship Management (CRM) application where:
+- Admins can upload customer databases (CSV or Excel)
+- Staff can request to download/access the uploaded databases
+- System manages customer record assignments and reservations
+
+## User Personas
+1. **Admin**: Manages databases, products, users, approves requests, views analytics
+2. **Staff**: Browses databases, requests records, contacts customers via WhatsApp, marks reachability status
+
+## Core Features Implemented
+
+### Phase 1: MVP (Completed)
+- User authentication (Admin/Staff roles)
+- Database upload (CSV/Excel) with product categorization
+- Staff download request workflow with admin approval
+
+### Phase 2: Record-Level Assignment (Completed)
+- Shifted from file downloads to individual record assignments
+- Staff requests quantity of records from a database
+- Admin approves → records get assigned to staff
+- Staff sees assigned customers with WhatsApp contact capability
+
+### Phase 3: WhatsApp Integration (Completed)
+- Copy full WhatsApp URL button (bypasses network blocks)
+- WhatsApp reachability status tracking (Ada/Tidak)
+- Staff marks customer WhatsApp status
+- Admin sees all status in dashboards
+
+### Phase 4: Admin Dashboards (Completed)
+- **All Assignments View**: Global view of all assigned records
+- **Staff Progress & Quality**: Analytics dashboard with filters (Today, All Time, etc.)
+- Performance metrics: records checked, quality rate
+
+### Phase 5: Reserved Member CRM (Completed - Jan 13, 2026)
+- **Staff Request Flow**: Staff requests customer name → pending → admin approval
+- **Admin Direct Add**: Admin assigns customer directly to staff (auto-approved)
+- **Duplicate Prevention**: Case-insensitive check, shows which staff owns the name
+- **Admin Controls**: Approve/Reject requests, Move reservations, Delete
+- **Visibility**: All approved reservations visible to all staff
+
+## Tech Stack
+- **Frontend**: React + TailwindCSS + Shadcn/UI
+- **Backend**: FastAPI + PyMongo
+- **Database**: MongoDB
+
+## Key API Endpoints
+- `/api/auth/*` - Authentication
+- `/api/products` - Product management
+- `/api/databases` - Database upload/management
+- `/api/download-requests` - Record request workflow
+- `/api/my-assigned-records` - Staff's assigned customers
+- `/api/customer-records/{id}/whatsapp-status` - Update WhatsApp status
+- `/api/reserved-members` - Reserved member CRM (POST/GET/PATCH/DELETE)
+- `/api/staff-users` - Get list of staff members
+
+## Credentials
+- **Admin**: admin@crm.com / admin123
+- **Staff**: staff@crm.com / staff123
+
+---
+
+## Backlog / Upcoming Tasks
+
+### P1: OMSET CRM Page
+- Analyze Excel file `/app/artifacts/90xd5vgy_MASTER OMSET CRM .xlsx`
+- Implement new page in Staff panel replicating Excel functionality
+- Likely involves forms for data entry and tables with calculations
+
+### P2: Potential Enhancements
+- Export functionality for reports
+- Bulk operations for admin
+- Mobile-responsive improvements
+- Notification system for request updates
