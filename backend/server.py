@@ -979,6 +979,24 @@ async def get_omset_summary(
     
     records = await db.omset_records.find(query, {'_id': 0}).to_list(100000)
     
+    # Get ALL records for NDP/RDP calculation (need full history)
+    all_query = {}
+    if user.role == 'staff':
+        all_query['staff_id'] = user.id
+    elif staff_id:
+        all_query['staff_id'] = staff_id
+    if product_id:
+        all_query['product_id'] = product_id
+    
+    all_records_for_ndp = await db.omset_records.find(all_query, {'_id': 0}).to_list(100000)
+    
+    # Calculate customer first appearance dates (per product)
+    customer_first_date = {}  # (customer_id, product_id) -> first date
+    for record in sorted(all_records_for_ndp, key=lambda x: x['record_date']):
+        key = (record['customer_id'], record['product_id'])
+        if key not in customer_first_date:
+            customer_first_date[key] = record['record_date']
+    
     # Calculate summaries
     daily_summary = {}
     staff_summary = {}
@@ -986,6 +1004,8 @@ async def get_omset_summary(
     total_nominal = 0
     total_depo = 0
     total_records = len(records)
+    total_ndp = 0
+    total_rdp = 0
     
     for record in records:
         date = record['record_date']
@@ -996,37 +1016,100 @@ async def get_omset_summary(
         nominal = record.get('nominal', 0) or 0
         depo_total = record.get('depo_total', 0) or 0
         
+        # Determine NDP/RDP
+        key = (record['customer_id'], product_id_rec)
+        first_date = customer_first_date.get(key)
+        is_ndp = first_date == date
+        
         total_nominal += nominal
         total_depo += depo_total
         
         # Daily summary
         if date not in daily_summary:
-            daily_summary[date] = {'date': date, 'total_nominal': 0, 'total_depo': 0, 'count': 0}
+            daily_summary[date] = {
+                'date': date, 
+                'total_nominal': 0, 
+                'total_depo': 0, 
+                'count': 0,
+                'ndp_customers': set(),
+                'rdp_count': 0,
+                'ndp_total': 0,
+                'rdp_total': 0
+            }
         daily_summary[date]['total_nominal'] += nominal
         daily_summary[date]['total_depo'] += depo_total
         daily_summary[date]['count'] += 1
         
+        if is_ndp:
+            daily_summary[date]['ndp_customers'].add(record['customer_id'])
+            daily_summary[date]['ndp_total'] += depo_total
+        else:
+            daily_summary[date]['rdp_count'] += 1
+            daily_summary[date]['rdp_total'] += depo_total
+        
         # Staff summary
         if staff_id_rec not in staff_summary:
-            staff_summary[staff_id_rec] = {'staff_id': staff_id_rec, 'staff_name': staff_name, 'total_nominal': 0, 'total_depo': 0, 'count': 0}
+            staff_summary[staff_id_rec] = {
+                'staff_id': staff_id_rec, 
+                'staff_name': staff_name, 
+                'total_nominal': 0, 
+                'total_depo': 0, 
+                'count': 0,
+                'ndp_count': 0,
+                'rdp_count': 0
+            }
         staff_summary[staff_id_rec]['total_nominal'] += nominal
         staff_summary[staff_id_rec]['total_depo'] += depo_total
         staff_summary[staff_id_rec]['count'] += 1
+        if is_ndp:
+            staff_summary[staff_id_rec]['ndp_count'] += 1
+        else:
+            staff_summary[staff_id_rec]['rdp_count'] += 1
         
         # Product summary
         if product_id_rec not in product_summary:
-            product_summary[product_id_rec] = {'product_id': product_id_rec, 'product_name': product_name, 'total_nominal': 0, 'total_depo': 0, 'count': 0}
+            product_summary[product_id_rec] = {
+                'product_id': product_id_rec, 
+                'product_name': product_name, 
+                'total_nominal': 0, 
+                'total_depo': 0, 
+                'count': 0,
+                'ndp_count': 0,
+                'rdp_count': 0
+            }
         product_summary[product_id_rec]['total_nominal'] += nominal
         product_summary[product_id_rec]['total_depo'] += depo_total
         product_summary[product_id_rec]['count'] += 1
+        if is_ndp:
+            product_summary[product_id_rec]['ndp_count'] += 1
+        else:
+            product_summary[product_id_rec]['rdp_count'] += 1
+    
+    # Convert daily summary sets to counts
+    daily_list = []
+    for date, data in daily_summary.items():
+        daily_list.append({
+            'date': data['date'],
+            'total_nominal': data['total_nominal'],
+            'total_depo': data['total_depo'],
+            'count': data['count'],
+            'ndp_count': len(data['ndp_customers']),
+            'rdp_count': data['rdp_count'],
+            'ndp_total': data['ndp_total'],
+            'rdp_total': data['rdp_total']
+        })
+        total_ndp += len(data['ndp_customers'])
+        total_rdp += data['rdp_count']
     
     return {
         'total': {
             'total_nominal': total_nominal,
             'total_depo': total_depo,
-            'total_records': total_records
+            'total_records': total_records,
+            'total_ndp': total_ndp,
+            'total_rdp': total_rdp
         },
-        'daily': sorted(daily_summary.values(), key=lambda x: x['date'], reverse=True),
+        'daily': sorted(daily_list, key=lambda x: x['date'], reverse=True),
         'by_staff': sorted(staff_summary.values(), key=lambda x: x['total_depo'], reverse=True),
         'by_product': sorted(product_summary.values(), key=lambda x: x['total_depo'], reverse=True)
     }
