@@ -44,9 +44,19 @@ export default function AdminMemberWDCRM() {
     }
   };
 
+  const loadProducts = async () => {
+    try {
+      const response = await api.get('/products');
+      setProducts(response.data);
+    } catch (error) {
+      console.error('Failed to load products');
+    }
+  };
+
   const loadDatabases = async () => {
     try {
-      const response = await api.get('/memberwd/databases');
+      const params = filterProduct ? `?product_id=${filterProduct}` : '';
+      const response = await api.get(`/memberwd/databases${params}`);
       setDatabases(response.data);
     } catch (error) {
       toast.error('Failed to load databases');
