@@ -96,6 +96,24 @@ class CustomerRecord(BaseModel):
 class WhatsAppStatusUpdate(BaseModel):
     whatsapp_status: str
 
+class ReservedMember(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    customer_name: str
+    staff_id: str
+    staff_name: str
+    status: str = "approved"
+    created_by: str
+    created_by_name: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    approved_at: Optional[datetime] = None
+    approved_by: Optional[str] = None
+    approved_by_name: Optional[str] = None
+
+class ReservedMemberCreate(BaseModel):
+    customer_name: str
+    staff_id: Optional[str] = None
+
 class DatabaseCreate(BaseModel):
     description: Optional[str] = None
     product_id: str
