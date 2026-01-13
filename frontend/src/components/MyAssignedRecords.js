@@ -268,6 +268,22 @@ export default function MyAssignedRecords() {
                   <span className="font-semibold text-rose-600">{batch.tidak_count || 0}</span>
                 </div>
                 
+                {/* Respond Status Counts */}
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100 mt-2">
+                  <div className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                    <span className="text-slate-600">Respond Ya:</span>
+                  </div>
+                  <span className="font-semibold text-blue-600">{batch.respond_ya_count || 0}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-slate-400"></span>
+                    <span className="text-slate-600">Respond Tidak:</span>
+                  </div>
+                  <span className="font-semibold text-slate-500">{batch.respond_tidak_count || 0}</span>
+                </div>
+                
                 {batch.is_legacy && (
                   <div className="text-xs text-amber-600 mt-2 pt-2 border-t border-slate-100">
                     Assigned before batch tracking
