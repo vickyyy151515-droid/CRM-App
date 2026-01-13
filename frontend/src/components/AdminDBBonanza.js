@@ -147,23 +147,36 @@ export default function AdminDBBonanza() {
       return;
     }
 
-    // Shuffle and pick random records
-    const shuffled = [...availableRecords].sort(() => Math.random() - 0.5);
-    const randomRecordIds = shuffled.slice(0, quantity).map(r => r.id);
+    // Detect the username field from the first record
+    const columns = Object.keys(records[0]?.row_data || {});
+    const usernameField = columns.find(col => 
+      col.toLowerCase().includes('username') || 
+      col.toLowerCase().includes('user') ||
+      col.toLowerCase() === 'nama'
+    ) || columns[0];
 
     setAssigning(true);
     try {
-      await api.post('/bonanza/assign', {
-        record_ids: randomRecordIds,
-        staff_id: selectedStaff
+      const response = await api.post('/bonanza/assign-random', {
+        database_id: expandedDb,
+        staff_id: selectedStaff,
+        quantity: quantity,
+        username_field: usernameField
       });
-      toast.success(`${quantity} random records assigned successfully`);
+      
+      const data = response.data;
+      let message = `${data.assigned_count} random records assigned successfully`;
+      if (data.skipped_reserved > 0) {
+        message += ` (${data.skipped_reserved} skipped - already in Reserved Members)`;
+      }
+      toast.success(message);
+      
       setRandomQuantity('');
       setSelectedStaff('');
       loadRecords(expandedDb);
       loadDatabases();
     } catch (error) {
-      toast.error('Failed to assign records');
+      toast.error(error.response?.data?.detail || 'Failed to assign records');
     } finally {
       setAssigning(false);
     }
