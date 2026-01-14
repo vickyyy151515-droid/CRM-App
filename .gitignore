@@ -94,3 +94,7 @@ frontend/node_modules/.cache/default-development/8.pack
 # Local environment files only (keep .env files for deployment)
 .env.local
 .env.*.local
+-e 
+# Environment files
+*.env
+*.env.*
