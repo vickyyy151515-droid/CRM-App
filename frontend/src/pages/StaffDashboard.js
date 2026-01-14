@@ -84,6 +84,8 @@ export default function StaffDashboard({ user, onLogout }) {
         return <StaffDBBonanza />;
       case 'memberwd':
         return <StaffMemberWDCRM />;
+      case 'leave':
+        return <StaffLeaveRequest />;
       default:
         return null;
     }
@@ -96,7 +98,8 @@ export default function StaffDashboard({ user, onLogout }) {
     { id: 'reserved', label: 'Reserved Member CRM', icon: UserCheck },
     { id: 'omset', label: 'OMSET CRM', icon: DollarSign },
     { id: 'bonanza', label: 'DB Bonanza', icon: Gift },
-    { id: 'memberwd', label: 'Member WD CRM', icon: CreditCard }
+    { id: 'memberwd', label: 'Member WD CRM', icon: CreditCard },
+    { id: 'leave', label: 'Off Day / Sakit', icon: CalendarOff }
   ];
 
   return (
