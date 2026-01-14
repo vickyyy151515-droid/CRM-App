@@ -310,13 +310,17 @@ Build a Customer Relationship Management (CRM) application where:
 ### P2: Potential Enhancements
 - Email notifications for important updates
 - Real-time notifications with WebSockets
-- **Refactor server.py** - In Progress (38% complete):
-  - ✅ `routes/deps.py` - Shared dependencies, auth helpers, DB connection
-  - ✅ `routes/auth.py` - Authentication & user management (8 routes)
-  - ✅ `routes/leave.py` - Leave request system (8 routes)
-  - ✅ `routes/notifications.py` - Notifications & preferences (9 routes)
-  - ✅ `routes/bulk.py` - Bulk operations (4 routes)
-  - ✅ `routes/products.py` - Product management (3 routes)
-  - ✅ `routes/analytics.py` - Analytics & export (5 routes)
-  - ⏳ Remaining: Report CRM, Bonus Calculation, Bonanza, MemberWD, Database/Records
-  - Current: 4,402 lines → 1,183 lines in modules (37 routes modularized)
+- **Refactor server.py** - Progress: ~50% complete
+  - ✅ `routes/deps.py` - Shared dependencies, auth helpers, DB connection (122 lines)
+  - ✅ `routes/auth.py` - Authentication & user management (131 lines, 8 routes)
+  - ✅ `routes/leave.py` - Leave request system (211 lines, 8 routes)
+  - ✅ `routes/notifications.py` - Notifications & preferences (151 lines, 9 routes)
+  - ✅ `routes/bulk.py` - Bulk operations (159 lines, 4 routes)
+  - ✅ `routes/products.py` - Product management (61 lines, 3 routes)
+  - ✅ `routes/analytics.py` - Analytics & export (428 lines, 5 routes)
+  - ✅ `routes/izin.py` - Break/permission system (291 lines, 7 routes)
+  - ✅ `routes/bonanza.py` - DB Bonanza (240 lines, 8 routes)
+  - ✅ `routes/memberwd.py` - Member WD CRM (240 lines, 8 routes)
+  - ⏳ Remaining in server.py: Report CRM, Bonus Calculation, Reserved Members, OMSET, Databases
+  - **Progress**: 4,410 → 3,945 lines in server.py (465 lines removed)
+  - **Modules**: 2,061 lines, 61 routes modularized
