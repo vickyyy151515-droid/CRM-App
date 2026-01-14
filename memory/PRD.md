@@ -248,6 +248,32 @@ Build a Customer Relationship Management (CRM) application where:
   - `GET /api/leave/staff-balance/{id}` - Admin view staff's balance
   - `GET /api/leave/calendar` - Admin calendar view data
 
+### Phase 20: Izin (Short Break Permission System) (Completed - Jan 14, 2026)
+- **Staff Page "Izin"**: Track short breaks during work hours
+- **Core Features**:
+  - "Izin" button: Start a break (clock starts)
+  - "Kembali" button: End break (clock stops, duration calculated)
+  - Real-time timer showing elapsed break time
+  - Daily limit: 30 minutes maximum
+  - Progress bar showing daily usage
+- **Automatic Notifications**:
+  - When staff exceeds 30-minute limit, admins receive notification
+  - Toast notifications for break start/end
+- **Admin Monitoring**:
+  - "Monitor Izin" page in admin panel
+  - Summary cards: Staff with breaks, currently on break, exceeded limit
+  - Expandable staff list showing individual break records
+  - Auto-refresh every 30 seconds
+- **Database**:
+  - `izin_records` collection: id, staff_id, staff_name, date, start_time, end_time, duration_minutes
+- **API Endpoints**:
+  - `GET /api/izin/status` - Current break status
+  - `GET /api/izin/today` - Today's break records
+  - `POST /api/izin/start` - Start break
+  - `POST /api/izin/end` - End break
+  - `GET /api/izin/admin/today` - Admin view all staff breaks
+  - `GET /api/izin/admin/history` - Admin view break history
+
 ## Tech Stack
 - **Frontend**: React + TailwindCSS + Shadcn/UI + Recharts
 - **Backend**: FastAPI + PyMongo + Pandas + Openpyxl
