@@ -9,6 +9,8 @@ from .bulk import router as bulk_router
 from .products import router as products_router
 from .analytics import router as analytics_router
 from .izin import router as izin_router
+from .bonanza import router as bonanza_router
+from .memberwd import router as memberwd_router
 
 __all__ = [
     'set_database', 
@@ -19,5 +21,7 @@ __all__ = [
     'bulk_router',
     'products_router',
     'analytics_router',
-    'izin_router'
+    'izin_router',
+    'bonanza_router',
+    'memberwd_router'
 ]
