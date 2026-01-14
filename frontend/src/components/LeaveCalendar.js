@@ -150,27 +150,27 @@ export default function LeaveCalendar() {
         {/* Calendar */}
         <div className="lg:col-span-3 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
           {/* Calendar Header */}
-          <div className="px-4 py-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 flex items-center justify-between">
+          <div className="px-4 py-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
             <button
               onClick={goToPreviousMonth}
-              className="p-2 hover:bg-slate-200 rounded-lg transition-colors"
+              className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors text-slate-600 dark:text-slate-400"
             >
               <ChevronLeft size={20} />
             </button>
             <div className="flex items-center gap-3">
-              <h2 className="text-lg font-semibold text-slate-800 dark:text-white dark:text-slate-100">
+              <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
                 {MONTH_NAMES[currentMonth - 1]} {currentYear}
               </h2>
               <button
                 onClick={goToToday}
-                className="px-3 py-1 text-sm bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full hover:bg-blue-200 transition-colors"
+                className="px-3 py-1 text-sm bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
               >
                 Today
               </button>
             </div>
             <button
               onClick={goToNextMonth}
-              className="p-2 hover:bg-slate-200 rounded-lg transition-colors"
+              className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors text-slate-600 dark:text-slate-400"
             >
               <ChevronRight size={20} />
             </button>
