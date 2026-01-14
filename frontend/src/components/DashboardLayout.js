@@ -245,7 +245,7 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex transition-colors">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div 
@@ -257,7 +257,7 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
       {/* Sidebar */}
       <aside 
         className={`
-          fixed lg:static inset-y-0 left-0 z-50 bg-white border-r border-slate-200 flex flex-col
+          fixed lg:static inset-y-0 left-0 z-50 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col
           transform transition-all duration-300 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
           ${collapsed ? 'lg:w-20' : 'w-64'}
@@ -265,21 +265,21 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
         data-testid="sidebar"
       >
         {/* Header */}
-        <div className={`p-4 border-b border-slate-200 flex items-center ${collapsed ? 'lg:justify-center' : 'justify-between'}`}>
+        <div className={`p-4 border-b border-slate-200 dark:border-slate-800 flex items-center ${collapsed ? 'lg:justify-center' : 'justify-between'}`}>
           <div className={`${collapsed ? 'lg:hidden' : ''}`}>
-            <h1 className="text-2xl font-bold text-slate-900">CRM Pro</h1>
-            <p className="text-sm text-slate-600 mt-1">{user.role === 'admin' ? 'Admin Panel' : 'Staff Panel'}</p>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">CRM Pro</h1>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{user.role === 'admin' ? 'Admin Panel' : 'Staff Panel'}</p>
           </div>
           {/* Collapsed logo */}
           {collapsed && (
             <div className="hidden lg:flex items-center justify-center">
-              <span className="text-2xl font-bold text-slate-900">C</span>
+              <span className="text-2xl font-bold text-slate-900 dark:text-white">C</span>
             </div>
           )}
           {/* Mobile close button */}
           <button
             onClick={() => setSidebarOpen(false)}
-            className="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+            className="lg:hidden p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
           >
             <X size={20} />
           </button>
