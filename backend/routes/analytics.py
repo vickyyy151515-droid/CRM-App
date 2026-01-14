@@ -47,25 +47,39 @@ async def get_staff_performance_analytics(
     if product_id:
         record_query['product_id'] = product_id
     
-    records = await db.customer_records.find(record_query, {'_id': 0}).to_list(100000)
-    records_in_period = [r for r in records if r.get('assigned_at', '') >= start_date]
+    # Use aggregation for better performance instead of loading all records
+    pipeline = [
+        {'$match': record_query},
+        {'$group': {
+            '_id': '$assigned_to',
+            'total': {'$sum': 1},
+            'wa_ada': {'$sum': {'$cond': [{'$eq': ['$whatsapp_status', 'ada']}, 1, 0]}},
+            'wa_tidak': {'$sum': {'$cond': [{'$eq': ['$whatsapp_status', 'tidak']}, 1, 0]}},
+            'wa_ceklis1': {'$sum': {'$cond': [{'$eq': ['$whatsapp_status', 'ceklis1']}, 1, 0]}},
+            'resp_ya': {'$sum': {'$cond': [{'$eq': ['$respond_status', 'ya']}, 1, 0]}},
+            'resp_tidak': {'$sum': {'$cond': [{'$eq': ['$respond_status', 'tidak']}, 1, 0]}},
+            'in_period': {'$sum': {'$cond': [{'$gte': ['$assigned_at', start_date]}, 1, 0]}}
+        }}
+    ]
+    aggregated_stats = await db.customer_records.aggregate(pipeline).to_list(1000)
+    stats_lookup = {s['_id']: s for s in aggregated_stats}
+    
     staff_list = await db.users.find({'role': 'staff'}, {'_id': 0, 'password_hash': 0}).to_list(1000)
     
     staff_metrics = []
     for staff in staff_list:
-        staff_records = [r for r in records if r.get('assigned_to') == staff['id']]
-        staff_records_period = [r for r in records_in_period if r.get('assigned_to') == staff['id']]
+        stats = stats_lookup.get(staff['id'], {})
         
-        total = len(staff_records)
-        total_period = len(staff_records_period)
+        total = stats.get('total', 0)
+        total_period = stats.get('in_period', 0)
         
-        wa_ada = len([r for r in staff_records if r.get('whatsapp_status') == 'ada'])
-        wa_tidak = len([r for r in staff_records if r.get('whatsapp_status') == 'tidak'])
-        wa_ceklis1 = len([r for r in staff_records if r.get('whatsapp_status') == 'ceklis1'])
+        wa_ada = stats.get('wa_ada', 0)
+        wa_tidak = stats.get('wa_tidak', 0)
+        wa_ceklis1 = stats.get('wa_ceklis1', 0)
         wa_checked = wa_ada + wa_tidak + wa_ceklis1
         
-        resp_ya = len([r for r in staff_records if r.get('respond_status') == 'ya'])
-        resp_tidak = len([r for r in staff_records if r.get('respond_status') == 'tidak'])
+        resp_ya = stats.get('resp_ya', 0)
+        resp_tidak = stats.get('resp_tidak', 0)
         resp_checked = resp_ya + resp_tidak
         
         staff_metrics.append({
