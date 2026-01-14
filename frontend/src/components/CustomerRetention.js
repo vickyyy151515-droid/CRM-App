@@ -91,6 +91,28 @@ export default function CustomerRetention({ isAdmin = false }) {
     }
   }, [dateRange, isAdmin]);
 
+  const loadAlerts = useCallback(async () => {
+    try {
+      let url = '/retention/alerts';
+      if (selectedProduct) url += `?product_id=${selectedProduct}`;
+      
+      const response = await api.get(url);
+      setAlerts(response.data);
+    } catch (error) {
+      console.error('Failed to load alerts');
+    }
+  }, [selectedProduct]);
+
+  const dismissAlert = async (customerId, productId) => {
+    try {
+      await api.post(`/retention/alerts/dismiss?customer_id=${customerId}&product_id=${productId}`);
+      toast.success('Alert dismissed for 7 days');
+      loadAlerts();
+    } catch (error) {
+      toast.error('Failed to dismiss alert');
+    }
+  };
+
   const loadProducts = useCallback(async () => {
     try {
       const response = await api.get('/products');
@@ -108,8 +130,9 @@ export default function CustomerRetention({ isAdmin = false }) {
     loadOverview();
     loadTrend();
     loadProductBreakdown();
+    loadAlerts();
     if (isAdmin) loadStaffBreakdown();
-  }, [loadOverview, loadTrend, loadProductBreakdown, loadStaffBreakdown, isAdmin]);
+  }, [loadOverview, loadTrend, loadProductBreakdown, loadStaffBreakdown, loadAlerts, isAdmin]);
 
   useEffect(() => {
     if (activeView === 'customers') {
