@@ -324,9 +324,43 @@ Build a Customer Relationship Management (CRM) application where:
   - `routes/report.py` - Report CRM (NEW)
   - `routes/bonus.py` - Bonus Calculation (NEW)
   - `routes/records.py` - Core database/records/reserved members (NEW)
-- **Total modular code: ~4,300 lines across 14 modules**
-- **All 80+ API endpoints working correctly**
+  - `routes/leaderboard.py` - Staff leaderboard & targets (NEW)
+  - `routes/followup.py` - Customer follow-up reminders (NEW)
+  - `routes/daily_summary.py` - Daily summary with product breakdown (NEW)
+  - `routes/funnel.py` - Conversion funnel analytics (NEW)
+- **Total modular code: ~5,000 lines across 18 modules**
+- **All 90+ API endpoints working correctly**
 - **API Version upgraded to 3.0.0**
+
+### ✅ COMPLETED: Daily Summary Product Breakdown (Jan 15, 2026)
+- **Enhanced Daily Summary** with per-product performance breakdown
+- **Admin View**:
+  - Overall stats: Total OMSET, NDP, RDP, Forms
+  - Staff breakdown with expandable product details per staff member
+  - Overall Product Performance section
+- **Staff View**:
+  - Personal stats with product breakdown
+  - Team product performance for comparison
+- **API Endpoint**: `/api/daily-summary` (enhanced with product_breakdown)
+
+### ✅ COMPLETED: Conversion Funnel (Jan 15, 2026)
+- **Sales Funnel Visualization**:
+  - Assigned → WhatsApp Reached → Responded → Deposited
+  - Visual funnel bars with conversion percentages
+  - Drop indicators showing customer loss at each stage
+- **Three Views**:
+  - **Overview**: Main funnel visualization with stage cards
+  - **By Product**: Table showing funnel metrics per product
+  - **By Staff**: Table showing funnel metrics per staff member (Admin only)
+- **Filters**: Date range (7/30/90/365 days), Product filter
+- **API Endpoints**:
+  - `GET /api/funnel` - Main funnel data
+  - `GET /api/funnel/by-product` - Product breakdown
+  - `GET /api/funnel/by-staff` - Staff breakdown (Admin only)
+  - `GET /api/funnel/trend` - Daily trend data
+
+### P1: Next Priority Tasks
+- **Customer Retention Tracking**: Track RDP (repeat depositors) and show loyalty metrics
 
 ### P2: Future Enhancements
 - Email notifications for important updates
@@ -337,3 +371,5 @@ Build a Customer Relationship Management (CRM) application where:
 - Leave Calendar statistics (total hours, most common leave day)
 - Keyboard shortcuts for power users
 - Sidebar search/filter functionality
+- Dark Mode
+- Global Search
