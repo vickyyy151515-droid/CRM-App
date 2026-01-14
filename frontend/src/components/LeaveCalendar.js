@@ -192,9 +192,9 @@ export default function LeaveCalendar() {
                 key={index}
                 onClick={() => dayData.date && setSelectedDate(dayData.date)}
                 className={`
-                  min-h-[100px] p-2 border-b border-r border-slate-100 transition-colors
-                  ${!dayData.day ? 'bg-slate-50' : 'hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer'}
-                  ${dayData.date === todayStr ? 'bg-blue-50/50' : ''}
+                  min-h-[100px] p-2 border-b border-r border-slate-100 dark:border-slate-700 transition-colors
+                  ${!dayData.day ? 'bg-slate-50 dark:bg-slate-900/50' : 'hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer'}
+                  ${dayData.date === todayStr ? 'bg-blue-50/50 dark:bg-blue-900/20' : ''}
                   ${dayData.date === selectedDate ? 'ring-2 ring-blue-500 ring-inset' : ''}
                 `}
               >
@@ -202,7 +202,7 @@ export default function LeaveCalendar() {
                   <>
                     <div className={`
                       text-sm font-medium mb-1
-                      ${dayData.date === todayStr ? 'text-blue-600' : 'text-slate-700'}
+                      ${dayData.date === todayStr ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300'}
                     `}>
                       {dayData.day}
                     </div>
@@ -228,7 +228,7 @@ export default function LeaveCalendar() {
                         );
                       })}
                       {dayData.leaves?.length > 3 && (
-                        <div className="text-xs text-slate-500 pl-1">
+                        <div className="text-xs text-slate-500 dark:text-slate-400 pl-1">
                           +{dayData.leaves.length - 3} more
                         </div>
                       )}
@@ -244,7 +244,7 @@ export default function LeaveCalendar() {
         <div className="space-y-4">
           {/* Selected Date Details */}
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-            <div className="px-4 py-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-200">
+            <div className="px-4 py-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
               <h3 className="font-semibold text-slate-800 dark:text-white flex items-center gap-2">
                 <CalendarIcon size={18} />
                 {selectedDate ? (
