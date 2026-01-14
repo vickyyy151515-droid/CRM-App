@@ -284,20 +284,10 @@ Build a Customer Relationship Management (CRM) application where:
 ### P2: Potential Enhancements
 - Email notifications for important updates
 - Real-time notifications with WebSockets
-- **Refactor server.py** - Currently 3200+ lines. Recommended structure:
-  ```
-  /app/backend/
-  ├── server.py          # App init + router registration only
-  ├── routes/
-  │   ├── auth.py        # Auth, users, products
-  │   ├── databases.py   # Database uploads, customer records
-  │   ├── omset.py       # OMSET CRM endpoints
-  │   ├── bonanza.py     # DB Bonanza endpoints
-  │   ├── memberwd.py    # Member WD endpoints
-  │   └── admin.py       # Analytics, export, bulk ops
-  ├── models/
-  │   └── schemas.py     # All Pydantic models
-  └── utils/
-      ├── timezone.py    # Jakarta timezone helpers
-      └── auth.py        # Password hashing, JWT
-  ```
+- **Refactor server.py** - Progress started:
+  - ✅ Created `/app/backend/routes/` package
+  - ✅ Created `routes/deps.py` with shared dependencies
+  - ✅ Created `routes/auth.py` with auth routes (ready to migrate)
+  - ✅ Created `routes/leave.py` with leave routes (ready to migrate)
+  - ⏳ Remaining: OMSET, Bonanza, MemberWD, Reports, Analytics, Export routes
+  - Current: 4,400 lines → Target: <500 lines in server.py
