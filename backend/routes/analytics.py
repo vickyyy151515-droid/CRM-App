@@ -155,33 +155,43 @@ async def get_business_analytics(period: str = 'month', product_id: Optional[str
     db = get_db()
     start_date, end_date = get_date_range(period)
     
-    omset_query = {}
+    omset_query = {'date': {'$gte': start_date[:10]}}
     if product_id:
         omset_query['product_id'] = product_id
     
-    omset_records = await db.omset_records.find(omset_query, {'_id': 0}).to_list(100000)
-    omset_in_period = [r for r in omset_records if r.get('date', '') >= start_date[:10]]
+    # Use aggregation for daily OMSET data
+    daily_pipeline = [
+        {'$match': omset_query},
+        {'$group': {
+            '_id': '$date',
+            'total': {'$sum': '$depo_total'},
+            'count': {'$sum': 1},
+            'ndp': {'$sum': {'$cond': [{'$eq': ['$customer_type', 'NDP']}, 1, 0]}},
+            'rdp': {'$sum': {'$cond': [{'$eq': ['$customer_type', 'RDP']}, 1, 0]}}
+        }},
+        {'$sort': {'_id': 1}}
+    ]
+    daily_results = await db.omset_records.aggregate(daily_pipeline).to_list(1000)
+    omset_chart = [{'date': d['_id'], 'total': d['total'], 'count': d['count'], 'ndp': d['ndp'], 'rdp': d['rdp']} for d in daily_results]
     
-    daily_omset = {}
-    for record in omset_in_period:
-        date = record.get('date', '')
-        if date not in daily_omset:
-            daily_omset[date] = {'date': date, 'total': 0, 'count': 0, 'ndp': 0, 'rdp': 0}
-        daily_omset[date]['total'] += record.get('depo_total', 0)
-        daily_omset[date]['count'] += 1
-        if record.get('customer_type') == 'NDP':
-            daily_omset[date]['ndp'] += 1
-        else:
-            daily_omset[date]['rdp'] += 1
-    
-    omset_chart = sorted(daily_omset.values(), key=lambda x: x['date'])
+    # Product OMSET aggregation
+    product_pipeline = [
+        {'$match': omset_query},
+        {'$group': {
+            '_id': '$product_id',
+            'total_omset': {'$sum': '$depo_total'},
+            'record_count': {'$sum': 1}
+        }}
+    ]
+    product_results = await db.omset_records.aggregate(product_pipeline).to_list(1000)
+    product_lookup = {p['_id']: p for p in product_results}
     
     products = await db.products.find({}, {'_id': 0}).to_list(1000)
     product_omset = []
     for product in products:
-        prod_records = [r for r in omset_in_period if r.get('product_id') == product['id']]
-        total = sum(r.get('depo_total', 0) for r in prod_records)
-        count = len(prod_records)
+        stats = product_lookup.get(product['id'], {'total_omset': 0, 'record_count': 0})
+        total = stats.get('total_omset', 0)
+        count = stats.get('record_count', 0)
         product_omset.append({
             'product_id': product['id'], 'product_name': product['name'],
             'total_omset': total, 'record_count': count,
@@ -190,16 +200,49 @@ async def get_business_analytics(period: str = 'month', product_id: Optional[str
     
     product_omset.sort(key=lambda x: x['total_omset'], reverse=True)
     
-    total_ndp = len([r for r in omset_in_period if r.get('customer_type') == 'NDP'])
-    total_rdp = len([r for r in omset_in_period if r.get('customer_type') == 'RDP'])
-    ndp_omset = sum(r.get('depo_total', 0) for r in omset_in_period if r.get('customer_type') == 'NDP')
-    rdp_omset = sum(r.get('depo_total', 0) for r in omset_in_period if r.get('customer_type') == 'RDP')
+    # Summary aggregation
+    summary_pipeline = [
+        {'$match': omset_query},
+        {'$group': {
+            '_id': None,
+            'total_ndp': {'$sum': {'$cond': [{'$eq': ['$customer_type', 'NDP']}, 1, 0]}},
+            'total_rdp': {'$sum': {'$cond': [{'$eq': ['$customer_type', 'RDP']}, 1, 0]}},
+            'ndp_omset': {'$sum': {'$cond': [{'$eq': ['$customer_type', 'NDP']}, '$depo_total', 0]}},
+            'rdp_omset': {'$sum': {'$cond': [{'$eq': ['$customer_type', 'RDP']}, '$depo_total', 0]}}
+        }}
+    ]
+    summary_result = await db.omset_records.aggregate(summary_pipeline).to_list(1)
+    summary = summary_result[0] if summary_result else {'total_ndp': 0, 'total_rdp': 0, 'ndp_omset': 0, 'rdp_omset': 0}
+    
+    total_ndp = summary.get('total_ndp', 0)
+    total_rdp = summary.get('total_rdp', 0)
+    ndp_omset = summary.get('ndp_omset', 0)
+    rdp_omset = summary.get('rdp_omset', 0)
+    
+    # Database utilization using aggregation
+    db_counts_pipeline = [
+        {'$group': {
+            '_id': {'database_id': '$database_id', 'status': '$status'},
+            'count': {'$sum': 1}
+        }}
+    ]
+    db_counts = await db.customer_records.aggregate(db_counts_pipeline).to_list(10000)
+    db_counts_lookup = {}
+    for item in db_counts:
+        db_id = item['_id']['database_id']
+        status = item['_id']['status']
+        if db_id not in db_counts_lookup:
+            db_counts_lookup[db_id] = {'total': 0, 'assigned': 0}
+        db_counts_lookup[db_id]['total'] += item['count']
+        if status == 'assigned':
+            db_counts_lookup[db_id]['assigned'] = item['count']
     
     databases = await db.databases.find({}, {'_id': 0}).to_list(1000)
     db_utilization = []
     for database in databases:
-        total_records = await db.customer_records.count_documents({'database_id': database['id']})
-        assigned = await db.customer_records.count_documents({'database_id': database['id'], 'status': 'assigned'})
+        counts = db_counts_lookup.get(database['id'], {'total': 0, 'assigned': 0})
+        total_records = counts['total']
+        assigned = counts['assigned']
         available = total_records - assigned
         db_utilization.append({
             'database_id': database['id'], 'database_name': database.get('filename', 'Unknown'),
