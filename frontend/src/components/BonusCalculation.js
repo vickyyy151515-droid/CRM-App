@@ -161,8 +161,8 @@ export default function BonusCalculation() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">CRM Bonus Calculation</h1>
-          <p className="text-slate-500 text-sm mt-1">Automatic monthly bonus calculation for staff</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">CRM Bonus Calculation</h1>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Automatic monthly bonus calculation for staff</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -185,14 +185,14 @@ export default function BonusCalculation() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
         <div className="flex flex-wrap gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-600 mb-1">Year</label>
+            <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Year</label>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
               data-testid="year-filter"
             >
               {years.map(year => (
@@ -201,11 +201,11 @@ export default function BonusCalculation() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-600 mb-1">Month</label>
+            <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Month</label>
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
-              className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
               data-testid="month-filter"
             >
               {MONTH_NAMES.map((name, idx) => (
