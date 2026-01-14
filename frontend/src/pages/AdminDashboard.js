@@ -187,6 +187,8 @@ export default function AdminDashboard({ user, onLogout }) {
         return <LeaveCalendar />;
       case 'izin-monitor':
         return <AdminIzinMonitor />;
+      case 'leaderboard':
+        return <Leaderboard isAdmin={true} />;
       default:
         return null;
     }
@@ -194,6 +196,7 @@ export default function AdminDashboard({ user, onLogout }) {
 
   const menuItems = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard, badge: 0 },
+    { id: 'leaderboard', label: 'Leaderboard', icon: Trophy, badge: 0 },
     { id: 'analytics', label: 'Advanced Analytics', icon: PieChart, badge: 0 },
     { id: 'export', label: 'Export Center', icon: Download, badge: 0 },
     { id: 'report', label: 'Report CRM', icon: FileText, badge: 0 },
