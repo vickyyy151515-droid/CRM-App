@@ -2440,39 +2440,66 @@ async def get_bonus_calculation_data(
         else:
             staff_data[sid]['daily_stats'][date]['rdp'] += 1
     
+    # Get bonus configuration
+    bonus_config = await get_bonus_config()
+    main_tiers = bonus_config['main_tiers']
+    ndp_tiers = bonus_config['ndp_tiers']
+    rdp_tiers = bonus_config['rdp_tiers']
+    
     # Calculate bonuses for each staff
     result = []
     for sid, data in staff_data.items():
         # Main bonus
-        main_bonus = calculate_main_bonus(data['total_nominal'])
+        main_bonus = calculate_main_bonus_with_config(data['total_nominal'], main_tiers)
         
         # Daily bonuses
         ndp_bonus_total = 0
         rdp_bonus_total = 0
-        ndp_bonus_days = {'8_10': 0, 'above_10': 0}
-        rdp_bonus_days = {'12_15': 0, 'above_15': 0}
+        ndp_bonus_days = {}
+        rdp_bonus_days = {}
+        
+        # Initialize bonus day counters based on config
+        for tier in ndp_tiers:
+            ndp_bonus_days[tier['label']] = 0
+        for tier in rdp_tiers:
+            rdp_bonus_days[tier['label']] = 0
+        
         daily_breakdown = []
         
         for date, stats in sorted(data['daily_stats'].items()):
             ndp = stats['ndp']
             rdp = stats['rdp']
             
-            ndp_daily_bonus = calculate_daily_ndp_bonus(ndp)
-            rdp_daily_bonus = calculate_daily_rdp_bonus(rdp)
+            ndp_daily_bonus = calculate_daily_ndp_bonus_with_config(ndp, ndp_tiers)
+            rdp_daily_bonus = calculate_daily_rdp_bonus_with_config(rdp, rdp_tiers)
             
             ndp_bonus_total += ndp_daily_bonus
             rdp_bonus_total += rdp_daily_bonus
             
             # Track bonus day counts
-            if ndp > 10:
-                ndp_bonus_days['above_10'] += 1
-            elif ndp >= 8:
-                ndp_bonus_days['8_10'] += 1
+            for tier in ndp_tiers:
+                min_val = tier['min']
+                max_val = tier.get('max')
+                if max_val is None:
+                    if ndp >= min_val:
+                        ndp_bonus_days[tier['label']] += 1
+                        break
+                else:
+                    if min_val <= ndp <= max_val:
+                        ndp_bonus_days[tier['label']] += 1
+                        break
             
-            if rdp > 15:
-                rdp_bonus_days['above_15'] += 1
-            elif rdp >= 12:
-                rdp_bonus_days['12_15'] += 1
+            for tier in rdp_tiers:
+                min_val = tier['min']
+                max_val = tier.get('max')
+                if max_val is None:
+                    if rdp >= min_val:
+                        rdp_bonus_days[tier['label']] += 1
+                        break
+                else:
+                    if min_val <= rdp <= max_val:
+                        rdp_bonus_days[tier['label']] += 1
+                        break
             
             daily_breakdown.append({
                 'date': date,
