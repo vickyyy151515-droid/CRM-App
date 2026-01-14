@@ -91,7 +91,6 @@ frontend/node_modules/.cache/default-development/3.pack
 frontend/node_modules/.cache/default-development/2.pack
 frontend/node_modules/.cache/default-development/4.pack
 frontend/node_modules/.cache/default-development/8.pack
--e 
-# Environment files
-*.env
-*.env.*
+# Local environment files only (keep .env files for deployment)
+.env.local
+.env.*.local
