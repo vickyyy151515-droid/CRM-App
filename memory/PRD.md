@@ -284,10 +284,13 @@ Build a Customer Relationship Management (CRM) application where:
 ### P2: Potential Enhancements
 - Email notifications for important updates
 - Real-time notifications with WebSockets
-- **Refactor server.py** - Progress started:
-  - ✅ Created `/app/backend/routes/` package
-  - ✅ Created `routes/deps.py` with shared dependencies
-  - ✅ Created `routes/auth.py` with auth routes (ready to migrate)
-  - ✅ Created `routes/leave.py` with leave routes (ready to migrate)
-  - ⏳ Remaining: OMSET, Bonanza, MemberWD, Reports, Analytics, Export routes
-  - Current: 4,400 lines → Target: <500 lines in server.py
+- **Refactor server.py** - In Progress (38% complete):
+  - ✅ `routes/deps.py` - Shared dependencies, auth helpers, DB connection
+  - ✅ `routes/auth.py` - Authentication & user management (8 routes)
+  - ✅ `routes/leave.py` - Leave request system (8 routes)
+  - ✅ `routes/notifications.py` - Notifications & preferences (9 routes)
+  - ✅ `routes/bulk.py` - Bulk operations (4 routes)
+  - ✅ `routes/products.py` - Product management (3 routes)
+  - ✅ `routes/analytics.py` - Analytics & export (5 routes)
+  - ⏳ Remaining: Report CRM, Bonus Calculation, Bonanza, MemberWD, Database/Records
+  - Current: 4,402 lines → 1,183 lines in modules (37 routes modularized)
