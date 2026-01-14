@@ -3730,6 +3730,54 @@ async def save_widget_layout(layout: WidgetLayoutUpdate, user: User = Depends(ge
     )
     return {'message': 'Layout saved successfully', 'widget_order': layout.widget_order}
 
+# ==================== SIDEBAR CONFIGURATION ENDPOINTS ====================
+
+class SidebarFolder(BaseModel):
+    id: str
+    name: str
+    items: list  # List of menu item IDs
+    isOpen: bool = True
+
+class SidebarConfig(BaseModel):
+    items: list  # Ordered list of item IDs and folder objects
+    folders: list  # List of SidebarFolder objects
+
+@api_router.get("/user/preferences/sidebar-config")
+async def get_sidebar_config(user: User = Depends(get_current_user)):
+    """Get user's saved sidebar configuration"""
+    prefs = await db.user_preferences.find_one(
+        {'user_id': user.id, 'type': 'sidebar_config'}, 
+        {'_id': 0}
+    )
+    if prefs:
+        return {
+            'config': prefs.get('config', None)
+        }
+    return {'config': None}
+
+@api_router.put("/user/preferences/sidebar-config")
+async def save_sidebar_config(config: dict, user: User = Depends(get_current_user)):
+    """Save user's sidebar configuration"""
+    await db.user_preferences.update_one(
+        {'user_id': user.id, 'type': 'sidebar_config'},
+        {'$set': {
+            'user_id': user.id,
+            'type': 'sidebar_config',
+            'config': config,
+            'updated_at': get_jakarta_now().isoformat()
+        }},
+        upsert=True
+    )
+    return {'message': 'Sidebar config saved successfully'}
+
+@api_router.delete("/user/preferences/sidebar-config")
+async def reset_sidebar_config(user: User = Depends(get_current_user)):
+    """Reset sidebar configuration to default"""
+    await db.user_preferences.delete_one(
+        {'user_id': user.id, 'type': 'sidebar_config'}
+    )
+    return {'message': 'Sidebar config reset to default'}
+
 # ==================== ADVANCED ANALYTICS ENDPOINTS ====================
 
 def get_date_range(period: str):
