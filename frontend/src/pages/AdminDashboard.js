@@ -89,20 +89,6 @@ export default function AdminDashboard({ user, onLogout }) {
             <h2 className="text-3xl font-semibold tracking-tight text-slate-900 mb-6">Dashboard Overview</h2>
             {/* Quick Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              {/* Monthly ATH Card */}
-              <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-6 shadow-sm" data-testid="stat-monthly-ath">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="p-2 bg-amber-100 rounded-lg">
-                    <BarChart className="text-amber-600" size={20} />
-                  </div>
-                  <span className="text-xs font-medium text-amber-600 bg-amber-100 px-2 py-1 rounded-full">
-                    {stats.monthlyAth.date ? formatAthDate(stats.monthlyAth.date) : 'No data'}
-                  </span>
-                </div>
-                <p className="text-xl font-bold text-slate-900 mt-2">{formatCurrency(stats.monthlyAth.amount)}</p>
-                <p className="text-sm text-slate-600 mt-1">Monthly ATH</p>
-              </div>
-              
               {/* Pending DB Requests */}
               <div 
                 className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm cursor-pointer hover:border-amber-300 transition-colors" 
@@ -127,6 +113,20 @@ export default function AdminDashboard({ user, onLogout }) {
                   <span className="text-2xl font-bold text-slate-900">{stats.pendingReservations}</span>
                 </div>
                 <p className="text-sm text-slate-600">Pending Reservations</p>
+              </div>
+              
+              {/* Monthly ATH Card */}
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-6 shadow-sm" data-testid="stat-monthly-ath">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="p-2 bg-amber-100 rounded-lg">
+                    <BarChart className="text-amber-600" size={20} />
+                  </div>
+                  <span className="text-xs font-medium text-amber-600 bg-amber-100 px-2 py-1 rounded-full">
+                    {stats.monthlyAth.date ? formatAthDate(stats.monthlyAth.date) : 'No data'}
+                  </span>
+                </div>
+                <p className="text-xl font-bold text-slate-900 mt-2">{formatCurrency(stats.monthlyAth.amount)}</p>
+                <p className="text-sm text-slate-600 mt-1">Monthly ATH</p>
               </div>
               
               {/* OMSET Year Card */}
