@@ -414,7 +414,7 @@ export default function DailySummary({ isAdmin = false }) {
 
           {/* Top Performer */}
           {summary.top_performer && summary.top_performer.staff_id !== summary.my_stats?.staff_id && (
-            <div className="bg-gradient-to-r from-yellow-50 via-amber-50 to-orange-50 border border-yellow-200 rounded-xl p-5">
+            <div className="bg-gradient-to-r from-yellow-50 via-amber-50 to-orange-50 border border-yellow-200 rounded-xl p-5 mb-6">
               <div className="flex items-center gap-2 mb-2">
                 <Trophy className="text-yellow-600" size={20} />
                 <span className="text-sm font-medium text-yellow-700">Today's Top Performer</span>
@@ -423,6 +423,93 @@ export default function DailySummary({ isAdmin = false }) {
               <p className="text-sm text-slate-600">
                 {formatCurrency(summary.top_performer.omset)} • {summary.top_performer.ndp} NDP • {summary.top_performer.rdp} RDP
               </p>
+            </div>
+          )}
+
+          {/* My Product Breakdown */}
+          {summary.my_stats?.product_breakdown && summary.my_stats.product_breakdown.length > 0 && (
+            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden mb-6">
+              <div 
+                className="px-5 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer"
+                onClick={() => setShowProductBreakdown(!showProductBreakdown)}
+              >
+                <div className="flex items-center gap-2">
+                  <Package className="text-indigo-600" size={20} />
+                  <h3 className="font-semibold text-slate-900">My Product Performance</h3>
+                </div>
+                {showProductBreakdown ? <ChevronUp size={20} className="text-slate-400" /> : <ChevronDown size={20} className="text-slate-400" />}
+              </div>
+              {showProductBreakdown && (
+                <div className="divide-y divide-slate-100">
+                  {summary.my_stats.product_breakdown.map((product, index) => (
+                    <div key={product.product_id} className="p-4 flex items-center justify-between hover:bg-slate-50">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                          index === 0 ? 'bg-indigo-100 text-indigo-700' :
+                          index === 1 ? 'bg-slate-200 text-slate-700' :
+                          index === 2 ? 'bg-purple-100 text-purple-700' :
+                          'bg-slate-100 text-slate-600'
+                        }`}>
+                          {index + 1}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-slate-900">{product.product_name}</p>
+                          <p className="text-sm text-slate-500">{product.form_count} deposits</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-6 text-right">
+                        <div>
+                          <p className="font-bold text-emerald-600">{formatCurrency(product.total_omset)}</p>
+                          <p className="text-xs text-slate-500">OMSET</p>
+                        </div>
+                        <div>
+                          <p className="font-bold text-blue-600">{product.ndp_count}</p>
+                          <p className="text-xs text-slate-500">NDP</p>
+                        </div>
+                        <div>
+                          <p className="font-bold text-violet-600">{product.rdp_count}</p>
+                          <p className="text-xs text-slate-500">RDP</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Team Product Breakdown */}
+          {summary.product_breakdown && summary.product_breakdown.length > 0 && (
+            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+              <div className="px-5 py-4 border-b border-slate-200 bg-slate-50">
+                <div className="flex items-center gap-2">
+                  <Package className="text-slate-600" size={18} />
+                  <h3 className="font-semibold text-slate-900">Team Product Performance</h3>
+                </div>
+              </div>
+              <div className="divide-y divide-slate-100">
+                {summary.product_breakdown.map((product, index) => (
+                  <div key={product.product_id} className="p-4 flex items-center justify-between hover:bg-slate-50">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs ${
+                        index === 0 ? 'bg-indigo-100 text-indigo-700' :
+                        'bg-slate-100 text-slate-600'
+                      }`}>
+                        {index + 1}
+                      </div>
+                      <div>
+                        <p className="font-medium text-slate-900">{product.product_name}</p>
+                        <p className="text-xs text-slate-500">{product.form_count} deposits</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4 text-right text-sm">
+                      <span className="font-semibold text-emerald-600">{formatCurrency(product.total_omset)}</span>
+                      <span className="text-blue-600">{product.ndp_count} NDP</span>
+                      <span className="text-violet-600">{product.rdp_count} RDP</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
