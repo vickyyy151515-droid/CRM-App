@@ -6,6 +6,10 @@ import {
   Download, Filter, RefreshCw, ChevronDown, ChevronUp,
   FileSpreadsheet, PieChart, Activity, Target
 } from 'lucide-react';
+import { 
+  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
+  Tooltip, Legend, ResponsiveContainer, Area, AreaChart, ComposedChart
+} from 'recharts';
 
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUN', 'JUL', 'AUG', 'SEPT', 'OCT', 'NOV', 'DEC'];
 const MONTH_NAMES = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
