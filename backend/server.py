@@ -38,16 +38,20 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 # App initialization
-app = FastAPI(title="CRM Pro API", version="2.2.0")  # Updated version with Izin feature
+app = FastAPI(title="CRM Pro API", version="2.3.0")  # Updated version with more modular routes
 api_router = APIRouter(prefix="/api")
 
 # Initialize modular routes with database connection
 from routes.deps import set_database
 from routes.izin import router as izin_router
+from routes.bonanza import router as bonanza_router
+from routes.memberwd import router as memberwd_router
 set_database(db)
 
 # Register modular routes
 api_router.include_router(izin_router)
+api_router.include_router(bonanza_router)
+api_router.include_router(memberwd_router)
 
 # Auth configuration
 JWT_SECRET = os.environ.get('JWT_SECRET', 'your-secret-key-change-in-production')
