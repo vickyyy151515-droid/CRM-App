@@ -379,6 +379,24 @@ Build a Customer Relationship Management (CRM) application where:
   - `GET /api/retention/by-product` - Product breakdown
   - `GET /api/retention/by-staff` - Staff breakdown (Admin only)
 
+### ✅ COMPLETED: Customer Segment Alerts (Jan 15, 2026)
+- **At-Risk Customer Detection** to prevent churn
+- **Risk Levels**:
+  - **Critical**: 14+ days since last deposit
+  - **High**: 7-13 days since last deposit
+  - **Medium**: 3-6 days (only for frequent depositors with 2+ deposits)
+- **Features**:
+  - Summary cards showing counts per risk level
+  - Detailed alert list with customer info, OMSET, and last deposit date
+  - Deposit pattern analysis ("typically deposits every X days")
+  - Overdue indicator for customers past their usual pattern
+  - Filter by risk level (All/Critical/High/Medium)
+  - Dismiss alerts for 7 days
+- **API Endpoints**:
+  - `GET /api/retention/alerts` - Get at-risk customers
+  - `GET /api/retention/alerts/by-staff` - Staff breakdown (Admin only)
+  - `POST /api/retention/alerts/dismiss` - Dismiss alert for 7 days
+
 ### P1: Next Priority Tasks
 - None - All P1 tasks completed!
 
