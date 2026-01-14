@@ -381,13 +381,8 @@ export default function ReportCRM() {
       {activeTab === 'monthly' && (
         <div className="space-y-4" data-testid="monthly-tab-content">
           {MONTHS.map((month, idx) => {
-            const monthData = monthlyData.filter(d => d.month === idx + 1);
-            const monthTotals = monthData.reduce((acc, d) => ({
-              new_id: acc.new_id + (d.new_id || 0),
-              rdp: acc.rdp + (d.rdp || 0),
-              total_form: acc.total_form + (d.total_form || 0),
-              nominal: acc.nominal + (d.nominal || 0)
-            }), { new_id: 0, rdp: 0, total_form: 0, nominal: 0 });
+            const monthStaffData = monthlyByStaff.find(m => m.month === idx + 1) || { staff: [], totals: { new_id: 0, rdp: 0, total_form: 0, nominal: 0, crm_efficiency: 0 } };
+            const monthTotals = monthStaffData.totals;
             const isExpanded = expandedMonths[month];
             
             return (
@@ -402,59 +397,133 @@ export default function ReportCRM() {
                       <span className="text-blue-600">NDP: {formatNumber(monthTotals.new_id)}</span>
                       <span className="text-green-600">RDP: {formatNumber(monthTotals.rdp)}</span>
                       <span className="text-amber-600">{formatRupiah(monthTotals.nominal)}</span>
+                      <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                        monthTotals.crm_efficiency >= 100 ? 'bg-green-100 text-green-700' :
+                        monthTotals.crm_efficiency >= 50 ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-red-100 text-red-700'
+                      }`}>
+                        CRM: {monthTotals.crm_efficiency?.toFixed(1) || 0}%
+                      </span>
                     </div>
                   </div>
                   {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                 </button>
                 
                 {isExpanded && (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead className="bg-slate-50">
-                        <tr>
-                          <th className="px-3 py-2 text-left text-slate-600">Tanggal</th>
-                          <th className="px-3 py-2 text-right text-slate-600">NEW ID</th>
-                          <th className="px-3 py-2 text-right text-slate-600">ID RDP</th>
-                          <th className="px-3 py-2 text-right text-slate-600">TOTAL FORM</th>
-                          <th className="px-3 py-2 text-right text-slate-600">NOMINAL</th>
-                          <th className="px-3 py-2 text-right text-slate-600">AVG/DAY</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {monthData.length === 0 ? (
-                          <tr>
-                            <td colSpan={6} className="px-3 py-8 text-center text-slate-500">
-                              No data for this month
-                            </td>
-                          </tr>
-                        ) : (
-                          monthData.map((d, i) => (
-                            <tr key={i} className="hover:bg-slate-50">
-                              <td className="px-3 py-2 text-slate-900">{d.date}</td>
-                              <td className="px-3 py-2 text-right text-blue-600">{formatNumber(d.new_id)}</td>
-                              <td className="px-3 py-2 text-right text-green-600">{formatNumber(d.rdp)}</td>
-                              <td className="px-3 py-2 text-right text-purple-600">{formatNumber(d.total_form)}</td>
-                              <td className="px-3 py-2 text-right text-amber-600">{formatRupiah(d.nominal)}</td>
-                              <td className="px-3 py-2 text-right text-slate-500">
-                                {d.total_form > 0 ? formatRupiah(Math.round(d.nominal / d.total_form)) : '-'}
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                        {monthData.length > 0 && (
-                          <tr className="bg-slate-100 font-semibold">
-                            <td className="px-3 py-2 text-slate-900">TOTAL</td>
-                            <td className="px-3 py-2 text-right text-blue-700">{formatNumber(monthTotals.new_id)}</td>
-                            <td className="px-3 py-2 text-right text-green-700">{formatNumber(monthTotals.rdp)}</td>
-                            <td className="px-3 py-2 text-right text-purple-700">{formatNumber(monthTotals.total_form)}</td>
-                            <td className="px-3 py-2 text-right text-amber-700">{formatRupiah(monthTotals.nominal)}</td>
-                            <td className="px-3 py-2 text-right text-slate-600">
-                              {monthTotals.total_form > 0 ? formatRupiah(Math.round(monthTotals.nominal / monthTotals.total_form)) : '-'}
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
+                  <div className="p-4 space-y-3 bg-slate-50">
+                    {monthStaffData.staff.length === 0 ? (
+                      <div className="text-center py-8 text-slate-500">No data for this month</div>
+                    ) : (
+                      monthStaffData.staff.map((staff) => {
+                        const staffMonthKey = `${month}-${staff.staff_id}`;
+                        const isStaffExpanded = expandedMonthlyStaff[staffMonthKey];
+                        
+                        return (
+                          <div key={staff.staff_id} className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                            <button
+                              onClick={() => toggleMonthlyStaff(staffMonthKey)}
+                              className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 transition-colors"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm">
+                                  {staff.staff_name.charAt(0).toUpperCase()}
+                                </div>
+                                <span className="font-medium text-slate-800">{staff.staff_name}</span>
+                              </div>
+                              <div className="flex items-center gap-4">
+                                <div className="flex gap-3 text-sm">
+                                  <span className="text-blue-600">NDP: {formatNumber(staff.new_id)}</span>
+                                  <span className="text-green-600">RDP: {formatNumber(staff.rdp)}</span>
+                                  <span className="text-purple-600">Form: {formatNumber(staff.total_form)}</span>
+                                  <span className="text-amber-600 font-semibold">{formatRupiah(staff.nominal)}</span>
+                                  <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                                    staff.crm_efficiency >= 100 ? 'bg-green-100 text-green-700' :
+                                    staff.crm_efficiency >= 50 ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-red-100 text-red-700'
+                                  }`}>
+                                    {staff.crm_efficiency?.toFixed(1) || 0}%
+                                  </span>
+                                </div>
+                                {isStaffExpanded ? <ChevronUp size={18} className="text-slate-400" /> : <ChevronDown size={18} className="text-slate-400" />}
+                              </div>
+                            </button>
+                            
+                            {isStaffExpanded && (
+                              <div className="border-t border-slate-200 p-4 bg-slate-50">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                  <div className="bg-white rounded-lg p-3 border border-slate-200">
+                                    <div className="text-xs text-slate-500 mb-1">NDP (New ID)</div>
+                                    <div className="text-xl font-bold text-blue-600">{formatNumber(staff.new_id)}</div>
+                                  </div>
+                                  <div className="bg-white rounded-lg p-3 border border-slate-200">
+                                    <div className="text-xs text-slate-500 mb-1">RDP</div>
+                                    <div className="text-xl font-bold text-green-600">{formatNumber(staff.rdp)}</div>
+                                  </div>
+                                  <div className="bg-white rounded-lg p-3 border border-slate-200">
+                                    <div className="text-xs text-slate-500 mb-1">Total Form</div>
+                                    <div className="text-xl font-bold text-purple-600">{formatNumber(staff.total_form)}</div>
+                                  </div>
+                                  <div className="bg-white rounded-lg p-3 border border-slate-200">
+                                    <div className="text-xs text-slate-500 mb-1">Total Nominal</div>
+                                    <div className="text-xl font-bold text-amber-600">{formatRupiah(staff.nominal)}</div>
+                                  </div>
+                                </div>
+                                
+                                {/* CRM Efficiency Progress Bar */}
+                                <div className="mt-4 bg-white rounded-lg p-4 border border-slate-200">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="text-sm font-medium text-slate-700">CRM Efficiency</span>
+                                    <span className={`text-lg font-bold ${
+                                      staff.crm_efficiency >= 100 ? 'text-green-600' :
+                                      staff.crm_efficiency >= 50 ? 'text-yellow-600' :
+                                      'text-red-600'
+                                    }`}>
+                                      {staff.crm_efficiency?.toFixed(2) || 0}%
+                                    </span>
+                                  </div>
+                                  <div className="h-4 bg-slate-200 rounded-full overflow-hidden">
+                                    <div 
+                                      className={`h-full transition-all duration-500 ${
+                                        staff.crm_efficiency >= 100 ? 'bg-green-500' :
+                                        staff.crm_efficiency >= 50 ? 'bg-yellow-500' :
+                                        'bg-red-500'
+                                      }`}
+                                      style={{ width: `${Math.min(staff.crm_efficiency || 0, 100)}%` }}
+                                    />
+                                  </div>
+                                  <div className="flex justify-between mt-1 text-xs text-slate-500">
+                                    <span>Rp 0</span>
+                                    <span>Target: {formatRupiah(CRM_EFFICIENCY_TARGET)}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
+                    )}
+                    
+                    {/* Month Total Summary */}
+                    {monthStaffData.staff.length > 0 && (
+                      <div className="bg-slate-800 text-white rounded-lg p-3 mt-2">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold">Month Total</span>
+                          <div className="flex gap-4 text-sm">
+                            <span>NDP: <strong>{formatNumber(monthTotals.new_id)}</strong></span>
+                            <span>RDP: <strong>{formatNumber(monthTotals.rdp)}</strong></span>
+                            <span>Form: <strong>{formatNumber(monthTotals.total_form)}</strong></span>
+                            <span className="text-amber-300 font-bold">{formatRupiah(monthTotals.nominal)}</span>
+                            <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                              monthTotals.crm_efficiency >= 100 ? 'bg-green-500 text-white' :
+                              monthTotals.crm_efficiency >= 50 ? 'bg-yellow-500 text-slate-900' :
+                              'bg-red-500 text-white'
+                            }`}>
+                              CRM: {monthTotals.crm_efficiency?.toFixed(1) || 0}%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -462,16 +531,16 @@ export default function ReportCRM() {
           })}
 
           {/* Grand Total for Monthly Detail */}
-          {monthlyData.length > 0 && (
+          {monthlyByStaff.some(m => m.staff.length > 0) && (
             <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl shadow-sm p-4 text-white">
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-lg">Grand Total - {selectedYear}</span>
                 <div className="flex gap-6 text-sm">
-                  <span>NDP: <strong>{formatNumber(monthlyData.reduce((sum, d) => sum + (d.new_id || 0), 0))}</strong></span>
-                  <span>RDP: <strong>{formatNumber(monthlyData.reduce((sum, d) => sum + (d.rdp || 0), 0))}</strong></span>
-                  <span>Form: <strong>{formatNumber(monthlyData.reduce((sum, d) => sum + (d.total_form || 0), 0))}</strong></span>
+                  <span>NDP: <strong>{formatNumber(monthlyByStaff.reduce((sum, m) => sum + (m.totals.new_id || 0), 0))}</strong></span>
+                  <span>RDP: <strong>{formatNumber(monthlyByStaff.reduce((sum, m) => sum + (m.totals.rdp || 0), 0))}</strong></span>
+                  <span>Form: <strong>{formatNumber(monthlyByStaff.reduce((sum, m) => sum + (m.totals.total_form || 0), 0))}</strong></span>
                   <span className="text-amber-300 text-lg font-bold">
-                    {formatRupiah(monthlyData.reduce((sum, d) => sum + (d.nominal || 0), 0))}
+                    {formatRupiah(monthlyByStaff.reduce((sum, m) => sum + (m.totals.nominal || 0), 0))}
                   </span>
                 </div>
               </div>
