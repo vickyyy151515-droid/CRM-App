@@ -468,16 +468,16 @@ export default function BonusCalculation() {
       {/* Settings Modal */}
       {showSettings && editConfig && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-              <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50 dark:bg-slate-900">
+              <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
                 <Settings size={24} />
                 Bonus Configuration Settings
               </h2>
               <button
                 onClick={() => setShowSettings(false)}
-                className="p-2 hover:bg-slate-200 rounded-lg transition-colors"
+                className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors text-slate-600 dark:text-slate-400"
               >
                 <X size={24} />
               </button>
@@ -489,13 +489,13 @@ export default function BonusCalculation() {
                 {/* Main Bonus Tiers */}
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                      <Award size={20} className="text-amber-500" />
+                    <h3 className="text-lg font-semibold text-slate-800 dark:text-white flex items-center gap-2">
+                      <Award size={20} className="text-amber-500 dark:text-amber-400" />
                       Main Bonus Tiers (Monthly Total Nominal)
                     </h3>
                     <button
                       onClick={addMainTier}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition-colors text-sm"
+                      className="flex items-center gap-1 px-3 py-1.5 bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-900 transition-colors text-sm"
                     >
                       <Plus size={16} />
                       Add Tier
@@ -505,9 +505,9 @@ export default function BonusCalculation() {
                     {editConfig.main_tiers
                       .sort((a, b) => b.threshold - a.threshold)
                       .map((tier, idx) => (
-                        <div key={idx} className="flex items-center gap-4 p-3 bg-amber-50 rounded-lg">
+                        <div key={idx} className="flex items-center gap-4 p-3 bg-amber-50 dark:bg-amber-900/30 rounded-lg">
                           <div className="flex-1">
-                            <label className="block text-xs text-amber-700 mb-1">Threshold (Rp)</label>
+                            <label className="block text-xs text-amber-700 dark:text-amber-300 mb-1">Threshold (Rp)</label>
                             <input
                               type="number"
                               value={tier.threshold}
@@ -515,12 +515,12 @@ export default function BonusCalculation() {
                                 const realIdx = editConfig.main_tiers.findIndex(t => t === tier);
                                 updateMainTier(realIdx, 'threshold', e.target.value);
                               }}
-                              className="w-full px-3 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                              className="w-full px-3 py-2 border border-amber-300 dark:border-amber-700 rounded-lg focus:ring-2 focus:ring-amber-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                               placeholder="e.g., 280000000"
                             />
                           </div>
                           <div className="w-32">
-                            <label className="block text-xs text-amber-700 mb-1">Bonus ($)</label>
+                            <label className="block text-xs text-amber-700 dark:text-amber-300 mb-1">Bonus ($)</label>
                             <input
                               type="number"
                               value={tier.bonus}
@@ -528,7 +528,7 @@ export default function BonusCalculation() {
                                 const realIdx = editConfig.main_tiers.findIndex(t => t === tier);
                                 updateMainTier(realIdx, 'bonus', e.target.value);
                               }}
-                              className="w-full px-3 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                              className="w-full px-3 py-2 border border-amber-300 dark:border-amber-700 rounded-lg focus:ring-2 focus:ring-amber-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                               placeholder="e.g., 100"
                             />
                           </div>
@@ -537,7 +537,7 @@ export default function BonusCalculation() {
                               const realIdx = editConfig.main_tiers.findIndex(t => t === tier);
                               removeMainTier(realIdx);
                             }}
-                            className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors mt-5"
+                            className="p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-lg transition-colors mt-5"
                           >
                             <Trash2 size={18} />
                           </button>
@@ -548,120 +548,120 @@ export default function BonusCalculation() {
 
                 {/* NDP Bonus Tiers */}
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2 mb-4">
-                    <Users size={20} className="text-blue-500" />
+                  <h3 className="text-lg font-semibold text-slate-800 dark:text-white flex items-center gap-2 mb-4">
+                    <Users size={20} className="text-blue-500 dark:text-blue-400" />
                     Daily NDP Bonus Tiers
                   </h3>
                   <div className="space-y-3">
                     {editConfig.ndp_tiers.map((tier, idx) => (
-                      <div key={idx} className="flex items-center gap-4 p-3 bg-blue-50 rounded-lg">
+                      <div key={idx} className="flex items-center gap-4 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
                         <div className="w-24">
-                          <label className="block text-xs text-blue-700 mb-1">Min NDP</label>
+                          <label className="block text-xs text-blue-700 dark:text-blue-300 mb-1">Min NDP</label>
                           <input
                             type="number"
                             value={tier.min}
                             onChange={(e) => updateNdpTier(idx, 'min', e.target.value)}
-                            className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-blue-300 dark:border-blue-700 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                           />
                         </div>
                         <div className="w-24">
-                          <label className="block text-xs text-blue-700 mb-1">Max NDP</label>
+                          <label className="block text-xs text-blue-700 dark:text-blue-300 mb-1">Max NDP</label>
                           <input
                             type="number"
                             value={tier.max || ''}
                             onChange={(e) => updateNdpTier(idx, 'max', e.target.value)}
-                            className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-blue-300 dark:border-blue-700 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                             placeholder="∞"
                           />
                         </div>
                         <div className="w-24">
-                          <label className="block text-xs text-blue-700 mb-1">Bonus ($)</label>
+                          <label className="block text-xs text-blue-700 dark:text-blue-300 mb-1">Bonus ($)</label>
                           <input
                             type="number"
                             step="0.5"
                             value={tier.bonus}
                             onChange={(e) => updateNdpTier(idx, 'bonus', e.target.value)}
-                            className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-blue-300 dark:border-blue-700 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                           />
                         </div>
                         <div className="flex-1">
-                          <label className="block text-xs text-blue-700 mb-1">Label</label>
+                          <label className="block text-xs text-blue-700 dark:text-blue-300 mb-1">Label</label>
                           <input
                             type="text"
                             value={tier.label}
                             onChange={(e) => updateNdpTier(idx, 'label', e.target.value)}
-                            className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-blue-300 dark:border-blue-700 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                             placeholder="e.g., >10"
                           />
                         </div>
                       </div>
                     ))}
                   </div>
-                  <p className="text-xs text-slate-500 mt-2">*Leave Max empty for &quot;greater than&quot; condition</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">*Leave Max empty for &quot;greater than&quot; condition</p>
                 </div>
 
                 {/* RDP Bonus Tiers */}
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2 mb-4">
-                    <TrendingUp size={20} className="text-green-500" />
+                  <h3 className="text-lg font-semibold text-slate-800 dark:text-white flex items-center gap-2 mb-4">
+                    <TrendingUp size={20} className="text-green-500 dark:text-green-400" />
                     Daily RDP Bonus Tiers
                   </h3>
                   <div className="space-y-3">
                     {editConfig.rdp_tiers.map((tier, idx) => (
-                      <div key={idx} className="flex items-center gap-4 p-3 bg-green-50 rounded-lg">
+                      <div key={idx} className="flex items-center gap-4 p-3 bg-green-50 dark:bg-green-900/30 rounded-lg">
                         <div className="w-24">
-                          <label className="block text-xs text-green-700 mb-1">Min RDP</label>
+                          <label className="block text-xs text-green-700 dark:text-green-300 mb-1">Min RDP</label>
                           <input
                             type="number"
                             value={tier.min}
                             onChange={(e) => updateRdpTier(idx, 'min', e.target.value)}
-                            className="w-full px-3 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                            className="w-full px-3 py-2 border border-green-300 dark:border-green-700 rounded-lg focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                           />
                         </div>
                         <div className="w-24">
-                          <label className="block text-xs text-green-700 mb-1">Max RDP</label>
+                          <label className="block text-xs text-green-700 dark:text-green-300 mb-1">Max RDP</label>
                           <input
                             type="number"
                             value={tier.max || ''}
                             onChange={(e) => updateRdpTier(idx, 'max', e.target.value)}
-                            className="w-full px-3 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                            className="w-full px-3 py-2 border border-green-300 dark:border-green-700 rounded-lg focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                             placeholder="∞"
                           />
                         </div>
                         <div className="w-24">
-                          <label className="block text-xs text-green-700 mb-1">Bonus ($)</label>
+                          <label className="block text-xs text-green-700 dark:text-green-300 mb-1">Bonus ($)</label>
                           <input
                             type="number"
                             step="0.5"
                             value={tier.bonus}
                             onChange={(e) => updateRdpTier(idx, 'bonus', e.target.value)}
-                            className="w-full px-3 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                            className="w-full px-3 py-2 border border-green-300 dark:border-green-700 rounded-lg focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                           />
                         </div>
                         <div className="flex-1">
-                          <label className="block text-xs text-green-700 mb-1">Label</label>
+                          <label className="block text-xs text-green-700 dark:text-green-300 mb-1">Label</label>
                           <input
                             type="text"
                             value={tier.label}
                             onChange={(e) => updateRdpTier(idx, 'label', e.target.value)}
-                            className="w-full px-3 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                            className="w-full px-3 py-2 border border-green-300 dark:border-green-700 rounded-lg focus:ring-2 focus:ring-green-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                             placeholder="e.g., >15"
                           />
                         </div>
                       </div>
                     ))}
                   </div>
-                  <p className="text-xs text-slate-500 mt-2">*Leave Max empty for &quot;greater than&quot; condition</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">*Leave Max empty for &quot;greater than&quot; condition</p>
                 </div>
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between bg-slate-50">
+            <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50 dark:bg-slate-900">
               <button
                 onClick={resetConfig}
                 disabled={savingConfig}
-                className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
               >
                 <RotateCcw size={18} />
                 Reset to Defaults
@@ -669,7 +669,7 @@ export default function BonusCalculation() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowSettings(false)}
-                  className="px-4 py-2 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
+                  className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
