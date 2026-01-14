@@ -404,6 +404,10 @@ Build a Customer Relationship Management (CRM) application where:
 - **Keyboard Shortcut**: Works with global UI
 - **Components Updated**: Sidebar, header, navigation items with dark mode classes
 - **New Files**: `frontend/src/contexts/ThemeContext.js`
+- **Dark Mode Fix (Jan 15, 2026)**: Enhanced dark mode styling for:
+  - AdminDashboard Overview stat cards
+  - CRM Bonus Calculation page (tier cards, staff breakdown, tables, settings modal)
+  - Leaderboard/Staff Progress page (stats, progress bars, rank indicators)
 
 ### ✅ COMPLETED: Global Search (Jan 15, 2026)
 - **Keyboard Shortcut**: Ctrl/Cmd + K to open search modal
@@ -426,14 +430,15 @@ Build a Customer Relationship Management (CRM) application where:
 ### P1: Next Priority Tasks
 - None - All P1 tasks completed!
 
+### P1: Next Priority Tasks
+- Real-time Notifications with WebSockets
+
 ### P2: Future Enhancements
 - Email notifications for important updates
-- Real-time notifications with WebSockets
 - Scheduled automated reports from Export Center
 - Financial ROI tracking in Report CRM
 - Izin analytics (break patterns, total time per period)
 - Leave Calendar statistics (total hours, most common leave day)
 - Keyboard shortcuts for power users
 - Sidebar search/filter functionality
-- Dark Mode
-- Global Search
+- Quick Actions on Overview cards
