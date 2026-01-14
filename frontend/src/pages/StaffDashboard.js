@@ -14,7 +14,8 @@ import Leaderboard from '../components/Leaderboard';
 import StaffFollowups from '../components/StaffFollowups';
 import DailySummary from '../components/DailySummary';
 import ConversionFunnel from '../components/ConversionFunnel';
-import { LayoutDashboard, FileSpreadsheet, Clock, User, UserCheck, DollarSign, Gift, CreditCard, CalendarOff, Timer, Trophy, Bell, CalendarDays, Filter } from 'lucide-react';
+import CustomerRetention from '../components/CustomerRetention';
+import { LayoutDashboard, FileSpreadsheet, Clock, User, UserCheck, DollarSign, Gift, CreditCard, CalendarOff, Timer, Trophy, Bell, CalendarDays, Filter, Heart } from 'lucide-react';
 
 export default function StaffDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('databases');
