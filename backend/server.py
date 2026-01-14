@@ -2259,37 +2259,120 @@ async def export_report_crm(
 
 # ==================== CRM BONUS CALCULATION ENDPOINTS ====================
 
-# Bonus tiers configuration
-MAIN_BONUS_TIERS = [
-    (280000000, 100),  # Rp 280M = $100
-    (210000000, 75),   # Rp 210M = $75
-    (140000000, 50),   # Rp 140M = $50
-    (100000000, 30),   # Rp 100M = $30
-    (70000000, 20),    # Rp 70M = $20
-]
+# Default bonus tiers configuration (used if no config in DB)
+DEFAULT_BONUS_CONFIG = {
+    'main_tiers': [
+        {'threshold': 280000000, 'bonus': 100},
+        {'threshold': 210000000, 'bonus': 75},
+        {'threshold': 140000000, 'bonus': 50},
+        {'threshold': 100000000, 'bonus': 30},
+        {'threshold': 70000000, 'bonus': 20},
+    ],
+    'ndp_tiers': [
+        {'min': 11, 'max': None, 'bonus': 5.0, 'label': '>10'},
+        {'min': 8, 'max': 10, 'bonus': 2.5, 'label': '8-10'},
+    ],
+    'rdp_tiers': [
+        {'min': 16, 'max': None, 'bonus': 5.0, 'label': '>15'},
+        {'min': 12, 'max': 15, 'bonus': 2.5, 'label': '12-15'},
+    ]
+}
 
-def calculate_main_bonus(total_nominal: float) -> float:
+async def get_bonus_config():
+    """Get bonus configuration from database or return defaults"""
+    config = await db.settings.find_one({'key': 'bonus_config'}, {'_id': 0})
+    if config:
+        return config['value']
+    return DEFAULT_BONUS_CONFIG
+
+def calculate_main_bonus_with_config(total_nominal: float, main_tiers: list) -> float:
     """Calculate main bonus based on monthly total nominal"""
-    for threshold, bonus in MAIN_BONUS_TIERS:
-        if total_nominal >= threshold:
-            return bonus
+    # Sort by threshold descending to find highest matching tier
+    sorted_tiers = sorted(main_tiers, key=lambda x: x['threshold'], reverse=True)
+    for tier in sorted_tiers:
+        if total_nominal >= tier['threshold']:
+            return tier['bonus']
     return 0
 
-def calculate_daily_ndp_bonus(ndp_count: int) -> float:
+def calculate_daily_ndp_bonus_with_config(ndp_count: int, ndp_tiers: list) -> float:
     """Calculate daily NDP bonus"""
-    if ndp_count > 10:
-        return 5.0
-    elif ndp_count >= 8:
-        return 2.5
+    for tier in ndp_tiers:
+        min_val = tier['min']
+        max_val = tier.get('max')
+        if max_val is None:
+            if ndp_count >= min_val:
+                return tier['bonus']
+        else:
+            if min_val <= ndp_count <= max_val:
+                return tier['bonus']
     return 0
 
-def calculate_daily_rdp_bonus(rdp_count: int) -> float:
+def calculate_daily_rdp_bonus_with_config(rdp_count: int, rdp_tiers: list) -> float:
     """Calculate daily RDP bonus"""
-    if rdp_count > 15:
-        return 5.0
-    elif rdp_count >= 12:
-        return 2.5
+    for tier in rdp_tiers:
+        min_val = tier['min']
+        max_val = tier.get('max')
+        if max_val is None:
+            if rdp_count >= min_val:
+                return tier['bonus']
+        else:
+            if min_val <= rdp_count <= max_val:
+                return tier['bonus']
     return 0
+
+# Pydantic models for bonus configuration
+class MainBonusTier(BaseModel):
+    threshold: int
+    bonus: float
+
+class DailyBonusTier(BaseModel):
+    min: int
+    max: Optional[int] = None
+    bonus: float
+    label: str
+
+class BonusConfigUpdate(BaseModel):
+    main_tiers: List[dict]
+    ndp_tiers: List[dict]
+    rdp_tiers: List[dict]
+
+@api_router.get("/bonus-calculation/config")
+async def get_bonus_calculation_config(user: User = Depends(get_admin_user)):
+    """Get current bonus configuration"""
+    config = await get_bonus_config()
+    return config
+
+@api_router.put("/bonus-calculation/config")
+async def update_bonus_calculation_config(
+    config: BonusConfigUpdate,
+    user: User = Depends(get_admin_user)
+):
+    """Update bonus configuration"""
+    config_doc = {
+        'key': 'bonus_config',
+        'value': {
+            'main_tiers': config.main_tiers,
+            'ndp_tiers': config.ndp_tiers,
+            'rdp_tiers': config.rdp_tiers
+        },
+        'updated_at': get_jakarta_now().isoformat(),
+        'updated_by': user.id,
+        'updated_by_name': user.name
+    }
+    
+    await db.settings.update_one(
+        {'key': 'bonus_config'},
+        {'$set': config_doc},
+        upsert=True
+    )
+    
+    return {'message': 'Bonus configuration updated successfully', 'config': config_doc['value']}
+
+@api_router.post("/bonus-calculation/config/reset")
+async def reset_bonus_calculation_config(user: User = Depends(get_admin_user)):
+    """Reset bonus configuration to defaults"""
+    await db.settings.delete_one({'key': 'bonus_config'})
+    return {'message': 'Bonus configuration reset to defaults', 'config': DEFAULT_BONUS_CONFIG}
 
 @api_router.get("/bonus-calculation/data")
 async def get_bonus_calculation_data(
