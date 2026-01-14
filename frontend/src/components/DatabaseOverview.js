@@ -56,14 +56,14 @@ export default function DatabaseOverview() {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-3xl font-semibold tracking-tight text-slate-900">
+        <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">
           Database Overview
         </h2>
         <button
           onClick={handleRefresh}
           disabled={refreshing}
           data-testid="refresh-databases-btn"
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors disabled:opacity-50"
         >
           <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
           Refresh
@@ -80,7 +80,7 @@ export default function DatabaseOverview() {
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search databases..."
             data-testid="search-overview-input"
-            className="flex h-10 w-full rounded-md border border-slate-200 bg-white pl-10 pr-3 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
+            className="flex h-10 w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 pl-10 pr-3 py-2 text-sm text-slate-900 dark:text-slate-100 ring-offset-white placeholder:text-slate-500 dark:placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
           />
         </div>
         <div>
@@ -88,7 +88,7 @@ export default function DatabaseOverview() {
             value={selectedProduct}
             onChange={(e) => setSelectedProduct(e.target.value)}
             data-testid="filter-overview-product"
-            className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
+            className="flex h-10 w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
           >
             <option value="">All Products</option>
             {products.map((product) => (
@@ -101,11 +101,11 @@ export default function DatabaseOverview() {
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-slate-600">Loading databases...</div>
+        <div className="text-center py-12 text-slate-600 dark:text-slate-400">Loading databases...</div>
       ) : databases.length === 0 ? (
         <div className="text-center py-12">
-          <FileSpreadsheet className="mx-auto text-slate-300 mb-4" size={64} />
-          <p className="text-slate-600">No databases found</p>
+          <FileSpreadsheet className="mx-auto text-slate-300 dark:text-slate-600 mb-4" size={64} />
+          <p className="text-slate-600 dark:text-slate-400">No databases found</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4" data-testid="database-overview-list">
