@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../App';
-import { Bell, Check, CheckCheck, Trash2, X } from 'lucide-react';
+import { Bell, Check, CheckCheck, Trash2, X, AlertCircle, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function NotificationBell() {
+export default function NotificationBell({ userRole }) {
   const [notifications, setNotifications] = useState([]);
+  const [followupAlerts, setFollowupAlerts] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [followupCount, setFollowupCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef(null);
@@ -13,10 +15,18 @@ export default function NotificationBell() {
 
   useEffect(() => {
     loadNotifications();
+    if (userRole === 'staff') {
+      loadFollowupAlerts();
+    }
     // Poll for new notifications every 30 seconds
-    const interval = setInterval(loadNotifications, 30000);
+    const interval = setInterval(() => {
+      loadNotifications();
+      if (userRole === 'staff') {
+        loadFollowupAlerts();
+      }
+    }, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [userRole]);
 
   useEffect(() => {
     // Close dropdown when clicking outside
@@ -45,6 +55,16 @@ export default function NotificationBell() {
       setUnreadCount(response.data.unread_count);
     } catch (error) {
       console.error('Failed to load notifications');
+    }
+  };
+
+  const loadFollowupAlerts = async () => {
+    try {
+      const response = await api.get('/followups/notifications');
+      setFollowupAlerts(response.data.notifications || []);
+      setFollowupCount(response.data.count || 0);
+    } catch (error) {
+      console.error('Failed to load followup alerts');
     }
   };
 
