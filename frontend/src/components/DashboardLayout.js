@@ -395,21 +395,41 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar for mobile */}
-        <header className="lg:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+        <header className="lg:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+            className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
             data-testid="mobile-menu-btn"
           >
             <Menu size={24} />
           </button>
-          <h1 className="text-lg font-bold text-slate-900">CRM Pro</h1>
-          <NotificationBell userRole={user?.role} />
+          <h1 className="text-lg font-bold text-slate-900 dark:text-white">CRM Pro</h1>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleTheme}
+              className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+              data-testid="theme-toggle-mobile"
+            >
+              {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+            <NotificationBell userRole={user?.role} />
+          </div>
         </header>
 
-        {/* Desktop notification bell */}
-        <div className="hidden lg:flex justify-end p-4 pb-0">
-          <NotificationBell userRole={user?.role} />
+        {/* Desktop top bar */}
+        <div className="hidden lg:flex items-center justify-between p-4 pb-0">
+          <GlobalSearch onNavigate={(tab) => setActiveTab(tab)} isAdmin={user?.role === 'admin'} />
+          <div className="flex items-center gap-3">
+            <button
+              onClick={toggleTheme}
+              className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              data-testid="theme-toggle"
+              title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+            <NotificationBell userRole={user?.role} />
+          </div>
         </div>
 
         <main className="flex-1 overflow-auto">
