@@ -133,6 +133,8 @@ export default function AdminDashboard({ user, onLogout }) {
         return <AdvancedAnalytics />;
       case 'export':
         return <ExportCenter />;
+      case 'report':
+        return <ReportCRM />;
       default:
         return null;
     }
@@ -142,6 +144,7 @@ export default function AdminDashboard({ user, onLogout }) {
     { id: 'overview', label: 'Overview', icon: LayoutDashboard, badge: 0 },
     { id: 'analytics', label: 'Advanced Analytics', icon: PieChart, badge: 0 },
     { id: 'export', label: 'Export Center', icon: Download, badge: 0 },
+    { id: 'report', label: 'Report CRM', icon: FileText, badge: 0 },
     { id: 'progress', label: 'Staff Progress & Quality', icon: BarChart, badge: 0 },
     { id: 'omset', label: 'OMSET CRM', icon: DollarSign, badge: 0 },
     { id: 'reserved', label: 'Reserved Member CRM', icon: UserCheck, badge: stats.pendingReservations },
