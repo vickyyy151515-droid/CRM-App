@@ -1960,10 +1960,92 @@ async def get_report_crm_data(
                 'nominal': nominal
             })
     
-    # Process daily data for selected month
+    # Process daily data for selected month - grouped by staff and product
     selected_month_str = f"{year}-{str(month).zfill(2)}"
     selected_month_records = [r for r in all_records if r['record_date'].startswith(selected_month_str)]
     
+    # Group by staff -> product -> date
+    staff_daily_data = {}
+    for record in selected_month_records:
+        sid = record['staff_id']
+        sname = record['staff_name']
+        pid = record['product_id']
+        pname = record['product_name']
+        date = record['record_date']
+        
+        if sid not in staff_daily_data:
+            staff_daily_data[sid] = {
+                'staff_id': sid,
+                'staff_name': sname,
+                'products': {},
+                'totals': {'new_id': 0, 'rdp': 0, 'total_form': 0, 'nominal': 0}
+            }
+        
+        if pid not in staff_daily_data[sid]['products']:
+            staff_daily_data[sid]['products'][pid] = {
+                'product_id': pid,
+                'product_name': pname,
+                'daily': {},
+                'totals': {'new_id': 0, 'rdp': 0, 'total_form': 0, 'nominal': 0}
+            }
+        
+        if date not in staff_daily_data[sid]['products'][pid]['daily']:
+            staff_daily_data[sid]['products'][pid]['daily'][date] = {
+                'date': date,
+                'new_id': 0,
+                'rdp': 0,
+                'total_form': 0,
+                'nominal': 0
+            }
+        
+        # Determine NDP/RDP
+        key = (record['customer_id'], record['product_id'])
+        first_date = customer_first_date.get(key)
+        is_ndp = first_date == date
+        
+        nom = record.get('depo_total', 0) or record.get('nominal', 0) or 0
+        
+        # Update daily entry
+        if is_ndp:
+            staff_daily_data[sid]['products'][pid]['daily'][date]['new_id'] += 1
+            staff_daily_data[sid]['products'][pid]['totals']['new_id'] += 1
+            staff_daily_data[sid]['totals']['new_id'] += 1
+        else:
+            staff_daily_data[sid]['products'][pid]['daily'][date]['rdp'] += 1
+            staff_daily_data[sid]['products'][pid]['totals']['rdp'] += 1
+            staff_daily_data[sid]['totals']['rdp'] += 1
+        
+        staff_daily_data[sid]['products'][pid]['daily'][date]['total_form'] += 1
+        staff_daily_data[sid]['products'][pid]['daily'][date]['nominal'] += nom
+        staff_daily_data[sid]['products'][pid]['totals']['total_form'] += 1
+        staff_daily_data[sid]['products'][pid]['totals']['nominal'] += nom
+        staff_daily_data[sid]['totals']['total_form'] += 1
+        staff_daily_data[sid]['totals']['nominal'] += nom
+    
+    # Convert to list format for frontend
+    daily_by_staff = []
+    for sid, staff_data in staff_daily_data.items():
+        products_list = []
+        for pid, product_data in staff_data['products'].items():
+            daily_list = sorted(product_data['daily'].values(), key=lambda x: x['date'])
+            products_list.append({
+                'product_id': product_data['product_id'],
+                'product_name': product_data['product_name'],
+                'daily': daily_list,
+                'totals': product_data['totals']
+            })
+        products_list.sort(key=lambda x: x['totals']['nominal'], reverse=True)
+        
+        daily_by_staff.append({
+            'staff_id': staff_data['staff_id'],
+            'staff_name': staff_data['staff_name'],
+            'products': products_list,
+            'totals': staff_data['totals']
+        })
+    
+    daily_by_staff.sort(key=lambda x: x['totals']['nominal'], reverse=True)
+    
+    # Also keep flat daily data for backward compatibility
     daily_groups = {}
     for record in selected_month_records:
         date = record['record_date']
