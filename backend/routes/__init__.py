@@ -17,6 +17,7 @@ from .bonus import router as bonus_router
 from .records import router as records_router
 from .leaderboard import router as leaderboard_router
 from .followup import router as followup_router
+from .daily_summary import router as daily_summary_router
 
 __all__ = [
     'set_database', 
@@ -35,5 +36,6 @@ __all__ = [
     'bonus_router',
     'records_router',
     'leaderboard_router',
-    'followup_router'
+    'followup_router',
+    'daily_summary_router'
 ]
