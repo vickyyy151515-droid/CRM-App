@@ -28,26 +28,27 @@ import { LayoutDashboard, Upload, FileSpreadsheet, Clock, Users, Package, List, 
 export default function AdminDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('overview');
   const [stats, setStats] = useState({
-    totalDatabases: 0,
     pendingRequests: 0,
     pendingReservations: 0,
-    totalDownloads: 0
+    totalOmsetYear: 0,
+    omsetYear: new Date().getFullYear(),
+    monthlyAth: { date: null, amount: 0 }
   });
 
   const loadStats = useCallback(async () => {
     try {
-      const [databases, requests, history, reservations] = await Promise.all([
-        api.get('/databases'),
+      const [requests, reservations, omsetStats] = await Promise.all([
         api.get('/download-requests'),
-        api.get('/download-history'),
-        api.get('/reserved-members')
+        api.get('/reserved-members'),
+        api.get('/omset/dashboard-stats')
       ]);
 
       setStats({
-        totalDatabases: databases.data.length,
         pendingRequests: requests.data.filter(r => r.status === 'pending').length,
         pendingReservations: reservations.data.filter(r => r.status === 'pending').length,
-        totalDownloads: history.data.length
+        totalOmsetYear: omsetStats.data.total_omset_year || 0,
+        omsetYear: omsetStats.data.year || new Date().getFullYear(),
+        monthlyAth: omsetStats.data.monthly_ath || { date: null, amount: 0 }
       });
     } catch (error) {
       console.error('Error loading stats:', error);
@@ -60,6 +61,25 @@ export default function AdminDashboard({ user, onLogout }) {
     const interval = setInterval(loadStats, 30000);
     return () => clearInterval(interval);
   }, [loadStats]);
+
+  // Format currency to Indonesian Rupiah
+  const formatCurrency = (amount) => {
+    if (amount >= 1000000000) {
+      return `Rp ${(amount / 1000000000).toFixed(2)}B`;
+    } else if (amount >= 1000000) {
+      return `Rp ${(amount / 1000000).toFixed(1)}M`;
+    } else if (amount >= 1000) {
+      return `Rp ${(amount / 1000).toFixed(0)}K`;
+    }
+    return `Rp ${amount.toLocaleString('id-ID')}`;
+  };
+
+  // Format date to readable format
+  const formatAthDate = (dateStr) => {
+    if (!dateStr) return '-';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+  };
 
   const renderContent = () => {
     switch (activeTab) {
