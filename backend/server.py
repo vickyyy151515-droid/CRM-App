@@ -1850,6 +1850,268 @@ async def get_omset_record_types(
     
     return date_records
 
+# ==================== REPORT CRM ENDPOINTS ====================
+
+@api_router.get("/report-crm/data")
+async def get_report_crm_data(
+    product_id: Optional[str] = None,
+    staff_id: Optional[str] = None,
+    year: int = None,
+    month: int = None,
+    user: User = Depends(get_admin_user)
+):
+    """Get comprehensive report data for Report CRM page"""
+    if year is None:
+        year = get_jakarta_now().year
+    if month is None:
+        month = get_jakarta_now().month
+    
+    # Build base query
+    base_query = {}
+    if product_id:
+        base_query['product_id'] = product_id
+    if staff_id:
+        base_query['staff_id'] = staff_id
+    
+    # Get all OMSET records for the year
+    year_start = f"{year}-01-01"
+    year_end = f"{year}-12-31"
+    year_query = {**base_query, 'record_date': {'$gte': year_start, '$lte': year_end}}
+    
+    all_records = await db.omset_records.find(year_query, {'_id': 0}).to_list(100000)
+    
+    # Get ALL records (all time) for NDP/RDP calculation
+    all_time_query = {}
+    if product_id:
+        all_time_query['product_id'] = product_id
+    all_time_records = await db.omset_records.find(all_time_query, {'_id': 0}).to_list(500000)
+    
+    # Calculate customer first appearance dates
+    customer_first_date = {}
+    for record in sorted(all_time_records, key=lambda x: x['record_date']):
+        cid = record['customer_id']
+        pid = record['product_id']
+        key = (cid, pid)
+        if key not in customer_first_date:
+            customer_first_date[key] = record['record_date']
+    
+    # Process yearly data (by month)
+    yearly_data = []
+    for m in range(1, 13):
+        month_str = f"{year}-{str(m).zfill(2)}"
+        month_records = [r for r in all_records if r['record_date'].startswith(month_str)]
+        
+        new_id = 0
+        rdp = 0
+        total_form = len(month_records)
+        nominal = 0
+        
+        for record in month_records:
+            key = (record['customer_id'], record['product_id'])
+            first_date = customer_first_date.get(key)
+            if first_date and first_date.startswith(month_str) and first_date == record['record_date']:
+                new_id += 1
+            elif first_date and first_date < record['record_date']:
+                rdp += 1
+            nominal += record.get('depo_total', 0) or record.get('nominal', 0) or 0
+        
+        yearly_data.append({
+            'month': m,
+            'new_id': new_id,
+            'rdp': rdp,
+            'total_form': total_form,
+            'nominal': nominal
+        })
+    
+    # Process monthly data (by day) for all months
+    monthly_data = []
+    for m in range(1, 13):
+        month_str = f"{year}-{str(m).zfill(2)}"
+        month_records = [r for r in all_records if r['record_date'].startswith(month_str)]
+        
+        # Group by date
+        daily_groups = {}
+        for record in month_records:
+            date = record['record_date']
+            if date not in daily_groups:
+                daily_groups[date] = []
+            daily_groups[date].append(record)
+        
+        for date, records in sorted(daily_groups.items()):
+            new_id = 0
+            rdp = 0
+            nominal = 0
+            
+            for record in records:
+                key = (record['customer_id'], record['product_id'])
+                first_date = customer_first_date.get(key)
+                if first_date == date:
+                    new_id += 1
+                else:
+                    rdp += 1
+                nominal += record.get('depo_total', 0) or record.get('nominal', 0) or 0
+            
+            monthly_data.append({
+                'month': m,
+                'date': date,
+                'new_id': new_id,
+                'rdp': rdp,
+                'total_form': len(records),
+                'nominal': nominal
+            })
+    
+    # Process daily data for selected month
+    selected_month_str = f"{year}-{str(month).zfill(2)}"
+    selected_month_records = [r for r in all_records if r['record_date'].startswith(selected_month_str)]
+    
+    daily_groups = {}
+    for record in selected_month_records:
+        date = record['record_date']
+        if date not in daily_groups:
+            daily_groups[date] = []
+        daily_groups[date].append(record)
+    
+    daily_data = []
+    for date, records in sorted(daily_groups.items()):
+        new_id = 0
+        rdp = 0
+        nominal = 0
+        
+        for record in records:
+            key = (record['customer_id'], record['product_id'])
+            first_date = customer_first_date.get(key)
+            if first_date == date:
+                new_id += 1
+            else:
+                rdp += 1
+            nominal += record.get('depo_total', 0) or record.get('nominal', 0) or 0
+        
+        daily_data.append({
+            'date': date,
+            'new_id': new_id,
+            'rdp': rdp,
+            'total_form': len(records),
+            'nominal': nominal
+        })
+    
+    # Process staff performance for the year
+    staff_groups = {}
+    for record in all_records:
+        sid = record['staff_id']
+        if sid not in staff_groups:
+            staff_groups[sid] = {
+                'staff_id': sid,
+                'staff_name': record['staff_name'],
+                'new_id': 0,
+                'rdp': 0,
+                'total_form': 0,
+                'nominal': 0
+            }
+        
+        key = (record['customer_id'], record['product_id'])
+        first_date = customer_first_date.get(key)
+        if first_date == record['record_date']:
+            staff_groups[sid]['new_id'] += 1
+        else:
+            staff_groups[sid]['rdp'] += 1
+        staff_groups[sid]['total_form'] += 1
+        staff_groups[sid]['nominal'] += record.get('depo_total', 0) or record.get('nominal', 0) or 0
+    
+    staff_performance = sorted(staff_groups.values(), key=lambda x: x['nominal'], reverse=True)
+    
+    # Calculate deposit frequency tiers (2x, 3x, >4x)
+    customer_deposit_counts = {}
+    for record in all_records:
+        cid = record['customer_id']
+        if cid not in customer_deposit_counts:
+            customer_deposit_counts[cid] = 0
+        customer_deposit_counts[cid] += 1
+    
+    deposit_tiers = {'2x': 0, '3x': 0, '4x_plus': 0}
+    for cid, count in customer_deposit_counts.items():
+        if count == 2:
+            deposit_tiers['2x'] += 1
+        elif count == 3:
+            deposit_tiers['3x'] += 1
+        elif count >= 4:
+            deposit_tiers['4x_plus'] += 1
+    
+    return {
+        'yearly': yearly_data,
+        'monthly': monthly_data,
+        'daily': daily_data,
+        'staff_performance': staff_performance,
+        'deposit_tiers': deposit_tiers
+    }
+
+@api_router.get("/report-crm/export")
+async def export_report_crm(
+    product_id: Optional[str] = None,
+    staff_id: Optional[str] = None,
+    year: int = None,
+    user: User = Depends(get_admin_user)
+):
+    """Export Report CRM data to Excel"""
+    from fastapi.responses import StreamingResponse
+    import tempfile
+    
+    if year is None:
+        year = get_jakarta_now().year
+    
+    # Get report data
+    report_data = await get_report_crm_data(product_id, staff_id, year, 1, user)
+    
+    # Create Excel workbook with multiple sheets
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        # Yearly Summary Sheet
+        yearly_df = pd.DataFrame(report_data['yearly'])
+        yearly_df['month_name'] = yearly_df['month'].apply(lambda x: ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUN', 'JUL', 'AUG', 'SEPT', 'OCT', 'NOV', 'DEC'][x-1])
+        yearly_df = yearly_df[['month_name', 'new_id', 'rdp', 'total_form', 'nominal']]
+        yearly_df.columns = ['BULAN', 'NEW ID (NDP)', 'ID RDP', 'TOTAL FORM', 'NOMINAL']
+        
+        # Add totals row
+        totals = yearly_df[['NEW ID (NDP)', 'ID RDP', 'TOTAL FORM', 'NOMINAL']].sum()
+        totals_row = pd.DataFrame([['TOTAL', totals['NEW ID (NDP)'], totals['ID RDP'], totals['TOTAL FORM'], totals['NOMINAL']]], 
+                                   columns=yearly_df.columns)
+        yearly_df = pd.concat([yearly_df, totals_row], ignore_index=True)
+        yearly_df.to_excel(writer, sheet_name='YEARLY', index=False)
+        
+        # Monthly Detail Sheet
+        if report_data['monthly']:
+            monthly_df = pd.DataFrame(report_data['monthly'])
+            monthly_df = monthly_df[['date', 'new_id', 'rdp', 'total_form', 'nominal']]
+            monthly_df.columns = ['TANGGAL', 'NEW ID', 'ID RDP', 'TOTAL FORM', 'NOMINAL']
+            monthly_df.to_excel(writer, sheet_name='MONTHLY', index=False)
+        
+        # Staff Performance Sheet
+        if report_data['staff_performance']:
+            staff_df = pd.DataFrame(report_data['staff_performance'])
+            staff_df = staff_df[['staff_name', 'new_id', 'rdp', 'total_form', 'nominal']]
+            staff_df.columns = ['STAFF', 'NEW ID (NDP)', 'ID RDP', 'TOTAL FORM', 'TOTAL OMSET']
+            staff_df.to_excel(writer, sheet_name='STAFF PERFORMANCE', index=False)
+        
+        # Deposit Tiers Sheet
+        tiers_df = pd.DataFrame([
+            {'Tier': '2x Deposit', 'Count': report_data['deposit_tiers']['2x']},
+            {'Tier': '3x Deposit', 'Count': report_data['deposit_tiers']['3x']},
+            {'Tier': '>4x Deposit', 'Count': report_data['deposit_tiers']['4x_plus']}
+        ])
+        tiers_df.to_excel(writer, sheet_name='DEPOSIT TIERS', index=False)
+    
+    output.seek(0)
+    
+    # Create temp file for download
+    temp_path = f"/tmp/report_crm_{year}.xlsx"
+    with open(temp_path, 'wb') as f:
+        f.write(output.getvalue())
+    
+    return FileResponse(
+        path=temp_path,
+        media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        filename=f"Report_CRM_{year}.xlsx"
+    )
+
 # ==================== DB BONANZA ENDPOINTS ====================
 
 @api_router.post("/bonanza/upload")
