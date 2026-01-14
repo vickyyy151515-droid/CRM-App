@@ -18,7 +18,8 @@ import AdminMemberWDCRM from '../components/AdminMemberWDCRM';
 import AdvancedAnalytics from '../components/AdvancedAnalytics';
 import ExportCenter from '../components/ExportCenter';
 import ReportCRM from '../components/ReportCRM';
-import { LayoutDashboard, Upload, FileSpreadsheet, Clock, Users, Package, List, BarChart, UserCheck, DollarSign, UserCog, Gift, CreditCard, PieChart, Download, FileText } from 'lucide-react';
+import BonusCalculation from '../components/BonusCalculation';
+import { LayoutDashboard, Upload, FileSpreadsheet, Clock, Users, Package, List, BarChart, UserCheck, DollarSign, UserCog, Gift, CreditCard, PieChart, Download, FileText, Calculator } from 'lucide-react';
 
 export default function AdminDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('overview');
