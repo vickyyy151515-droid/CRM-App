@@ -156,6 +156,7 @@ export default function AdminDashboard({ user, onLogout }) {
     { id: 'report', label: 'Report CRM', icon: FileText, badge: 0 },
     { id: 'bonus', label: 'CRM Bonus Calculation', icon: Calculator, badge: 0 },
     { id: 'leave', label: 'Leave Requests', icon: CalendarOff, badge: 0 },
+    { id: 'leave-calendar', label: 'Leave Calendar', icon: Calendar, badge: 0 },
     { id: 'progress', label: 'Staff Progress & Quality', icon: BarChart, badge: 0 },
     { id: 'omset', label: 'OMSET CRM', icon: DollarSign, badge: 0 },
     { id: 'reserved', label: 'Reserved Member CRM', icon: UserCheck, badge: stats.pendingReservations },
