@@ -129,10 +129,16 @@ export default function NotificationBell({ userRole }) {
         return <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center"><CheckCheck size={16} className="text-blue-600" /></div>;
       case 'new_reserved_request':
         return <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center"><Bell size={16} className="text-amber-600" /></div>;
+      case 'followup_critical':
+        return <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center"><AlertCircle size={16} className="text-red-600" /></div>;
+      case 'followup_high':
+        return <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center"><Clock size={16} className="text-orange-600" /></div>;
       default:
         return <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center"><Bell size={16} className="text-slate-600" /></div>;
     }
   };
+
+  const totalAlerts = unreadCount + followupCount;
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -142,9 +148,9 @@ export default function NotificationBell({ userRole }) {
         data-testid="notification-bell"
       >
         <Bell size={20} />
-        {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-            {unreadCount > 9 ? '9+' : unreadCount}
+        {totalAlerts > 0 && (
+          <span className={`absolute -top-1 -right-1 w-5 h-5 text-white text-xs font-bold rounded-full flex items-center justify-center ${followupCount > 0 ? 'bg-red-500' : 'bg-indigo-500'}`}>
+            {totalAlerts > 9 ? '9+' : totalAlerts}
           </span>
         )}
       </button>
@@ -163,6 +169,24 @@ export default function NotificationBell({ userRole }) {
               </button>
             )}
           </div>
+
+          {/* Follow-up Alerts Section (for staff only) */}
+          {followupAlerts.length > 0 && (
+            <div className="border-b border-slate-200 bg-gradient-to-r from-red-50 to-orange-50">
+              <div className="px-4 py-2 border-b border-red-100">
+                <span className="text-xs font-semibold text-red-700 uppercase tracking-wider">Follow-up Reminders</span>
+              </div>
+              {followupAlerts.map((alert, index) => (
+                <div key={index} className="p-3 flex items-start gap-3">
+                  {getNotificationIcon(alert.type)}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-slate-900">{alert.title}</p>
+                    <p className="text-sm text-slate-600">{alert.message}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Notifications List */}
           <div className="overflow-y-auto flex-1">
