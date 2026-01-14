@@ -139,7 +139,7 @@ export default function LeaveCalendar() {
           <p className="text-slate-500 text-sm mt-1">View all approved staff leave days</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg flex items-center gap-2">
+          <div className="px-4 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg flex items-center gap-2">
             <Users size={18} />
             <span className="font-medium">{totalLeaveDays} day(s) with leave this month</span>
           </div>
