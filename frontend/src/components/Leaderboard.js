@@ -201,8 +201,8 @@ export default function Leaderboard({ isAdmin = false }) {
             onClick={() => setActiveTab('rdp')}
             className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
               activeTab === 'rdp' 
-                ? 'bg-white text-slate-900 shadow-sm' 
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' 
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <RefreshCcw size={16} className="inline mr-1" />
@@ -211,13 +211,13 @@ export default function Leaderboard({ isAdmin = false }) {
         </div>
 
         {/* Period Toggle */}
-        <div className="flex bg-slate-100 rounded-lg p-1">
+        <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
           <button
             onClick={() => setPeriod('month')}
             className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
               period === 'month' 
-                ? 'bg-white text-slate-900 shadow-sm' 
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' 
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             This Month
@@ -226,8 +226,8 @@ export default function Leaderboard({ isAdmin = false }) {
             onClick={() => setPeriod('all')}
             className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
               period === 'all' 
-                ? 'bg-white text-slate-900 shadow-sm' 
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' 
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             All Time
@@ -237,11 +237,11 @@ export default function Leaderboard({ isAdmin = false }) {
 
       {/* Leaderboard List */}
       {loading ? (
-        <div className="text-center py-12 text-slate-600">Loading leaderboard...</div>
+        <div className="text-center py-12 text-slate-600 dark:text-slate-400">Loading leaderboard...</div>
       ) : sortedLeaderboard.length === 0 ? (
         <div className="text-center py-12">
-          <Users className="mx-auto text-slate-300 mb-4" size={64} />
-          <p className="text-slate-600">No data available</p>
+          <Users className="mx-auto text-slate-300 dark:text-slate-600 mb-4" size={64} />
+          <p className="text-slate-600 dark:text-slate-400">No data available</p>
         </div>
       ) : (
         <div className="space-y-3" data-testid="leaderboard-list">
