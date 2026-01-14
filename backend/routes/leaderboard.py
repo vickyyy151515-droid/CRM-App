@@ -55,49 +55,68 @@ async def get_leaderboard(
     else:  # all time
         query = {}
     
-    # Get all records for the period
-    records = await db.omset_records.find(query, {'_id': 0}).to_list(500000)
+    # Use aggregation for staff stats - much more efficient than loading all records
+    staff_pipeline = [
+        {'$match': query},
+        {'$group': {
+            '_id': '$staff_id',
+            'total_omset': {'$sum': '$depo_total'},
+            'total_ndp': {'$sum': {'$cond': [{'$eq': ['$customer_type', 'NDP']}, 1, 0]}},
+            'total_rdp': {'$sum': {'$cond': [{'$eq': ['$customer_type', 'RDP']}, 1, 0]}},
+            'days_worked': {'$addToSet': '$record_date'}
+        }}
+    ]
+    staff_results = await db.omset_records.aggregate(staff_pipeline).to_list(1000)
     
-    # Get all records for NDP/RDP calculation (need full history for first deposit detection)
-    all_records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
-    
-    # Build customer first deposit date map
-    customer_first_date = {}
-    for record in sorted(all_records, key=lambda x: x['record_date']):
-        key = (record['customer_id'], record['product_id'])
-        if key not in customer_first_date:
-            customer_first_date[key] = record['record_date']
+    # Get today's stats separately
+    today_pipeline = [
+        {'$match': {'record_date': today_str}},
+        {'$group': {
+            '_id': '$staff_id',
+            'today_ndp': {'$sum': {'$cond': [{'$eq': ['$customer_type', 'NDP']}, 1, 0]}},
+            'today_rdp': {'$sum': {'$cond': [{'$eq': ['$customer_type', 'RDP']}, 1, 0]}}
+        }}
+    ]
+    today_results = await db.omset_records.aggregate(today_pipeline).to_list(1000)
+    today_lookup = {t['_id']: t for t in today_results}
     
     # Get all staff users
     staff_users = await db.users.find({'role': 'staff'}, {'_id': 0}).to_list(100)
     staff_map = {s['id']: s for s in staff_users}
     
-    # Calculate stats per staff
+    # Build result from aggregation
+    staff_stats_lookup = {s['_id']: s for s in staff_results}
+    
     staff_stats = {}
     for staff in staff_users:
+        agg_stats = staff_stats_lookup.get(staff['id'], {})
+        today_stats = today_lookup.get(staff['id'], {})
         staff_stats[staff['id']] = {
             'staff_id': staff['id'],
             'staff_name': staff['name'],
-            'total_omset': 0,
-            'total_ndp': 0,
-            'total_rdp': 0,
-            'today_ndp': 0,
-            'today_rdp': 0,
-            'days_worked': set()
+            'total_omset': agg_stats.get('total_omset', 0),
+            'total_ndp': agg_stats.get('total_ndp', 0),
+            'total_rdp': agg_stats.get('total_rdp', 0),
+            'today_ndp': today_stats.get('today_ndp', 0),
+            'today_rdp': today_stats.get('today_rdp', 0),
+            'days_worked': len(agg_stats.get('days_worked', []))
         }
     
-    # Process records
-    for record in records:
-        staff_id = record['staff_id']
+    # Also include staff from records who might have been deleted
+    for result in staff_results:
+        staff_id = result['_id']
         if staff_id not in staff_stats:
-            # Staff might have been deleted, create entry
+            today_stats = today_lookup.get(staff_id, {})
             staff_stats[staff_id] = {
                 'staff_id': staff_id,
-                'staff_name': record.get('staff_name', 'Unknown'),
-                'total_omset': 0,
-                'total_ndp': 0,
-                'total_rdp': 0,
-                'today_ndp': 0,
+                'staff_name': 'Unknown',
+                'total_omset': result.get('total_omset', 0),
+                'total_ndp': result.get('total_ndp', 0),
+                'total_rdp': result.get('total_rdp', 0),
+                'today_ndp': today_stats.get('today_ndp', 0),
+                'today_rdp': today_stats.get('today_rdp', 0),
+                'days_worked': len(result.get('days_worked', []))
+            }
                 'today_rdp': 0,
                 'days_worked': set()
             }
