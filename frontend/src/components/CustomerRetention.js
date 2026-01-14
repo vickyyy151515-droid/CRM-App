@@ -227,7 +227,7 @@ export default function CustomerRetention({ isAdmin = false }) {
         <button
           onClick={() => setActiveView('alerts')}
           className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
-            activeView === 'alerts' ? 'bg-red-100 text-red-700' : 'text-slate-600 hover:bg-slate-100'
+            activeView === 'alerts' ? 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
           }`}
           data-testid="alerts-tab"
         >
@@ -242,7 +242,7 @@ export default function CustomerRetention({ isAdmin = false }) {
         <button
           onClick={() => setActiveView('overview')}
           className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-            activeView === 'overview' ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300' : 'text-slate-600 hover:bg-slate-100'
+            activeView === 'overview' ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
           }`}
           data-testid="overview-tab"
         >
@@ -251,7 +251,7 @@ export default function CustomerRetention({ isAdmin = false }) {
         <button
           onClick={() => setActiveView('customers')}
           className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-            activeView === 'customers' ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300' : 'text-slate-600 hover:bg-slate-100'
+            activeView === 'customers' ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
           }`}
           data-testid="customers-tab"
         >
@@ -260,7 +260,7 @@ export default function CustomerRetention({ isAdmin = false }) {
         <button
           onClick={() => setActiveView('by-product')}
           className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-            activeView === 'by-product' ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300' : 'text-slate-600 hover:bg-slate-100'
+            activeView === 'by-product' ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
           }`}
           data-testid="by-product-tab"
         >
@@ -270,7 +270,7 @@ export default function CustomerRetention({ isAdmin = false }) {
           <button
             onClick={() => setActiveView('by-staff')}
             className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-              activeView === 'by-staff' ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300' : 'text-slate-600 hover:bg-slate-100'
+              activeView === 'by-staff' ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
             }`}
             data-testid="by-staff-tab"
           >
