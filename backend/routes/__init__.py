@@ -20,6 +20,7 @@ from .followup import router as followup_router
 from .daily_summary import router as daily_summary_router
 from .funnel import router as funnel_router
 from .retention import router as retention_router
+from .search import router as search_router
 
 __all__ = [
     'set_database', 
@@ -41,5 +42,6 @@ __all__ = [
     'followup_router',
     'daily_summary_router',
     'funnel_router',
-    'retention_router'
+    'retention_router',
+    'search_router'
 ]
