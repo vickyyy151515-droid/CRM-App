@@ -122,7 +122,7 @@ export default function ExportCenter() {
         return (
           <>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Product</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Product</label>
               <select
                 value={filters.product_id}
                 onChange={(e) => handleFilterChange('product_id', e.target.value)}
@@ -135,7 +135,7 @@ export default function ExportCenter() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Status</label>
               <select
                 value={filters.status}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
@@ -147,7 +147,7 @@ export default function ExportCenter() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Assigned To</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Assigned To</label>
               <select
                 value={filters.staff_id}
                 onChange={(e) => handleFilterChange('staff_id', e.target.value)}
@@ -160,7 +160,7 @@ export default function ExportCenter() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Start Date</label>
               <input
                 type="date"
                 value={filters.start_date}
@@ -169,7 +169,7 @@ export default function ExportCenter() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">End Date</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">End Date</label>
               <input
                 type="date"
                 value={filters.end_date}
@@ -184,7 +184,7 @@ export default function ExportCenter() {
         return (
           <>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Product</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Product</label>
               <select
                 value={filters.product_id}
                 onChange={(e) => handleFilterChange('product_id', e.target.value)}
@@ -197,7 +197,7 @@ export default function ExportCenter() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Staff</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Staff</label>
               <select
                 value={filters.staff_id}
                 onChange={(e) => handleFilterChange('staff_id', e.target.value)}
@@ -210,7 +210,7 @@ export default function ExportCenter() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Customer Type</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Customer Type</label>
               <select
                 value={filters.customer_type}
                 onChange={(e) => handleFilterChange('customer_type', e.target.value)}
@@ -222,7 +222,7 @@ export default function ExportCenter() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Start Date</label>
               <input
                 type="date"
                 value={filters.start_date}
@@ -231,7 +231,7 @@ export default function ExportCenter() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">End Date</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">End Date</label>
               <input
                 type="date"
                 value={filters.end_date}
@@ -245,7 +245,7 @@ export default function ExportCenter() {
       case 'staff-report':
         return (
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Period</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Period</label>
             <select
               value={filters.period}
               onChange={(e) => handleFilterChange('period', e.target.value)}
@@ -264,7 +264,7 @@ export default function ExportCenter() {
         return (
           <>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Product</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Product</label>
               <select
                 value={filters.product_id}
                 onChange={(e) => handleFilterChange('product_id', e.target.value)}
@@ -277,7 +277,7 @@ export default function ExportCenter() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Staff</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Staff</label>
               <select
                 value={filters.staff_id}
                 onChange={(e) => handleFilterChange('staff_id', e.target.value)}
@@ -290,7 +290,7 @@ export default function ExportCenter() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Status</label>
               <select
                 value={filters.status}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
@@ -308,7 +308,7 @@ export default function ExportCenter() {
         return (
           <>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Database</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Database</label>
               <select
                 value={filters.database_id}
                 onChange={(e) => handleFilterChange('database_id', e.target.value)}
@@ -321,7 +321,7 @@ export default function ExportCenter() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Product</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Product</label>
               <select
                 value={filters.product_id}
                 onChange={(e) => handleFilterChange('product_id', e.target.value)}
@@ -334,7 +334,7 @@ export default function ExportCenter() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Assigned To</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Assigned To</label>
               <select
                 value={filters.staff_id}
                 onChange={(e) => handleFilterChange('staff_id', e.target.value)}
@@ -347,7 +347,7 @@ export default function ExportCenter() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Status</label>
               <select
                 value={filters.status}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
@@ -365,7 +365,7 @@ export default function ExportCenter() {
         return (
           <>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Database</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Database</label>
               <select
                 value={filters.database_id}
                 onChange={(e) => handleFilterChange('database_id', e.target.value)}
@@ -378,7 +378,7 @@ export default function ExportCenter() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Product</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Product</label>
               <select
                 value={filters.product_id}
                 onChange={(e) => handleFilterChange('product_id', e.target.value)}
@@ -391,7 +391,7 @@ export default function ExportCenter() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Assigned To</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Assigned To</label>
               <select
                 value={filters.staff_id}
                 onChange={(e) => handleFilterChange('staff_id', e.target.value)}
@@ -404,7 +404,7 @@ export default function ExportCenter() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Status</label>
               <select
                 value={filters.status}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
@@ -422,7 +422,7 @@ export default function ExportCenter() {
         return (
           <>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Staff</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Staff</label>
               <select
                 value={filters.staff_id}
                 onChange={(e) => handleFilterChange('staff_id', e.target.value)}
@@ -435,7 +435,7 @@ export default function ExportCenter() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Status</label>
               <select
                 value={filters.status}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
@@ -448,7 +448,7 @@ export default function ExportCenter() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Start Date</label>
               <input
                 type="date"
                 value={filters.start_date}
@@ -457,7 +457,7 @@ export default function ExportCenter() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">End Date</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">End Date</label>
               <input
                 type="date"
                 value={filters.end_date}
@@ -472,7 +472,7 @@ export default function ExportCenter() {
         return (
           <>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Staff</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Staff</label>
               <select
                 value={filters.staff_id}
                 onChange={(e) => handleFilterChange('staff_id', e.target.value)}
@@ -485,7 +485,7 @@ export default function ExportCenter() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Start Date</label>
               <input
                 type="date"
                 value={filters.start_date}
@@ -494,7 +494,7 @@ export default function ExportCenter() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">End Date</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">End Date</label>
               <input
                 type="date"
                 value={filters.end_date}

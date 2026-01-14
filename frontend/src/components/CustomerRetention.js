@@ -164,9 +164,9 @@ export default function CustomerRetention({ isAdmin = false }) {
 
   const getLoyaltyBadge = (score) => {
     if (score >= 80) return { label: 'VIP', color: 'bg-purple-100 text-purple-700 border-purple-300' };
-    if (score >= 50) return { label: 'Loyal', color: 'bg-emerald-100 text-emerald-700 border-emerald-300' };
-    if (score >= 30) return { label: 'Regular', color: 'bg-blue-100 text-blue-700 border-blue-300' };
-    return { label: 'New', color: 'bg-slate-100 text-slate-600 border-slate-300' };
+    if (score >= 50) return { label: 'Loyal', color: 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border-emerald-300' };
+    if (score >= 30) return { label: 'Regular', color: 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border-blue-300' };
+    return { label: 'New', color: 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-300' };
   };
 
   return (
@@ -214,7 +214,7 @@ export default function CustomerRetention({ isAdmin = false }) {
               if (isAdmin) loadStaffBreakdown();
               if (activeView === 'customers') loadCustomers();
             }}
-            className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+            className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 rounded-lg transition-colors"
             data-testid="refresh-btn"
           >
             <RefreshCcw size={20} />
@@ -242,7 +242,7 @@ export default function CustomerRetention({ isAdmin = false }) {
         <button
           onClick={() => setActiveView('overview')}
           className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-            activeView === 'overview' ? 'bg-indigo-100 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'
+            activeView === 'overview' ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300' : 'text-slate-600 hover:bg-slate-100'
           }`}
           data-testid="overview-tab"
         >
@@ -251,7 +251,7 @@ export default function CustomerRetention({ isAdmin = false }) {
         <button
           onClick={() => setActiveView('customers')}
           className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-            activeView === 'customers' ? 'bg-indigo-100 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'
+            activeView === 'customers' ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300' : 'text-slate-600 hover:bg-slate-100'
           }`}
           data-testid="customers-tab"
         >
@@ -260,7 +260,7 @@ export default function CustomerRetention({ isAdmin = false }) {
         <button
           onClick={() => setActiveView('by-product')}
           className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-            activeView === 'by-product' ? 'bg-indigo-100 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'
+            activeView === 'by-product' ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300' : 'text-slate-600 hover:bg-slate-100'
           }`}
           data-testid="by-product-tab"
         >
@@ -270,7 +270,7 @@ export default function CustomerRetention({ isAdmin = false }) {
           <button
             onClick={() => setActiveView('by-staff')}
             className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-              activeView === 'by-staff' ? 'bg-indigo-100 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'
+              activeView === 'by-staff' ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300' : 'text-slate-600 hover:bg-slate-100'
             }`}
             data-testid="by-staff-tab"
           >
@@ -389,10 +389,10 @@ export default function CustomerRetention({ isAdmin = false }) {
                       <div key={`${customer.customer_id}-${index}`} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700">
                         <div className="flex items-center gap-4">
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                            index === 0 ? 'bg-yellow-100 text-yellow-700' :
+                            index === 0 ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300' :
                             index === 1 ? 'bg-slate-200 text-slate-700' :
                             index === 2 ? 'bg-orange-100 text-orange-700' :
-                            'bg-slate-100 text-slate-600'
+                            'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
                           }`}>
                             {index + 1}
                           </div>
@@ -543,7 +543,7 @@ export default function CustomerRetention({ isAdmin = false }) {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                            index === 0 ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'
+                            index === 0 ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
                           }`}>
                             {index + 1}
                           </div>
@@ -600,10 +600,10 @@ export default function CustomerRetention({ isAdmin = false }) {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                            index === 0 ? 'bg-yellow-100 text-yellow-700' :
+                            index === 0 ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300' :
                             index === 1 ? 'bg-slate-200 text-slate-700' :
                             index === 2 ? 'bg-orange-100 text-orange-700' :
-                            'bg-slate-100 text-slate-600'
+                            'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
                           }`}>
                             {index + 1}
                           </div>
@@ -621,7 +621,7 @@ export default function CustomerRetention({ isAdmin = false }) {
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                          staff.loyalty_rate >= 20 ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'
+                          staff.loyalty_rate >= 20 ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
                         }`}>
                           {staff.loyalty_rate}%
                         </span>
@@ -721,7 +721,7 @@ export default function CustomerRetention({ isAdmin = false }) {
                               <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
                                 alert.risk_level === 'critical' ? 'bg-red-100 text-red-700' :
                                 alert.risk_level === 'high' ? 'bg-orange-100 text-orange-700' :
-                                'bg-yellow-100 text-yellow-700'
+                                'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300'
                               }`}>
                                 {alert.risk_level.toUpperCase()}
                               </span>

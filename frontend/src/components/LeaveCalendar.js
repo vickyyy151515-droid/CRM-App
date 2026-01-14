@@ -163,7 +163,7 @@ export default function LeaveCalendar() {
               </h2>
               <button
                 onClick={goToToday}
-                className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors"
+                className="px-3 py-1 text-sm bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full hover:bg-blue-200 transition-colors"
               >
                 Today
               </button>

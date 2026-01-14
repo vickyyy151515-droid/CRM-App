@@ -93,19 +93,19 @@ export default function DailySummary({ isAdmin = false }) {
     
     if (rank === 1) {
       return (
-        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-bold bg-yellow-100 text-yellow-700 border border-yellow-300">
+        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-bold bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300 border border-yellow-300">
           <Trophy size={16} /> #1 Top Performer!
         </span>
       );
     } else if (rank <= 3) {
       return (
-        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold bg-emerald-100 text-emerald-700 border border-emerald-300">
+        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-300">
           <Award size={16} /> #{rank} of {total}
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm font-medium bg-slate-100 text-slate-600 dark:text-slate-400">
+      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 dark:text-slate-400">
         #{rank} of {total}
       </span>
     );
@@ -124,7 +124,7 @@ export default function DailySummary({ isAdmin = false }) {
           onClick={() => setShowHistory(!showHistory)}
           className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
             showHistory 
-              ? 'bg-indigo-100 text-indigo-700' 
+              ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300' 
               : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
@@ -136,7 +136,7 @@ export default function DailySummary({ isAdmin = false }) {
       <div className="flex items-center justify-center gap-4 mb-6">
         <button
           onClick={() => navigateDate(-1)}
-          className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+          className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 rounded-lg transition-colors"
         >
           <ChevronLeft size={24} />
         </button>
@@ -144,13 +144,13 @@ export default function DailySummary({ isAdmin = false }) {
           <Calendar className="text-indigo-600" size={20} />
           <span className="font-semibold text-slate-900 dark:text-white">{formatDate(selectedDate)}</span>
           {isToday && (
-            <span className="px-2 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-700 rounded-full">Today</span>
+            <span className="px-2 py-0.5 text-xs font-medium bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-full">Today</span>
           )}
         </div>
         <button
           onClick={() => navigateDate(1)}
           disabled={isToday}
-          className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
         >
           <ChevronRight size={24} />
         </button>
@@ -237,10 +237,10 @@ export default function DailySummary({ isAdmin = false }) {
                     >
                       <div className="flex items-center gap-4">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                          index === 0 ? 'bg-yellow-100 text-yellow-700' :
+                          index === 0 ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300' :
                           index === 1 ? 'bg-slate-200 text-slate-700' :
                           index === 2 ? 'bg-orange-100 text-orange-700' :
-                          'bg-slate-100 text-slate-600'
+                          'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
                         }`}>
                           {index + 1}
                         </div>
@@ -318,10 +318,10 @@ export default function DailySummary({ isAdmin = false }) {
                     <div key={product.product_id} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700">
                       <div className="flex items-center gap-4">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                          index === 0 ? 'bg-indigo-100 text-indigo-700' :
+                          index === 0 ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300' :
                           index === 1 ? 'bg-slate-200 text-slate-700' :
                           index === 2 ? 'bg-purple-100 text-purple-700' :
-                          'bg-slate-100 text-slate-600'
+                          'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
                         }`}>
                           {index + 1}
                         </div>
@@ -445,10 +445,10 @@ export default function DailySummary({ isAdmin = false }) {
                     <div key={product.product_id} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700">
                       <div className="flex items-center gap-4">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                          index === 0 ? 'bg-indigo-100 text-indigo-700' :
+                          index === 0 ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300' :
                           index === 1 ? 'bg-slate-200 text-slate-700' :
                           index === 2 ? 'bg-purple-100 text-purple-700' :
-                          'bg-slate-100 text-slate-600'
+                          'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
                         }`}>
                           {index + 1}
                         </div>
@@ -492,8 +492,8 @@ export default function DailySummary({ isAdmin = false }) {
                   <div key={product.product_id} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700">
                     <div className="flex items-center gap-4">
                       <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs ${
-                        index === 0 ? 'bg-indigo-100 text-indigo-700' :
-                        'bg-slate-100 text-slate-600'
+                        index === 0 ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300' :
+                        'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
                       }`}>
                         {index + 1}
                       </div>
