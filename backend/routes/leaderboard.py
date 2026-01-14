@@ -70,7 +70,7 @@ async def get_leaderboard(
     
     # Get today's stats separately
     today_pipeline = [
-        {'$match': {'record_date': today_str}},
+        {'$match': {'record_date': today}},
         {'$group': {
             '_id': '$staff_id',
             'today_ndp': {'$sum': {'$cond': [{'$eq': ['$customer_type', 'NDP']}, 1, 0]}},
