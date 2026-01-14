@@ -303,13 +303,13 @@ export default function BonusCalculation() {
 
       {/* Staff Bonus Cards */}
       <div className="space-y-4">
-        <h2 className="font-semibold text-slate-800 flex items-center gap-2">
+        <h2 className="font-semibold text-slate-800 dark:text-white flex items-center gap-2">
           <Users size={20} />
           Staff Bonus Breakdown
         </h2>
         
         {!bonusData || bonusData.staff_bonuses.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center text-slate-500">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-12 text-center text-slate-500 dark:text-slate-400">
             No bonus data for this month
           </div>
         ) : (
@@ -317,25 +317,25 @@ export default function BonusCalculation() {
             const isExpanded = expandedStaff[staff.staff_id];
             
             return (
-              <div key={staff.staff_id} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+              <div key={staff.staff_id} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                 {/* Staff Header */}
                 <button
                   onClick={() => toggleStaff(staff.staff_id)}
-                  className="w-full px-4 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
+                  className="w-full px-4 py-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold text-xl">
                       {staff.staff_name.charAt(0).toUpperCase()}
                     </div>
                     <div className="text-left">
-                      <div className="font-semibold text-slate-800 text-lg">{staff.staff_name}</div>
-                      <div className="text-sm text-slate-500">{staff.days_worked} days worked</div>
+                      <div className="font-semibold text-slate-800 dark:text-white text-lg">{staff.staff_name}</div>
+                      <div className="text-sm text-slate-500 dark:text-slate-400">{staff.days_worked} days worked</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-6">
                     <div className="text-right">
-                      <div className="text-sm text-slate-500">Total Bonus</div>
-                      <div className="text-2xl font-bold text-green-600">{formatUSD(staff.total_bonus)}</div>
+                      <div className="text-sm text-slate-500 dark:text-slate-400">Total Bonus</div>
+                      <div className="text-2xl font-bold text-green-600 dark:text-green-400">{formatUSD(staff.total_bonus)}</div>
                     </div>
                     {isExpanded ? <ChevronUp size={24} className="text-slate-400" /> : <ChevronDown size={24} className="text-slate-400" />}
                   </div>
@@ -343,30 +343,30 @@ export default function BonusCalculation() {
 
                 {/* Staff Details */}
                 {isExpanded && (
-                  <div className="border-t border-slate-200 p-4 bg-slate-50">
+                  <div className="border-t border-slate-200 dark:border-slate-700 p-4 bg-slate-50 dark:bg-slate-900/50">
                     {/* Bonus Breakdown */}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                      <div className="bg-white rounded-lg p-4 border border-slate-200">
-                        <div className="text-sm text-slate-500 mb-1">Total Nominal</div>
-                        <div className="text-xl font-bold text-slate-800">{formatRupiah(staff.total_nominal)}</div>
+                      <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+                        <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">Total Nominal</div>
+                        <div className="text-xl font-bold text-slate-800 dark:text-white">{formatRupiah(staff.total_nominal)}</div>
                       </div>
-                      <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
-                        <div className="text-sm text-amber-700 mb-1">Main Bonus</div>
-                        <div className="text-xl font-bold text-amber-600">{formatUSD(staff.main_bonus)}</div>
+                      <div className="bg-amber-50 dark:bg-amber-900/30 rounded-lg p-4 border border-amber-200 dark:border-amber-800">
+                        <div className="text-sm text-amber-700 dark:text-amber-300 mb-1">Main Bonus</div>
+                        <div className="text-xl font-bold text-amber-600 dark:text-amber-400">{formatUSD(staff.main_bonus)}</div>
                       </div>
-                      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                        <div className="text-sm text-blue-700 mb-1">NDP Bonus</div>
-                        <div className="text-xl font-bold text-blue-600">{formatUSD(staff.ndp_bonus_total)}</div>
-                        <div className="text-xs text-blue-500 mt-1">
+                      <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                        <div className="text-sm text-blue-700 dark:text-blue-300 mb-1">NDP Bonus</div>
+                        <div className="text-xl font-bold text-blue-600 dark:text-blue-400">{formatUSD(staff.ndp_bonus_total)}</div>
+                        <div className="text-xs text-blue-500 dark:text-blue-400 mt-1">
                           {Object.entries(staff.ndp_bonus_days).map(([label, count]) => (
                             <span key={label} className="mr-2">{count} days {label}</span>
                           ))}
                         </div>
                       </div>
-                      <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                        <div className="text-sm text-green-700 mb-1">RDP Bonus</div>
-                        <div className="text-xl font-bold text-green-600">{formatUSD(staff.rdp_bonus_total)}</div>
-                        <div className="text-xs text-green-500 mt-1">
+                      <div className="bg-green-50 dark:bg-green-900/30 rounded-lg p-4 border border-green-200 dark:border-green-800">
+                        <div className="text-sm text-green-700 dark:text-green-300 mb-1">RDP Bonus</div>
+                        <div className="text-xl font-bold text-green-600 dark:text-green-400">{formatUSD(staff.rdp_bonus_total)}</div>
+                        <div className="text-xs text-green-500 dark:text-green-400 mt-1">
                           {Object.entries(staff.rdp_bonus_days).map(([label, count]) => (
                             <span key={label} className="mr-2">{count} days {label}</span>
                           ))}
@@ -375,9 +375,9 @@ export default function BonusCalculation() {
                     </div>
 
                     {/* Daily Breakdown Table */}
-                    <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-                      <div className="px-4 py-2 bg-slate-100 border-b border-slate-200">
-                        <h4 className="font-medium text-slate-700">Daily Breakdown</h4>
+                    <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+                      <div className="px-4 py-2 bg-slate-100 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-600">
+                        <h4 className="font-medium text-slate-700 dark:text-slate-200">Daily Breakdown</h4>
                       </div>
                       <div className="overflow-x-auto max-h-64">
                         <table className="w-full text-sm">
