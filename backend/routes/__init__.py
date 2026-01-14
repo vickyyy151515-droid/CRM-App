@@ -19,6 +19,7 @@ from .leaderboard import router as leaderboard_router
 from .followup import router as followup_router
 from .daily_summary import router as daily_summary_router
 from .funnel import router as funnel_router
+from .retention import router as retention_router
 
 __all__ = [
     'set_database', 
@@ -39,5 +40,6 @@ __all__ = [
     'leaderboard_router',
     'followup_router',
     'daily_summary_router',
-    'funnel_router'
+    'funnel_router',
+    'retention_router'
 ]
