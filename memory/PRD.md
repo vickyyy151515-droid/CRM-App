@@ -397,6 +397,32 @@ Build a Customer Relationship Management (CRM) application where:
   - `GET /api/retention/alerts/by-staff` - Staff breakdown (Admin only)
   - `POST /api/retention/alerts/dismiss` - Dismiss alert for 7 days
 
+### ✅ COMPLETED: Dark Mode (Jan 15, 2026)
+- **Theme Toggle**: Sun/Moon icon in header to switch between light/dark modes
+- **System Preference Detection**: Automatically detects user's OS preference
+- **Persistence**: Saves theme preference in localStorage
+- **Keyboard Shortcut**: Works with global UI
+- **Components Updated**: Sidebar, header, navigation items with dark mode classes
+- **New Files**: `frontend/src/contexts/ThemeContext.js`
+
+### ✅ COMPLETED: Global Search (Jan 15, 2026)
+- **Keyboard Shortcut**: Ctrl/Cmd + K to open search modal
+- **Multi-Category Search**: Searches across:
+  - Customers (name, ID, WhatsApp)
+  - Staff (name, email) - Admin only
+  - Products (name, category)
+  - Databases (name, product)
+  - OMSET Records (customer name, ID, username)
+- **Features**:
+  - Real-time search with 300ms debounce
+  - Keyboard navigation (↑↓ to navigate, Enter to select)
+  - Categorized results with icons
+  - Click-to-navigate to relevant pages
+  - ESC to close
+- **New Files**: 
+  - `backend/routes/search.py`
+  - `frontend/src/components/GlobalSearch.js`
+
 ### P1: Next Priority Tasks
 - None - All P1 tasks completed!
 
