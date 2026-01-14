@@ -87,6 +87,8 @@ export default function StaffDashboard({ user, onLogout }) {
         return <StaffMemberWDCRM />;
       case 'leave':
         return <StaffLeaveRequest />;
+      case 'izin':
+        return <StaffIzin />;
       default:
         return null;
     }
