@@ -143,7 +143,50 @@ export default function SidebarConfigurator({ isOpen, onClose, menuItems, onConf
     try {
       const response = await api.get('/user/preferences/sidebar-config');
       if (response.data.config) {
-        setConfig(response.data.config);
+        // Merge saved config with current menuItems to include new items
+        const savedConfig = response.data.config;
+        
+        // Get all item IDs currently in the saved config (including items inside folders)
+        const configItemIds = new Set();
+        savedConfig.items.forEach(configItem => {
+          if (configItem.type === 'folder') {
+            configItem.items?.forEach(itemId => configItemIds.add(itemId));
+          } else {
+            configItemIds.add(configItem.id);
+          }
+        });
+        
+        // Find new menu items that are not in the saved config
+        const newMenuItems = menuItems.filter(item => !configItemIds.has(item.id));
+        
+        // If there are new items, add them to the config
+        if (newMenuItems.length > 0) {
+          const newConfigItems = newMenuItems.map(item => ({ 
+            type: 'item', 
+            id: item.id, 
+            label: item.label 
+          }));
+          
+          // Insert after the first item (usually Overview)
+          const firstItem = savedConfig.items[0];
+          if (firstItem && firstItem.id === 'overview') {
+            savedConfig.items = [firstItem, ...newConfigItems, ...savedConfig.items.slice(1)];
+          } else {
+            savedConfig.items = [...newConfigItems, ...savedConfig.items];
+          }
+        }
+        
+        // Also remove items that no longer exist in menuItems
+        const currentMenuIds = new Set(menuItems.map(m => m.id));
+        savedConfig.items = savedConfig.items.filter(item => {
+          if (item.type === 'folder') {
+            item.items = item.items?.filter(itemId => currentMenuIds.has(itemId)) || [];
+            return true;
+          }
+          return currentMenuIds.has(item.id);
+        });
+        
+        setConfig(savedConfig);
       } else {
         // Initialize with default config (all items in order, no folders)
         const defaultConfig = {
