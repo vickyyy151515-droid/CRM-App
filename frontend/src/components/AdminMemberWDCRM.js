@@ -309,7 +309,7 @@ export default function AdminMemberWDCRM() {
 
   return (
     <div data-testid="admin-db-memberwd">
-      <h2 className="text-3xl font-semibold tracking-tight text-slate-900 mb-6">Member WD CRM</h2>
+      <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white mb-6">Member WD CRM</h2>
 
       {/* Upload Section */}
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm mb-6">
@@ -393,7 +393,7 @@ export default function AdminMemberWDCRM() {
                 data-testid={`memberwd-db-${database.id}`}
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center flex-shrink-0">
                     <Database className="text-indigo-600" size={24} />
                   </div>
                   <div className="min-w-0">
@@ -601,7 +601,7 @@ export default function AdminMemberWDCRM() {
                   ) : (
                     <div className="overflow-x-auto max-h-96 overflow-y-auto">
                       <table className="min-w-full border border-slate-200 rounded-lg">
-                        <thead className="bg-slate-50 sticky top-0">
+                        <thead className="bg-slate-50 dark:bg-slate-900 sticky top-0">
                           <tr>
                             <th className="px-3 py-2 text-left text-xs font-semibold text-slate-700 w-10">
                               <input

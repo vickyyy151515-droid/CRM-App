@@ -225,7 +225,7 @@ export default function DailySummary({ isAdmin = false }) {
               <h3 className="font-semibold text-slate-900 dark:text-white dark:text-white">Staff Performance Breakdown</h3>
               <p className="text-xs text-slate-500 mt-1">Click on a staff member to see their product breakdown</p>
             </div>
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-slate-100 dark:divide-slate-700">
               {(summary.staff_breakdown || []).length === 0 ? (
                 <div className="p-8 text-center text-slate-500 dark:text-slate-400">No staff data for this date</div>
               ) : (
@@ -310,7 +310,7 @@ export default function DailySummary({ isAdmin = false }) {
               {showProductBreakdown ? <ChevronUp size={20} className="text-slate-400" /> : <ChevronDown size={20} className="text-slate-400" />}
             </div>
             {showProductBreakdown && (
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-slate-100 dark:divide-slate-700">
                 {(summary.product_breakdown || []).length === 0 ? (
                   <div className="p-8 text-center text-slate-500 dark:text-slate-400">No product data for this date</div>
                 ) : (
@@ -440,7 +440,7 @@ export default function DailySummary({ isAdmin = false }) {
                 {showProductBreakdown ? <ChevronUp size={20} className="text-slate-400" /> : <ChevronDown size={20} className="text-slate-400" />}
               </div>
               {showProductBreakdown && (
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-slate-100 dark:divide-slate-700">
                   {summary.my_stats.product_breakdown.map((product, index) => (
                     <div key={product.product_id} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700">
                       <div className="flex items-center gap-4">
@@ -487,7 +487,7 @@ export default function DailySummary({ isAdmin = false }) {
                   <h3 className="font-semibold text-slate-900 dark:text-white dark:text-white">Team Product Performance</h3>
                 </div>
               </div>
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-slate-100 dark:divide-slate-700">
                 {summary.product_breakdown.map((product, index) => (
                   <div key={product.product_id} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700">
                     <div className="flex items-center gap-4">

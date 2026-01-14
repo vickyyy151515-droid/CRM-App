@@ -382,7 +382,7 @@ export default function CustomerRetention({ isAdmin = false }) {
                 {showTopCustomers ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
               </div>
               {showTopCustomers && (
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-slate-100 dark:divide-slate-700">
                   {overview.top_loyal_customers.map((customer, index) => {
                     const badge = getLoyaltyBadge(customer.loyalty_score || 0);
                     return (
@@ -475,7 +475,7 @@ export default function CustomerRetention({ isAdmin = false }) {
                     <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                   {customers.map((customer, index) => {
                     const badge = getLoyaltyBadge(customer.loyalty_score || 0);
                     return (
@@ -537,7 +537,7 @@ export default function CustomerRetention({ isAdmin = false }) {
                     <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Avg/Customer</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                   {productBreakdown.products.map((product, index) => (
                     <tr key={product.product_id} className="hover:bg-slate-50 dark:hover:bg-slate-700">
                       <td className="px-4 py-3">
@@ -594,7 +594,7 @@ export default function CustomerRetention({ isAdmin = false }) {
                     <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">OMSET</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                   {staffBreakdown.staff.map((staff, index) => (
                     <tr key={staff.staff_id} className="hover:bg-slate-50 dark:hover:bg-slate-700">
                       <td className="px-4 py-3">
@@ -697,7 +697,7 @@ export default function CustomerRetention({ isAdmin = false }) {
                 <p className="text-sm text-slate-500 mt-1">All customers are actively depositing</p>
               </div>
             ) : (
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-slate-100 dark:divide-slate-700">
                 {alerts.alerts
                   .filter(alert => alertFilter === 'all' || alert.risk_level === alertFilter)
                   .map((alert, index) => (
