@@ -212,6 +212,13 @@ Build a Customer Relationship Management (CRM) application where:
   - Pending request count badge
   - Approve/Reject requests with optional notes
   - View staff leave balances
+- **Leave Calendar** (Admin):
+  - Monthly calendar view of all approved leave days
+  - Color-coded staff members for easy identification
+  - Click on any date to see detailed leave information
+  - Staff legend and leave type legend
+  - Month navigation with "Today" button
+  - Shows count of days with leave per month
 - **Balance Calculation**:
   - Only approved requests deduct from balance
   - Pending requests are considered when validating new requests (prevents over-requesting)
@@ -224,6 +231,7 @@ Build a Customer Relationship Management (CRM) application where:
   - `GET /api/leave/all-requests` - Admin view all requests
   - `PUT /api/leave/request/{id}/action` - Admin approve/reject
   - `GET /api/leave/staff-balance/{id}` - Admin view staff's balance
+  - `GET /api/leave/calendar` - Admin calendar view data
 
 ## Tech Stack
 - **Frontend**: React + TailwindCSS + Shadcn/UI + Recharts
