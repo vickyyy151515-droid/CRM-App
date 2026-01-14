@@ -3,7 +3,8 @@ import { api } from '../App';
 import { toast } from 'sonner';
 import { 
   DollarSign, Users, Calendar, ChevronDown, ChevronUp, 
-  Download, TrendingUp, Award, Target, FileSpreadsheet
+  Download, TrendingUp, Award, Target, FileSpreadsheet,
+  Settings, X, Plus, Trash2, Save, RotateCcw
 } from 'lucide-react';
 
 const MONTH_NAMES = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
@@ -26,6 +27,9 @@ export default function BonusCalculation() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [bonusData, setBonusData] = useState(null);
   const [expandedStaff, setExpandedStaff] = useState({});
+  const [showSettings, setShowSettings] = useState(false);
+  const [editConfig, setEditConfig] = useState(null);
+  const [savingConfig, setSavingConfig] = useState(false);
 
   useEffect(() => {
     loadBonusData();
@@ -55,6 +59,89 @@ export default function BonusCalculation() {
     toast.success('Export started');
   };
 
+  const openSettings = () => {
+    if (bonusData?.bonus_config) {
+      setEditConfig(JSON.parse(JSON.stringify(bonusData.bonus_config)));
+    }
+    setShowSettings(true);
+  };
+
+  const saveConfig = async () => {
+    setSavingConfig(true);
+    try {
+      await api.put('/bonus-calculation/config', editConfig);
+      toast.success('Bonus configuration saved!');
+      setShowSettings(false);
+      loadBonusData(); // Reload data with new config
+    } catch (error) {
+      console.error('Failed to save config:', error);
+      toast.error('Failed to save configuration');
+    } finally {
+      setSavingConfig(false);
+    }
+  };
+
+  const resetConfig = async () => {
+    if (!window.confirm('Reset to default configuration? This cannot be undone.')) return;
+    
+    setSavingConfig(true);
+    try {
+      const response = await api.post('/bonus-calculation/config/reset');
+      setEditConfig(response.data.config);
+      toast.success('Configuration reset to defaults!');
+      loadBonusData();
+    } catch (error) {
+      console.error('Failed to reset config:', error);
+      toast.error('Failed to reset configuration');
+    } finally {
+      setSavingConfig(false);
+    }
+  };
+
+  // Main tier handlers
+  const addMainTier = () => {
+    setEditConfig(prev => ({
+      ...prev,
+      main_tiers: [...prev.main_tiers, { threshold: 0, bonus: 0 }]
+    }));
+  };
+
+  const updateMainTier = (index, field, value) => {
+    setEditConfig(prev => ({
+      ...prev,
+      main_tiers: prev.main_tiers.map((tier, i) => 
+        i === index ? { ...tier, [field]: Number(value) } : tier
+      )
+    }));
+  };
+
+  const removeMainTier = (index) => {
+    setEditConfig(prev => ({
+      ...prev,
+      main_tiers: prev.main_tiers.filter((_, i) => i !== index)
+    }));
+  };
+
+  // NDP tier handlers
+  const updateNdpTier = (index, field, value) => {
+    setEditConfig(prev => ({
+      ...prev,
+      ndp_tiers: prev.ndp_tiers.map((tier, i) => 
+        i === index ? { ...tier, [field]: field === 'label' ? value : (value === '' ? null : Number(value)) } : tier
+      )
+    }));
+  };
+
+  // RDP tier handlers
+  const updateRdpTier = (index, field, value) => {
+    setEditConfig(prev => ({
+      ...prev,
+      rdp_tiers: prev.rdp_tiers.map((tier, i) => 
+        i === index ? { ...tier, [field]: field === 'label' ? value : (value === '' ? null : Number(value)) } : tier
+      )
+    }));
+  };
+
   // Get years for dropdown
   const currentYear = new Date().getFullYear();
   const years = [currentYear, currentYear - 1, currentYear - 2];
@@ -67,6 +154,8 @@ export default function BonusCalculation() {
     );
   }
 
+  const bonusConfig = bonusData?.bonus_config || { main_tiers: [], ndp_tiers: [], rdp_tiers: [] };
+
   return (
     <div className="space-y-6" data-testid="bonus-calculation-page">
       {/* Header */}
@@ -75,14 +164,24 @@ export default function BonusCalculation() {
           <h1 className="text-2xl font-bold text-slate-900">CRM Bonus Calculation</h1>
           <p className="text-slate-500 text-sm mt-1">Automatic monthly bonus calculation for staff</p>
         </div>
-        <button
-          onClick={exportToExcel}
-          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-          data-testid="export-bonus-btn"
-        >
-          <FileSpreadsheet size={18} />
-          Export Excel
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={openSettings}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
+            data-testid="settings-btn"
+          >
+            <Settings size={18} />
+            Settings
+          </button>
+          <button
+            onClick={exportToExcel}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            data-testid="export-bonus-btn"
+          >
+            <FileSpreadsheet size={18} />
+            Export Excel
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -126,26 +225,14 @@ export default function BonusCalculation() {
             Main Bonus Tiers
           </h3>
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between p-2 bg-amber-50 rounded">
-              <span>≥ Rp 280.000.000</span>
-              <span className="font-bold text-amber-600">$100</span>
-            </div>
-            <div className="flex justify-between p-2 bg-amber-50/70 rounded">
-              <span>≥ Rp 210.000.000</span>
-              <span className="font-bold text-amber-600">$75</span>
-            </div>
-            <div className="flex justify-between p-2 bg-amber-50/50 rounded">
-              <span>≥ Rp 140.000.000</span>
-              <span className="font-bold text-amber-600">$50</span>
-            </div>
-            <div className="flex justify-between p-2 bg-amber-50/30 rounded">
-              <span>≥ Rp 100.000.000</span>
-              <span className="font-bold text-amber-600">$30</span>
-            </div>
-            <div className="flex justify-between p-2 bg-slate-50 rounded">
-              <span>≥ Rp 70.000.000</span>
-              <span className="font-bold text-amber-600">$20</span>
-            </div>
+            {bonusConfig.main_tiers
+              .sort((a, b) => b.threshold - a.threshold)
+              .map((tier, idx) => (
+                <div key={idx} className={`flex justify-between p-2 rounded ${idx === 0 ? 'bg-amber-50' : 'bg-slate-50'}`}>
+                  <span>≥ {formatRupiah(tier.threshold)}</span>
+                  <span className="font-bold text-amber-600">${tier.bonus}</span>
+                </div>
+              ))}
           </div>
         </div>
 
@@ -156,14 +243,12 @@ export default function BonusCalculation() {
             Daily NDP Bonus
           </h3>
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between p-2 bg-blue-50 rounded">
-              <span>&gt;10 NDP/day</span>
-              <span className="font-bold text-blue-600">$5.00</span>
-            </div>
-            <div className="flex justify-between p-2 bg-blue-50/50 rounded">
-              <span>8-10 NDP/day</span>
-              <span className="font-bold text-blue-600">$2.50</span>
-            </div>
+            {bonusConfig.ndp_tiers.map((tier, idx) => (
+              <div key={idx} className={`flex justify-between p-2 rounded ${idx === 0 ? 'bg-blue-50' : 'bg-blue-50/50'}`}>
+                <span>{tier.label} NDP/day</span>
+                <span className="font-bold text-blue-600">${tier.bonus.toFixed(2)}</span>
+              </div>
+            ))}
           </div>
           <p className="text-xs text-slate-500 mt-3">*Total NDP from all products per day</p>
         </div>
@@ -175,14 +260,12 @@ export default function BonusCalculation() {
             Daily RDP Bonus
           </h3>
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between p-2 bg-green-50 rounded">
-              <span>&gt;15 RDP/day</span>
-              <span className="font-bold text-green-600">$5.00</span>
-            </div>
-            <div className="flex justify-between p-2 bg-green-50/50 rounded">
-              <span>12-15 RDP/day</span>
-              <span className="font-bold text-green-600">$2.50</span>
-            </div>
+            {bonusConfig.rdp_tiers.map((tier, idx) => (
+              <div key={idx} className={`flex justify-between p-2 rounded ${idx === 0 ? 'bg-green-50' : 'bg-green-50/50'}`}>
+                <span>{tier.label} RDP/day</span>
+                <span className="font-bold text-green-600">${tier.bonus.toFixed(2)}</span>
+              </div>
+            ))}
           </div>
           <p className="text-xs text-slate-500 mt-3">*Total RDP from all products per day</p>
         </div>
@@ -275,14 +358,18 @@ export default function BonusCalculation() {
                         <div className="text-sm text-blue-700 mb-1">NDP Bonus</div>
                         <div className="text-xl font-bold text-blue-600">{formatUSD(staff.ndp_bonus_total)}</div>
                         <div className="text-xs text-blue-500 mt-1">
-                          {staff.ndp_bonus_days.above_10} days &gt;10 • {staff.ndp_bonus_days['8_10']} days 8-10
+                          {Object.entries(staff.ndp_bonus_days).map(([label, count]) => (
+                            <span key={label} className="mr-2">{count} days {label}</span>
+                          ))}
                         </div>
                       </div>
                       <div className="bg-green-50 rounded-lg p-4 border border-green-200">
                         <div className="text-sm text-green-700 mb-1">RDP Bonus</div>
                         <div className="text-xl font-bold text-green-600">{formatUSD(staff.rdp_bonus_total)}</div>
                         <div className="text-xs text-green-500 mt-1">
-                          {staff.rdp_bonus_days.above_15} days &gt;15 • {staff.rdp_bonus_days['12_15']} days 12-15
+                          {Object.entries(staff.rdp_bonus_days).map(([label, count]) => (
+                            <span key={label} className="mr-2">{count} days {label}</span>
+                          ))}
                         </div>
                       </div>
                     </div>
@@ -310,9 +397,7 @@ export default function BonusCalculation() {
                                 <td className="px-4 py-2 text-slate-900">{day.date}</td>
                                 <td className="px-4 py-2 text-right">
                                   <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                                    day.ndp > 10 ? 'bg-blue-100 text-blue-700' :
-                                    day.ndp >= 8 ? 'bg-blue-50 text-blue-600' :
-                                    'text-slate-600'
+                                    day.ndp_bonus > 0 ? 'bg-blue-100 text-blue-700' : 'text-slate-600'
                                   }`}>
                                     {day.ndp}
                                   </span>
@@ -322,9 +407,7 @@ export default function BonusCalculation() {
                                 </td>
                                 <td className="px-4 py-2 text-right">
                                   <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                                    day.rdp > 15 ? 'bg-green-100 text-green-700' :
-                                    day.rdp >= 12 ? 'bg-green-50 text-green-600' :
-                                    'text-slate-600'
+                                    day.rdp_bonus > 0 ? 'bg-green-100 text-green-700' : 'text-slate-600'
                                   }`}>
                                     {day.rdp}
                                   </span>
@@ -381,6 +464,228 @@ export default function BonusCalculation() {
           })
         )}
       </div>
+
+      {/* Settings Modal */}
+      {showSettings && editConfig && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+              <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                <Settings size={24} />
+                Bonus Configuration Settings
+              </h2>
+              <button
+                onClick={() => setShowSettings(false)}
+                className="p-2 hover:bg-slate-200 rounded-lg transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+              <div className="space-y-8">
+                {/* Main Bonus Tiers */}
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                      <Award size={20} className="text-amber-500" />
+                      Main Bonus Tiers (Monthly Total Nominal)
+                    </h3>
+                    <button
+                      onClick={addMainTier}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition-colors text-sm"
+                    >
+                      <Plus size={16} />
+                      Add Tier
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    {editConfig.main_tiers
+                      .sort((a, b) => b.threshold - a.threshold)
+                      .map((tier, idx) => (
+                        <div key={idx} className="flex items-center gap-4 p-3 bg-amber-50 rounded-lg">
+                          <div className="flex-1">
+                            <label className="block text-xs text-amber-700 mb-1">Threshold (Rp)</label>
+                            <input
+                              type="number"
+                              value={tier.threshold}
+                              onChange={(e) => {
+                                const realIdx = editConfig.main_tiers.findIndex(t => t === tier);
+                                updateMainTier(realIdx, 'threshold', e.target.value);
+                              }}
+                              className="w-full px-3 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                              placeholder="e.g., 280000000"
+                            />
+                          </div>
+                          <div className="w-32">
+                            <label className="block text-xs text-amber-700 mb-1">Bonus ($)</label>
+                            <input
+                              type="number"
+                              value={tier.bonus}
+                              onChange={(e) => {
+                                const realIdx = editConfig.main_tiers.findIndex(t => t === tier);
+                                updateMainTier(realIdx, 'bonus', e.target.value);
+                              }}
+                              className="w-full px-3 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                              placeholder="e.g., 100"
+                            />
+                          </div>
+                          <button
+                            onClick={() => {
+                              const realIdx = editConfig.main_tiers.findIndex(t => t === tier);
+                              removeMainTier(realIdx);
+                            }}
+                            className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors mt-5"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+
+                {/* NDP Bonus Tiers */}
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2 mb-4">
+                    <Users size={20} className="text-blue-500" />
+                    Daily NDP Bonus Tiers
+                  </h3>
+                  <div className="space-y-3">
+                    {editConfig.ndp_tiers.map((tier, idx) => (
+                      <div key={idx} className="flex items-center gap-4 p-3 bg-blue-50 rounded-lg">
+                        <div className="w-24">
+                          <label className="block text-xs text-blue-700 mb-1">Min NDP</label>
+                          <input
+                            type="number"
+                            value={tier.min}
+                            onChange={(e) => updateNdpTier(idx, 'min', e.target.value)}
+                            className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div className="w-24">
+                          <label className="block text-xs text-blue-700 mb-1">Max NDP</label>
+                          <input
+                            type="number"
+                            value={tier.max || ''}
+                            onChange={(e) => updateNdpTier(idx, 'max', e.target.value)}
+                            className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            placeholder="∞"
+                          />
+                        </div>
+                        <div className="w-24">
+                          <label className="block text-xs text-blue-700 mb-1">Bonus ($)</label>
+                          <input
+                            type="number"
+                            step="0.5"
+                            value={tier.bonus}
+                            onChange={(e) => updateNdpTier(idx, 'bonus', e.target.value)}
+                            className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="block text-xs text-blue-700 mb-1">Label</label>
+                          <input
+                            type="text"
+                            value={tier.label}
+                            onChange={(e) => updateNdpTier(idx, 'label', e.target.value)}
+                            className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            placeholder="e.g., >10"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-slate-500 mt-2">*Leave Max empty for &quot;greater than&quot; condition</p>
+                </div>
+
+                {/* RDP Bonus Tiers */}
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2 mb-4">
+                    <TrendingUp size={20} className="text-green-500" />
+                    Daily RDP Bonus Tiers
+                  </h3>
+                  <div className="space-y-3">
+                    {editConfig.rdp_tiers.map((tier, idx) => (
+                      <div key={idx} className="flex items-center gap-4 p-3 bg-green-50 rounded-lg">
+                        <div className="w-24">
+                          <label className="block text-xs text-green-700 mb-1">Min RDP</label>
+                          <input
+                            type="number"
+                            value={tier.min}
+                            onChange={(e) => updateRdpTier(idx, 'min', e.target.value)}
+                            className="w-full px-3 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                          />
+                        </div>
+                        <div className="w-24">
+                          <label className="block text-xs text-green-700 mb-1">Max RDP</label>
+                          <input
+                            type="number"
+                            value={tier.max || ''}
+                            onChange={(e) => updateRdpTier(idx, 'max', e.target.value)}
+                            className="w-full px-3 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                            placeholder="∞"
+                          />
+                        </div>
+                        <div className="w-24">
+                          <label className="block text-xs text-green-700 mb-1">Bonus ($)</label>
+                          <input
+                            type="number"
+                            step="0.5"
+                            value={tier.bonus}
+                            onChange={(e) => updateRdpTier(idx, 'bonus', e.target.value)}
+                            className="w-full px-3 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="block text-xs text-green-700 mb-1">Label</label>
+                          <input
+                            type="text"
+                            value={tier.label}
+                            onChange={(e) => updateRdpTier(idx, 'label', e.target.value)}
+                            className="w-full px-3 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                            placeholder="e.g., >15"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-slate-500 mt-2">*Leave Max empty for &quot;greater than&quot; condition</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between bg-slate-50">
+              <button
+                onClick={resetConfig}
+                disabled={savingConfig}
+                className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
+              >
+                <RotateCcw size={18} />
+                Reset to Defaults
+              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowSettings(false)}
+                  className="px-4 py-2 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveConfig}
+                  disabled={savingConfig}
+                  className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                >
+                  <Save size={18} />
+                  {savingConfig ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
