@@ -8,9 +8,18 @@ import os
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
-from typing import List, Optional
+from typing import List, Optional, Dict
 import uuid
 from datetime import datetime, timezone, timedelta
+import bcrypt
+import jwt
+import pandas as pd
+import io
+
+# ==================== CONFIGURATION ====================
+
+ROOT_DIR = Path(__file__).parent
+load_dotenv(ROOT_DIR / '.env')
 
 # Jakarta timezone (UTC+7)
 JAKARTA_TZ = timezone(timedelta(hours=7))
@@ -22,25 +31,22 @@ def get_jakarta_now():
 def get_jakarta_date_string():
     """Get current date string in Jakarta timezone (YYYY-MM-DD)"""
     return get_jakarta_now().strftime('%Y-%m-%d')
-import bcrypt
-import jwt
-import pandas as pd
-import io
 
-ROOT_DIR = Path(__file__).parent
-load_dotenv(ROOT_DIR / '.env')
-
+# Database connection
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-app = FastAPI()
+# App initialization
+app = FastAPI(title="CRM Pro API", version="2.0.0")
 api_router = APIRouter(prefix="/api")
 
+# Auth configuration
 JWT_SECRET = os.environ.get('JWT_SECRET', 'your-secret-key-change-in-production')
 JWT_ALGORITHM = 'HS256'
 security = HTTPBearer()
 
+# File upload directory
 UPLOAD_DIR = ROOT_DIR / 'uploads'
 UPLOAD_DIR.mkdir(exist_ok=True)
 
