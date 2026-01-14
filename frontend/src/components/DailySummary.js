@@ -9,6 +9,8 @@ export default function DailySummary({ isAdmin = false }) {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [showHistory, setShowHistory] = useState(false);
+  const [showProductBreakdown, setShowProductBreakdown] = useState(true);
+  const [expandedStaff, setExpandedStaff] = useState({});
 
   const loadSummary = useCallback(async () => {
     try {
