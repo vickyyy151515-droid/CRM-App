@@ -203,7 +203,8 @@ async def get_daily_summary(
                 'total_omset': 0,
                 'ndp_count': 0,
                 'rdp_count': 0,
-                'form_count': 0
+                'form_count': 0,
+                'product_breakdown': []
             }
             
             # Calculate rank
@@ -219,6 +220,7 @@ async def get_daily_summary(
                 'team_total_ndp': saved_summary.get('total_ndp', 0),
                 'team_total_rdp': saved_summary.get('total_rdp', 0),
                 'top_performer': saved_summary.get('top_performer'),
+                'product_breakdown': saved_summary.get('product_breakdown', []),
                 'generated_at': saved_summary.get('generated_at')
             }
         
