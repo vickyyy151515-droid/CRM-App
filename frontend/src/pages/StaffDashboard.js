@@ -93,6 +93,8 @@ export default function StaffDashboard({ user, onLogout }) {
         return <StaffIzin />;
       case 'leaderboard':
         return <Leaderboard isAdmin={false} />;
+      case 'followups':
+        return <StaffFollowups />;
       default:
         return null;
     }
@@ -101,6 +103,7 @@ export default function StaffDashboard({ user, onLogout }) {
   const menuItems = [
     { id: 'databases', label: 'Browse Databases', icon: FileSpreadsheet },
     { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
+    { id: 'followups', label: 'Follow-up Reminders', icon: Bell },
     { id: 'requests', label: 'My Requests', icon: Clock },
     { id: 'assigned', label: 'My Assigned Customers', icon: User },
     { id: 'reserved', label: 'Reserved Member CRM', icon: UserCheck },
