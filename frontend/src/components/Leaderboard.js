@@ -284,34 +284,34 @@ export default function Leaderboard({ isAdmin = false }) {
                   <div className="hidden md:flex items-center gap-6">
                     {/* OMSET */}
                     <div className="text-center">
-                      <p className={`text-lg font-bold ${activeTab === 'omset' ? 'text-emerald-600' : 'text-slate-700'}`}>
+                      <p className={`text-lg font-bold ${activeTab === 'omset' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'}`}>
                         {formatCurrency(staff.total_omset)}
                       </p>
-                      <p className="text-xs text-slate-500">OMSET</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">OMSET</p>
                     </div>
                     
                     {/* NDP */}
                     <div className="text-center">
-                      <p className={`text-lg font-bold ${activeTab === 'ndp' ? 'text-blue-600' : 'text-slate-700'}`}>
+                      <p className={`text-lg font-bold ${activeTab === 'ndp' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300'}`}>
                         {staff.total_ndp}
                       </p>
-                      <p className="text-xs text-slate-500">NDP</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">NDP</p>
                     </div>
                     
                     {/* RDP */}
                     <div className="text-center">
-                      <p className={`text-lg font-bold ${activeTab === 'rdp' ? 'text-violet-600' : 'text-slate-700'}`}>
+                      <p className={`text-lg font-bold ${activeTab === 'rdp' ? 'text-violet-600 dark:text-violet-400' : 'text-slate-700 dark:text-slate-300'}`}>
                         {staff.total_rdp}
                       </p>
-                      <p className="text-xs text-slate-500">RDP</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">RDP</p>
                     </div>
 
                     {/* Today Stats */}
-                    <div className="text-center border-l pl-6">
-                      <p className="text-sm font-medium text-slate-900">
+                    <div className="text-center border-l border-slate-200 dark:border-slate-600 pl-6">
+                      <p className="text-sm font-medium text-slate-900 dark:text-white">
                         {staff.today_ndp}/{staff.today_rdp}
                       </p>
-                      <p className="text-xs text-slate-500">Today NDP/RDP</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Today NDP/RDP</p>
                     </div>
                   </div>
                 </div>
@@ -321,10 +321,10 @@ export default function Leaderboard({ isAdmin = false }) {
                   {/* OMSET Progress */}
                   <div>
                     <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="text-slate-600">Monthly OMSET</span>
-                      <span className="font-medium">{omsetProgress.toFixed(0)}%</span>
+                      <span className="text-slate-600 dark:text-slate-400">Monthly OMSET</span>
+                      <span className="font-medium text-slate-700 dark:text-slate-300">{omsetProgress.toFixed(0)}%</span>
                     </div>
-                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                       <div 
                         className={`h-full ${getProgressColor(omsetProgress)} transition-all duration-500`}
                         style={{ width: `${omsetProgress}%` }}
@@ -335,10 +335,10 @@ export default function Leaderboard({ isAdmin = false }) {
                   {/* NDP Progress */}
                   <div>
                     <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="text-slate-600">Avg Daily NDP</span>
-                      <span className="font-medium">{staff.avg_daily_ndp.toFixed(1)} / {targets.daily_ndp}</span>
+                      <span className="text-slate-600 dark:text-slate-400">Avg Daily NDP</span>
+                      <span className="font-medium text-slate-700 dark:text-slate-300">{staff.avg_daily_ndp.toFixed(1)} / {targets.daily_ndp}</span>
                     </div>
-                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                       <div 
                         className={`h-full ${getProgressColor(ndpProgress)} transition-all duration-500`}
                         style={{ width: `${ndpProgress}%` }}
@@ -349,10 +349,10 @@ export default function Leaderboard({ isAdmin = false }) {
                   {/* RDP Progress */}
                   <div>
                     <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="text-slate-600">Avg Daily RDP</span>
-                      <span className="font-medium">{staff.avg_daily_rdp.toFixed(1)} / {targets.daily_rdp}</span>
+                      <span className="text-slate-600 dark:text-slate-400">Avg Daily RDP</span>
+                      <span className="font-medium text-slate-700 dark:text-slate-300">{staff.avg_daily_rdp.toFixed(1)} / {targets.daily_rdp}</span>
                     </div>
-                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                       <div 
                         className={`h-full ${getProgressColor(rdpProgress)} transition-all duration-500`}
                         style={{ width: `${rdpProgress}%` }}
