@@ -247,6 +247,7 @@ Build a Customer Relationship Management (CRM) application where:
 - `/api/export/*` - Export endpoints (customer-records, omset, staff-report, reserved-members, bonanza-records, memberwd-records)
 - `/api/bulk/*` - Bulk operations (requests, status-update, bonanza-records, memberwd-records)
 - `/api/user/preferences/widget-layout` - Save/load user widget layout order
+- `/api/leave/*` - Leave request system (balance, my-requests, request, all-requests, staff-balance)
 
 ## Credentials
 - **Admin**: admin@crm.com / admin123
