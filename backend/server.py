@@ -1960,6 +1960,66 @@ async def get_report_crm_data(
                 'nominal': nominal
             })
     
+    # Process monthly data by staff (for CRM Efficiency)
+    CRM_EFFICIENCY_TARGET = 278000000  # Rp 278,000,000 = 100%
+    monthly_by_staff = []
+    for m in range(1, 13):
+        month_str = f"{year}-{str(m).zfill(2)}"
+        month_records = [r for r in all_records if r['record_date'].startswith(month_str)]
+        
+        # Group by staff
+        staff_month_data = {}
+        for record in month_records:
+            sid = record['staff_id']
+            sname = record['staff_name']
+            
+            if sid not in staff_month_data:
+                staff_month_data[sid] = {
+                    'staff_id': sid,
+                    'staff_name': sname,
+                    'new_id': 0,
+                    'rdp': 0,
+                    'total_form': 0,
+                    'nominal': 0
+                }
+            
+            key = (record['customer_id'], record['product_id'])
+            first_date = customer_first_date.get(key)
+            if first_date and first_date.startswith(month_str) and first_date == record['record_date']:
+                staff_month_data[sid]['new_id'] += 1
+            elif first_date and first_date < record['record_date']:
+                staff_month_data[sid]['rdp'] += 1
+            
+            staff_month_data[sid]['total_form'] += 1
+            staff_month_data[sid]['nominal'] += record.get('depo_total', 0) or record.get('nominal', 0) or 0
+        
+        # Calculate CRM efficiency for each staff
+        staff_list = []
+        for sid, data in staff_month_data.items():
+            efficiency = (data['nominal'] / CRM_EFFICIENCY_TARGET) * 100 if CRM_EFFICIENCY_TARGET > 0 else 0
+            staff_list.append({
+                **data,
+                'crm_efficiency': round(efficiency, 2)
+            })
+        
+        # Sort by nominal descending
+        staff_list.sort(key=lambda x: x['nominal'], reverse=True)
+        
+        # Calculate month totals
+        month_totals = {
+            'new_id': sum(s['new_id'] for s in staff_list),
+            'rdp': sum(s['rdp'] for s in staff_list),
+            'total_form': sum(s['total_form'] for s in staff_list),
+            'nominal': sum(s['nominal'] for s in staff_list)
+        }
+        month_totals['crm_efficiency'] = round((month_totals['nominal'] / CRM_EFFICIENCY_TARGET) * 100, 2) if CRM_EFFICIENCY_TARGET > 0 else 0
+        
+        monthly_by_staff.append({
+            'month': m,
+            'staff': staff_list,
+            'totals': month_totals
+        })
+    
     # Process daily data for selected month - grouped by staff and product
     selected_month_str = f"{year}-{str(month).zfill(2)}"
     selected_month_records = [r for r in all_records if r['record_date'].startswith(selected_month_str)]
