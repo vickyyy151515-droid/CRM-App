@@ -430,28 +430,28 @@ export default function StaffProgress() {
 
                 {/* Daily Progress */}
                 {dateRange !== 'all' && dailyStats && (
-                  <div className="mb-4 p-3 bg-indigo-50 rounded-lg border border-indigo-100">
-                    <p className="text-xs font-semibold text-indigo-900 mb-2">{getDateRangeLabel()}</p>
+                  <div className="mb-4 p-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg border border-indigo-100 dark:border-indigo-800">
+                    <p className="text-xs font-semibold text-indigo-900 dark:text-indigo-300 mb-2">{getDateRangeLabel()}</p>
                     <div className="grid grid-cols-5 gap-1 text-center">
                       <div>
-                        <p className="text-sm font-bold text-indigo-600">{dailyStats.checkedToday}</p>
-                        <p className="text-[10px] text-indigo-600">Checked</p>
+                        <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{dailyStats.checkedToday}</p>
+                        <p className="text-[10px] text-indigo-600 dark:text-indigo-400">Checked</p>
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-emerald-600">{dailyStats.adaToday}</p>
-                        <p className="text-[10px] text-emerald-600">WA Ada</p>
+                        <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{dailyStats.adaToday}</p>
+                        <p className="text-[10px] text-emerald-600 dark:text-emerald-400">WA Ada</p>
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-rose-600">{dailyStats.tidakToday}</p>
-                        <p className="text-[10px] text-rose-600">WA Tidak</p>
+                        <p className="text-sm font-bold text-rose-600 dark:text-rose-400">{dailyStats.tidakToday}</p>
+                        <p className="text-[10px] text-rose-600 dark:text-rose-400">WA Tidak</p>
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-blue-600">{dailyStats.respondYaToday}</p>
-                        <p className="text-[10px] text-blue-600">Resp Ya</p>
+                        <p className="text-sm font-bold text-blue-600 dark:text-blue-400">{dailyStats.respondYaToday}</p>
+                        <p className="text-[10px] text-blue-600 dark:text-blue-400">Resp Ya</p>
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-orange-600">{dailyStats.respondTidakToday}</p>
-                        <p className="text-[10px] text-orange-600">Resp Tidak</p>
+                        <p className="text-sm font-bold text-orange-600 dark:text-orange-400">{dailyStats.respondTidakToday}</p>
+                        <p className="text-[10px] text-orange-600 dark:text-orange-400">Resp Tidak</p>
                       </div>
                     </div>
                   </div>
