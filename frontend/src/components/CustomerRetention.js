@@ -634,6 +634,137 @@ export default function CustomerRetention({ isAdmin = false }) {
             </div>
           )}
         </div>
+      ) : activeView === 'alerts' && alerts ? (
+        <div className="space-y-6">
+          {/* Alert Summary Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-gradient-to-br from-red-50 to-rose-50 border border-red-200 rounded-xl p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle className="text-red-600" size={20} />
+                <span className="text-sm font-medium text-red-700">Critical (14+ days)</span>
+              </div>
+              <p className="text-2xl font-bold text-red-600">{alerts.summary.critical}</p>
+            </div>
+            <div className="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-xl p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <Clock className="text-orange-600" size={20} />
+                <span className="text-sm font-medium text-orange-700">High (7-13 days)</span>
+              </div>
+              <p className="text-2xl font-bold text-orange-600">{alerts.summary.high}</p>
+            </div>
+            <div className="bg-gradient-to-br from-yellow-50 to-amber-50 border border-yellow-200 rounded-xl p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <Bell className="text-yellow-600" size={20} />
+                <span className="text-sm font-medium text-yellow-700">Medium (3-6 days)</span>
+              </div>
+              <p className="text-2xl font-bold text-yellow-600">{alerts.summary.medium}</p>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-xl p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <Users className="text-slate-600" size={20} />
+                <span className="text-sm font-medium text-slate-700">Total At-Risk</span>
+              </div>
+              <p className="text-2xl font-bold text-slate-900">{alerts.summary.total}</p>
+            </div>
+          </div>
+
+          {/* Alert List */}
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="text-red-500" size={20} />
+                <h3 className="font-semibold text-slate-900">At-Risk Customers</h3>
+                <span className="text-sm text-slate-500">Customers who need follow-up</span>
+              </div>
+              <select
+                value={alertFilter}
+                onChange={(e) => setAlertFilter(e.target.value)}
+                className="px-2 py-1 text-sm border border-slate-200 rounded-lg"
+              >
+                <option value="all">All Risks</option>
+                <option value="critical">Critical Only</option>
+                <option value="high">High Only</option>
+                <option value="medium">Medium Only</option>
+              </select>
+            </div>
+            
+            {(alerts.alerts || []).length === 0 ? (
+              <div className="p-8 text-center">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Heart className="text-green-600" size={32} />
+                </div>
+                <p className="text-lg font-medium text-slate-900">No At-Risk Customers!</p>
+                <p className="text-sm text-slate-500 mt-1">All customers are actively depositing</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {alerts.alerts
+                  .filter(alert => alertFilter === 'all' || alert.risk_level === alertFilter)
+                  .map((alert, index) => (
+                    <div key={`${alert.customer_id}-${alert.product_id}-${index}`} className="p-4 hover:bg-slate-50">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-4">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                            alert.risk_level === 'critical' ? 'bg-red-100' :
+                            alert.risk_level === 'high' ? 'bg-orange-100' :
+                            'bg-yellow-100'
+                          }`}>
+                            <AlertTriangle className={
+                              alert.risk_level === 'critical' ? 'text-red-600' :
+                              alert.risk_level === 'high' ? 'text-orange-600' :
+                              'text-yellow-600'
+                            } size={20} />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-semibold text-slate-900">{alert.customer_name}</p>
+                              <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
+                                alert.risk_level === 'critical' ? 'bg-red-100 text-red-700' :
+                                alert.risk_level === 'high' ? 'bg-orange-100 text-orange-700' :
+                                'bg-yellow-100 text-yellow-700'
+                              }`}>
+                                {alert.risk_level.toUpperCase()}
+                              </span>
+                            </div>
+                            <p className="text-sm text-slate-500">{alert.product_name} • {alert.staff_name}</p>
+                            <div className="flex items-center gap-4 mt-2 text-sm">
+                              <span className="text-slate-600">
+                                <strong>{alert.days_since_deposit}</strong> days since last deposit
+                              </span>
+                              <span className="text-slate-500">
+                                Last: {new Date(alert.last_deposit_date).toLocaleDateString('id-ID')}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <p className="font-bold text-emerald-600">{formatCurrency(alert.total_omset)}</p>
+                            <p className="text-xs text-slate-500">{alert.total_deposits} deposits</p>
+                          </div>
+                          <button
+                            onClick={() => dismissAlert(alert.customer_id, alert.product_id)}
+                            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                            title="Dismiss alert for 7 days"
+                          >
+                            <X size={18} />
+                          </button>
+                        </div>
+                      </div>
+                      {alert.avg_days_between_deposits > 0 && (
+                        <div className="mt-3 ml-14 p-2 bg-slate-50 rounded-lg text-xs text-slate-600">
+                          <span className="font-medium">Pattern:</span> This customer typically deposits every {alert.avg_days_between_deposits} days
+                          {alert.days_since_deposit > alert.avg_days_between_deposits * 2 && (
+                            <span className="text-red-500 ml-2">• Overdue by {Math.round(alert.days_since_deposit - alert.avg_days_between_deposits)} days</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        </div>
       ) : (
         <div className="text-center py-12 text-slate-600">No data available</div>
       )}
