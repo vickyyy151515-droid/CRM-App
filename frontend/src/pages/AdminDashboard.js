@@ -21,7 +21,8 @@ import ReportCRM from '../components/ReportCRM';
 import BonusCalculation from '../components/BonusCalculation';
 import AdminLeaveRequests from '../components/AdminLeaveRequests';
 import LeaveCalendar from '../components/LeaveCalendar';
-import { LayoutDashboard, Upload, FileSpreadsheet, Clock, Users, Package, List, BarChart, UserCheck, DollarSign, UserCog, Gift, CreditCard, PieChart, Download, FileText, Calculator, CalendarOff, Calendar } from 'lucide-react';
+import AdminIzinMonitor from '../components/AdminIzinMonitor';
+import { LayoutDashboard, Upload, FileSpreadsheet, Clock, Users, Package, List, BarChart, UserCheck, DollarSign, UserCog, Gift, CreditCard, PieChart, Download, FileText, Calculator, CalendarOff, Calendar, Timer } from 'lucide-react';
 
 export default function AdminDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('overview');
