@@ -115,8 +115,8 @@ export default function ConversionFunnel({ isAdmin = false }) {
     <div data-testid="conversion-funnel">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-          <h2 className="text-3xl font-semibold tracking-tight text-slate-900">Conversion Funnel</h2>
-          <p className="text-sm text-slate-500 mt-1">
+          <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">Conversion Funnel</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             Track customer journey from assignment to deposit
           </p>
         </div>
@@ -126,7 +126,7 @@ export default function ConversionFunnel({ isAdmin = false }) {
           <select
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
-            className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             data-testid="date-range-select"
           >
             <option value="7">Last 7 days</option>
@@ -138,7 +138,7 @@ export default function ConversionFunnel({ isAdmin = false }) {
           <select
             value={selectedProduct}
             onChange={(e) => setSelectedProduct(e.target.value)}
-            className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             data-testid="product-filter-select"
           >
             <option value="">All Products</option>
@@ -153,7 +153,7 @@ export default function ConversionFunnel({ isAdmin = false }) {
               loadProductBreakdown();
               if (isAdmin) loadStaffBreakdown();
             }}
-            className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+            className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
             data-testid="refresh-btn"
           >
             <RefreshCcw size={20} />
