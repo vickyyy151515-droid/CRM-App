@@ -145,6 +145,8 @@ export default function AdminDashboard({ user, onLogout }) {
         return <AdminLeaveRequests />;
       case 'leave-calendar':
         return <LeaveCalendar />;
+      case 'izin-monitor':
+        return <AdminIzinMonitor />;
       default:
         return null;
     }
