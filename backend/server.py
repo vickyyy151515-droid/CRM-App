@@ -46,12 +46,32 @@ from routes.deps import set_database
 from routes.izin import router as izin_router
 from routes.bonanza import router as bonanza_router
 from routes.memberwd import router as memberwd_router
+from routes.omset import router as omset_router
+from routes.report import router as report_router
+from routes.bonus import router as bonus_router
+from routes.records import router as records_router
+from routes.auth import router as auth_router
+from routes.leave import router as leave_router
+from routes.notifications import router as notifications_router
+from routes.bulk import router as bulk_router
+from routes.products import router as products_router
+from routes.analytics import router as analytics_router
 set_database(db)
 
 # Register modular routes
 api_router.include_router(izin_router)
 api_router.include_router(bonanza_router)
 api_router.include_router(memberwd_router)
+api_router.include_router(omset_router)
+api_router.include_router(report_router)
+api_router.include_router(bonus_router)
+api_router.include_router(records_router)
+api_router.include_router(auth_router)
+api_router.include_router(leave_router)
+api_router.include_router(notifications_router)
+api_router.include_router(bulk_router)
+api_router.include_router(products_router)
+api_router.include_router(analytics_router)
 
 # Auth configuration
 JWT_SECRET = os.environ.get('JWT_SECRET', 'your-secret-key-change-in-production')
