@@ -83,7 +83,21 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
       menuMap[item.id] = item;
     });
 
-    return sidebarConfig.items.map(configItem => {
+    // Get all item IDs currently in the saved config (including items inside folders)
+    const configItemIds = new Set();
+    sidebarConfig.items.forEach(configItem => {
+      if (configItem.type === 'folder') {
+        configItem.items.forEach(itemId => configItemIds.add(itemId));
+      } else {
+        configItemIds.add(configItem.id);
+      }
+    });
+
+    // Find new menu items that are not in the saved config
+    const newItems = menuItems.filter(item => !configItemIds.has(item.id));
+
+    // Build the menu from saved config
+    const configuredMenu = sidebarConfig.items.map(configItem => {
       if (configItem.type === 'folder') {
         return {
           ...configItem,
@@ -92,6 +106,19 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
       }
       return menuMap[configItem.id] ? { ...menuMap[configItem.id], type: 'item' } : null;
     }).filter(Boolean);
+
+    // Add new items at the beginning (after Overview if it exists)
+    if (newItems.length > 0) {
+      const newMenuItems = newItems.map(item => ({ ...item, type: 'item' }));
+      // Insert after the first item (usually Overview)
+      const firstItem = configuredMenu[0];
+      if (firstItem && firstItem.id === 'overview') {
+        return [firstItem, ...newMenuItems, ...configuredMenu.slice(1)];
+      }
+      return [...newMenuItems, ...configuredMenu];
+    }
+
+    return configuredMenu;
   };
 
   const organizedMenu = buildMenu();
