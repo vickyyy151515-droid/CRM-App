@@ -66,6 +66,7 @@ export default function AdminDashboard({ user, onLogout }) {
       case 'overview':
         return (
           <div>
+            <h2 className="text-3xl font-semibold tracking-tight text-slate-900 mb-6">Dashboard Overview</h2>
             {/* Quick Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
               <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm" data-testid="stat-total-databases">
