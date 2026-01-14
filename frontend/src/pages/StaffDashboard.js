@@ -102,6 +102,8 @@ export default function StaffDashboard({ user, onLogout }) {
         return <DailySummary isAdmin={false} />;
       case 'funnel':
         return <ConversionFunnel isAdmin={false} />;
+      case 'retention':
+        return <CustomerRetention isAdmin={false} />;
       default:
         return null;
     }
@@ -112,6 +114,7 @@ export default function StaffDashboard({ user, onLogout }) {
     { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
     { id: 'daily-summary', label: 'Daily Summary', icon: CalendarDays },
     { id: 'funnel', label: 'Conversion Funnel', icon: Filter },
+    { id: 'retention', label: 'Customer Retention', icon: Heart },
     { id: 'followups', label: 'Follow-up Reminders', icon: Bell },
     { id: 'requests', label: 'My Requests', icon: Clock },
     { id: 'assigned', label: 'My Assigned Customers', icon: User },
