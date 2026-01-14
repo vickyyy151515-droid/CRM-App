@@ -210,6 +210,7 @@ export default function CustomerRetention({ isAdmin = false }) {
               loadOverview();
               loadTrend();
               loadProductBreakdown();
+              loadAlerts();
               if (isAdmin) loadStaffBreakdown();
               if (activeView === 'customers') loadCustomers();
             }}
@@ -222,7 +223,22 @@ export default function CustomerRetention({ isAdmin = false }) {
       </div>
 
       {/* View Tabs */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6 flex-wrap">
+        <button
+          onClick={() => setActiveView('alerts')}
+          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
+            activeView === 'alerts' ? 'bg-red-100 text-red-700' : 'text-slate-600 hover:bg-slate-100'
+          }`}
+          data-testid="alerts-tab"
+        >
+          <AlertTriangle size={16} />
+          At-Risk
+          {alerts?.summary?.total > 0 && (
+            <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+              {alerts.summary.total}
+            </span>
+          )}
+        </button>
         <button
           onClick={() => setActiveView('overview')}
           className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
