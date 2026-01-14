@@ -1,7 +1,15 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '../App';
-import { Bell, Check, CheckCheck, Trash2, X, AlertCircle, Clock } from 'lucide-react';
+import { Bell, Check, CheckCheck, Trash2, X, AlertCircle, Clock, Wifi, WifiOff } from 'lucide-react';
 import { toast } from 'sonner';
+
+// WebSocket connection status enum
+const WS_STATUS = {
+  CONNECTING: 'connecting',
+  CONNECTED: 'connected',
+  DISCONNECTED: 'disconnected',
+  RECONNECTING: 'reconnecting'
+};
 
 export default function NotificationBell({ userRole }) {
   const [notifications, setNotifications] = useState([]);
@@ -9,45 +17,130 @@ export default function NotificationBell({ userRole }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [followupCount, setFollowupCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [wsStatus, setWsStatus] = useState(WS_STATUS.DISCONNECTED);
   const dropdownRef = useRef(null);
-  const prevUnreadCount = useRef(0);
+  const wsRef = useRef(null);
+  const reconnectTimeoutRef = useRef(null);
+  const reconnectAttemptsRef = useRef(0);
+  const maxReconnectAttempts = 5;
+  const baseReconnectDelay = 2000;
 
-  useEffect(() => {
-    loadNotifications();
-    if (userRole === 'staff') {
-      loadFollowupAlerts();
-    }
-    // Poll for new notifications every 30 seconds
-    const interval = setInterval(() => {
-      loadNotifications();
-      if (userRole === 'staff') {
-        loadFollowupAlerts();
-      }
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [userRole]);
-
-  useEffect(() => {
-    // Close dropdown when clicking outside
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+  // Get WebSocket URL from backend URL
+  const getWsUrl = useCallback(() => {
+    const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+    
+    // Convert http(s) to ws(s)
+    let wsUrl = backendUrl.replace('https://', 'wss://').replace('http://', 'ws://');
+    return `${wsUrl}/ws/notifications?token=${token}`;
   }, []);
 
-  useEffect(() => {
-    // Show toast for new notifications
-    if (unreadCount > prevUnreadCount.current && prevUnreadCount.current > 0) {
-      const newCount = unreadCount - prevUnreadCount.current;
-      toast.info(`You have ${newCount} new notification${newCount > 1 ? 's' : ''}`);
+  // Connect to WebSocket
+  const connectWebSocket = useCallback(() => {
+    const wsUrl = getWsUrl();
+    if (!wsUrl) {
+      console.log('No token available for WebSocket connection');
+      return;
     }
-    prevUnreadCount.current = unreadCount;
-  }, [unreadCount]);
 
+    // Clean up existing connection
+    if (wsRef.current) {
+      wsRef.current.close();
+    }
+
+    setWsStatus(WS_STATUS.CONNECTING);
+    console.log('Connecting to WebSocket...');
+
+    try {
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        console.log('WebSocket connected');
+        setWsStatus(WS_STATUS.CONNECTED);
+        reconnectAttemptsRef.current = 0;
+        
+        // Start heartbeat
+        const heartbeatInterval = setInterval(() => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'ping' }));
+          }
+        }, 30000);
+
+        ws.heartbeatInterval = heartbeatInterval;
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          
+          if (data.type === 'notification') {
+            // New notification received
+            const notification = data.data;
+            setNotifications(prev => [notification, ...prev]);
+            setUnreadCount(prev => prev + 1);
+            
+            // Show toast for new notification
+            toast.info(notification.title, {
+              description: notification.message,
+              duration: 5000
+            });
+          } else if (data.type === 'connection') {
+            console.log('WebSocket connection confirmed:', data);
+          } else if (data.type === 'heartbeat' || data.type === 'pong') {
+            // Heartbeat response - connection is alive
+          }
+        } catch (e) {
+          console.error('Error parsing WebSocket message:', e);
+        }
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        setWsStatus(WS_STATUS.DISCONNECTED);
+      };
+
+      ws.onclose = (event) => {
+        console.log('WebSocket closed:', event.code, event.reason);
+        setWsStatus(WS_STATUS.DISCONNECTED);
+        
+        // Clear heartbeat interval
+        if (ws.heartbeatInterval) {
+          clearInterval(ws.heartbeatInterval);
+        }
+
+        // Attempt reconnection if not intentionally closed
+        if (event.code !== 1000 && reconnectAttemptsRef.current < maxReconnectAttempts) {
+          setWsStatus(WS_STATUS.RECONNECTING);
+          const delay = baseReconnectDelay * Math.pow(2, reconnectAttemptsRef.current);
+          console.log(`Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current + 1}/${maxReconnectAttempts})`);
+          
+          reconnectTimeoutRef.current = setTimeout(() => {
+            reconnectAttemptsRef.current++;
+            connectWebSocket();
+          }, delay);
+        }
+      };
+    } catch (error) {
+      console.error('Failed to create WebSocket:', error);
+      setWsStatus(WS_STATUS.DISCONNECTED);
+    }
+  }, [getWsUrl]);
+
+  // Disconnect WebSocket
+  const disconnectWebSocket = useCallback(() => {
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+    }
+    if (wsRef.current) {
+      wsRef.current.close(1000, 'User logout');
+      wsRef.current = null;
+    }
+    setWsStatus(WS_STATUS.DISCONNECTED);
+  }, []);
+
+  // Load initial notifications
   const loadNotifications = async () => {
     try {
       const response = await api.get('/notifications?limit=20');
@@ -67,6 +160,46 @@ export default function NotificationBell({ userRole }) {
       console.error('Failed to load followup alerts');
     }
   };
+
+  // Initialize WebSocket and load data
+  useEffect(() => {
+    loadNotifications();
+    if (userRole === 'staff') {
+      loadFollowupAlerts();
+    }
+    
+    // Connect WebSocket
+    const token = localStorage.getItem('token');
+    if (token) {
+      connectWebSocket();
+    }
+    
+    // Fallback polling only when WebSocket is disconnected (every 60 seconds instead of 30)
+    const pollInterval = setInterval(() => {
+      if (wsStatus !== WS_STATUS.CONNECTED) {
+        loadNotifications();
+        if (userRole === 'staff') {
+          loadFollowupAlerts();
+        }
+      }
+    }, 60000);
+    
+    return () => {
+      clearInterval(pollInterval);
+      disconnectWebSocket();
+    };
+  }, [userRole, connectWebSocket, disconnectWebSocket, wsStatus]);
+
+  useEffect(() => {
+    // Close dropdown when clicking outside
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const markAsRead = async (notificationId) => {
     try {
@@ -121,20 +254,32 @@ export default function NotificationBell({ userRole }) {
     switch (type) {
       case 'request_approved':
       case 'reserved_approved':
-        return <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center"><Check size={16} className="text-emerald-600" /></div>;
+        return <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center"><Check size={16} className="text-emerald-600 dark:text-emerald-400" /></div>;
       case 'request_rejected':
       case 'reserved_rejected':
-        return <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center"><X size={16} className="text-red-600" /></div>;
+        return <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center"><X size={16} className="text-red-600 dark:text-red-400" /></div>;
       case 'records_assigned':
-        return <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center"><CheckCheck size={16} className="text-blue-600" /></div>;
+        return <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center"><CheckCheck size={16} className="text-blue-600 dark:text-blue-400" /></div>;
       case 'new_reserved_request':
-        return <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center"><Bell size={16} className="text-amber-600" /></div>;
+        return <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center"><Bell size={16} className="text-amber-600 dark:text-amber-400" /></div>;
       case 'followup_critical':
-        return <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center"><AlertCircle size={16} className="text-red-600" /></div>;
+        return <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center"><AlertCircle size={16} className="text-red-600 dark:text-red-400" /></div>;
       case 'followup_high':
-        return <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center"><Clock size={16} className="text-orange-600" /></div>;
+        return <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center"><Clock size={16} className="text-orange-600 dark:text-orange-400" /></div>;
       default:
-        return <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center"><Bell size={16} className="text-slate-600" /></div>;
+        return <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center"><Bell size={16} className="text-slate-600 dark:text-slate-400" /></div>;
+    }
+  };
+
+  const getWsStatusIndicator = () => {
+    switch (wsStatus) {
+      case WS_STATUS.CONNECTED:
+        return <Wifi size={12} className="text-emerald-500" title="Real-time connected" />;
+      case WS_STATUS.CONNECTING:
+      case WS_STATUS.RECONNECTING:
+        return <Wifi size={12} className="text-amber-500 animate-pulse" title="Connecting..." />;
+      default:
+        return <WifiOff size={12} className="text-slate-400" title="Offline - using polling" />;
     }
   };
 
@@ -144,7 +289,7 @@ export default function NotificationBell({ userRole }) {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+        className="relative p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
         data-testid="notification-bell"
       >
         <Bell size={20} />
@@ -156,14 +301,17 @@ export default function NotificationBell({ userRole }) {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-lg border border-slate-200 z-50 max-h-[70vh] overflow-hidden flex flex-col">
+        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 z-50 max-h-[70vh] overflow-hidden flex flex-col">
           {/* Header */}
-          <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-            <h3 className="font-semibold text-slate-900">Notifications</h3>
+          <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50 dark:bg-slate-900">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-slate-900 dark:text-white">Notifications</h3>
+              {getWsStatusIndicator()}
+            </div>
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
-                className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+                className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium"
               >
                 Mark all as read
               </button>
@@ -172,16 +320,16 @@ export default function NotificationBell({ userRole }) {
 
           {/* Follow-up Alerts Section (for staff only) */}
           {followupAlerts.length > 0 && (
-            <div className="border-b border-slate-200 bg-gradient-to-r from-red-50 to-orange-50">
-              <div className="px-4 py-2 border-b border-red-100">
-                <span className="text-xs font-semibold text-red-700 uppercase tracking-wider">Follow-up Reminders</span>
+            <div className="border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/30 dark:to-orange-900/30">
+              <div className="px-4 py-2 border-b border-red-100 dark:border-red-800">
+                <span className="text-xs font-semibold text-red-700 dark:text-red-400 uppercase tracking-wider">Follow-up Reminders</span>
               </div>
               {followupAlerts.map((alert, index) => (
                 <div key={index} className="p-3 flex items-start gap-3">
                   {getNotificationIcon(alert.type)}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-900">{alert.title}</p>
-                    <p className="text-sm text-slate-600">{alert.message}</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white">{alert.title}</p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">{alert.message}</p>
                   </div>
                 </div>
               ))}
@@ -191,43 +339,43 @@ export default function NotificationBell({ userRole }) {
           {/* Notifications List */}
           <div className="overflow-y-auto flex-1">
             {notifications.length === 0 ? (
-              <div className="p-8 text-center text-slate-500">
-                <Bell className="mx-auto mb-2 text-slate-300" size={32} />
+              <div className="p-8 text-center text-slate-500 dark:text-slate-400">
+                <Bell className="mx-auto mb-2 text-slate-300 dark:text-slate-600" size={32} />
                 <p>No notifications yet</p>
               </div>
             ) : (
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-slate-100 dark:divide-slate-700">
                 {notifications.map(notification => (
                   <div
                     key={notification.id}
-                    className={`p-4 hover:bg-slate-50 transition-colors ${!notification.read ? 'bg-indigo-50/50' : ''}`}
+                    className={`p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${!notification.read ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : ''}`}
                   >
                     <div className="flex gap-3">
                       {getNotificationIcon(notification.type)}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
-                          <p className={`text-sm ${!notification.read ? 'font-semibold text-slate-900' : 'text-slate-700'}`}>
+                          <p className={`text-sm ${!notification.read ? 'font-semibold text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'}`}>
                             {notification.title}
                           </p>
-                          <span className="text-xs text-slate-400 whitespace-nowrap">
+                          <span className="text-xs text-slate-400 dark:text-slate-500 whitespace-nowrap">
                             {formatTime(notification.created_at)}
                           </span>
                         </div>
-                        <p className="text-sm text-slate-500 mt-0.5 line-clamp-2">
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">
                           {notification.message}
                         </p>
                         <div className="flex items-center gap-2 mt-2">
                           {!notification.read && (
                             <button
                               onClick={() => markAsRead(notification.id)}
-                              className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+                              className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium"
                             >
                               Mark as read
                             </button>
                           )}
                           <button
                             onClick={() => deleteNotification(notification.id)}
-                            className="text-xs text-slate-400 hover:text-red-600"
+                            className="text-xs text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400"
                           >
                             <Trash2 size={12} />
                           </button>
