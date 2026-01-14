@@ -147,10 +147,8 @@ export default function NotificationBell({ userRole }) {
     };
 
     // Initial data load
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadNotifications();
     if (userRole === 'staff') {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       loadFollowupAlerts();
     }
 
