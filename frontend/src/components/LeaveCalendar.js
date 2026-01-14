@@ -285,8 +285,8 @@ export default function LeaveCalendar() {
                             )}
                           </div>
                           {leave.reason && (
-                            <div className="mt-2 text-xs text-slate-500 italic">
-                              "{leave.reason}"
+                            <div className="mt-2 text-xs text-slate-500 dark:text-slate-400 italic">
+                              &quot;{leave.reason}&quot;
                             </div>
                           )}
                         </div>
