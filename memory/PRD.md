@@ -195,6 +195,36 @@ Build a Customer Relationship Management (CRM) application where:
   - Total bonus formula display ($Main + $NDP + $RDP)
   - Excel export with summary sheet and per-staff daily breakdown
 
+### Phase 19: Off Day / Sakit (Leave Request System) (Completed - Jan 14, 2026)
+- **New Staff Page**: Staff can request time off
+- **Leave Types**:
+  - **Off Day**: Full day off = 12 hours deducted
+  - **Sakit**: Sick leave with custom start/end time = calculated hours
+- **Monthly Balance**: 24 hours per month per staff member
+- **Staff Features**:
+  - View remaining leave balance
+  - Create new leave requests with date, time (for Sakit), and optional reason
+  - View request history with status (Pending/Approved/Rejected)
+  - Cancel pending requests
+  - See admin notes on processed requests
+- **Admin Features**:
+  - View all leave requests with filters (Status, Year, Month)
+  - Pending request count badge
+  - Approve/Reject requests with optional notes
+  - View staff leave balances
+- **Balance Calculation**:
+  - Only approved requests deduct from balance
+  - Pending requests are considered when validating new requests (prevents over-requesting)
+  - Rejected requests do not affect balance
+- **API Endpoints**:
+  - `GET /api/leave/balance` - Staff's leave balance
+  - `GET /api/leave/my-requests` - Staff's leave requests
+  - `POST /api/leave/request` - Create leave request
+  - `DELETE /api/leave/request/{id}` - Cancel pending request
+  - `GET /api/leave/all-requests` - Admin view all requests
+  - `PUT /api/leave/request/{id}/action` - Admin approve/reject
+  - `GET /api/leave/staff-balance/{id}` - Admin view staff's balance
+
 ## Tech Stack
 - **Frontend**: React + TailwindCSS + Shadcn/UI + Recharts
 - **Backend**: FastAPI + PyMongo + Pandas + Openpyxl
