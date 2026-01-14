@@ -312,7 +312,7 @@ export default function AdminMemberWDCRM() {
       <h2 className="text-3xl font-semibold tracking-tight text-slate-900 mb-6">Member WD CRM</h2>
 
       {/* Upload Section */}
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm mb-6">
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm mb-6">
         <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
           <Upload size={20} className="text-indigo-600" />
           Upload New Database
@@ -359,7 +359,7 @@ export default function AdminMemberWDCRM() {
       <div className="mb-6 flex items-center gap-4">
         <div className="flex items-center gap-2">
           <Package size={18} className="text-slate-500" />
-          <span className="text-sm font-medium text-slate-600">Filter by Product:</span>
+          <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Filter by Product:</span>
         </div>
         <select
           value={filterProduct}
@@ -377,18 +377,18 @@ export default function AdminMemberWDCRM() {
       {/* Databases List */}
       <div className="space-y-4">
         {loading ? (
-          <div className="text-center py-12 text-slate-600">Loading databases...</div>
+          <div className="text-center py-12 text-slate-600 dark:text-slate-400">Loading databases...</div>
         ) : databases.length === 0 ? (
-          <div className="text-center py-12 bg-white border border-slate-200 rounded-xl">
+          <div className="text-center py-12 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
             <Database className="mx-auto text-slate-300 mb-4" size={48} />
-            <p className="text-slate-600">No databases uploaded yet</p>
+            <p className="text-slate-600 dark:text-slate-400">No databases uploaded yet</p>
           </div>
         ) : (
           databases.map(database => (
-            <div key={database.id} className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+            <div key={database.id} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
               {/* Database Header */}
               <div 
-                className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer hover:bg-slate-50"
+                className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700"
                 onClick={() => loadRecords(database.id)}
                 data-testid={`memberwd-db-${database.id}`}
               >
@@ -443,10 +443,10 @@ export default function AdminMemberWDCRM() {
                 </div>
                 <div className="flex items-center gap-4 sm:gap-6">
                   <div className="text-right">
-                    <p className="text-sm text-slate-600">
-                      <span className="font-semibold text-slate-900">{database.total_records}</span> total
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                      <span className="font-semibold text-slate-900 dark:text-white">{database.total_records}</span> total
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                       <span className="text-emerald-600 font-medium">{database.available_count}</span> available • 
                       <span className="text-blue-600 font-medium ml-1">{database.assigned_count}</span> assigned
                     </p>
@@ -550,7 +550,7 @@ export default function AdminMemberWDCRM() {
                     >
                       Clear Selection
                     </button>
-                    <span className="text-sm text-slate-600">
+                    <span className="text-sm text-slate-600 dark:text-slate-400">
                       <span className="font-semibold text-indigo-600">{selectedRecords.length}</span> selected
                     </span>
                     <button
@@ -597,7 +597,7 @@ export default function AdminMemberWDCRM() {
 
                   {/* Records Table */}
                   {loadingRecords ? (
-                    <div className="text-center py-8 text-slate-600">Loading records...</div>
+                    <div className="text-center py-8 text-slate-600 dark:text-slate-400">Loading records...</div>
                   ) : (
                     <div className="overflow-x-auto max-h-96 overflow-y-auto">
                       <table className="min-w-full border border-slate-200 rounded-lg">
@@ -611,19 +611,19 @@ export default function AdminMemberWDCRM() {
                                 className="rounded border-slate-300"
                               />
                             </th>
-                            <th className="px-3 py-2 text-left text-xs font-semibold text-slate-700">#</th>
+                            <th className="px-3 py-2 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">#</th>
                             {columns.map(col => (
-                              <th key={col} className="px-3 py-2 text-left text-xs font-semibold text-slate-700">{col}</th>
+                              <th key={col} className="px-3 py-2 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">{col}</th>
                             ))}
-                            <th className="px-3 py-2 text-left text-xs font-semibold text-slate-700">Status</th>
-                            <th className="px-3 py-2 text-left text-xs font-semibold text-slate-700">Assigned To</th>
+                            <th className="px-3 py-2 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">Status</th>
+                            <th className="px-3 py-2 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">Assigned To</th>
                           </tr>
                         </thead>
                         <tbody>
                           {filteredRecords.map(record => (
                             <tr 
                               key={record.id} 
-                              className={`border-b border-slate-100 hover:bg-slate-50 ${selectedRecords.includes(record.id) ? 'bg-indigo-50' : ''}`}
+                              className={`border-b border-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 ${selectedRecords.includes(record.id) ? 'bg-indigo-50' : ''}`}
                             >
                               <td className="px-3 py-2">
                                 {record.status === 'available' && (
@@ -637,7 +637,7 @@ export default function AdminMemberWDCRM() {
                               </td>
                               <td className="px-3 py-2 text-sm text-slate-900 font-medium">{record.row_number}</td>
                               {columns.map(col => (
-                                <td key={col} className="px-3 py-2 text-sm text-slate-700">{record.row_data[col] || '-'}</td>
+                                <td key={col} className="px-3 py-2 text-sm text-slate-700 dark:text-slate-200">{record.row_data[col] || '-'}</td>
                               ))}
                               <td className="px-3 py-2">
                                 <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
@@ -648,7 +648,7 @@ export default function AdminMemberWDCRM() {
                                   {record.status === 'available' ? 'Available' : 'Assigned'}
                                 </span>
                               </td>
-                              <td className="px-3 py-2 text-sm text-slate-600">
+                              <td className="px-3 py-2 text-sm text-slate-600 dark:text-slate-400">
                                 {record.assigned_to_name || '-'}
                               </td>
                             </tr>

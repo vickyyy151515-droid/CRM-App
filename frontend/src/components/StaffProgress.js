@@ -247,13 +247,13 @@ export default function StaffProgress() {
   };
 
   if (loading) {
-    return <div className="text-center py-12 text-slate-600">Loading statistics...</div>;
+    return <div className="text-center py-12 text-slate-600 dark:text-slate-400">Loading statistics...</div>;
   }
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-3xl font-semibold tracking-tight text-slate-900">Staff Progress & Database Quality</h2>
+        <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">Staff Progress & Database Quality</h2>
         <div className="flex gap-3">
           <select
             value={dateRange}
@@ -343,52 +343,52 @@ export default function StaffProgress() {
 
       {/* Overall Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <Users className="text-indigo-600" size={20} />
-            <span className="text-2xl font-bold text-slate-900">{totalAssigned}</span>
+            <span className="text-2xl font-bold text-slate-900 dark:text-white">{totalAssigned}</span>
           </div>
-          <p className="text-xs text-slate-600">Total Assigned</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400">Total Assigned</p>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <CheckCircle className="text-emerald-600" size={20} />
             <span className="text-2xl font-bold text-emerald-700">{totalAda}</span>
           </div>
-          <p className="text-xs text-slate-600">WhatsApp Ada</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400">WhatsApp Ada</p>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <XCircle className="text-rose-600" size={20} />
             <span className="text-2xl font-bold text-rose-700">{totalTidak}</span>
           </div>
-          <p className="text-xs text-slate-600">WhatsApp Tidak</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400">WhatsApp Tidak</p>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <MessageCircle className="text-blue-600" size={20} />
             <span className="text-2xl font-bold text-blue-700">{totalRespondYa}</span>
           </div>
-          <p className="text-xs text-slate-600">Respond Ya</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400">Respond Ya</p>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <MessageCircle className="text-orange-600" size={20} />
             <span className="text-2xl font-bold text-orange-700">{totalRespondTidak}</span>
           </div>
-          <p className="text-xs text-slate-600">Respond Tidak</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400">Respond Tidak</p>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <TrendingUp className="text-indigo-600" size={20} />
             <span className="text-2xl font-bold text-indigo-700">{overallRespondRate}%</span>
           </div>
-          <p className="text-xs text-slate-600">Response Rate</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400">Response Rate</p>
           <div className="mt-2 w-full bg-slate-200 rounded-full h-1.5">
             <div 
               className="bg-indigo-600 h-1.5 rounded-full transition-all" 
@@ -417,14 +417,14 @@ export default function StaffProgress() {
             const dailyStats = staffDailyStats[Object.keys(staffStats)[idx]];
 
             return (
-              <div key={idx} className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+              <div key={idx} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
                     <Users className="text-indigo-600" size={18} />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-slate-900">{staff.name}</h4>
-                    <p className="text-xs text-slate-500">{staff.total} customers assigned</p>
+                    <h4 className="font-semibold text-slate-900 dark:text-white">{staff.name}</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{staff.total} customers assigned</p>
                   </div>
                 </div>
 
@@ -459,11 +459,11 @@ export default function StaffProgress() {
 
                 <div className="space-y-3">
                   {/* WhatsApp Section */}
-                  <div className="pb-3 border-b border-slate-100">
+                  <div className="pb-3 border-b border-slate-100 dark:border-slate-700">
                     <p className="text-xs font-medium text-slate-500 mb-2">WhatsApp Status</p>
                     <div className="flex items-center justify-between text-sm mb-1">
-                      <span className="text-slate-600">Check Progress</span>
-                      <span className="font-semibold text-slate-900">{waProgressRate}%</span>
+                      <span className="text-slate-600 dark:text-slate-400">Check Progress</span>
+                      <span className="font-semibold text-slate-900 dark:text-white">{waProgressRate}%</span>
                     </div>
                     <div className="w-full bg-slate-200 rounded-full h-2 mb-2">
                       <div 
@@ -474,25 +474,25 @@ export default function StaffProgress() {
                     <div className="grid grid-cols-3 gap-2">
                       <div className="text-center">
                         <p className="text-sm font-bold text-emerald-600">{staff.ada}</p>
-                        <p className="text-[10px] text-slate-600">Ada</p>
+                        <p className="text-[10px] text-slate-600 dark:text-slate-400">Ada</p>
                       </div>
                       <div className="text-center">
                         <p className="text-sm font-bold text-rose-600">{staff.tidak}</p>
-                        <p className="text-[10px] text-slate-600">Tidak</p>
+                        <p className="text-[10px] text-slate-600 dark:text-slate-400">Tidak</p>
                       </div>
                       <div className="text-center">
                         <p className="text-sm font-bold text-slate-400">{staff.waNotChecked}</p>
-                        <p className="text-[10px] text-slate-600">Pending</p>
+                        <p className="text-[10px] text-slate-600 dark:text-slate-400">Pending</p>
                       </div>
                     </div>
                   </div>
 
                   {/* Respond Section */}
-                  <div className="pb-3 border-b border-slate-100">
+                  <div className="pb-3 border-b border-slate-100 dark:border-slate-700">
                     <p className="text-xs font-medium text-slate-500 mb-2">Respond Status</p>
                     <div className="flex items-center justify-between text-sm mb-1">
-                      <span className="text-slate-600">Check Progress</span>
-                      <span className="font-semibold text-slate-900">{respondProgressRate}%</span>
+                      <span className="text-slate-600 dark:text-slate-400">Check Progress</span>
+                      <span className="font-semibold text-slate-900 dark:text-white">{respondProgressRate}%</span>
                     </div>
                     <div className="w-full bg-slate-200 rounded-full h-2 mb-2">
                       <div 
@@ -503,15 +503,15 @@ export default function StaffProgress() {
                     <div className="grid grid-cols-3 gap-2">
                       <div className="text-center">
                         <p className="text-sm font-bold text-blue-600">{staff.respondYa}</p>
-                        <p className="text-[10px] text-slate-600">Ya</p>
+                        <p className="text-[10px] text-slate-600 dark:text-slate-400">Ya</p>
                       </div>
                       <div className="text-center">
                         <p className="text-sm font-bold text-orange-600">{staff.respondTidak}</p>
-                        <p className="text-[10px] text-slate-600">Tidak</p>
+                        <p className="text-[10px] text-slate-600 dark:text-slate-400">Tidak</p>
                       </div>
                       <div className="text-center">
                         <p className="text-sm font-bold text-slate-400">{staff.respondNotChecked}</p>
-                        <p className="text-[10px] text-slate-600">Pending</p>
+                        <p className="text-[10px] text-slate-600 dark:text-slate-400">Pending</p>
                       </div>
                     </div>
                   </div>
@@ -522,13 +522,13 @@ export default function StaffProgress() {
                       <p className={`text-lg font-bold ${parseFloat(waQualityRate) >= 70 ? 'text-emerald-600' : parseFloat(waQualityRate) >= 50 ? 'text-amber-600' : 'text-rose-600'}`}>
                         {waQualityRate}%
                       </p>
-                      <p className="text-[10px] text-slate-600">WA Quality</p>
+                      <p className="text-[10px] text-slate-600 dark:text-slate-400">WA Quality</p>
                     </div>
                     <div className="text-center p-2 bg-blue-50 rounded-lg">
                       <p className={`text-lg font-bold ${parseFloat(respondRate) >= 70 ? 'text-blue-600' : parseFloat(respondRate) >= 50 ? 'text-amber-600' : 'text-orange-600'}`}>
                         {respondRate}%
                       </p>
-                      <p className="text-[10px] text-slate-600">Respond Rate</p>
+                      <p className="text-[10px] text-slate-600 dark:text-slate-400">Respond Rate</p>
                     </div>
                   </div>
                 </div>
@@ -537,7 +537,7 @@ export default function StaffProgress() {
           })}
         </div>
         {Object.keys(staffStats).length === 0 && (
-          <div className="text-center py-8 text-slate-600">No staff assignments yet</div>
+          <div className="text-center py-8 text-slate-600 dark:text-slate-400">No staff assignments yet</div>
         )}
       </div>
 
@@ -547,32 +547,32 @@ export default function StaffProgress() {
           <Package className="text-indigo-600" size={20} />
           Database Quality Report
         </h3>
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700">Database</th>
-                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700">Product</th>
-                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700">Assigned</th>
-                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700">WA Ada</th>
-                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700">WA Tidak</th>
-                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700">WA Quality</th>
-                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700">Resp Ya</th>
-                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700">Resp Tidak</th>
-                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700">Resp Rate</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">Database</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">Product</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">Assigned</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">WA Ada</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">WA Tidak</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">WA Quality</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">Resp Ya</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">Resp Tidak</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">Resp Rate</th>
                 </tr>
               </thead>
               <tbody>
                 {databaseStats.map((db) => (
-                  <tr key={db.id} className="border-b border-slate-100 hover:bg-slate-50">
+                  <tr key={db.id} className="border-b border-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700">
                     <td className="px-3 py-3 text-sm text-slate-900 font-medium">{db.filename}</td>
                     <td className="px-3 py-3 text-sm">
                       <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold bg-indigo-50 text-indigo-700 border-indigo-200">
                         {db.product_name}
                       </span>
                     </td>
-                    <td className="px-3 py-3 text-sm text-slate-900">{db.assigned}</td>
+                    <td className="px-3 py-3 text-sm text-slate-900 dark:text-white">{db.assigned}</td>
                     <td className="px-3 py-3 text-sm">
                       <span className="text-emerald-600 font-semibold">{db.ada}</span>
                     </td>

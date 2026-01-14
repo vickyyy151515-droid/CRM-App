@@ -135,7 +135,7 @@ export default function LeaveCalendar() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Leave Calendar</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Leave Calendar</h1>
           <p className="text-slate-500 text-sm mt-1">View all approved staff leave days</p>
         </div>
         <div className="flex items-center gap-3">
@@ -148,9 +148,9 @@ export default function LeaveCalendar() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Calendar */}
-        <div className="lg:col-span-3 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="lg:col-span-3 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
           {/* Calendar Header */}
-          <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+          <div className="px-4 py-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 flex items-center justify-between">
             <button
               onClick={goToPreviousMonth}
               className="p-2 hover:bg-slate-200 rounded-lg transition-colors"
@@ -158,7 +158,7 @@ export default function LeaveCalendar() {
               <ChevronLeft size={20} />
             </button>
             <div className="flex items-center gap-3">
-              <h2 className="text-lg font-semibold text-slate-800">
+              <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
                 {MONTH_NAMES[currentMonth - 1]} {currentYear}
               </h2>
               <button
@@ -177,9 +177,9 @@ export default function LeaveCalendar() {
           </div>
 
           {/* Day Headers */}
-          <div className="grid grid-cols-7 bg-slate-100">
+          <div className="grid grid-cols-7 bg-slate-100 dark:bg-slate-700">
             {DAY_NAMES.map(day => (
-              <div key={day} className="px-2 py-2 text-center text-sm font-medium text-slate-600">
+              <div key={day} className="px-2 py-2 text-center text-sm font-medium text-slate-600 dark:text-slate-400">
                 {day}
               </div>
             ))}
@@ -193,7 +193,7 @@ export default function LeaveCalendar() {
                 onClick={() => dayData.date && setSelectedDate(dayData.date)}
                 className={`
                   min-h-[100px] p-2 border-b border-r border-slate-100 transition-colors
-                  ${!dayData.day ? 'bg-slate-50' : 'hover:bg-slate-50 cursor-pointer'}
+                  ${!dayData.day ? 'bg-slate-50' : 'hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer'}
                   ${dayData.date === todayStr ? 'bg-blue-50/50' : ''}
                   ${dayData.date === selectedDate ? 'ring-2 ring-blue-500 ring-inset' : ''}
                 `}
@@ -243,8 +243,8 @@ export default function LeaveCalendar() {
         {/* Sidebar - Selected Date Details & Legend */}
         <div className="space-y-4">
           {/* Selected Date Details */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="px-4 py-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-200">
               <h3 className="font-semibold text-slate-800 flex items-center gap-2">
                 <CalendarIcon size={18} />
                 {selectedDate ? (
@@ -272,12 +272,12 @@ export default function LeaveCalendar() {
                             </div>
                             <div>
                               <div className={`font-medium ${colors.text}`}>{leave.staff_name}</div>
-                              <div className="text-xs text-slate-500">
+                              <div className="text-xs text-slate-500 dark:text-slate-400">
                                 {leave.leave_type === 'off_day' ? 'Off Day' : 'Sakit'}
                               </div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 text-sm text-slate-600">
+                          <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                             <Clock size={14} />
                             <span>{leave.hours_deducted} hours</span>
                             {leave.leave_type === 'sakit' && leave.start_time && (
@@ -294,13 +294,13 @@ export default function LeaveCalendar() {
                     })}
                   </div>
                 ) : (
-                  <div className="text-center py-6 text-slate-500">
+                  <div className="text-center py-6 text-slate-500 dark:text-slate-400">
                     <CalendarIcon size={32} className="mx-auto mb-2 opacity-30" />
                     <p>No approved leave on this date</p>
                   </div>
                 )
               ) : (
-                <div className="text-center py-6 text-slate-500">
+                <div className="text-center py-6 text-slate-500 dark:text-slate-400">
                   <CalendarIcon size={32} className="mx-auto mb-2 opacity-30" />
                   <p>Click on a date to see details</p>
                 </div>
@@ -309,8 +309,8 @@ export default function LeaveCalendar() {
           </div>
 
           {/* Staff Legend */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="px-4 py-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-200">
               <h3 className="font-semibold text-slate-800 flex items-center gap-2">
                 <Users size={18} />
                 Staff Legend
@@ -324,34 +324,34 @@ export default function LeaveCalendar() {
                     return (
                       <div key={staff.id} className="flex items-center gap-2">
                         <div className={`w-4 h-4 rounded ${colors.bg} ${colors.border} border`}></div>
-                        <span className="text-sm text-slate-700">{staff.name}</span>
+                        <span className="text-sm text-slate-700 dark:text-slate-200">{staff.name}</span>
                       </div>
                     );
                   })}
                 </div>
               ) : (
-                <p className="text-sm text-slate-500">No staff members</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">No staff members</p>
               )}
             </div>
           </div>
 
           {/* Leave Type Legend */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
-              <h3 className="font-semibold text-slate-800">Leave Types</h3>
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="px-4 py-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-200">
+              <h3 className="font-semibold text-slate-800 dark:text-slate-100">Leave Types</h3>
             </div>
             <div className="p-4 space-y-2">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded bg-blue-100 flex items-center justify-center">
                   <CalendarOff size={14} className="text-blue-600" />
                 </div>
-                <span className="text-sm text-slate-700">Off Day (12 hours)</span>
+                <span className="text-sm text-slate-700 dark:text-slate-200">Off Day (12 hours)</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded bg-red-100 flex items-center justify-center">
                   <Thermometer size={14} className="text-red-600" />
                 </div>
-                <span className="text-sm text-slate-700">Sakit (Custom hours)</span>
+                <span className="text-sm text-slate-700 dark:text-slate-200">Sakit (Custom hours)</span>
               </div>
             </div>
           </div>

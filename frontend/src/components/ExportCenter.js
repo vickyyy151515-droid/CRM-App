@@ -517,7 +517,7 @@ export default function ExportCenter() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Export Type Selection */}
         <div className="lg:col-span-1">
-          <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-sm">
             <h3 className="text-lg font-semibold text-slate-900 mb-4">Export Type</h3>
             <div className="space-y-2 max-h-[500px] overflow-y-auto">
               {exportTypes.map(type => {
@@ -529,7 +529,7 @@ export default function ExportCenter() {
                     className={`w-full flex items-start gap-3 p-3 rounded-lg text-left transition-colors ${
                       activeExport === type.id
                         ? 'bg-indigo-50 border border-indigo-200'
-                        : 'bg-slate-50 border border-transparent hover:bg-slate-100'
+                        : 'bg-slate-50 dark:bg-slate-900 border border-transparent hover:bg-slate-100'
                     }`}
                     data-testid={`export-type-${type.id}`}
                   >
@@ -553,7 +553,7 @@ export default function ExportCenter() {
 
         {/* Filters & Export */}
         <div className="lg:col-span-2">
-          <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 sm:p-6 shadow-sm">
             <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
               <Filter size={20} className="text-indigo-600" />
               Filters & Options
@@ -577,7 +577,7 @@ export default function ExportCenter() {
                     onChange={(e) => handleFilterChange('format', e.target.value)}
                     className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
                   />
-                  <span className="text-sm text-slate-700">Excel (.xlsx)</span>
+                  <span className="text-sm text-slate-700 dark:text-slate-200">Excel (.xlsx)</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -588,7 +588,7 @@ export default function ExportCenter() {
                     onChange={(e) => handleFilterChange('format', e.target.value)}
                     className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
                   />
-                  <span className="text-sm text-slate-700">CSV (.csv)</span>
+                  <span className="text-sm text-slate-700 dark:text-slate-200">CSV (.csv)</span>
                 </label>
               </div>
             </div>
