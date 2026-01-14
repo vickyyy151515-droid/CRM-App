@@ -56,7 +56,7 @@ async def delete_notification(notification_id: str, user: User = Depends(get_cur
 
 # Helper function to create notification (can be imported by other modules)
 async def create_notification(user_id: str, type: str, title: str, message: str, data: dict = None):
-    """Create a notification for a user"""
+    """Create a notification for a user and send it via WebSocket"""
     db = get_db()
     notification = {
         'id': str(uuid.uuid4()),
@@ -69,6 +69,14 @@ async def create_notification(user_id: str, type: str, title: str, message: str,
         'created_at': get_jakarta_now().isoformat()
     }
     await db.notifications.insert_one(notification)
+    
+    # Send real-time notification via WebSocket
+    try:
+        from .websocket import send_realtime_notification
+        await send_realtime_notification(user_id, notification)
+    except Exception as e:
+        print(f"Failed to send real-time notification: {e}")
+    
     return notification
 
 # ==================== USER PREFERENCES ENDPOINTS ====================
