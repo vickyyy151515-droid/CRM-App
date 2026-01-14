@@ -314,7 +314,7 @@ export default function AdminDBBonanza() {
 
       {/* Upload Section */}
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm mb-6">
-        <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
           <Upload size={20} className="text-indigo-600" />
           Upload New Database
         </h3>
@@ -398,7 +398,7 @@ export default function AdminDBBonanza() {
                     <Database className="text-indigo-600" size={24} />
                   </div>
                   <div className="min-w-0">
-                    <h4 className="font-semibold text-slate-900 truncate">{database.name}</h4>
+                    <h4 className="font-semibold text-slate-900 dark:text-white truncate">{database.name}</h4>
                     <p className="text-sm text-slate-500 truncate">{database.filename}</p>
                     {editingProduct === database.id ? (
                       <div className="flex items-center gap-2 mt-1" onClick={(e) => e.stopPropagation()}>
@@ -445,7 +445,7 @@ export default function AdminDBBonanza() {
                 <div className="flex items-center gap-4 sm:gap-6">
                   <div className="text-right">
                     <p className="text-sm text-slate-600 dark:text-slate-400">
-                      <span className="font-semibold text-slate-900 dark:text-white">{database.total_records}</span> total
+                      <span className="font-semibold text-slate-900 dark:text-white dark:text-white">{database.total_records}</span> total
                     </p>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                       <span className="text-emerald-600 font-medium">{database.available_count}</span> available • 

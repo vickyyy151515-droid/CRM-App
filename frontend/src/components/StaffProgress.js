@@ -354,7 +354,7 @@ export default function StaffProgress() {
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <CheckCircle className="text-emerald-600" size={20} />
-            <span className="text-2xl font-bold text-emerald-700">{totalAda}</span>
+            <span className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{totalAda}</span>
           </div>
           <p className="text-xs text-slate-600 dark:text-slate-400">WhatsApp Ada</p>
         </div>
@@ -362,7 +362,7 @@ export default function StaffProgress() {
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <XCircle className="text-rose-600" size={20} />
-            <span className="text-2xl font-bold text-rose-700">{totalTidak}</span>
+            <span className="text-2xl font-bold text-rose-700 dark:text-rose-400">{totalTidak}</span>
           </div>
           <p className="text-xs text-slate-600 dark:text-slate-400">WhatsApp Tidak</p>
         </div>
@@ -370,7 +370,7 @@ export default function StaffProgress() {
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <MessageCircle className="text-blue-600" size={20} />
-            <span className="text-2xl font-bold text-blue-700">{totalRespondYa}</span>
+            <span className="text-2xl font-bold text-blue-700 dark:text-blue-400">{totalRespondYa}</span>
           </div>
           <p className="text-xs text-slate-600 dark:text-slate-400">Respond Ya</p>
         </div>
@@ -378,7 +378,7 @@ export default function StaffProgress() {
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <MessageCircle className="text-orange-600" size={20} />
-            <span className="text-2xl font-bold text-orange-700">{totalRespondTidak}</span>
+            <span className="text-2xl font-bold text-orange-700 dark:text-orange-400">{totalRespondTidak}</span>
           </div>
           <p className="text-xs text-slate-600 dark:text-slate-400">Respond Tidak</p>
         </div>
@@ -386,10 +386,10 @@ export default function StaffProgress() {
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <TrendingUp className="text-indigo-600" size={20} />
-            <span className="text-2xl font-bold text-indigo-700">{overallRespondRate}%</span>
+            <span className="text-2xl font-bold text-indigo-700 dark:text-indigo-400">{overallRespondRate}%</span>
           </div>
           <p className="text-xs text-slate-600 dark:text-slate-400">Response Rate</p>
-          <div className="mt-2 w-full bg-slate-200 rounded-full h-1.5">
+          <div className="mt-2 w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5">
             <div 
               className="bg-indigo-600 h-1.5 rounded-full transition-all" 
               style={{width: `${overallRespondRate}%`}}
@@ -400,7 +400,7 @@ export default function StaffProgress() {
 
       {/* Staff Progress */}
       <div className="mb-8">
-        <h3 className="text-xl font-semibold text-slate-900 mb-4 flex items-center gap-2">
+        <h3 className="text-xl font-semibold text-slate-900 dark:text-white dark:text-white mb-4 flex items-center gap-2">
           <Users className="text-indigo-600" size={20} />
           Staff Performance
         </h3>
@@ -423,7 +423,7 @@ export default function StaffProgress() {
                     <Users className="text-indigo-600" size={18} />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-slate-900 dark:text-white">{staff.name}</h4>
+                    <h4 className="font-semibold text-slate-900 dark:text-white dark:text-white">{staff.name}</h4>
                     <p className="text-xs text-slate-500 dark:text-slate-400">{staff.total} customers assigned</p>
                   </div>
                 </div>
@@ -463,9 +463,9 @@ export default function StaffProgress() {
                     <p className="text-xs font-medium text-slate-500 mb-2">WhatsApp Status</p>
                     <div className="flex items-center justify-between text-sm mb-1">
                       <span className="text-slate-600 dark:text-slate-400">Check Progress</span>
-                      <span className="font-semibold text-slate-900 dark:text-white">{waProgressRate}%</span>
+                      <span className="font-semibold text-slate-900 dark:text-white dark:text-white">{waProgressRate}%</span>
                     </div>
-                    <div className="w-full bg-slate-200 rounded-full h-2 mb-2">
+                    <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 mb-2">
                       <div 
                         className="bg-emerald-500 h-2 rounded-full transition-all" 
                         style={{width: `${waProgressRate}%`}}
@@ -492,9 +492,9 @@ export default function StaffProgress() {
                     <p className="text-xs font-medium text-slate-500 mb-2">Respond Status</p>
                     <div className="flex items-center justify-between text-sm mb-1">
                       <span className="text-slate-600 dark:text-slate-400">Check Progress</span>
-                      <span className="font-semibold text-slate-900 dark:text-white">{respondProgressRate}%</span>
+                      <span className="font-semibold text-slate-900 dark:text-white dark:text-white">{respondProgressRate}%</span>
                     </div>
-                    <div className="w-full bg-slate-200 rounded-full h-2 mb-2">
+                    <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 mb-2">
                       <div 
                         className="bg-blue-500 h-2 rounded-full transition-all" 
                         style={{width: `${respondProgressRate}%`}}
@@ -543,7 +543,7 @@ export default function StaffProgress() {
 
       {/* Database Quality Report */}
       <div>
-        <h3 className="text-xl font-semibold text-slate-900 mb-4 flex items-center gap-2">
+        <h3 className="text-xl font-semibold text-slate-900 dark:text-white dark:text-white mb-4 flex items-center gap-2">
           <Package className="text-indigo-600" size={20} />
           Database Quality Report
         </h3>

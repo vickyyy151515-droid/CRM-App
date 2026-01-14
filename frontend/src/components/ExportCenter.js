@@ -512,13 +512,13 @@ export default function ExportCenter() {
 
   return (
     <div data-testid="export-center">
-      <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900 mb-6">Export Center</h2>
+      <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900 dark:text-white mb-6">Export Center</h2>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Export Type Selection */}
         <div className="lg:col-span-1">
           <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-sm">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">Export Type</h3>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Export Type</h3>
             <div className="space-y-2 max-h-[500px] overflow-y-auto">
               {exportTypes.map(type => {
                 const Icon = type.icon;
@@ -554,7 +554,7 @@ export default function ExportCenter() {
         {/* Filters & Export */}
         <div className="lg:col-span-2">
           <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 sm:p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
               <Filter size={20} className="text-indigo-600" />
               Filters & Options
             </h3>

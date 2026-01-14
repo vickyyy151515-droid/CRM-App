@@ -158,7 +158,7 @@ export default function LeaveCalendar() {
               <ChevronLeft size={20} />
             </button>
             <div className="flex items-center gap-3">
-              <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
+              <h2 className="text-lg font-semibold text-slate-800 dark:text-white dark:text-slate-100">
                 {MONTH_NAMES[currentMonth - 1]} {currentYear}
               </h2>
               <button
@@ -245,7 +245,7 @@ export default function LeaveCalendar() {
           {/* Selected Date Details */}
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
             <div className="px-4 py-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-200">
-              <h3 className="font-semibold text-slate-800 flex items-center gap-2">
+              <h3 className="font-semibold text-slate-800 dark:text-white flex items-center gap-2">
                 <CalendarIcon size={18} />
                 {selectedDate ? (
                   <span>{new Date(selectedDate + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
@@ -311,7 +311,7 @@ export default function LeaveCalendar() {
           {/* Staff Legend */}
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
             <div className="px-4 py-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-200">
-              <h3 className="font-semibold text-slate-800 flex items-center gap-2">
+              <h3 className="font-semibold text-slate-800 dark:text-white flex items-center gap-2">
                 <Users size={18} />
                 Staff Legend
               </h3>
@@ -338,7 +338,7 @@ export default function LeaveCalendar() {
           {/* Leave Type Legend */}
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
             <div className="px-4 py-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-200">
-              <h3 className="font-semibold text-slate-800 dark:text-slate-100">Leave Types</h3>
+              <h3 className="font-semibold text-slate-800 dark:text-white dark:text-slate-100">Leave Types</h3>
             </div>
             <div className="p-4 space-y-2">
               <div className="flex items-center gap-2">

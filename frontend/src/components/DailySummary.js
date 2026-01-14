@@ -142,7 +142,7 @@ export default function DailySummary({ isAdmin = false }) {
         </button>
         <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
           <Calendar className="text-indigo-600" size={20} />
-          <span className="font-semibold text-slate-900 dark:text-white">{formatDate(selectedDate)}</span>
+          <span className="font-semibold text-slate-900 dark:text-white dark:text-white">{formatDate(selectedDate)}</span>
           {isToday && (
             <span className="px-2 py-0.5 text-xs font-medium bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-full">Today</span>
           )}
@@ -171,14 +171,14 @@ export default function DailySummary({ isAdmin = false }) {
             <div className="bg-gradient-to-br from-emerald-50 dark:from-emerald-900/30 to-teal-50 dark:to-teal-900/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-5">
               <div className="flex items-center gap-2 mb-2">
                 <DollarSign className="text-emerald-600" size={20} />
-                <span className="text-sm font-medium text-emerald-700">Total OMSET</span>
+                <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">Total OMSET</span>
               </div>
               <p className="text-2xl font-bold text-slate-900 dark:text-white">{formatCurrency(summary.total_omset)}</p>
             </div>
             <div className="bg-gradient-to-br from-blue-50 dark:from-blue-900/30 to-indigo-50 dark:to-indigo-900/30 border border-blue-200 dark:border-blue-800 rounded-xl p-5">
               <div className="flex items-center gap-2 mb-2">
                 <UserPlus className="text-blue-600" size={20} />
-                <span className="text-sm font-medium text-blue-700">Total NDP</span>
+                <span className="text-sm font-medium text-blue-700 dark:text-blue-400">Total NDP</span>
               </div>
               <p className="text-2xl font-bold text-slate-900 dark:text-white">{summary.total_ndp || 0}</p>
             </div>
@@ -203,7 +203,7 @@ export default function DailySummary({ isAdmin = false }) {
             <div className="bg-gradient-to-r from-yellow-50 dark:from-yellow-900/30 via-amber-50 dark:via-amber-900/30 to-orange-50 dark:to-orange-900/30 border border-yellow-200 dark:border-yellow-800 rounded-xl p-5 mb-6">
               <div className="flex items-center gap-3 mb-3">
                 <Trophy className="text-yellow-600" size={24} />
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Top Performer of the Day</h3>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white dark:text-white">Top Performer of the Day</h3>
               </div>
               <div className="flex items-center justify-between">
                 <div>
@@ -222,7 +222,7 @@ export default function DailySummary({ isAdmin = false }) {
           {/* Staff Breakdown */}
           <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden mb-6">
             <div className="px-5 py-4 border-b border-slate-200 bg-slate-50">
-              <h3 className="font-semibold text-slate-900 dark:text-white">Staff Performance Breakdown</h3>
+              <h3 className="font-semibold text-slate-900 dark:text-white dark:text-white">Staff Performance Breakdown</h3>
               <p className="text-xs text-slate-500 mt-1">Click on a staff member to see their product breakdown</p>
             </div>
             <div className="divide-y divide-slate-100">
@@ -245,7 +245,7 @@ export default function DailySummary({ isAdmin = false }) {
                           {index + 1}
                         </div>
                         <div>
-                          <p className="font-semibold text-slate-900 dark:text-white">{staff.staff_name}</p>
+                          <p className="font-semibold text-slate-900 dark:text-white dark:text-white">{staff.staff_name}</p>
                           <p className="text-sm text-slate-500 dark:text-slate-400">{staff.form_count} forms submitted</p>
                         </div>
                         {staff.product_breakdown && staff.product_breakdown.length > 0 && (
@@ -305,7 +305,7 @@ export default function DailySummary({ isAdmin = false }) {
             >
               <div className="flex items-center gap-2">
                 <Package className="text-indigo-600" size={20} />
-                <h3 className="font-semibold text-slate-900 dark:text-white">Product Performance</h3>
+                <h3 className="font-semibold text-slate-900 dark:text-white dark:text-white">Product Performance</h3>
               </div>
               {showProductBreakdown ? <ChevronUp size={20} className="text-slate-400" /> : <ChevronDown size={20} className="text-slate-400" />}
             </div>
@@ -326,7 +326,7 @@ export default function DailySummary({ isAdmin = false }) {
                           {index + 1}
                         </div>
                         <div>
-                          <p className="font-semibold text-slate-900 dark:text-white">{product.product_name}</p>
+                          <p className="font-semibold text-slate-900 dark:text-white dark:text-white">{product.product_name}</p>
                           <p className="text-sm text-slate-500 dark:text-slate-400">{product.form_count} deposits</p>
                         </div>
                       </div>
@@ -366,14 +366,14 @@ export default function DailySummary({ isAdmin = false }) {
             <div className="bg-gradient-to-br from-emerald-50 dark:from-emerald-900/30 to-teal-50 dark:to-teal-900/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-5">
               <div className="flex items-center gap-2 mb-2">
                 <DollarSign className="text-emerald-600" size={20} />
-                <span className="text-sm font-medium text-emerald-700">My OMSET</span>
+                <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">My OMSET</span>
               </div>
               <p className="text-2xl font-bold text-slate-900 dark:text-white">{formatCurrency(summary.my_stats?.total_omset)}</p>
             </div>
             <div className="bg-gradient-to-br from-blue-50 dark:from-blue-900/30 to-indigo-50 dark:to-indigo-900/30 border border-blue-200 dark:border-blue-800 rounded-xl p-5">
               <div className="flex items-center gap-2 mb-2">
                 <UserPlus className="text-blue-600" size={20} />
-                <span className="text-sm font-medium text-blue-700">My NDP</span>
+                <span className="text-sm font-medium text-blue-700 dark:text-blue-400">My NDP</span>
               </div>
               <p className="text-2xl font-bold text-slate-900 dark:text-white">{summary.my_stats?.ndp_count || 0}</p>
             </div>
@@ -395,7 +395,7 @@ export default function DailySummary({ isAdmin = false }) {
 
           {/* Team Comparison */}
           <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 mb-6">
-            <h3 className="font-semibold text-slate-900 mb-4">Team Comparison</h3>
+            <h3 className="font-semibold text-slate-900 dark:text-white mb-4">Team Comparison</h3>
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
                 <p className="text-sm text-slate-500 mb-1">Team Total OMSET</p>
@@ -435,7 +435,7 @@ export default function DailySummary({ isAdmin = false }) {
               >
                 <div className="flex items-center gap-2">
                   <Package className="text-indigo-600" size={20} />
-                  <h3 className="font-semibold text-slate-900 dark:text-white">My Product Performance</h3>
+                  <h3 className="font-semibold text-slate-900 dark:text-white dark:text-white">My Product Performance</h3>
                 </div>
                 {showProductBreakdown ? <ChevronUp size={20} className="text-slate-400" /> : <ChevronDown size={20} className="text-slate-400" />}
               </div>
@@ -453,7 +453,7 @@ export default function DailySummary({ isAdmin = false }) {
                           {index + 1}
                         </div>
                         <div>
-                          <p className="font-semibold text-slate-900 dark:text-white">{product.product_name}</p>
+                          <p className="font-semibold text-slate-900 dark:text-white dark:text-white">{product.product_name}</p>
                           <p className="text-sm text-slate-500 dark:text-slate-400">{product.form_count} deposits</p>
                         </div>
                       </div>
@@ -484,7 +484,7 @@ export default function DailySummary({ isAdmin = false }) {
               <div className="px-5 py-4 border-b border-slate-200 bg-slate-50">
                 <div className="flex items-center gap-2">
                   <Package className="text-slate-600" size={18} />
-                  <h3 className="font-semibold text-slate-900 dark:text-white">Team Product Performance</h3>
+                  <h3 className="font-semibold text-slate-900 dark:text-white dark:text-white">Team Product Performance</h3>
                 </div>
               </div>
               <div className="divide-y divide-slate-100">
@@ -518,7 +518,7 @@ export default function DailySummary({ isAdmin = false }) {
       {/* History Section */}
       {showHistory && history.length > 0 && (
         <div className="mt-8">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">Last 7 Days</h3>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Last 7 Days</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {history.map((day) => (
               <div
