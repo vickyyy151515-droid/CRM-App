@@ -103,6 +103,7 @@ export default function ReportCRM() {
 
       setYearlyData(data.yearly || []);
       setMonthlyData(data.monthly || []);
+      setMonthlyByStaff(data.monthly_by_staff || []);
       setDailyData(data.daily || []);
       setDailyByStaff(data.daily_by_staff || []);
       setStaffPerformance(data.staff_performance || []);
@@ -117,6 +118,10 @@ export default function ReportCRM() {
 
   const toggleMonth = (month) => {
     setExpandedMonths(prev => ({ ...prev, [month]: !prev[month] }));
+  };
+
+  const toggleMonthlyStaff = (monthKey) => {
+    setExpandedMonthlyStaff(prev => ({ ...prev, [monthKey]: !prev[monthKey] }));
   };
 
   const toggleStaff = (staffId) => {
