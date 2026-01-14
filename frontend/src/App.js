@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import StaffDashboard from './pages/StaffDashboard';
 import { Toaster } from 'sonner';
+import { ThemeProvider } from './contexts/ThemeContext';
 import './App.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
