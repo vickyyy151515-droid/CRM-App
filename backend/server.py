@@ -2257,6 +2257,256 @@ async def export_report_crm(
         filename=f"Report_CRM_{year}.xlsx"
     )
 
+# ==================== CRM BONUS CALCULATION ENDPOINTS ====================
+
+# Bonus tiers configuration
+MAIN_BONUS_TIERS = [
+    (280000000, 100),  # Rp 280M = $100
+    (210000000, 75),   # Rp 210M = $75
+    (140000000, 50),   # Rp 140M = $50
+    (100000000, 30),   # Rp 100M = $30
+    (70000000, 20),    # Rp 70M = $20
+]
+
+def calculate_main_bonus(total_nominal: float) -> float:
+    """Calculate main bonus based on monthly total nominal"""
+    for threshold, bonus in MAIN_BONUS_TIERS:
+        if total_nominal >= threshold:
+            return bonus
+    return 0
+
+def calculate_daily_ndp_bonus(ndp_count: int) -> float:
+    """Calculate daily NDP bonus"""
+    if ndp_count > 10:
+        return 5.0
+    elif ndp_count >= 8:
+        return 2.5
+    return 0
+
+def calculate_daily_rdp_bonus(rdp_count: int) -> float:
+    """Calculate daily RDP bonus"""
+    if rdp_count > 15:
+        return 5.0
+    elif rdp_count >= 12:
+        return 2.5
+    return 0
+
+@api_router.get("/bonus-calculation/data")
+async def get_bonus_calculation_data(
+    year: int = None,
+    month: int = None,
+    staff_id: Optional[str] = None,
+    user: User = Depends(get_admin_user)
+):
+    """Calculate bonus for all staff for a specific month"""
+    if year is None:
+        year = get_jakarta_now().year
+    if month is None:
+        month = get_jakarta_now().month
+    
+    month_str = f"{year}-{str(month).zfill(2)}"
+    
+    # Build query
+    query = {'record_date': {'$regex': f'^{month_str}'}}
+    if staff_id:
+        query['staff_id'] = staff_id
+    
+    # Get all OMSET records for the month
+    records = await db.omset_records.find(query, {'_id': 0}).to_list(100000)
+    
+    # Get all time records for NDP/RDP calculation
+    all_time_query = {}
+    all_time_records = await db.omset_records.find(all_time_query, {'_id': 0}).to_list(500000)
+    
+    # Calculate customer first appearance dates
+    customer_first_date = {}
+    for record in sorted(all_time_records, key=lambda x: x['record_date']):
+        cid = record['customer_id']
+        pid = record['product_id']
+        key = (cid, pid)
+        if key not in customer_first_date:
+            customer_first_date[key] = record['record_date']
+    
+    # Group records by staff
+    staff_data = {}
+    for record in records:
+        sid = record['staff_id']
+        sname = record['staff_name']
+        date = record['record_date']
+        
+        if sid not in staff_data:
+            staff_data[sid] = {
+                'staff_id': sid,
+                'staff_name': sname,
+                'total_nominal': 0,
+                'daily_stats': {},  # date -> {ndp, rdp}
+            }
+        
+        # Add to total nominal
+        nominal = record.get('depo_total', 0) or record.get('nominal', 0) or 0
+        staff_data[sid]['total_nominal'] += nominal
+        
+        # Calculate NDP/RDP for this day
+        if date not in staff_data[sid]['daily_stats']:
+            staff_data[sid]['daily_stats'][date] = {'ndp': 0, 'rdp': 0}
+        
+        key = (record['customer_id'], record['product_id'])
+        first_date = customer_first_date.get(key)
+        if first_date == date:
+            staff_data[sid]['daily_stats'][date]['ndp'] += 1
+        else:
+            staff_data[sid]['daily_stats'][date]['rdp'] += 1
+    
+    # Calculate bonuses for each staff
+    result = []
+    for sid, data in staff_data.items():
+        # Main bonus
+        main_bonus = calculate_main_bonus(data['total_nominal'])
+        
+        # Daily bonuses
+        ndp_bonus_total = 0
+        rdp_bonus_total = 0
+        ndp_bonus_days = {'8_10': 0, 'above_10': 0}
+        rdp_bonus_days = {'12_15': 0, 'above_15': 0}
+        daily_breakdown = []
+        
+        for date, stats in sorted(data['daily_stats'].items()):
+            ndp = stats['ndp']
+            rdp = stats['rdp']
+            
+            ndp_daily_bonus = calculate_daily_ndp_bonus(ndp)
+            rdp_daily_bonus = calculate_daily_rdp_bonus(rdp)
+            
+            ndp_bonus_total += ndp_daily_bonus
+            rdp_bonus_total += rdp_daily_bonus
+            
+            # Track bonus day counts
+            if ndp > 10:
+                ndp_bonus_days['above_10'] += 1
+            elif ndp >= 8:
+                ndp_bonus_days['8_10'] += 1
+            
+            if rdp > 15:
+                rdp_bonus_days['above_15'] += 1
+            elif rdp >= 12:
+                rdp_bonus_days['12_15'] += 1
+            
+            daily_breakdown.append({
+                'date': date,
+                'ndp': ndp,
+                'rdp': rdp,
+                'ndp_bonus': ndp_daily_bonus,
+                'rdp_bonus': rdp_daily_bonus
+            })
+        
+        total_bonus = main_bonus + ndp_bonus_total + rdp_bonus_total
+        
+        result.append({
+            'staff_id': sid,
+            'staff_name': data['staff_name'],
+            'total_nominal': data['total_nominal'],
+            'main_bonus': main_bonus,
+            'ndp_bonus_total': ndp_bonus_total,
+            'rdp_bonus_total': rdp_bonus_total,
+            'total_bonus': total_bonus,
+            'ndp_bonus_days': ndp_bonus_days,
+            'rdp_bonus_days': rdp_bonus_days,
+            'daily_breakdown': daily_breakdown,
+            'days_worked': len(data['daily_stats'])
+        })
+    
+    # Sort by total bonus descending
+    result.sort(key=lambda x: x['total_bonus'], reverse=True)
+    
+    # Calculate grand totals
+    grand_total = {
+        'total_nominal': sum(s['total_nominal'] for s in result),
+        'main_bonus': sum(s['main_bonus'] for s in result),
+        'ndp_bonus_total': sum(s['ndp_bonus_total'] for s in result),
+        'rdp_bonus_total': sum(s['rdp_bonus_total'] for s in result),
+        'total_bonus': sum(s['total_bonus'] for s in result)
+    }
+    
+    return {
+        'year': year,
+        'month': month,
+        'staff_bonuses': result,
+        'grand_total': grand_total,
+        'bonus_tiers': {
+            'main': [{'threshold': t, 'bonus': b} for t, b in MAIN_BONUS_TIERS],
+            'ndp': [{'range': '8-10', 'bonus': 2.5}, {'range': '>10', 'bonus': 5}],
+            'rdp': [{'range': '12-15', 'bonus': 2.5}, {'range': '>15', 'bonus': 5}]
+        }
+    }
+
+@api_router.get("/bonus-calculation/export")
+async def export_bonus_calculation(
+    year: int = None,
+    month: int = None,
+    user: User = Depends(get_admin_user)
+):
+    """Export bonus calculation to Excel"""
+    if year is None:
+        year = get_jakarta_now().year
+    if month is None:
+        month = get_jakarta_now().month
+    
+    # Get bonus data
+    bonus_data = await get_bonus_calculation_data(year, month, None, user)
+    
+    # Create Excel workbook
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        # Summary Sheet
+        summary_data = []
+        for staff in bonus_data['staff_bonuses']:
+            summary_data.append({
+                'Staff': staff['staff_name'],
+                'Total Nominal (Rp)': staff['total_nominal'],
+                'Main Bonus ($)': staff['main_bonus'],
+                'NDP Bonus ($)': staff['ndp_bonus_total'],
+                'RDP Bonus ($)': staff['rdp_bonus_total'],
+                'Total Bonus ($)': staff['total_bonus'],
+                'Days Worked': staff['days_worked']
+            })
+        
+        # Add grand total
+        summary_data.append({
+            'Staff': 'GRAND TOTAL',
+            'Total Nominal (Rp)': bonus_data['grand_total']['total_nominal'],
+            'Main Bonus ($)': bonus_data['grand_total']['main_bonus'],
+            'NDP Bonus ($)': bonus_data['grand_total']['ndp_bonus_total'],
+            'RDP Bonus ($)': bonus_data['grand_total']['rdp_bonus_total'],
+            'Total Bonus ($)': bonus_data['grand_total']['total_bonus'],
+            'Days Worked': '-'
+        })
+        
+        summary_df = pd.DataFrame(summary_data)
+        summary_df.to_excel(writer, sheet_name='Bonus Summary', index=False)
+        
+        # Daily breakdown for each staff
+        for staff in bonus_data['staff_bonuses']:
+            if staff['daily_breakdown']:
+                daily_df = pd.DataFrame(staff['daily_breakdown'])
+                daily_df.columns = ['Date', 'NDP', 'RDP', 'NDP Bonus ($)', 'RDP Bonus ($)']
+                sheet_name = staff['staff_name'][:31]  # Excel sheet name limit
+                daily_df.to_excel(writer, sheet_name=sheet_name, index=False)
+    
+    output.seek(0)
+    
+    month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    filename = f"Bonus_Calculation_{month_names[month-1]}_{year}.xlsx"
+    
+    temp_path = f"/tmp/{filename}"
+    with open(temp_path, 'wb') as f:
+        f.write(output.getvalue())
+    
+    return FileResponse(
+        path=temp_path,
+        media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        filename=filename
+    )
+
 # ==================== DB BONANZA ENDPOINTS ====================
 
 @api_router.post("/bonanza/upload")
