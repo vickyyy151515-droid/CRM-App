@@ -117,32 +117,11 @@ async def get_leaderboard(
                 'today_rdp': today_stats.get('today_rdp', 0),
                 'days_worked': len(result.get('days_worked', []))
             }
-                'today_rdp': 0,
-                'days_worked': set()
-            }
-        
-        # Add OMSET
-        staff_stats[staff_id]['total_omset'] += record.get('depo_total', 0) or 0
-        staff_stats[staff_id]['days_worked'].add(record['record_date'])
-        
-        # Check if NDP or RDP
-        key = (record['customer_id'], record['product_id'])
-        first_date = customer_first_date.get(key)
-        is_ndp = first_date == record['record_date']
-        
-        if is_ndp:
-            staff_stats[staff_id]['total_ndp'] += 1
-            if record['record_date'] == today:
-                staff_stats[staff_id]['today_ndp'] += 1
-        else:
-            staff_stats[staff_id]['total_rdp'] += 1
-            if record['record_date'] == today:
-                staff_stats[staff_id]['today_rdp'] += 1
     
     # Convert to list and calculate averages
     leaderboard = []
     for staff_id, stats in staff_stats.items():
-        days_count = len(stats['days_worked'])
+        days_count = stats['days_worked'] if isinstance(stats['days_worked'], int) else len(stats['days_worked'])
         leaderboard.append({
             'staff_id': stats['staff_id'],
             'staff_name': stats['staff_name'],
