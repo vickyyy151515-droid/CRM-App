@@ -2542,11 +2542,7 @@ async def get_bonus_calculation_data(
         'month': month,
         'staff_bonuses': result,
         'grand_total': grand_total,
-        'bonus_tiers': {
-            'main': [{'threshold': t, 'bonus': b} for t, b in MAIN_BONUS_TIERS],
-            'ndp': [{'range': '8-10', 'bonus': 2.5}, {'range': '>10', 'bonus': 5}],
-            'rdp': [{'range': '12-15', 'bonus': 2.5}, {'range': '>15', 'bonus': 5}]
-        }
+        'bonus_config': bonus_config
     }
 
 @api_router.get("/bonus-calculation/export")
