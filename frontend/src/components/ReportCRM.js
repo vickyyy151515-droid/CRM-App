@@ -37,9 +37,12 @@ export default function ReportCRM() {
   const [yearlyData, setYearlyData] = useState([]);
   const [monthlyData, setMonthlyData] = useState([]);
   const [dailyData, setDailyData] = useState([]);
+  const [dailyByStaff, setDailyByStaff] = useState([]);
   const [staffPerformance, setStaffPerformance] = useState([]);
   const [depositTiers, setDepositTiers] = useState({ '2x': 0, '3x': 0, '4x_plus': 0 });
   const [expandedMonths, setExpandedMonths] = useState({});
+  const [expandedStaff, setExpandedStaff] = useState({});
+  const [expandedProducts, setExpandedProducts] = useState({});
 
   // Fetch server time on mount
   useEffect(() => {
