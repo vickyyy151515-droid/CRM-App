@@ -142,6 +142,8 @@ export default function AdminDashboard({ user, onLogout }) {
         return <BonusCalculation />;
       case 'leave':
         return <AdminLeaveRequests />;
+      case 'leave-calendar':
+        return <LeaveCalendar />;
       default:
         return null;
     }
