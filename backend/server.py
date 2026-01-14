@@ -50,6 +50,7 @@ from routes.products import router as products_router
 from routes.analytics import router as analytics_router
 from routes.leaderboard import router as leaderboard_router
 from routes.followup import router as followup_router
+from routes.daily_summary import router as daily_summary_router
 
 # Initialize database connection for all route modules
 set_database(db)
@@ -70,6 +71,7 @@ api_router.include_router(bulk_router)
 api_router.include_router(analytics_router)
 api_router.include_router(leaderboard_router)
 api_router.include_router(followup_router)
+api_router.include_router(daily_summary_router)
 
 # ==================== CORE ENDPOINTS ====================
 
