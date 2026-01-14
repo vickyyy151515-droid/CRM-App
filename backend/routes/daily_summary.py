@@ -47,9 +47,14 @@ async def generate_daily_summary(date_str: str = None):
     # Staff breakdown
     staff_stats = {}
     
+    # Product breakdown
+    product_stats = {}
+    
     for record in records:
         staff_id = record['staff_id']
         staff_name = record['staff_name']
+        product_id = record.get('product_id', 'unknown')
+        product_name = record.get('product_name', 'Unknown Product')
         depo_total = record.get('depo_total', 0) or 0
         
         # Check if NDP or RDP
@@ -71,7 +76,8 @@ async def generate_daily_summary(date_str: str = None):
                 'total_omset': 0,
                 'ndp_count': 0,
                 'rdp_count': 0,
-                'form_count': 0
+                'form_count': 0,
+                'product_breakdown': {}
             }
         
         staff_stats[staff_id]['total_omset'] += depo_total
@@ -80,9 +86,52 @@ async def generate_daily_summary(date_str: str = None):
             staff_stats[staff_id]['ndp_count'] += 1
         else:
             staff_stats[staff_id]['rdp_count'] += 1
+        
+        # Staff's product breakdown
+        if product_id not in staff_stats[staff_id]['product_breakdown']:
+            staff_stats[staff_id]['product_breakdown'][product_id] = {
+                'product_id': product_id,
+                'product_name': product_name,
+                'total_omset': 0,
+                'ndp_count': 0,
+                'rdp_count': 0,
+                'form_count': 0
+            }
+        staff_stats[staff_id]['product_breakdown'][product_id]['total_omset'] += depo_total
+        staff_stats[staff_id]['product_breakdown'][product_id]['form_count'] += 1
+        if is_ndp:
+            staff_stats[staff_id]['product_breakdown'][product_id]['ndp_count'] += 1
+        else:
+            staff_stats[staff_id]['product_breakdown'][product_id]['rdp_count'] += 1
+        
+        # Overall product stats
+        if product_id not in product_stats:
+            product_stats[product_id] = {
+                'product_id': product_id,
+                'product_name': product_name,
+                'total_omset': 0,
+                'ndp_count': 0,
+                'rdp_count': 0,
+                'form_count': 0
+            }
+        product_stats[product_id]['total_omset'] += depo_total
+        product_stats[product_id]['form_count'] += 1
+        if is_ndp:
+            product_stats[product_id]['ndp_count'] += 1
+        else:
+            product_stats[product_id]['rdp_count'] += 1
     
-    # Convert to list and sort by OMSET
+    # Convert staff stats to list and sort by OMSET
+    for staff_id in staff_stats:
+        staff_stats[staff_id]['product_breakdown'] = sorted(
+            staff_stats[staff_id]['product_breakdown'].values(),
+            key=lambda x: x['total_omset'],
+            reverse=True
+        )
     staff_list = sorted(staff_stats.values(), key=lambda x: x['total_omset'], reverse=True)
+    
+    # Convert product stats to list and sort by OMSET
+    product_list = sorted(product_stats.values(), key=lambda x: x['total_omset'], reverse=True)
     
     # Determine top performer
     top_performer = staff_list[0] if staff_list else None
@@ -102,6 +151,7 @@ async def generate_daily_summary(date_str: str = None):
             'rdp': top_performer['rdp_count']
         } if top_performer else None,
         'staff_breakdown': staff_list,
+        'product_breakdown': product_list,
         'generated_at': get_jakarta_now().isoformat()
     }
     
