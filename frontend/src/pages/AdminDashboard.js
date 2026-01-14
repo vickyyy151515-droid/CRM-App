@@ -26,7 +26,8 @@ import AdminIzinMonitor from '../components/AdminIzinMonitor';
 import Leaderboard from '../components/Leaderboard';
 import DailySummary from '../components/DailySummary';
 import ConversionFunnel from '../components/ConversionFunnel';
-import { LayoutDashboard, Upload, FileSpreadsheet, Clock, Users, Package, List, BarChart, UserCheck, DollarSign, UserCog, Gift, CreditCard, PieChart, Download, FileText, Calculator, CalendarOff, Calendar, Timer, Trophy, CalendarDays, Filter } from 'lucide-react';
+import CustomerRetention from '../components/CustomerRetention';
+import { LayoutDashboard, Upload, FileSpreadsheet, Clock, Users, Package, List, BarChart, UserCheck, DollarSign, UserCog, Gift, CreditCard, PieChart, Download, FileText, Calculator, CalendarOff, Calendar, Timer, Trophy, CalendarDays, Filter, Heart } from 'lucide-react';
 
 export default function AdminDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('overview');
