@@ -259,25 +259,25 @@ export default function Leaderboard({ isAdmin = false }) {
               >
                 <div className="flex items-center gap-4">
                   {/* Rank */}
-                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-sm">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-white dark:bg-slate-700 shadow-sm">
                     {getRankIcon(rank)}
                   </div>
 
                   {/* Staff Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-slate-900 truncate">{staff.staff_name}</h3>
+                      <h3 className="font-semibold text-slate-900 dark:text-white truncate">{staff.staff_name}</h3>
                       {rank <= 3 && (
                         <span className={`text-xs px-2 py-0.5 rounded-full ${
-                          rank === 1 ? 'bg-yellow-100 text-yellow-700' :
-                          rank === 2 ? 'bg-gray-100 text-gray-700' :
-                          'bg-orange-100 text-orange-700'
+                          rank === 1 ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300' :
+                          rank === 2 ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300' :
+                          'bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300'
                         }`}>
                           #{rank}
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-slate-500">{staff.days_worked} days worked</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{staff.days_worked} days worked</p>
                   </div>
 
                   {/* Stats */}

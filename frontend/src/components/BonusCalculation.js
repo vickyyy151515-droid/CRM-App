@@ -219,55 +219,55 @@ export default function BonusCalculation() {
       {/* Bonus Tiers Reference */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Main Bonus Tiers */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-          <h3 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
-            <Award size={18} className="text-amber-500" />
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+          <h3 className="font-semibold text-slate-800 dark:text-white mb-3 flex items-center gap-2">
+            <Award size={18} className="text-amber-500 dark:text-amber-400" />
             Main Bonus Tiers
           </h3>
           <div className="space-y-2 text-sm">
             {bonusConfig.main_tiers
               .sort((a, b) => b.threshold - a.threshold)
               .map((tier, idx) => (
-                <div key={idx} className={`flex justify-between p-2 rounded ${idx === 0 ? 'bg-amber-50' : 'bg-slate-50'}`}>
+                <div key={idx} className={`flex justify-between p-2 rounded text-slate-700 dark:text-slate-300 ${idx === 0 ? 'bg-amber-50 dark:bg-amber-900/30' : 'bg-slate-50 dark:bg-slate-700/50'}`}>
                   <span>≥ {formatRupiah(tier.threshold)}</span>
-                  <span className="font-bold text-amber-600">${tier.bonus}</span>
+                  <span className="font-bold text-amber-600 dark:text-amber-400">${tier.bonus}</span>
                 </div>
               ))}
           </div>
         </div>
 
         {/* NDP Bonus Tiers */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-          <h3 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
-            <Users size={18} className="text-blue-500" />
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+          <h3 className="font-semibold text-slate-800 dark:text-white mb-3 flex items-center gap-2">
+            <Users size={18} className="text-blue-500 dark:text-blue-400" />
             Daily NDP Bonus
           </h3>
           <div className="space-y-2 text-sm">
             {bonusConfig.ndp_tiers.map((tier, idx) => (
-              <div key={idx} className={`flex justify-between p-2 rounded ${idx === 0 ? 'bg-blue-50' : 'bg-blue-50/50'}`}>
+              <div key={idx} className={`flex justify-between p-2 rounded text-slate-700 dark:text-slate-300 ${idx === 0 ? 'bg-blue-50 dark:bg-blue-900/30' : 'bg-blue-50/50 dark:bg-blue-900/20'}`}>
                 <span>{tier.label} NDP/day</span>
-                <span className="font-bold text-blue-600">${tier.bonus.toFixed(2)}</span>
+                <span className="font-bold text-blue-600 dark:text-blue-400">${tier.bonus.toFixed(2)}</span>
               </div>
             ))}
           </div>
-          <p className="text-xs text-slate-500 mt-3">*Total NDP from all products per day</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-3">*Total NDP from all products per day</p>
         </div>
 
         {/* RDP Bonus Tiers */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-          <h3 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
-            <TrendingUp size={18} className="text-green-500" />
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+          <h3 className="font-semibold text-slate-800 dark:text-white mb-3 flex items-center gap-2">
+            <TrendingUp size={18} className="text-green-500 dark:text-green-400" />
             Daily RDP Bonus
           </h3>
           <div className="space-y-2 text-sm">
             {bonusConfig.rdp_tiers.map((tier, idx) => (
-              <div key={idx} className={`flex justify-between p-2 rounded ${idx === 0 ? 'bg-green-50' : 'bg-green-50/50'}`}>
+              <div key={idx} className={`flex justify-between p-2 rounded text-slate-700 dark:text-slate-300 ${idx === 0 ? 'bg-green-50 dark:bg-green-900/30' : 'bg-green-50/50 dark:bg-green-900/20'}`}>
                 <span>{tier.label} RDP/day</span>
-                <span className="font-bold text-green-600">${tier.bonus.toFixed(2)}</span>
+                <span className="font-bold text-green-600 dark:text-green-400">${tier.bonus.toFixed(2)}</span>
               </div>
             ))}
           </div>
-          <p className="text-xs text-slate-500 mt-3">*Total RDP from all products per day</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-3">*Total RDP from all products per day</p>
         </div>
       </div>
 
