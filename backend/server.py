@@ -2122,6 +2122,7 @@ async def get_report_crm_data(
         'yearly': yearly_data,
         'monthly': monthly_data,
         'daily': daily_data,
+        'daily_by_staff': daily_by_staff,
         'staff_performance': staff_performance,
         'deposit_tiers': deposit_tiers
     }
