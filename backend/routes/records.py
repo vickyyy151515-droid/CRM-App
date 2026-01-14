@@ -213,26 +213,6 @@ async def upload_database(
     
     return database
 
-@router.get("/databases", response_model=List[Database])
-async def get_databases(search: Optional[str] = None, product_id: Optional[str] = None, user: User = Depends(get_current_user)):
-    db = get_db()
-    query = {}
-    if search:
-        query['$or'] = [
-            {'filename': {'$regex': search, '$options': 'i'}},
-            {'description': {'$regex': search, '$options': 'i'}}
-        ]
-    if product_id:
-        query['product_id'] = product_id
-    
-    databases = await db.databases.find(query, {'_id': 0}).sort('uploaded_at', -1).to_list(1000)
-    
-    for db_item in databases:
-        if isinstance(db_item['uploaded_at'], str):
-            db_item['uploaded_at'] = datetime.fromisoformat(db_item['uploaded_at'])
-    
-    return databases
-
 @router.get("/databases/with-stats")
 async def get_databases_with_stats(search: Optional[str] = None, product_id: Optional[str] = None, user: User = Depends(get_current_user)):
     """Get all databases with real-time record status counts"""
@@ -277,6 +257,26 @@ async def get_databases_with_stats(search: Optional[str] = None, product_id: Opt
         })
     
     return result
+
+@router.get("/databases", response_model=List[Database])
+async def get_databases(search: Optional[str] = None, product_id: Optional[str] = None, user: User = Depends(get_current_user)):
+    db = get_db()
+    query = {}
+    if search:
+        query['$or'] = [
+            {'filename': {'$regex': search, '$options': 'i'}},
+            {'description': {'$regex': search, '$options': 'i'}}
+        ]
+    if product_id:
+        query['product_id'] = product_id
+    
+    databases = await db.databases.find(query, {'_id': 0}).sort('uploaded_at', -1).to_list(1000)
+    
+    for db_item in databases:
+        if isinstance(db_item['uploaded_at'], str):
+            db_item['uploaded_at'] = datetime.fromisoformat(db_item['uploaded_at'])
+    
+    return databases
 
 @router.get("/databases/{database_id}", response_model=Database)
 async def get_database(database_id: str, user: User = Depends(get_current_user)):
