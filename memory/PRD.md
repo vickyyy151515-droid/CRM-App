@@ -101,6 +101,14 @@ Build a Customer Relationship Management (CRM) application where:
   - State persisted in localStorage across sessions
   - User avatar with hover card when collapsed
   - Badge indicators repositioned for collapsed state
+- **Sidebar Customization** (Enhanced - Jan 14, 2026):
+  - "Configure Sidebar" button (Admin only) opens configuration modal
+  - **Drag-and-drop reordering** of all menu items
+  - **Folder creation**: Group related pages into collapsible folders
+  - **Folder management**: Edit folder names, delete folders, remove items from folders
+  - **Persistent configuration**: Saved to database per user
+  - **Reset to default**: One-click restore to original order
+  - Example: Group "Leave Requests" + "Leave Calendar" into "Leave Management" folder
 
 ### Phase 12: Notification System (Completed - Jan 13, 2026)
 - **In-App Notifications**: Bell icon in header with unread count badge
