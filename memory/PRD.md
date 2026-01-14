@@ -151,12 +151,15 @@ Build a Customer Relationship Management (CRM) application where:
 - **New Admin Page**: Comprehensive OMSET reporting connected to staff's daily OMSET CRM data
 - **Yearly Summary Tab**:
   - Summary cards: Total NDP, Total RDP, Total Form, Total OMSET
-  - Deposit Frequency Analysis: 2x, 3x, >4x deposit tier breakdown
+  - **NEW**: Monthly Progress Chart for NDP/RDP/Form (ComposedChart with bars and line)
+  - **NEW**: Monthly Progress Chart for OMSET/Nominal (AreaChart with gradient)
   - Monthly breakdown table with NDP/RDP/Form/Nominal columns
-- **Monthly Detail Tab**:
+- **Monthly Detail Tab** (Enhanced):
   - Collapsible sections for each month
-  - Daily breakdown with expandable data
-  - AVG/DAY calculations
+  - **Staff-level breakdown** with collapsible cards
+  - **CRM Efficiency** calculation per staff (Rp 278M = 100%)
+  - Progress bar visualization for efficiency
+  - Month total summary with combined CRM efficiency
 - **Daily Report Tab** (Enhanced):
   - **Collapsible Staff Boxes**: Each staff has their own expandable card with avatar, summary stats
   - **Product Separation**: Within each staff, products are shown as collapsible sections with indigo badges
@@ -168,6 +171,29 @@ Build a Customer Relationship Management (CRM) application where:
 - **Filters**: Year, Month, Product, Staff
 - **Export**: Excel export with multiple sheets (YEARLY, MONTHLY, STAFF PERFORMANCE, DEPOSIT TIERS)
 - **Data Source**: Pulls from existing OMSET CRM records, separated by product
+
+### Phase 18: CRM Bonus Calculation (Completed - Jan 14, 2026)
+- **New Admin Page**: Automatic monthly bonus calculation for staff
+- **Main Bonus Tiers** (based on monthly total nominal):
+  - ≥ Rp 280.000.000 = $100
+  - ≥ Rp 210.000.000 = $75
+  - ≥ Rp 140.000.000 = $50
+  - ≥ Rp 100.000.000 = $30
+  - ≥ Rp 70.000.000 = $20
+- **Daily NDP Bonus**:
+  - >10 NDP/day = $5
+  - 8-10 NDP/day = $2.50
+- **Daily RDP Bonus**:
+  - >15 RDP/day = $5
+  - 12-15 RDP/day = $2.50
+- **Features**:
+  - Year/Month filters
+  - Grand Total summary bar (green gradient)
+  - Collapsible staff cards with bonus breakdown
+  - 4 metric cards: Total Nominal, Main Bonus, NDP Bonus, RDP Bonus
+  - Daily breakdown table with NDP/RDP counts and bonuses
+  - Total bonus formula display ($Main + $NDP + $RDP)
+  - Excel export with summary sheet and per-staff daily breakdown
 
 ## Tech Stack
 - **Frontend**: React + TailwindCSS + Shadcn/UI + Recharts
