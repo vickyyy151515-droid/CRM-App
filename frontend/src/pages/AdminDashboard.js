@@ -89,13 +89,21 @@ export default function AdminDashboard({ user, onLogout }) {
             <h2 className="text-3xl font-semibold tracking-tight text-slate-900 mb-6">Dashboard Overview</h2>
             {/* Quick Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm" data-testid="stat-total-databases">
-                <div className="flex items-center justify-between mb-3">
-                  <FileSpreadsheet className="text-indigo-600" size={24} />
-                  <span className="text-2xl font-bold text-slate-900">{stats.totalDatabases}</span>
+              {/* Monthly ATH Card */}
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-6 shadow-sm" data-testid="stat-monthly-ath">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="p-2 bg-amber-100 rounded-lg">
+                    <BarChart className="text-amber-600" size={20} />
+                  </div>
+                  <span className="text-xs font-medium text-amber-600 bg-amber-100 px-2 py-1 rounded-full">
+                    {stats.monthlyAth.date ? formatAthDate(stats.monthlyAth.date) : 'No data'}
+                  </span>
                 </div>
-                <p className="text-sm text-slate-600">Total Databases</p>
+                <p className="text-xl font-bold text-slate-900 mt-2">{formatCurrency(stats.monthlyAth.amount)}</p>
+                <p className="text-sm text-slate-600 mt-1">Monthly ATH</p>
               </div>
+              
+              {/* Pending DB Requests */}
               <div 
                 className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm cursor-pointer hover:border-amber-300 transition-colors" 
                 data-testid="stat-pending-requests"
@@ -107,6 +115,8 @@ export default function AdminDashboard({ user, onLogout }) {
                 </div>
                 <p className="text-sm text-slate-600">Pending DB Requests</p>
               </div>
+              
+              {/* Pending Reservations */}
               <div 
                 className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm cursor-pointer hover:border-amber-300 transition-colors" 
                 data-testid="stat-pending-reservations"
@@ -118,12 +128,18 @@ export default function AdminDashboard({ user, onLogout }) {
                 </div>
                 <p className="text-sm text-slate-600">Pending Reservations</p>
               </div>
-              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm" data-testid="stat-total-downloads">
+              
+              {/* OMSET Year Card */}
+              <div 
+                className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-6 shadow-sm cursor-pointer hover:border-emerald-300 transition-colors" 
+                data-testid="stat-omset-year"
+                onClick={() => setActiveTab('omset')}
+              >
                 <div className="flex items-center justify-between mb-3">
-                  <LayoutDashboard className="text-emerald-600" size={24} />
-                  <span className="text-2xl font-bold text-slate-900">{stats.totalDownloads}</span>
+                  <DollarSign className="text-emerald-600" size={24} />
                 </div>
-                <p className="text-sm text-slate-600">Total Downloads</p>
+                <p className="text-xl font-bold text-slate-900">{formatCurrency(stats.totalOmsetYear)}</p>
+                <p className="text-sm text-slate-600 mt-1">OMSET {stats.omsetYear}</p>
               </div>
             </div>
             {/* Real-time Database Overview with Record Stats */}
