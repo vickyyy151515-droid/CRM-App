@@ -2181,10 +2181,12 @@ async def get_report_crm_data(
     return {
         'yearly': yearly_data,
         'monthly': monthly_data,
+        'monthly_by_staff': monthly_by_staff,
         'daily': daily_data,
         'daily_by_staff': daily_by_staff,
         'staff_performance': staff_performance,
-        'deposit_tiers': deposit_tiers
+        'deposit_tiers': deposit_tiers,
+        'crm_efficiency_target': 278000000
     }
 
 @api_router.get("/report-crm/export")
