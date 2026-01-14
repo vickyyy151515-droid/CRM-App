@@ -417,7 +417,7 @@ export default function DailySummary({ isAdmin = false }) {
             <div className="bg-gradient-to-r from-yellow-50 dark:from-yellow-900/30 via-amber-50 dark:via-amber-900/30 to-orange-50 dark:to-orange-900/30 border border-yellow-200 dark:border-yellow-800 rounded-xl p-5 mb-6">
               <div className="flex items-center gap-2 mb-2">
                 <Trophy className="text-yellow-600" size={20} />
-                <span className="text-sm font-medium text-yellow-700">Today's Top Performer</span>
+                <span className="text-sm font-medium text-yellow-700 dark:text-yellow-400">Today&apos;s Top Performer</span>
               </div>
               <p className="text-xl font-bold text-slate-900 dark:text-white">{summary.top_performer.staff_name}</p>
               <p className="text-sm text-slate-600 dark:text-slate-400">
