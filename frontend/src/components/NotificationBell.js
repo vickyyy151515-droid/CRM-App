@@ -118,7 +118,8 @@ export default function NotificationBell({ userRole }) {
           
           reconnectTimeoutRef.current = setTimeout(() => {
             reconnectAttemptsRef.current++;
-            connectWebSocket();
+            // Trigger reconnection through state change
+            setWsStatus(WS_STATUS.CONNECTING);
           }, delay);
         }
       };
@@ -127,6 +128,13 @@ export default function NotificationBell({ userRole }) {
       setWsStatus(WS_STATUS.DISCONNECTED);
     }
   }, [getWsUrl]);
+
+  // Handle reconnection when status changes to CONNECTING
+  useEffect(() => {
+    if (wsStatus === WS_STATUS.CONNECTING && !wsRef.current) {
+      connectWebSocket();
+    }
+  }, [wsStatus, connectWebSocket]);
 
   // Disconnect WebSocket
   const disconnectWebSocket = useCallback(() => {
