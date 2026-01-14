@@ -11,6 +11,10 @@ from .analytics import router as analytics_router
 from .izin import router as izin_router
 from .bonanza import router as bonanza_router
 from .memberwd import router as memberwd_router
+from .omset import router as omset_router
+from .report import router as report_router
+from .bonus import router as bonus_router
+from .records import router as records_router
 
 __all__ = [
     'set_database', 
@@ -23,5 +27,9 @@ __all__ = [
     'analytics_router',
     'izin_router',
     'bonanza_router',
-    'memberwd_router'
+    'memberwd_router',
+    'omset_router',
+    'report_router',
+    'bonus_router',
+    'records_router'
 ]
