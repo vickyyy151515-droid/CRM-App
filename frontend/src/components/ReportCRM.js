@@ -116,6 +116,15 @@ export default function ReportCRM() {
     setExpandedMonths(prev => ({ ...prev, [month]: !prev[month] }));
   };
 
+  const toggleStaff = (staffId) => {
+    setExpandedStaff(prev => ({ ...prev, [staffId]: !prev[staffId] }));
+  };
+
+  const toggleProduct = (staffId, productId) => {
+    const key = `${staffId}-${productId}`;
+    setExpandedProducts(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
   const exportToExcel = async () => {
     try {
       const params = new URLSearchParams();
