@@ -325,3 +325,104 @@ async def export_staff_performance_report(format: str = 'xlsx', period: str = 'm
         with open(temp_path, 'wb') as f:
             f.write(output.getvalue())
         return FileResponse(path=temp_path, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', filename=f"{filename}.xlsx")
+
+@router.get("/export/leave-requests")
+async def export_leave_requests(
+    format: str = 'xlsx', staff_id: Optional[str] = None, status: Optional[str] = None,
+    start_date: Optional[str] = None, end_date: Optional[str] = None,
+    token: Optional[str] = None, user: User = Depends(get_admin_user)
+):
+    """Export leave request records"""
+    db = get_db()
+    query = {}
+    if staff_id: query['staff_id'] = staff_id
+    if status: query['status'] = status
+    
+    records = await db.leave_requests.find(query, {'_id': 0}).sort('created_at', -1).to_list(100000)
+    
+    if start_date:
+        records = [r for r in records if r.get('date', '') >= start_date]
+    if end_date:
+        records = [r for r in records if r.get('date', '') <= end_date]
+    
+    export_data = [{
+        'Date': r.get('date', ''),
+        'Staff Name': r.get('staff_name', ''),
+        'Leave Type': 'Off Day' if r.get('leave_type') == 'off_day' else 'Sakit',
+        'Start Time': r.get('start_time', '-'),
+        'End Time': r.get('end_time', '-'),
+        'Hours Deducted': r.get('hours_deducted', 0),
+        'Reason': r.get('reason', ''),
+        'Status': r.get('status', '').title(),
+        'Reviewed By': r.get('reviewed_by_name', ''),
+        'Reviewed At': r.get('reviewed_at', ''),
+        'Admin Note': r.get('admin_note', ''),
+        'Created At': r.get('created_at', '')
+    } for r in records]
+    
+    df = pd.DataFrame(export_data)
+    filename = f"leave_requests_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    
+    if format == 'csv':
+        output = io.BytesIO()
+        df.to_csv(output, index=False, encoding='utf-8')
+        output.seek(0)
+        temp_path = f"/tmp/{filename}.csv"
+        with open(temp_path, 'wb') as f:
+            f.write(output.getvalue())
+        return FileResponse(path=temp_path, media_type='text/csv', filename=f"{filename}.csv")
+    else:
+        output = io.BytesIO()
+        df.to_excel(output, index=False, engine='openpyxl')
+        output.seek(0)
+        temp_path = f"/tmp/{filename}.xlsx"
+        with open(temp_path, 'wb') as f:
+            f.write(output.getvalue())
+        return FileResponse(path=temp_path, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', filename=f"{filename}.xlsx")
+
+@router.get("/export/izin-records")
+async def export_izin_records(
+    format: str = 'xlsx', staff_id: Optional[str] = None,
+    start_date: Optional[str] = None, end_date: Optional[str] = None,
+    token: Optional[str] = None, user: User = Depends(get_admin_user)
+):
+    """Export izin (break) records"""
+    db = get_db()
+    query = {}
+    if staff_id: query['staff_id'] = staff_id
+    
+    records = await db.izin_records.find(query, {'_id': 0}).sort('created_at', -1).to_list(100000)
+    
+    if start_date:
+        records = [r for r in records if r.get('date', '') >= start_date]
+    if end_date:
+        records = [r for r in records if r.get('date', '') <= end_date]
+    
+    export_data = [{
+        'Date': r.get('date', ''),
+        'Staff Name': r.get('staff_name', ''),
+        'Start Time': r.get('start_time', ''),
+        'End Time': r.get('end_time', '-') if r.get('end_time') else 'Ongoing',
+        'Duration (minutes)': round(r.get('duration_minutes', 0), 2) if r.get('duration_minutes') else '-',
+        'Created At': r.get('created_at', '')
+    } for r in records]
+    
+    df = pd.DataFrame(export_data)
+    filename = f"izin_records_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    
+    if format == 'csv':
+        output = io.BytesIO()
+        df.to_csv(output, index=False, encoding='utf-8')
+        output.seek(0)
+        temp_path = f"/tmp/{filename}.csv"
+        with open(temp_path, 'wb') as f:
+            f.write(output.getvalue())
+        return FileResponse(path=temp_path, media_type='text/csv', filename=f"{filename}.csv")
+    else:
+        output = io.BytesIO()
+        df.to_excel(output, index=False, engine='openpyxl')
+        output.seek(0)
+        temp_path = f"/tmp/{filename}.xlsx"
+        with open(temp_path, 'wb') as f:
+            f.write(output.getvalue())
+        return FileResponse(path=temp_path, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', filename=f"{filename}.xlsx")
