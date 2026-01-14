@@ -252,13 +252,16 @@ async def get_business_analytics(period: str = 'month', product_id: Optional[str
         })
     
     db_utilization.sort(key=lambda x: x['utilization_rate'], reverse=True)
-    total_omset = sum(r.get('depo_total', 0) for r in omset_in_period)
+    
+    # Calculate total OMSET from daily chart
+    total_omset = sum(d['total'] for d in omset_chart)
+    total_records_count = sum(d['count'] for d in omset_chart)
     
     return {
         'period': period, 'start_date': start_date, 'end_date': end_date,
         'summary': {
-            'total_omset': total_omset, 'total_records': len(omset_in_period),
-            'avg_omset_per_record': round(total_omset / len(omset_in_period), 2) if omset_in_period else 0,
+            'total_omset': total_omset, 'total_records': total_records_count,
+            'avg_omset_per_record': round(total_omset / total_records_count, 2) if total_records_count > 0 else 0,
             'ndp_count': total_ndp, 'rdp_count': total_rdp, 'ndp_omset': ndp_omset, 'rdp_omset': rdp_omset,
             'ndp_percentage': round((total_ndp / (total_ndp + total_rdp) * 100) if (total_ndp + total_rdp) > 0 else 0, 1)
         },
