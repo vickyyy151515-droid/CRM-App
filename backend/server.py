@@ -2918,6 +2918,60 @@ async def process_leave_request(
     
     return {'message': f'Leave request {new_status}', 'status': new_status}
 
+@api_router.get("/leave/calendar")
+async def get_leave_calendar(
+    year: int = Query(default=None),
+    month: int = Query(default=None),
+    user: User = Depends(get_admin_user)
+):
+    """Get approved leave requests for calendar view (admin only)"""
+    now = get_jakarta_now()
+    year = year or now.year
+    month = month or now.month
+    
+    # Get first and last day of month
+    first_day = f"{year}-{month:02d}-01"
+    if month == 12:
+        last_day = f"{year + 1}-01-01"
+    else:
+        last_day = f"{year}-{month + 1:02d}-01"
+    
+    # Get all approved leave requests for this month
+    query = {
+        'status': 'approved',
+        'date': {'$gte': first_day, '$lt': last_day}
+    }
+    
+    requests = await db.leave_requests.find(query, {'_id': 0}).sort('date', 1).to_list(1000)
+    
+    # Group by date for calendar display
+    calendar_data = {}
+    for req in requests:
+        date = req['date']
+        if date not in calendar_data:
+            calendar_data[date] = []
+        calendar_data[date].append({
+            'id': req['id'],
+            'staff_id': req['staff_id'],
+            'staff_name': req['staff_name'],
+            'leave_type': req['leave_type'],
+            'hours_deducted': req['hours_deducted'],
+            'start_time': req.get('start_time'),
+            'end_time': req.get('end_time'),
+            'reason': req.get('reason')
+        })
+    
+    # Get all staff for the legend
+    staff_list = await db.users.find({'role': 'staff'}, {'_id': 0, 'id': 1, 'name': 1}).to_list(100)
+    
+    return {
+        'year': year,
+        'month': month,
+        'calendar_data': calendar_data,
+        'staff_list': staff_list,
+        'total_leave_days': len(calendar_data)
+    }
+
 # ==================== DB BONANZA ENDPOINTS ====================
 
 @api_router.post("/bonanza/upload")
