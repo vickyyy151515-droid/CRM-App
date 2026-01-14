@@ -459,9 +459,6 @@ Build a Customer Relationship Management (CRM) application where:
 ### P1: Next Priority Tasks
 - None - All P1 tasks completed!
 
-### P1: Next Priority Tasks
-- Real-time Notifications with WebSockets
-
 ### P2: Future Enhancements
 - Email notifications for important updates
 - Scheduled automated reports from Export Center
