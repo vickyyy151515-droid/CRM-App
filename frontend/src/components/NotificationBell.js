@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { api } from '../App';
 import { Bell, Check, CheckCheck, Trash2, X, AlertCircle, Clock, Wifi, WifiOff } from 'lucide-react';
 import { toast } from 'sonner';
@@ -26,7 +26,7 @@ export default function NotificationBell({ userRole }) {
   const baseReconnectDelay = 2000;
 
   // Get WebSocket URL from backend URL
-  const getWsUrl = useCallback(() => {
+  const getWsUrl = () => {
     const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
     const token = localStorage.getItem('token');
     if (!token) return null;
@@ -34,119 +34,7 @@ export default function NotificationBell({ userRole }) {
     // Convert http(s) to ws(s)
     let wsUrl = backendUrl.replace('https://', 'wss://').replace('http://', 'ws://');
     return `${wsUrl}/ws/notifications?token=${token}`;
-  }, []);
-
-  // Connect to WebSocket
-  const connectWebSocket = useCallback(() => {
-    const wsUrl = getWsUrl();
-    if (!wsUrl) {
-      console.log('No token available for WebSocket connection');
-      return;
-    }
-
-    // Clean up existing connection
-    if (wsRef.current) {
-      wsRef.current.close();
-    }
-
-    setWsStatus(WS_STATUS.CONNECTING);
-    console.log('Connecting to WebSocket...');
-
-    try {
-      const ws = new WebSocket(wsUrl);
-      wsRef.current = ws;
-
-      ws.onopen = () => {
-        console.log('WebSocket connected');
-        setWsStatus(WS_STATUS.CONNECTED);
-        reconnectAttemptsRef.current = 0;
-        
-        // Start heartbeat
-        const heartbeatInterval = setInterval(() => {
-          if (ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({ type: 'ping' }));
-          }
-        }, 30000);
-
-        ws.heartbeatInterval = heartbeatInterval;
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          
-          if (data.type === 'notification') {
-            // New notification received
-            const notification = data.data;
-            setNotifications(prev => [notification, ...prev]);
-            setUnreadCount(prev => prev + 1);
-            
-            // Show toast for new notification
-            toast.info(notification.title, {
-              description: notification.message,
-              duration: 5000
-            });
-          } else if (data.type === 'connection') {
-            console.log('WebSocket connection confirmed:', data);
-          } else if (data.type === 'heartbeat' || data.type === 'pong') {
-            // Heartbeat response - connection is alive
-          }
-        } catch (e) {
-          console.error('Error parsing WebSocket message:', e);
-        }
-      };
-
-      ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        setWsStatus(WS_STATUS.DISCONNECTED);
-      };
-
-      ws.onclose = (event) => {
-        console.log('WebSocket closed:', event.code, event.reason);
-        setWsStatus(WS_STATUS.DISCONNECTED);
-        
-        // Clear heartbeat interval
-        if (ws.heartbeatInterval) {
-          clearInterval(ws.heartbeatInterval);
-        }
-
-        // Attempt reconnection if not intentionally closed
-        if (event.code !== 1000 && reconnectAttemptsRef.current < maxReconnectAttempts) {
-          setWsStatus(WS_STATUS.RECONNECTING);
-          const delay = baseReconnectDelay * Math.pow(2, reconnectAttemptsRef.current);
-          console.log(`Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current + 1}/${maxReconnectAttempts})`);
-          
-          reconnectTimeoutRef.current = setTimeout(() => {
-            reconnectAttemptsRef.current++;
-            // Trigger reconnection through state change
-            setWsStatus(WS_STATUS.CONNECTING);
-          }, delay);
-        }
-      };
-    } catch (error) {
-      console.error('Failed to create WebSocket:', error);
-      setWsStatus(WS_STATUS.DISCONNECTED);
-    }
-  }, [getWsUrl]);
-
-  // Handle reconnection when status changes to CONNECTING
-  useEffect(() => {
-    if (wsStatus === WS_STATUS.CONNECTING && !wsRef.current) {
-      connectWebSocket();
-    }
-  }, [wsStatus, connectWebSocket]);
-
-  // Disconnect WebSocket
-  const disconnectWebSocket = useCallback(() => {
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-    }
-    if (wsRef.current) {
-      wsRef.current.close(1000, 'User logout');
-      wsRef.current = null;
-    }
-    setWsStatus(WS_STATUS.DISCONNECTED);
-  }, []);
+  };
 
   // Load initial notifications
   const loadNotifications = async () => {
@@ -169,37 +57,132 @@ export default function NotificationBell({ userRole }) {
     }
   };
 
-  // Initialize WebSocket and load data
+  // WebSocket connection management
   useEffect(() => {
+    let ws = null;
+    let heartbeatInterval = null;
+    let reconnectTimeout = null;
+
+    const connect = () => {
+      const wsUrl = getWsUrl();
+      if (!wsUrl) {
+        console.log('No token available for WebSocket connection');
+        return;
+      }
+
+      setWsStatus(WS_STATUS.CONNECTING);
+      console.log('Connecting to WebSocket...');
+
+      try {
+        ws = new WebSocket(wsUrl);
+        wsRef.current = ws;
+
+        ws.onopen = () => {
+          console.log('WebSocket connected');
+          setWsStatus(WS_STATUS.CONNECTED);
+          reconnectAttemptsRef.current = 0;
+          
+          // Start heartbeat
+          heartbeatInterval = setInterval(() => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({ type: 'ping' }));
+            }
+          }, 30000);
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            
+            if (data.type === 'notification') {
+              // New notification received
+              const notification = data.data;
+              setNotifications(prev => [notification, ...prev]);
+              setUnreadCount(prev => prev + 1);
+              
+              // Show toast for new notification
+              toast.info(notification.title, {
+                description: notification.message,
+                duration: 5000
+              });
+            } else if (data.type === 'connection') {
+              console.log('WebSocket connection confirmed:', data);
+            }
+          } catch (e) {
+            console.error('Error parsing WebSocket message:', e);
+          }
+        };
+
+        ws.onerror = (error) => {
+          console.error('WebSocket error:', error);
+          setWsStatus(WS_STATUS.DISCONNECTED);
+        };
+
+        ws.onclose = (event) => {
+          console.log('WebSocket closed:', event.code, event.reason);
+          setWsStatus(WS_STATUS.DISCONNECTED);
+          
+          // Clear heartbeat interval
+          if (heartbeatInterval) {
+            clearInterval(heartbeatInterval);
+            heartbeatInterval = null;
+          }
+
+          // Attempt reconnection if not intentionally closed
+          if (event.code !== 1000 && reconnectAttemptsRef.current < maxReconnectAttempts) {
+            setWsStatus(WS_STATUS.RECONNECTING);
+            const delay = baseReconnectDelay * Math.pow(2, reconnectAttemptsRef.current);
+            console.log(`Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current + 1}/${maxReconnectAttempts})`);
+            
+            reconnectTimeout = setTimeout(() => {
+              reconnectAttemptsRef.current++;
+              connect();
+            }, delay);
+          }
+        };
+      } catch (error) {
+        console.error('Failed to create WebSocket:', error);
+        setWsStatus(WS_STATUS.DISCONNECTED);
+      }
+    };
+
+    // Initial data load
     loadNotifications();
     if (userRole === 'staff') {
       loadFollowupAlerts();
     }
-    
+
     // Connect WebSocket
     const token = localStorage.getItem('token');
     if (token) {
-      connectWebSocket();
+      connect();
     }
-    
-    // Fallback polling only when WebSocket is disconnected (every 60 seconds instead of 30)
+
+    // Fallback polling when WebSocket is not connected
     const pollInterval = setInterval(() => {
-      if (wsStatus !== WS_STATUS.CONNECTED) {
-        loadNotifications();
-        if (userRole === 'staff') {
-          loadFollowupAlerts();
-        }
+      loadNotifications();
+      if (userRole === 'staff') {
+        loadFollowupAlerts();
       }
     }, 60000);
-    
+
+    // Cleanup
     return () => {
       clearInterval(pollInterval);
-      disconnectWebSocket();
+      if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
+      }
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
+      if (ws) {
+        ws.close(1000, 'Component unmount');
+      }
     };
-  }, [userRole, connectWebSocket, disconnectWebSocket, wsStatus]);
+  }, [userRole]);
 
+  // Close dropdown when clicking outside
   useEffect(() => {
-    // Close dropdown when clicking outside
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsOpen(false);
