@@ -316,25 +316,102 @@ export default function ReportCRM() {
             </div>
           </div>
 
-          {/* Deposit Frequency Tiers */}
+          {/* NDP, RDP, Form Progress Chart */}
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
             <h3 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
-              <PieChart size={18} className="text-blue-600" />
-              Deposit Frequency Analysis
+              <TrendingUp size={18} className="text-blue-600" />
+              Monthly Progress - NDP, RDP & Total Form
             </h3>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">{formatNumber(depositTiers['2x'])}</div>
-                <div className="text-sm text-slate-600 mt-1">2x Deposit</div>
-              </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">{formatNumber(depositTiers['3x'])}</div>
-                <div className="text-sm text-slate-600 mt-1">3x Deposit</div>
-              </div>
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <div className="text-2xl font-bold text-purple-600">{formatNumber(depositTiers['4x_plus'])}</div>
-                <div className="text-sm text-slate-600 mt-1">&gt;4x Deposit</div>
-              </div>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart
+                  data={MONTHS.map((month, idx) => {
+                    const data = yearlyData.find(d => d.month === idx + 1) || { new_id: 0, rdp: 0, total_form: 0 };
+                    return {
+                      month: month,
+                      'NDP': data.new_id || 0,
+                      'RDP': data.rdp || 0,
+                      'Total Form': data.total_form || 0
+                    };
+                  })}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#64748b" />
+                  <YAxis tick={{ fontSize: 12 }} stroke="#64748b" />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#fff', 
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
+                    }}
+                  />
+                  <Legend />
+                  <Bar dataKey="NDP" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="RDP" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                  <Line type="monotone" dataKey="Total Form" stroke="#a855f7" strokeWidth={3} dot={{ fill: '#a855f7', strokeWidth: 2 }} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Nominal (OMSET) Progress Chart */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+            <h3 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
+              <DollarSign size={18} className="text-amber-600" />
+              Monthly Progress - OMSET (Nominal)
+            </h3>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart
+                  data={MONTHS.map((month, idx) => {
+                    const data = yearlyData.find(d => d.month === idx + 1) || { nominal: 0 };
+                    return {
+                      month: month,
+                      'OMSET': data.nominal || 0
+                    };
+                  })}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <defs>
+                    <linearGradient id="omsetGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.1}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#64748b" />
+                  <YAxis 
+                    tick={{ fontSize: 12 }} 
+                    stroke="#64748b"
+                    tickFormatter={(value) => {
+                      if (value >= 1000000000) return `${(value / 1000000000).toFixed(1)}B`;
+                      if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+                      if (value >= 1000) return `${(value / 1000).toFixed(0)}K`;
+                      return value;
+                    }}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#fff', 
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
+                    }}
+                    formatter={(value) => [formatRupiah(value), 'OMSET']}
+                  />
+                  <Legend />
+                  <Area 
+                    type="monotone" 
+                    dataKey="OMSET" 
+                    stroke="#f59e0b" 
+                    strokeWidth={3}
+                    fillOpacity={1} 
+                    fill="url(#omsetGradient)" 
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
           </div>
 
