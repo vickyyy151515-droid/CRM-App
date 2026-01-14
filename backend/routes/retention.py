@@ -1,0 +1,533 @@
+# Customer Retention Tracking Routes
+from fastapi import APIRouter, Depends, HTTPException, Query
+from typing import Optional, List
+from datetime import datetime, timedelta
+from collections import defaultdict
+
+from .deps import get_db, get_current_user, get_admin_user, get_jakarta_now, User
+
+router = APIRouter(tags=["Retention"])
+
+# ==================== RETENTION TRACKING ENDPOINTS ====================
+
+@router.get("/retention/overview")
+async def get_retention_overview(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    product_id: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
+    """Get overall customer retention metrics"""
+    db = get_db()
+    
+    jakarta_now = get_jakarta_now()
+    if not end_date:
+        end_date = jakarta_now.strftime('%Y-%m-%d')
+    if not start_date:
+        start_date = (jakarta_now - timedelta(days=90)).strftime('%Y-%m-%d')
+    
+    # Build query
+    query = {'record_date': {'$gte': start_date, '$lte': end_date}}
+    if product_id:
+        query['product_id'] = product_id
+    if user.role == 'staff':
+        query['staff_id'] = user.id
+    
+    # Get all OMSET records in date range
+    records = await db.omset_records.find(query, {'_id': 0}).to_list(100000)
+    
+    if not records:
+        return {
+            'date_range': {'start': start_date, 'end': end_date},
+            'total_customers': 0,
+            'ndp_customers': 0,
+            'rdp_customers': 0,
+            'retention_rate': 0,
+            'total_deposits': 0,
+            'total_omset': 0,
+            'avg_deposits_per_customer': 0,
+            'avg_omset_per_customer': 0,
+            'top_loyal_customers': []
+        }
+    
+    # Get ALL omset records to determine first deposit dates
+    all_records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
+    
+    # Build customer first deposit map
+    customer_first_date = {}
+    for record in sorted(all_records, key=lambda x: x['record_date']):
+        key = (record['customer_id'], record.get('product_id'))
+        if key not in customer_first_date:
+            customer_first_date[key] = record['record_date']
+    
+    # Analyze customers in date range
+    customer_stats = defaultdict(lambda: {
+        'customer_id': '',
+        'customer_name': '',
+        'product_id': '',
+        'product_name': '',
+        'total_deposits': 0,
+        'total_omset': 0,
+        'first_deposit': None,
+        'last_deposit': None,
+        'is_ndp': False,
+        'deposit_dates': set()
+    })
+    
+    for record in records:
+        key = (record['customer_id'], record.get('product_id'))
+        customer = customer_stats[key]
+        
+        customer['customer_id'] = record['customer_id']
+        customer['customer_name'] = record.get('customer_name', record['customer_id'])
+        customer['product_id'] = record.get('product_id')
+        customer['product_name'] = record.get('product_name', 'Unknown')
+        customer['total_deposits'] += 1
+        customer['total_omset'] += record.get('depo_total', 0) or 0
+        customer['deposit_dates'].add(record['record_date'])
+        
+        # Track first/last deposit in range
+        if customer['first_deposit'] is None or record['record_date'] < customer['first_deposit']:
+            customer['first_deposit'] = record['record_date']
+        if customer['last_deposit'] is None or record['record_date'] > customer['last_deposit']:
+            customer['last_deposit'] = record['record_date']
+        
+        # Check if NDP (first deposit is within date range)
+        first_ever = customer_first_date.get(key)
+        if first_ever and start_date <= first_ever <= end_date:
+            customer['is_ndp'] = True
+    
+    # Calculate metrics
+    all_customers = list(customer_stats.values())
+    total_customers = len(all_customers)
+    ndp_customers = sum(1 for c in all_customers if c['is_ndp'])
+    rdp_customers = sum(1 for c in all_customers if not c['is_ndp'])
+    total_deposits = sum(c['total_deposits'] for c in all_customers)
+    total_omset = sum(c['total_omset'] for c in all_customers)
+    
+    # Retention rate: RDP / Total customers
+    retention_rate = round((rdp_customers / total_customers * 100), 1) if total_customers > 0 else 0
+    
+    # Top loyal customers (by deposit count, then by OMSET)
+    top_customers = sorted(all_customers, key=lambda x: (x['total_deposits'], x['total_omset']), reverse=True)[:10]
+    top_loyal = []
+    for c in top_customers:
+        top_loyal.append({
+            'customer_id': c['customer_id'],
+            'customer_name': c['customer_name'],
+            'product_name': c['product_name'],
+            'total_deposits': c['total_deposits'],
+            'total_omset': c['total_omset'],
+            'avg_deposit': round(c['total_omset'] / c['total_deposits'], 2) if c['total_deposits'] > 0 else 0,
+            'first_deposit': c['first_deposit'],
+            'last_deposit': c['last_deposit'],
+            'is_ndp': c['is_ndp'],
+            'unique_days': len(c['deposit_dates'])
+        })
+    
+    return {
+        'date_range': {'start': start_date, 'end': end_date},
+        'total_customers': total_customers,
+        'ndp_customers': ndp_customers,
+        'rdp_customers': rdp_customers,
+        'retention_rate': retention_rate,
+        'total_deposits': total_deposits,
+        'total_omset': total_omset,
+        'avg_deposits_per_customer': round(total_deposits / total_customers, 1) if total_customers > 0 else 0,
+        'avg_omset_per_customer': round(total_omset / total_customers, 2) if total_customers > 0 else 0,
+        'top_loyal_customers': top_loyal
+    }
+
+
+@router.get("/retention/customers")
+async def get_retention_customers(
+    filter_type: str = "all",  # all, ndp, rdp, loyal (3+ deposits)
+    sort_by: str = "deposits",  # deposits, omset, recent
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    product_id: Optional[str] = None,
+    limit: int = 50,
+    user: User = Depends(get_current_user)
+):
+    """Get detailed customer list with retention metrics"""
+    db = get_db()
+    
+    jakarta_now = get_jakarta_now()
+    if not end_date:
+        end_date = jakarta_now.strftime('%Y-%m-%d')
+    if not start_date:
+        start_date = (jakarta_now - timedelta(days=90)).strftime('%Y-%m-%d')
+    
+    # Build query
+    query = {'record_date': {'$gte': start_date, '$lte': end_date}}
+    if product_id:
+        query['product_id'] = product_id
+    if user.role == 'staff':
+        query['staff_id'] = user.id
+    
+    # Get records
+    records = await db.omset_records.find(query, {'_id': 0}).to_list(100000)
+    
+    if not records:
+        return {'customers': [], 'total': 0}
+    
+    # Get all records to determine first deposits
+    all_records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
+    
+    customer_first_date = {}
+    for record in sorted(all_records, key=lambda x: x['record_date']):
+        key = (record['customer_id'], record.get('product_id'))
+        if key not in customer_first_date:
+            customer_first_date[key] = record['record_date']
+    
+    # Build customer stats
+    customer_stats = defaultdict(lambda: {
+        'customer_id': '',
+        'customer_name': '',
+        'product_id': '',
+        'product_name': '',
+        'staff_name': '',
+        'total_deposits': 0,
+        'total_omset': 0,
+        'first_deposit': None,
+        'last_deposit': None,
+        'is_ndp': False,
+        'deposit_dates': []
+    })
+    
+    for record in records:
+        key = (record['customer_id'], record.get('product_id'))
+        customer = customer_stats[key]
+        
+        customer['customer_id'] = record['customer_id']
+        customer['customer_name'] = record.get('customer_name', record['customer_id'])
+        customer['product_id'] = record.get('product_id')
+        customer['product_name'] = record.get('product_name', 'Unknown')
+        customer['staff_name'] = record.get('staff_name', 'Unknown')
+        customer['total_deposits'] += 1
+        customer['total_omset'] += record.get('depo_total', 0) or 0
+        customer['deposit_dates'].append(record['record_date'])
+        
+        if customer['first_deposit'] is None or record['record_date'] < customer['first_deposit']:
+            customer['first_deposit'] = record['record_date']
+        if customer['last_deposit'] is None or record['record_date'] > customer['last_deposit']:
+            customer['last_deposit'] = record['record_date']
+        
+        first_ever = customer_first_date.get(key)
+        if first_ever and start_date <= first_ever <= end_date:
+            customer['is_ndp'] = True
+    
+    customers = list(customer_stats.values())
+    
+    # Apply filter
+    if filter_type == 'ndp':
+        customers = [c for c in customers if c['is_ndp']]
+    elif filter_type == 'rdp':
+        customers = [c for c in customers if not c['is_ndp']]
+    elif filter_type == 'loyal':
+        customers = [c for c in customers if c['total_deposits'] >= 3]
+    
+    # Sort
+    if sort_by == 'deposits':
+        customers.sort(key=lambda x: x['total_deposits'], reverse=True)
+    elif sort_by == 'omset':
+        customers.sort(key=lambda x: x['total_omset'], reverse=True)
+    elif sort_by == 'recent':
+        customers.sort(key=lambda x: x['last_deposit'] or '', reverse=True)
+    
+    # Format for response
+    result = []
+    for c in customers[:limit]:
+        unique_days = len(set(c['deposit_dates']))
+        result.append({
+            'customer_id': c['customer_id'],
+            'customer_name': c['customer_name'],
+            'product_name': c['product_name'],
+            'staff_name': c['staff_name'],
+            'total_deposits': c['total_deposits'],
+            'total_omset': c['total_omset'],
+            'avg_deposit': round(c['total_omset'] / c['total_deposits'], 2) if c['total_deposits'] > 0 else 0,
+            'first_deposit': c['first_deposit'],
+            'last_deposit': c['last_deposit'],
+            'is_ndp': c['is_ndp'],
+            'unique_days': unique_days,
+            'loyalty_score': min(100, c['total_deposits'] * 10 + unique_days * 5)  # Simple loyalty score
+        })
+    
+    return {
+        'customers': result,
+        'total': len(customers)
+    }
+
+
+@router.get("/retention/trend")
+async def get_retention_trend(
+    days: int = 30,
+    product_id: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
+    """Get daily retention trend showing NDP vs RDP over time"""
+    db = get_db()
+    
+    jakarta_now = get_jakarta_now()
+    
+    # Build query
+    query = {}
+    if product_id:
+        query['product_id'] = product_id
+    if user.role == 'staff':
+        query['staff_id'] = user.id
+    
+    # Get all records for first deposit calculation
+    all_records = await db.omset_records.find(query, {'_id': 0}).to_list(500000)
+    
+    if not all_records:
+        return {'trend': [], 'summary': {'total_ndp': 0, 'total_rdp': 0}}
+    
+    # Build customer first deposit map
+    customer_first_date = {}
+    for record in sorted(all_records, key=lambda x: x['record_date']):
+        key = (record['customer_id'], record.get('product_id'))
+        if key not in customer_first_date:
+            customer_first_date[key] = record['record_date']
+    
+    # Calculate daily NDP/RDP counts
+    trend = []
+    total_ndp = 0
+    total_rdp = 0
+    
+    for i in range(days - 1, -1, -1):
+        date = (jakarta_now - timedelta(days=i)).strftime('%Y-%m-%d')
+        
+        # Get records for this date
+        day_records = [r for r in all_records if r['record_date'] == date]
+        
+        day_ndp = 0
+        day_rdp = 0
+        day_omset = 0
+        seen_customers = set()
+        
+        for record in day_records:
+            key = (record['customer_id'], record.get('product_id'))
+            if key not in seen_customers:
+                seen_customers.add(key)
+                first_date = customer_first_date.get(key)
+                if first_date == date:
+                    day_ndp += 1
+                else:
+                    day_rdp += 1
+            day_omset += record.get('depo_total', 0) or 0
+        
+        total_ndp += day_ndp
+        total_rdp += day_rdp
+        
+        trend.append({
+            'date': date,
+            'ndp': day_ndp,
+            'rdp': day_rdp,
+            'total': day_ndp + day_rdp,
+            'omset': day_omset,
+            'retention_rate': round((day_rdp / (day_ndp + day_rdp) * 100), 1) if (day_ndp + day_rdp) > 0 else 0
+        })
+    
+    return {
+        'trend': trend,
+        'summary': {
+            'total_ndp': total_ndp,
+            'total_rdp': total_rdp,
+            'avg_daily_ndp': round(total_ndp / days, 1),
+            'avg_daily_rdp': round(total_rdp / days, 1),
+            'overall_retention': round((total_rdp / (total_ndp + total_rdp) * 100), 1) if (total_ndp + total_rdp) > 0 else 0
+        }
+    }
+
+
+@router.get("/retention/by-product")
+async def get_retention_by_product(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
+    """Get retention metrics broken down by product"""
+    db = get_db()
+    
+    jakarta_now = get_jakarta_now()
+    if not end_date:
+        end_date = jakarta_now.strftime('%Y-%m-%d')
+    if not start_date:
+        start_date = (jakarta_now - timedelta(days=90)).strftime('%Y-%m-%d')
+    
+    # Build query
+    query = {'record_date': {'$gte': start_date, '$lte': end_date}}
+    if user.role == 'staff':
+        query['staff_id'] = user.id
+    
+    records = await db.omset_records.find(query, {'_id': 0}).to_list(100000)
+    
+    if not records:
+        return {'products': []}
+    
+    # Get all records for first deposit calculation
+    all_records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
+    
+    customer_first_date = {}
+    for record in sorted(all_records, key=lambda x: x['record_date']):
+        key = (record['customer_id'], record.get('product_id'))
+        if key not in customer_first_date:
+            customer_first_date[key] = record['record_date']
+    
+    # Group by product
+    products = defaultdict(lambda: {
+        'product_id': '',
+        'product_name': '',
+        'total_customers': set(),
+        'ndp_customers': set(),
+        'rdp_customers': set(),
+        'total_deposits': 0,
+        'total_omset': 0
+    })
+    
+    for record in records:
+        prod_id = record.get('product_id', 'unknown')
+        prod = products[prod_id]
+        
+        prod['product_id'] = prod_id
+        prod['product_name'] = record.get('product_name', 'Unknown')
+        prod['total_customers'].add(record['customer_id'])
+        prod['total_deposits'] += 1
+        prod['total_omset'] += record.get('depo_total', 0) or 0
+        
+        key = (record['customer_id'], prod_id)
+        first_date = customer_first_date.get(key)
+        if first_date and start_date <= first_date <= end_date:
+            prod['ndp_customers'].add(record['customer_id'])
+        else:
+            prod['rdp_customers'].add(record['customer_id'])
+    
+    # Format result
+    result = []
+    for prod in products.values():
+        total = len(prod['total_customers'])
+        ndp = len(prod['ndp_customers'])
+        rdp = len(prod['rdp_customers'])
+        
+        result.append({
+            'product_id': prod['product_id'],
+            'product_name': prod['product_name'],
+            'total_customers': total,
+            'ndp_customers': ndp,
+            'rdp_customers': rdp,
+            'retention_rate': round((rdp / total * 100), 1) if total > 0 else 0,
+            'total_deposits': prod['total_deposits'],
+            'total_omset': prod['total_omset'],
+            'avg_deposits_per_customer': round(prod['total_deposits'] / total, 1) if total > 0 else 0,
+            'avg_omset_per_customer': round(prod['total_omset'] / total, 2) if total > 0 else 0
+        })
+    
+    # Sort by total customers
+    result.sort(key=lambda x: x['total_customers'], reverse=True)
+    
+    return {
+        'date_range': {'start': start_date, 'end': end_date},
+        'products': result
+    }
+
+
+@router.get("/retention/by-staff")
+async def get_retention_by_staff(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    user: User = Depends(get_admin_user)
+):
+    """Get retention metrics broken down by staff (Admin only)"""
+    db = get_db()
+    
+    jakarta_now = get_jakarta_now()
+    if not end_date:
+        end_date = jakarta_now.strftime('%Y-%m-%d')
+    if not start_date:
+        start_date = (jakarta_now - timedelta(days=90)).strftime('%Y-%m-%d')
+    
+    records = await db.omset_records.find(
+        {'record_date': {'$gte': start_date, '$lte': end_date}},
+        {'_id': 0}
+    ).to_list(100000)
+    
+    if not records:
+        return {'staff': []}
+    
+    # Get all records for first deposit calculation
+    all_records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
+    
+    customer_first_date = {}
+    for record in sorted(all_records, key=lambda x: x['record_date']):
+        key = (record['customer_id'], record.get('product_id'))
+        if key not in customer_first_date:
+            customer_first_date[key] = record['record_date']
+    
+    # Group by staff
+    staff_data = defaultdict(lambda: {
+        'staff_id': '',
+        'staff_name': '',
+        'total_customers': set(),
+        'ndp_customers': set(),
+        'rdp_customers': set(),
+        'loyal_customers': set(),  # 3+ deposits
+        'total_deposits': 0,
+        'total_omset': 0,
+        'customer_deposits': defaultdict(int)
+    })
+    
+    for record in records:
+        staff_id = record.get('staff_id', 'unknown')
+        staff = staff_data[staff_id]
+        
+        staff['staff_id'] = staff_id
+        staff['staff_name'] = record.get('staff_name', 'Unknown')
+        staff['total_customers'].add(record['customer_id'])
+        staff['total_deposits'] += 1
+        staff['total_omset'] += record.get('depo_total', 0) or 0
+        staff['customer_deposits'][record['customer_id']] += 1
+        
+        key = (record['customer_id'], record.get('product_id'))
+        first_date = customer_first_date.get(key)
+        if first_date and start_date <= first_date <= end_date:
+            staff['ndp_customers'].add(record['customer_id'])
+        else:
+            staff['rdp_customers'].add(record['customer_id'])
+    
+    # Calculate loyal customers
+    for staff in staff_data.values():
+        for customer_id, count in staff['customer_deposits'].items():
+            if count >= 3:
+                staff['loyal_customers'].add(customer_id)
+    
+    # Format result
+    result = []
+    for staff in staff_data.values():
+        total = len(staff['total_customers'])
+        ndp = len(staff['ndp_customers'])
+        rdp = len(staff['rdp_customers'])
+        loyal = len(staff['loyal_customers'])
+        
+        result.append({
+            'staff_id': staff['staff_id'],
+            'staff_name': staff['staff_name'],
+            'total_customers': total,
+            'ndp_customers': ndp,
+            'rdp_customers': rdp,
+            'loyal_customers': loyal,
+            'retention_rate': round((rdp / total * 100), 1) if total > 0 else 0,
+            'loyalty_rate': round((loyal / total * 100), 1) if total > 0 else 0,
+            'total_deposits': staff['total_deposits'],
+            'total_omset': staff['total_omset'],
+            'avg_deposits_per_customer': round(staff['total_deposits'] / total, 1) if total > 0 else 0
+        })
+    
+    # Sort by retention rate
+    result.sort(key=lambda x: x['retention_rate'], reverse=True)
+    
+    return {
+        'date_range': {'start': start_date, 'end': end_date},
+        'staff': result
+    }
