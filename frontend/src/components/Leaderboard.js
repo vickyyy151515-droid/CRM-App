@@ -116,8 +116,8 @@ export default function Leaderboard({ isAdmin = false }) {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-3xl font-semibold tracking-tight text-slate-900">Staff Leaderboard</h2>
-          <p className="text-sm text-slate-500 mt-1">
+          <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">Staff Leaderboard</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             {period === 'month' 
               ? `${getMonthName(periodInfo.month)} ${periodInfo.year}` 
               : 'All Time'} Rankings
@@ -126,7 +126,7 @@ export default function Leaderboard({ isAdmin = false }) {
         <div className="flex items-center gap-3">
           <button
             onClick={loadLeaderboard}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+            className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
           >
             <RefreshCcw size={16} />
           </button>
