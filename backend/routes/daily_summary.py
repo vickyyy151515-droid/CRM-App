@@ -240,7 +240,8 @@ async def get_daily_summary(
                     'total_omset': 0,
                     'ndp_count': 0,
                     'rdp_count': 0,
-                    'form_count': 0
+                    'form_count': 0,
+                    'product_breakdown': []
                 },
                 'my_rank': None,
                 'total_staff': 0,
@@ -248,6 +249,7 @@ async def get_daily_summary(
                 'team_total_ndp': 0,
                 'team_total_rdp': 0,
                 'top_performer': None,
+                'product_breakdown': [],
                 'generated_at': get_jakarta_now().isoformat()
             }
         
@@ -259,6 +261,7 @@ async def get_daily_summary(
             'total_forms': 0,
             'top_performer': None,
             'staff_breakdown': [],
+            'product_breakdown': [],
             'generated_at': get_jakarta_now().isoformat()
         }
     
