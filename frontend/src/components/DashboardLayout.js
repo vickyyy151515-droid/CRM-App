@@ -1,10 +1,13 @@
-import { LogOut, Menu, X, ChevronLeft, ChevronRight, Settings, ChevronDown, ChevronUp, Folder, FolderOpen } from 'lucide-react';
+import { LogOut, Menu, X, ChevronLeft, ChevronRight, Settings, ChevronDown, ChevronUp, Folder, FolderOpen, Sun, Moon } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import NotificationBell from './NotificationBell';
 import SidebarConfigurator from './SidebarConfigurator';
+import GlobalSearch from './GlobalSearch';
+import { useTheme } from '../contexts/ThemeContext';
 import { api } from '../App';
 
 export default function DashboardLayout({ user, onLogout, activeTab, setActiveTab, menuItems, children }) {
+  const { darkMode, toggleTheme } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => {
     const saved = localStorage.getItem('sidebar-collapsed');
