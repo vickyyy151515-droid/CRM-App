@@ -408,6 +408,35 @@ Build a Customer Relationship Management (CRM) application where:
   - AdminDashboard Overview stat cards
   - CRM Bonus Calculation page (tier cards, staff breakdown, tables, settings modal)
   - Leaderboard/Staff Progress page (stats, progress bars, rank indicators)
+  - Daily Summary page (gradient cards, performer badges)
+  - Customer Retention page (tabs, metric cards, alert sections)
+  - Export Center page (form elements, labels, cards)
+  - Leave Calendar page (calendar grid, day cells, sidebar)
+  - Staff Progress & Quality page (filter dropdowns, progress bars, daily stats)
+  - DB Bonanza page (upload section, database cards)
+  - Member WD CRM page (upload section, database cards)
+  - Notification Bell dropdown (proper dark mode styling)
+
+### ✅ COMPLETED: Real-time Notifications with WebSockets (Jan 15, 2026)
+- **WebSocket Backend**: FastAPI WebSocket endpoint at `/ws/notifications`
+- **Connection Manager**: Handles multiple concurrent WebSocket connections per user
+- **Authentication**: JWT token-based WebSocket authentication
+- **Features**:
+  - Real-time notification delivery when events occur
+  - Automatic heartbeat (30-second keepalive)
+  - Automatic reconnection with exponential backoff (up to 5 attempts)
+  - Graceful fallback to polling (60 seconds) when WebSocket unavailable
+- **Frontend Updates**:
+  - WebSocket connection status indicator (green = connected, amber = connecting, gray = offline)
+  - Toast notifications for new real-time notifications
+  - Reduced polling frequency when WebSocket is connected
+- **New Files**:
+  - `backend/routes/websocket.py` - WebSocket route and connection manager
+- **Modified Files**:
+  - `backend/routes/notifications.py` - Send real-time notifications on creation
+  - `backend/server.py` - Include WebSocket router
+  - `frontend/src/components/NotificationBell.js` - WebSocket client integration
+- **Note**: WebSocket may require proper ingress configuration for production. Fallback polling ensures notifications always work.
 
 ### ✅ COMPLETED: Global Search (Jan 15, 2026)
 - **Keyboard Shortcut**: Ctrl/Cmd + K to open search modal
