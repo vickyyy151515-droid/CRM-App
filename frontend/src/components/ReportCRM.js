@@ -36,6 +36,7 @@ export default function ReportCRM() {
   // Report data
   const [yearlyData, setYearlyData] = useState([]);
   const [monthlyData, setMonthlyData] = useState([]);
+  const [monthlyByStaff, setMonthlyByStaff] = useState([]);
   const [dailyData, setDailyData] = useState([]);
   const [dailyByStaff, setDailyByStaff] = useState([]);
   const [staffPerformance, setStaffPerformance] = useState([]);
@@ -43,6 +44,8 @@ export default function ReportCRM() {
   const [expandedMonths, setExpandedMonths] = useState({});
   const [expandedStaff, setExpandedStaff] = useState({});
   const [expandedProducts, setExpandedProducts] = useState({});
+  const [expandedMonthlyStaff, setExpandedMonthlyStaff] = useState({});
+  const CRM_EFFICIENCY_TARGET = 278000000; // Rp 278,000,000 = 100%
 
   // Fetch server time on mount
   useEffect(() => {
