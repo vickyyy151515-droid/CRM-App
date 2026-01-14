@@ -3,7 +3,7 @@ import { api } from '../App';
 import { toast } from 'sonner';
 import { 
   Download, FileSpreadsheet, Users, DollarSign, UserCheck, Gift, CreditCard,
-  Calendar, Filter, Loader2
+  Calendar, Filter, Loader2, CalendarOff, Timer
 } from 'lucide-react';
 
 export default function ExportCenter() {
@@ -55,7 +55,9 @@ export default function ExportCenter() {
     { id: 'staff-report', label: 'Staff Performance', icon: Users, description: 'Export staff performance summary' },
     { id: 'reserved-members', label: 'Reserved Members', icon: UserCheck, description: 'Export reserved member list' },
     { id: 'bonanza-records', label: 'DB Bonanza Records', icon: Gift, description: 'Export DB Bonanza records' },
-    { id: 'memberwd-records', label: 'Member WD Records', icon: CreditCard, description: 'Export Member WD CRM records' }
+    { id: 'memberwd-records', label: 'Member WD Records', icon: CreditCard, description: 'Export Member WD CRM records' },
+    { id: 'leave-requests', label: 'Leave Requests', icon: CalendarOff, description: 'Export Off Day/Sakit records' },
+    { id: 'izin-records', label: 'Izin Records', icon: Timer, description: 'Export staff break (izin) records' }
   ];
 
   const handleFilterChange = (key, value) => {
@@ -416,6 +418,93 @@ export default function ExportCenter() {
           </>
         );
       
+      case 'leave-requests':
+        return (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Staff</label>
+              <select
+                value={filters.staff_id}
+                onChange={(e) => handleFilterChange('staff_id', e.target.value)}
+                className="w-full h-10 px-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="">All Staff</option>
+                {staff.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+              <select
+                value={filters.status}
+                onChange={(e) => handleFilterChange('status', e.target.value)}
+                className="w-full h-10 px-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
+              <input
+                type="date"
+                value={filters.start_date}
+                onChange={(e) => handleFilterChange('start_date', e.target.value)}
+                className="w-full h-10 px-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">End Date</label>
+              <input
+                type="date"
+                value={filters.end_date}
+                onChange={(e) => handleFilterChange('end_date', e.target.value)}
+                className="w-full h-10 px-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+          </>
+        );
+      
+      case 'izin-records':
+        return (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Staff</label>
+              <select
+                value={filters.staff_id}
+                onChange={(e) => handleFilterChange('staff_id', e.target.value)}
+                className="w-full h-10 px-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="">All Staff</option>
+                {staff.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
+              <input
+                type="date"
+                value={filters.start_date}
+                onChange={(e) => handleFilterChange('start_date', e.target.value)}
+                className="w-full h-10 px-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">End Date</label>
+              <input
+                type="date"
+                value={filters.end_date}
+                onChange={(e) => handleFilterChange('end_date', e.target.value)}
+                className="w-full h-10 px-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+          </>
+        );
+      
       default:
         return null;
     }
@@ -430,7 +519,7 @@ export default function ExportCenter() {
         <div className="lg:col-span-1">
           <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
             <h3 className="text-lg font-semibold text-slate-900 mb-4">Export Type</h3>
-            <div className="space-y-2">
+            <div className="space-y-2 max-h-[500px] overflow-y-auto">
               {exportTypes.map(type => {
                 const Icon = type.icon;
                 return (
