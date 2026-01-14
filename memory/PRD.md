@@ -359,8 +359,28 @@ Build a Customer Relationship Management (CRM) application where:
   - `GET /api/funnel/by-staff` - Staff breakdown (Admin only)
   - `GET /api/funnel/trend` - Daily trend data
 
+### ✅ COMPLETED: Customer Retention Tracking (Jan 15, 2026)
+- **Track RDP (Repeat Depositors)** and loyalty metrics
+- **Overview Dashboard**:
+  - Key metrics: Total Customers, NDP, RDP, Retention Rate
+  - Secondary metrics: Total Deposits, Total OMSET, Avg per Customer
+  - Daily NDP vs RDP trend chart (stacked area)
+  - Top Loyal Customers list with loyalty badges (VIP, Loyal, Regular, New)
+- **Four Views**:
+  - **Overview**: Main retention metrics and charts
+  - **Customer List**: Detailed customer table with filters and sorting
+  - **By Product**: Product-level retention breakdown
+  - **By Staff**: Staff-level retention metrics (Admin only)
+- **Loyalty Scoring**: Calculated based on deposit count and unique days
+- **API Endpoints**:
+  - `GET /api/retention/overview` - Main retention metrics
+  - `GET /api/retention/customers` - Customer list with filters
+  - `GET /api/retention/trend` - Daily NDP/RDP trend
+  - `GET /api/retention/by-product` - Product breakdown
+  - `GET /api/retention/by-staff` - Staff breakdown (Admin only)
+
 ### P1: Next Priority Tasks
-- **Customer Retention Tracking**: Track RDP (repeat depositors) and show loyalty metrics
+- None - All P1 tasks completed!
 
 ### P2: Future Enhancements
 - Email notifications for important updates
