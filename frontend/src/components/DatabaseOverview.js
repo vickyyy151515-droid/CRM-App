@@ -123,16 +123,16 @@ function DatabaseCard({ database }) {
   
   return (
     <div
-      className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-all"
+      className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm hover:shadow-md transition-all"
       data-testid={`database-overview-${db.id}`}
     >
       {/* Header - Filename and Product Badge */}
       <div className="flex items-center gap-3 mb-4">
-        <FileSpreadsheet className="text-indigo-600 flex-shrink-0" size={20} />
-        <h3 className="text-base font-semibold text-slate-900 truncate" data-testid="database-overview-filename">
+        <FileSpreadsheet className="text-indigo-600 dark:text-indigo-400 flex-shrink-0" size={20} />
+        <h3 className="text-base font-semibold text-slate-900 dark:text-white truncate" data-testid="database-overview-filename">
           {db.filename}
         </h3>
-        <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-indigo-50 text-indigo-700 border-indigo-200 flex-shrink-0">
+        <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800 flex-shrink-0">
           {db.product_name}
         </span>
       </div>
@@ -140,33 +140,33 @@ function DatabaseCard({ database }) {
       {/* Stats Cards - Matching the image layout */}
       <div className="grid grid-cols-4 gap-3">
         {/* Total Records */}
-        <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
-          <p className="text-xs text-slate-500 mb-1">Total Records</p>
-          <p className="text-xl font-bold text-slate-900" data-testid="stat-total">
+        <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 border border-slate-100 dark:border-slate-700">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Total Records</p>
+          <p className="text-xl font-bold text-slate-900 dark:text-white" data-testid="stat-total">
             {db.total_records}
           </p>
         </div>
 
         {/* Available - Green */}
-        <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-100">
-          <p className="text-xs text-emerald-600 mb-1">Available</p>
-          <p className="text-xl font-bold text-emerald-700" data-testid="stat-available">
+        <div className="bg-emerald-50 dark:bg-emerald-900/30 rounded-lg p-3 border border-emerald-100 dark:border-emerald-800">
+          <p className="text-xs text-emerald-600 dark:text-emerald-400 mb-1">Available</p>
+          <p className="text-xl font-bold text-emerald-700 dark:text-emerald-400" data-testid="stat-available">
             {db.available_count}
           </p>
         </div>
 
         {/* Requested - Yellow/Orange */}
-        <div className="bg-amber-50 rounded-lg p-3 border border-amber-100">
-          <p className="text-xs text-amber-600 mb-1">Requested</p>
-          <p className="text-xl font-bold text-amber-700" data-testid="stat-requested">
+        <div className="bg-amber-50 dark:bg-amber-900/30 rounded-lg p-3 border border-amber-100 dark:border-amber-800">
+          <p className="text-xs text-amber-600 dark:text-amber-400 mb-1">Requested</p>
+          <p className="text-xl font-bold text-amber-700 dark:text-amber-400" data-testid="stat-requested">
             {db.requested_count}
           </p>
         </div>
 
         {/* Assigned - Purple */}
-        <div className="bg-violet-50 rounded-lg p-3 border border-violet-100">
-          <p className="text-xs text-violet-600 mb-1">Assigned</p>
-          <p className="text-xl font-bold text-violet-700" data-testid="stat-assigned">
+        <div className="bg-violet-50 dark:bg-violet-900/30 rounded-lg p-3 border border-violet-100 dark:border-violet-800">
+          <p className="text-xs text-violet-600 dark:text-violet-400 mb-1">Assigned</p>
+          <p className="text-xl font-bold text-violet-700 dark:text-violet-400" data-testid="stat-assigned">
             {db.assigned_count}
           </p>
         </div>
