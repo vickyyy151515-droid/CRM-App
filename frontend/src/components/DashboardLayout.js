@@ -294,34 +294,32 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
 
         {/* Settings & User Section */}
         <div className="p-3 border-t border-slate-200 dark:border-slate-800">
-          {/* Configure Sidebar Button (Admin only) */}
-          {user.role === 'admin' && (
-            <button
-              onClick={() => setShowConfigurator(true)}
-              data-testid="sidebar-settings-btn"
-              title={collapsed ? 'Configure Sidebar' : ''}
-              className={`
-                w-full flex items-center gap-2 py-2 mb-2 text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors
-                ${collapsed ? 'lg:justify-center lg:px-2 px-4' : 'px-4'}
-                group relative
-              `}
-            >
-              <Settings size={18} />
-              <span className={`${collapsed ? 'lg:hidden' : ''}`}>Configure Sidebar</span>
-              
-              {/* Tooltip */}
-              {collapsed && (
-                <div className="
-                  hidden lg:group-hover:flex absolute left-full ml-2 px-3 py-2 
-                  bg-slate-900 text-white text-sm rounded-lg whitespace-nowrap z-50
-                  pointer-events-none shadow-lg
-                ">
-                  Configure Sidebar
-                  <div className="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
-                </div>
-              )}
-            </button>
-          )}
+          {/* Configure Sidebar Button */}
+          <button
+            onClick={() => setShowConfigurator(true)}
+            data-testid="sidebar-settings-btn"
+            title={collapsed ? 'Configure Sidebar' : ''}
+            className={`
+              w-full flex items-center gap-2 py-2 mb-2 text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors
+              ${collapsed ? 'lg:justify-center lg:px-2 px-4' : 'px-4'}
+              group relative
+            `}
+          >
+            <Settings size={18} />
+            <span className={`${collapsed ? 'lg:hidden' : ''}`}>Configure Sidebar</span>
+            
+            {/* Tooltip */}
+            {collapsed && (
+              <div className="
+                hidden lg:group-hover:flex absolute left-full ml-2 px-3 py-2 
+                bg-slate-900 text-white text-sm rounded-lg whitespace-nowrap z-50
+                pointer-events-none shadow-lg
+              ">
+                Configure Sidebar
+                <div className="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
+              </div>
+            )}
+          </button>
 
           {/* User Info */}
           {!collapsed && (
