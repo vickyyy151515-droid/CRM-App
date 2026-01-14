@@ -1,19 +1,47 @@
-import { LogOut, Menu, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LogOut, Menu, X, ChevronLeft, ChevronRight, Settings, ChevronDown, ChevronUp, Folder, FolderOpen } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import NotificationBell from './NotificationBell';
+import SidebarConfigurator from './SidebarConfigurator';
+import { api } from '../App';
 
 export default function DashboardLayout({ user, onLogout, activeTab, setActiveTab, menuItems, children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => {
-    // Load collapsed state from localStorage
     const saved = localStorage.getItem('sidebar-collapsed');
     return saved === 'true';
   });
+  const [showConfigurator, setShowConfigurator] = useState(false);
+  const [sidebarConfig, setSidebarConfig] = useState(null);
+  const [openFolders, setOpenFolders] = useState({});
+
+  // Load sidebar configuration on mount
+  useEffect(() => {
+    loadSidebarConfig();
+  }, []);
 
   // Save collapsed state to localStorage
   useEffect(() => {
     localStorage.setItem('sidebar-collapsed', collapsed.toString());
   }, [collapsed]);
+
+  const loadSidebarConfig = async () => {
+    try {
+      const response = await api.get('/user/preferences/sidebar-config');
+      if (response.data.config) {
+        setSidebarConfig(response.data.config);
+        // Initialize open folders state
+        const folders = {};
+        response.data.config.items?.forEach(item => {
+          if (item.type === 'folder') {
+            folders[item.id] = item.isOpen !== false;
+          }
+        });
+        setOpenFolders(folders);
+      }
+    } catch (error) {
+      console.error('Failed to load sidebar config:', error);
+    }
+  };
 
   const handleNavClick = (tabId) => {
     setActiveTab(tabId);
@@ -22,6 +50,168 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
 
   const toggleCollapse = () => {
     setCollapsed(!collapsed);
+  };
+
+  const toggleFolder = (folderId) => {
+    setOpenFolders(prev => ({
+      ...prev,
+      [folderId]: !prev[folderId]
+    }));
+  };
+
+  const handleConfigChange = (newConfig) => {
+    setSidebarConfig(newConfig);
+    if (newConfig) {
+      const folders = {};
+      newConfig.items?.forEach(item => {
+        if (item.type === 'folder') {
+          folders[item.id] = item.isOpen !== false;
+        }
+      });
+      setOpenFolders(folders);
+    }
+  };
+
+  // Build the menu based on config or default
+  const buildMenu = () => {
+    if (!sidebarConfig || !sidebarConfig.items) {
+      return menuItems.map(item => ({ ...item, type: 'item' }));
+    }
+
+    const menuMap = {};
+    menuItems.forEach(item => {
+      menuMap[item.id] = item;
+    });
+
+    return sidebarConfig.items.map(configItem => {
+      if (configItem.type === 'folder') {
+        return {
+          ...configItem,
+          items: configItem.items.map(itemId => menuMap[itemId]).filter(Boolean)
+        };
+      }
+      return menuMap[configItem.id] ? { ...menuMap[configItem.id], type: 'item' } : null;
+    }).filter(Boolean);
+  };
+
+  const organizedMenu = buildMenu();
+
+  const renderMenuItem = (item, isInFolder = false) => {
+    const Icon = item.icon;
+    const isActive = activeTab === item.id;
+
+    return (
+      <button
+        key={item.id}
+        onClick={() => handleNavClick(item.id)}
+        data-testid={`nav-${item.id}`}
+        title={collapsed ? item.label : ''}
+        className={`
+          w-full flex items-center rounded-lg text-sm font-medium transition-all
+          ${collapsed && !isInFolder ? 'lg:justify-center lg:px-2 px-4' : 'px-4'} 
+          ${isInFolder ? 'py-2 pl-8' : 'py-2.5'}
+          ${isActive
+            ? 'bg-slate-900 text-white'
+            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+          }
+          group relative
+        `}
+      >
+        <span className={`flex items-center ${collapsed && !isInFolder ? 'lg:gap-0' : 'gap-3'}`}>
+          <Icon size={isInFolder ? 16 : 20} className="flex-shrink-0" />
+          <span className={`truncate transition-all duration-200 ${collapsed && !isInFolder ? 'lg:hidden lg:w-0 lg:opacity-0' : 'opacity-100'}`}>
+            {item.label}
+          </span>
+        </span>
+        
+        {/* Badge */}
+        {item.badge > 0 && (
+          <span 
+            className={`
+              min-w-[20px] h-5 px-1.5 rounded-full text-xs font-bold flex items-center justify-center
+              ${collapsed && !isInFolder ? 'lg:absolute lg:top-0 lg:right-0 lg:-mt-1 lg:-mr-1' : 'ml-auto'}
+              ${isActive
+                ? 'bg-white text-slate-900'
+                : 'bg-red-500 text-white'
+              }
+            `}
+            data-testid={`badge-${item.id}`}
+          >
+            {item.badge > 99 ? '99+' : item.badge}
+          </span>
+        )}
+
+        {/* Tooltip for collapsed state */}
+        {collapsed && !isInFolder && (
+          <div className="
+            hidden lg:group-hover:flex absolute left-full ml-2 px-3 py-2 
+            bg-slate-900 text-white text-sm rounded-lg whitespace-nowrap z-50
+            pointer-events-none shadow-lg
+          ">
+            {item.label}
+            {item.badge > 0 && (
+              <span className="ml-2 px-1.5 py-0.5 bg-red-500 rounded-full text-xs">
+                {item.badge}
+              </span>
+            )}
+            <div className="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
+          </div>
+        )}
+      </button>
+    );
+  };
+
+  const renderFolder = (folder) => {
+    const isOpen = openFolders[folder.id];
+    const hasActiveItem = folder.items?.some(item => item.id === activeTab);
+
+    return (
+      <div key={folder.id} className="mb-1">
+        <button
+          onClick={() => toggleFolder(folder.id)}
+          className={`
+            w-full flex items-center rounded-lg text-sm font-medium transition-all px-4 py-2.5
+            ${hasActiveItem ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-100'}
+            ${collapsed ? 'lg:justify-center lg:px-2' : ''}
+            group relative
+          `}
+        >
+          <span className={`flex items-center ${collapsed ? 'lg:gap-0' : 'gap-3'}`}>
+            {isOpen ? <FolderOpen size={20} /> : <Folder size={20} />}
+            <span className={`truncate ${collapsed ? 'lg:hidden' : ''}`}>{folder.name}</span>
+          </span>
+          <span className={`ml-auto ${collapsed ? 'lg:hidden' : ''}`}>
+            {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </span>
+
+          {/* Tooltip for collapsed state */}
+          {collapsed && (
+            <div className="
+              hidden lg:group-hover:flex absolute left-full ml-2 px-3 py-2 
+              bg-slate-900 text-white text-sm rounded-lg whitespace-nowrap z-50
+              pointer-events-none shadow-lg flex-col gap-1
+            ">
+              <span className="font-medium">{folder.name}</span>
+              {folder.items?.map(item => (
+                <span key={item.id} className={`text-xs ${item.id === activeTab ? 'text-blue-300' : 'text-slate-300'}`}>
+                  • {item.label}
+                </span>
+              ))}
+              <div className="absolute left-0 top-4 -translate-x-1 border-4 border-transparent border-r-slate-900" />
+            </div>
+          )}
+        </button>
+        
+        {/* Folder contents - always show on mobile, respect isOpen on desktop */}
+        <div className={`
+          overflow-hidden transition-all duration-200
+          ${isOpen ? 'max-h-96 opacity-100' : 'lg:max-h-0 lg:opacity-0 max-h-96 opacity-100'}
+          ${collapsed ? 'lg:hidden' : ''}
+        `}>
+          {folder.items?.map(item => renderMenuItem(item, true))}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -67,72 +257,43 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
 
         {/* Navigation */}
         <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.id}
-                onClick={() => handleNavClick(item.id)}
-                data-testid={`nav-${item.id}`}
-                title={collapsed ? item.label : ''}
-                className={`
-                  w-full flex items-center rounded-lg text-sm font-medium transition-all
-                  ${collapsed ? 'lg:justify-center lg:px-2 px-4' : 'px-4'} py-2.5
-                  ${activeTab === item.id
-                    ? 'bg-slate-900 text-white'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                  }
-                  group relative
-                `}
-              >
-                <span className={`flex items-center ${collapsed ? 'lg:gap-0' : 'gap-3'}`}>
-                  <Icon size={20} className="flex-shrink-0" />
-                  <span className={`truncate transition-all duration-200 ${collapsed ? 'lg:hidden lg:w-0 lg:opacity-0' : 'opacity-100'}`}>
-                    {item.label}
-                  </span>
-                </span>
-                
-                {/* Badge */}
-                {item.badge > 0 && (
-                  <span 
-                    className={`
-                      min-w-[20px] h-5 px-1.5 rounded-full text-xs font-bold flex items-center justify-center
-                      ${collapsed ? 'lg:absolute lg:top-0 lg:right-0 lg:-mt-1 lg:-mr-1' : 'ml-auto'}
-                      ${activeTab === item.id
-                        ? 'bg-white text-slate-900'
-                        : 'bg-red-500 text-white'
-                      }
-                    `}
-                    data-testid={`badge-${item.id}`}
-                  >
-                    {item.badge > 99 ? '99+' : item.badge}
-                  </span>
-                )}
-
-                {/* Tooltip for collapsed state */}
-                {collapsed && (
-                  <div className="
-                    hidden lg:group-hover:flex absolute left-full ml-2 px-3 py-2 
-                    bg-slate-900 text-white text-sm rounded-lg whitespace-nowrap z-50
-                    pointer-events-none shadow-lg
-                  ">
-                    {item.label}
-                    {item.badge > 0 && (
-                      <span className="ml-2 px-1.5 py-0.5 bg-red-500 rounded-full text-xs">
-                        {item.badge}
-                      </span>
-                    )}
-                    {/* Tooltip arrow */}
-                    <div className="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
-                  </div>
-                )}
-              </button>
-            );
-          })}
+          {organizedMenu.map(item => 
+            item.type === 'folder' ? renderFolder(item) : renderMenuItem(item)
+          )}
         </nav>
 
-        {/* User info & Logout */}
+        {/* Settings & User Section */}
         <div className="p-3 border-t border-slate-200">
+          {/* Configure Sidebar Button (Admin only) */}
+          {user.role === 'admin' && (
+            <button
+              onClick={() => setShowConfigurator(true)}
+              data-testid="sidebar-settings-btn"
+              title={collapsed ? 'Configure Sidebar' : ''}
+              className={`
+                w-full flex items-center gap-2 py-2 mb-2 text-sm text-slate-500 hover:bg-slate-100 rounded-lg transition-colors
+                ${collapsed ? 'lg:justify-center lg:px-2 px-4' : 'px-4'}
+                group relative
+              `}
+            >
+              <Settings size={18} />
+              <span className={`${collapsed ? 'lg:hidden' : ''}`}>Configure Sidebar</span>
+              
+              {/* Tooltip */}
+              {collapsed && (
+                <div className="
+                  hidden lg:group-hover:flex absolute left-full ml-2 px-3 py-2 
+                  bg-slate-900 text-white text-sm rounded-lg whitespace-nowrap z-50
+                  pointer-events-none shadow-lg
+                ">
+                  Configure Sidebar
+                  <div className="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
+                </div>
+              )}
+            </button>
+          )}
+
+          {/* User Info */}
           {!collapsed && (
             <div className="mb-3 px-2">
               <p className="text-sm font-medium text-slate-900 truncate">{user.name}</p>
@@ -146,7 +307,6 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
               <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-semibold">
                 {user.name?.charAt(0).toUpperCase()}
               </div>
-              {/* User tooltip */}
               <div className="
                 hidden group-hover:flex absolute left-full ml-2 px-3 py-2 
                 bg-slate-900 text-white text-sm rounded-lg whitespace-nowrap z-50
@@ -159,6 +319,7 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
             </div>
           )}
 
+          {/* Logout */}
           <button
             onClick={onLogout}
             data-testid="logout-button"
@@ -172,7 +333,6 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
             <LogOut size={18} />
             <span className={`${collapsed ? 'lg:hidden' : ''}`}>Sign Out</span>
             
-            {/* Tooltip for collapsed */}
             {collapsed && (
               <div className="
                 hidden lg:group-hover:flex absolute left-full ml-2 px-3 py-2 
@@ -228,6 +388,14 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
           </div>
         </main>
       </div>
+
+      {/* Sidebar Configurator Modal */}
+      <SidebarConfigurator
+        isOpen={showConfigurator}
+        onClose={() => setShowConfigurator(false)}
+        menuItems={menuItems}
+        onConfigChange={handleConfigChange}
+      />
     </div>
   );
 }
