@@ -147,6 +147,27 @@ Build a Customer Relationship Management (CRM) application where:
   - `AdminOmsetCRM.js`: Now uses server date for Today/Yesterday/Last7/Last30/ThisMonth filters
   - `StaffOmsetCRM.js`: Now initializes date picker with server date (Jakarta timezone)
 
+### Phase 17: Report CRM (Completed - Jan 14, 2026)
+- **New Admin Page**: Comprehensive OMSET reporting connected to staff's daily OMSET CRM data
+- **Yearly Summary Tab**:
+  - Summary cards: Total NDP, Total RDP, Total Form, Total OMSET
+  - Deposit Frequency Analysis: 2x, 3x, >4x deposit tier breakdown
+  - Monthly breakdown table with NDP/RDP/Form/Nominal columns
+- **Monthly Detail Tab**:
+  - Collapsible sections for each month
+  - Daily breakdown with expandable data
+  - AVG/DAY calculations
+- **Daily Report Tab**:
+  - Detailed daily data for selected month
+  - % NDP calculations with color coding
+  - AVG/FORM metrics
+- **Staff Performance Tab**:
+  - Per-staff metrics: NDP, RDP, Total Form, Total OMSET
+  - AVG/FORM and % NDP calculations
+- **Filters**: Year, Month, Product, Staff
+- **Export**: Excel export with multiple sheets (YEARLY, MONTHLY, STAFF PERFORMANCE, DEPOSIT TIERS)
+- **Data Source**: Pulls from existing OMSET CRM records, separated by product
+
 ## Tech Stack
 - **Frontend**: React + TailwindCSS + Shadcn/UI + Recharts
 - **Backend**: FastAPI + PyMongo + Pandas + Openpyxl
