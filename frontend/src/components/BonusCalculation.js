@@ -381,62 +381,62 @@ export default function BonusCalculation() {
                       </div>
                       <div className="overflow-x-auto max-h-64">
                         <table className="w-full text-sm">
-                          <thead className="bg-slate-50 sticky top-0">
+                          <thead className="bg-slate-50 dark:bg-slate-700 sticky top-0">
                             <tr>
-                              <th className="px-4 py-2 text-left text-slate-600">Date</th>
-                              <th className="px-4 py-2 text-right text-slate-600">NDP</th>
-                              <th className="px-4 py-2 text-right text-slate-600">NDP Bonus</th>
-                              <th className="px-4 py-2 text-right text-slate-600">RDP</th>
-                              <th className="px-4 py-2 text-right text-slate-600">RDP Bonus</th>
-                              <th className="px-4 py-2 text-right text-slate-600">Day Total</th>
+                              <th className="px-4 py-2 text-left text-slate-600 dark:text-slate-300">Date</th>
+                              <th className="px-4 py-2 text-right text-slate-600 dark:text-slate-300">NDP</th>
+                              <th className="px-4 py-2 text-right text-slate-600 dark:text-slate-300">NDP Bonus</th>
+                              <th className="px-4 py-2 text-right text-slate-600 dark:text-slate-300">RDP</th>
+                              <th className="px-4 py-2 text-right text-slate-600 dark:text-slate-300">RDP Bonus</th>
+                              <th className="px-4 py-2 text-right text-slate-600 dark:text-slate-300">Day Total</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-100">
+                          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                             {staff.daily_breakdown.map((day, idx) => (
-                              <tr key={idx} className="hover:bg-slate-50">
-                                <td className="px-4 py-2 text-slate-900">{day.date}</td>
+                              <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                                <td className="px-4 py-2 text-slate-900 dark:text-slate-100">{day.date}</td>
                                 <td className="px-4 py-2 text-right">
                                   <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                                    day.ndp_bonus > 0 ? 'bg-blue-100 text-blue-700' : 'text-slate-600'
+                                    day.ndp_bonus > 0 ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300' : 'text-slate-600 dark:text-slate-400'
                                   }`}>
                                     {day.ndp}
                                   </span>
                                 </td>
-                                <td className="px-4 py-2 text-right text-blue-600 font-medium">
+                                <td className="px-4 py-2 text-right text-blue-600 dark:text-blue-400 font-medium">
                                   {day.ndp_bonus > 0 ? formatUSD(day.ndp_bonus) : '-'}
                                 </td>
                                 <td className="px-4 py-2 text-right">
                                   <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                                    day.rdp_bonus > 0 ? 'bg-green-100 text-green-700' : 'text-slate-600'
+                                    day.rdp_bonus > 0 ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' : 'text-slate-600 dark:text-slate-400'
                                   }`}>
                                     {day.rdp}
                                   </span>
                                 </td>
-                                <td className="px-4 py-2 text-right text-green-600 font-medium">
+                                <td className="px-4 py-2 text-right text-green-600 dark:text-green-400 font-medium">
                                   {day.rdp_bonus > 0 ? formatUSD(day.rdp_bonus) : '-'}
                                 </td>
-                                <td className="px-4 py-2 text-right font-bold text-slate-800">
+                                <td className="px-4 py-2 text-right font-bold text-slate-800 dark:text-white">
                                   {formatUSD(day.ndp_bonus + day.rdp_bonus)}
                                 </td>
                               </tr>
                             ))}
                           </tbody>
-                          <tfoot className="bg-slate-100">
+                          <tfoot className="bg-slate-100 dark:bg-slate-700">
                             <tr className="font-semibold">
-                              <td className="px-4 py-2 text-slate-900">Total</td>
-                              <td className="px-4 py-2 text-right text-blue-700">
+                              <td className="px-4 py-2 text-slate-900 dark:text-white">Total</td>
+                              <td className="px-4 py-2 text-right text-blue-700 dark:text-blue-400">
                                 {staff.daily_breakdown.reduce((sum, d) => sum + d.ndp, 0)}
                               </td>
-                              <td className="px-4 py-2 text-right text-blue-700">
+                              <td className="px-4 py-2 text-right text-blue-700 dark:text-blue-400">
                                 {formatUSD(staff.ndp_bonus_total)}
                               </td>
-                              <td className="px-4 py-2 text-right text-green-700">
+                              <td className="px-4 py-2 text-right text-green-700 dark:text-green-400">
                                 {staff.daily_breakdown.reduce((sum, d) => sum + d.rdp, 0)}
                               </td>
-                              <td className="px-4 py-2 text-right text-green-700">
+                              <td className="px-4 py-2 text-right text-green-700 dark:text-green-400">
                                 {formatUSD(staff.rdp_bonus_total)}
                               </td>
-                              <td className="px-4 py-2 text-right text-slate-900">
+                              <td className="px-4 py-2 text-right text-slate-900 dark:text-white">
                                 {formatUSD(staff.ndp_bonus_total + staff.rdp_bonus_total)}
                               </td>
                             </tr>
