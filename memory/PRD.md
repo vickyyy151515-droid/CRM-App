@@ -94,6 +94,13 @@ Build a Customer Relationship Management (CRM) application where:
 - **Mobile Header**: Shows hamburger menu, CRM Pro title, and notification bell
 - **Touch-friendly**: All buttons and controls sized for touch interaction
 - **Responsive Forms**: Forms stack vertically on mobile
+- **Desktop Collapse** (Enhanced - Jan 14, 2026):
+  - Toggle button on sidebar edge to collapse/expand
+  - Collapsed mode shows only icons with "C" logo
+  - Hover tooltips show menu labels when collapsed
+  - State persisted in localStorage across sessions
+  - User avatar with hover card when collapsed
+  - Badge indicators repositioned for collapsed state
 
 ### Phase 12: Notification System (Completed - Jan 13, 2026)
 - **In-App Notifications**: Bell icon in header with unread count badge
