@@ -204,6 +204,7 @@ export default function AdminDashboard({ user, onLogout }) {
     { id: 'overview', label: 'Overview', icon: LayoutDashboard, badge: 0 },
     { id: 'leaderboard', label: 'Leaderboard', icon: Trophy, badge: 0 },
     { id: 'daily-summary', label: 'Daily Summary', icon: CalendarDays, badge: 0 },
+    { id: 'funnel', label: 'Conversion Funnel', icon: Filter, badge: 0 },
     { id: 'analytics', label: 'Advanced Analytics', icon: PieChart, badge: 0 },
     { id: 'export', label: 'Export Center', icon: Download, badge: 0 },
     { id: 'report', label: 'Report CRM', icon: FileText, badge: 0 },
