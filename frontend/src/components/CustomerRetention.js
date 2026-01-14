@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Users, UserPlus, RefreshCcw, Heart, TrendingUp, DollarSign, Calendar, Award, ChevronDown, ChevronUp, Star, Package, BarChart3 } from 'lucide-react';
+import { Users, UserPlus, RefreshCcw, Heart, TrendingUp, DollarSign, Calendar, Award, ChevronDown, ChevronUp, Star, Package, BarChart3, AlertTriangle, Clock, X, Bell } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, AreaChart, Area } from 'recharts';
 
 export default function CustomerRetention({ isAdmin = false }) {
@@ -10,6 +10,7 @@ export default function CustomerRetention({ isAdmin = false }) {
   const [trend, setTrend] = useState(null);
   const [productBreakdown, setProductBreakdown] = useState(null);
   const [staffBreakdown, setStaffBreakdown] = useState(null);
+  const [alerts, setAlerts] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeView, setActiveView] = useState('overview');
   const [dateRange, setDateRange] = useState('90');
@@ -18,6 +19,7 @@ export default function CustomerRetention({ isAdmin = false }) {
   const [products, setProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState('');
   const [showTopCustomers, setShowTopCustomers] = useState(true);
+  const [alertFilter, setAlertFilter] = useState('all');
 
   const loadOverview = useCallback(async () => {
     try {
