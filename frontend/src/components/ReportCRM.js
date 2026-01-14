@@ -101,6 +101,7 @@ export default function ReportCRM() {
       setYearlyData(data.yearly || []);
       setMonthlyData(data.monthly || []);
       setDailyData(data.daily || []);
+      setDailyByStaff(data.daily_by_staff || []);
       setStaffPerformance(data.staff_performance || []);
       setDepositTiers(data.deposit_tiers || { '2x': 0, '3x': 0, '4x_plus': 0 });
     } catch (error) {
