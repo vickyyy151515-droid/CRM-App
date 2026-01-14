@@ -531,3 +531,245 @@ async def get_retention_by_staff(
         'date_range': {'start': start_date, 'end': end_date},
         'staff': result
     }
+
+
+
+# ==================== CUSTOMER SEGMENT ALERTS ====================
+
+@router.get("/retention/alerts")
+async def get_customer_alerts(
+    product_id: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
+    """
+    Get at-risk customers who haven't deposited recently.
+    Risk levels:
+    - Critical: 14+ days since last deposit
+    - High: 7-13 days since last deposit
+    - Medium: 3-6 days since last deposit (only for frequent depositors)
+    """
+    db = get_db()
+    
+    jakarta_now = get_jakarta_now()
+    today = jakarta_now.strftime('%Y-%m-%d')
+    
+    # Get all OMSET records
+    query = {}
+    if product_id:
+        query['product_id'] = product_id
+    if user.role == 'staff':
+        query['staff_id'] = user.id
+    
+    records = await db.omset_records.find(query, {'_id': 0}).to_list(500000)
+    
+    if not records:
+        return {
+            'summary': {'critical': 0, 'high': 0, 'medium': 0, 'total': 0},
+            'alerts': []
+        }
+    
+    # Build customer data with last deposit info
+    customer_data = defaultdict(lambda: {
+        'customer_id': '',
+        'customer_name': '',
+        'product_id': '',
+        'product_name': '',
+        'staff_id': '',
+        'staff_name': '',
+        'total_deposits': 0,
+        'total_omset': 0,
+        'last_deposit_date': None,
+        'first_deposit_date': None,
+        'deposit_dates': []
+    })
+    
+    for record in records:
+        key = (record['customer_id'], record.get('product_id'))
+        customer = customer_data[key]
+        
+        customer['customer_id'] = record['customer_id']
+        customer['customer_name'] = record.get('customer_name', record['customer_id'])
+        customer['product_id'] = record.get('product_id')
+        customer['product_name'] = record.get('product_name', 'Unknown')
+        customer['staff_id'] = record.get('staff_id')
+        customer['staff_name'] = record.get('staff_name', 'Unknown')
+        customer['total_deposits'] += 1
+        customer['total_omset'] += record.get('depo_total', 0) or 0
+        customer['deposit_dates'].append(record['record_date'])
+        
+        if customer['last_deposit_date'] is None or record['record_date'] > customer['last_deposit_date']:
+            customer['last_deposit_date'] = record['record_date']
+        if customer['first_deposit_date'] is None or record['record_date'] < customer['first_deposit_date']:
+            customer['first_deposit_date'] = record['record_date']
+    
+    # Calculate days since last deposit and assign risk levels
+    alerts = []
+    critical_count = 0
+    high_count = 0
+    medium_count = 0
+    
+    for customer in customer_data.values():
+        if not customer['last_deposit_date']:
+            continue
+        
+        last_date = datetime.strptime(customer['last_deposit_date'], '%Y-%m-%d')
+        today_date = datetime.strptime(today, '%Y-%m-%d')
+        days_since = (today_date - last_date).days
+        
+        # Skip if deposited today
+        if days_since == 0:
+            continue
+        
+        # Determine risk level
+        risk_level = None
+        risk_color = None
+        
+        if days_since >= 14:
+            risk_level = 'critical'
+            risk_color = '#ef4444'  # red
+            critical_count += 1
+        elif days_since >= 7:
+            risk_level = 'high'
+            risk_color = '#f97316'  # orange
+            high_count += 1
+        elif days_since >= 3 and customer['total_deposits'] >= 2:
+            # Only flag medium risk for customers who deposited at least twice
+            risk_level = 'medium'
+            risk_color = '#eab308'  # yellow
+            medium_count += 1
+        
+        if risk_level:
+            # Calculate average deposit frequency
+            unique_days = len(set(customer['deposit_dates']))
+            first_date = datetime.strptime(customer['first_deposit_date'], '%Y-%m-%d')
+            days_active = max(1, (today_date - first_date).days)
+            avg_days_between = round(days_active / max(1, unique_days - 1), 1) if unique_days > 1 else 0
+            
+            alerts.append({
+                'customer_id': customer['customer_id'],
+                'customer_name': customer['customer_name'],
+                'product_id': customer['product_id'],
+                'product_name': customer['product_name'],
+                'staff_id': customer['staff_id'],
+                'staff_name': customer['staff_name'],
+                'total_deposits': customer['total_deposits'],
+                'total_omset': customer['total_omset'],
+                'last_deposit_date': customer['last_deposit_date'],
+                'days_since_deposit': days_since,
+                'risk_level': risk_level,
+                'risk_color': risk_color,
+                'avg_days_between_deposits': avg_days_between,
+                'unique_deposit_days': unique_days
+            })
+    
+    # Sort by risk (critical first, then by days since deposit)
+    risk_order = {'critical': 0, 'high': 1, 'medium': 2}
+    alerts.sort(key=lambda x: (risk_order[x['risk_level']], -x['days_since_deposit']))
+    
+    return {
+        'summary': {
+            'critical': critical_count,
+            'high': high_count,
+            'medium': medium_count,
+            'total': critical_count + high_count + medium_count
+        },
+        'alerts': alerts
+    }
+
+
+@router.get("/retention/alerts/by-staff")
+async def get_alerts_by_staff(
+    user: User = Depends(get_admin_user)
+):
+    """Get at-risk customer counts grouped by staff (Admin only)"""
+    db = get_db()
+    
+    jakarta_now = get_jakarta_now()
+    today = jakarta_now.strftime('%Y-%m-%d')
+    
+    records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
+    
+    if not records:
+        return {'staff': []}
+    
+    # Build customer data
+    customer_data = defaultdict(lambda: {
+        'staff_id': '',
+        'staff_name': '',
+        'last_deposit_date': None,
+        'total_deposits': 0
+    })
+    
+    for record in records:
+        key = (record['customer_id'], record.get('product_id'))
+        customer = customer_data[key]
+        
+        customer['staff_id'] = record.get('staff_id')
+        customer['staff_name'] = record.get('staff_name', 'Unknown')
+        customer['total_deposits'] += 1
+        
+        if customer['last_deposit_date'] is None or record['record_date'] > customer['last_deposit_date']:
+            customer['last_deposit_date'] = record['record_date']
+    
+    # Group alerts by staff
+    staff_alerts = defaultdict(lambda: {
+        'staff_id': '',
+        'staff_name': '',
+        'critical': 0,
+        'high': 0,
+        'medium': 0,
+        'total_customers': 0
+    })
+    
+    for customer in customer_data.values():
+        if not customer['last_deposit_date'] or not customer['staff_id']:
+            continue
+        
+        staff_id = customer['staff_id']
+        staff = staff_alerts[staff_id]
+        staff['staff_id'] = staff_id
+        staff['staff_name'] = customer['staff_name']
+        staff['total_customers'] += 1
+        
+        last_date = datetime.strptime(customer['last_deposit_date'], '%Y-%m-%d')
+        today_date = datetime.strptime(today, '%Y-%m-%d')
+        days_since = (today_date - last_date).days
+        
+        if days_since >= 14:
+            staff['critical'] += 1
+        elif days_since >= 7:
+            staff['high'] += 1
+        elif days_since >= 3 and customer['total_deposits'] >= 2:
+            staff['medium'] += 1
+    
+    result = list(staff_alerts.values())
+    result.sort(key=lambda x: x['critical'] + x['high'], reverse=True)
+    
+    return {'staff': result}
+
+
+@router.post("/retention/alerts/dismiss")
+async def dismiss_alert(
+    customer_id: str,
+    product_id: str,
+    user: User = Depends(get_current_user)
+):
+    """Dismiss an alert for a customer (adds to dismissed list for 7 days)"""
+    db = get_db()
+    
+    jakarta_now = get_jakarta_now()
+    
+    # Add to dismissed alerts collection
+    await db.dismissed_alerts.update_one(
+        {'customer_id': customer_id, 'product_id': product_id, 'user_id': user.id},
+        {'$set': {
+            'customer_id': customer_id,
+            'product_id': product_id,
+            'user_id': user.id,
+            'dismissed_at': jakarta_now.isoformat(),
+            'expires_at': (jakarta_now + timedelta(days=7)).isoformat()
+        }},
+        upsert=True
+    )
+    
+    return {'message': 'Alert dismissed for 7 days'}
