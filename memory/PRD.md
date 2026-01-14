@@ -157,10 +157,11 @@ Build a Customer Relationship Management (CRM) application where:
   - Collapsible sections for each month
   - Daily breakdown with expandable data
   - AVG/DAY calculations
-- **Daily Report Tab**:
-  - Detailed daily data for selected month
-  - % NDP calculations with color coding
-  - AVG/FORM metrics
+- **Daily Report Tab** (Enhanced):
+  - **Collapsible Staff Boxes**: Each staff has their own expandable card with avatar, summary stats
+  - **Product Separation**: Within each staff, products are shown as collapsible sections with indigo badges
+  - **Daily Data Tables**: When a product is expanded, shows daily breakdown (Tanggal, NDP, RDP, Form, Nominal, AVG/Form)
+  - **Grand Total Bar**: Dark gradient bar at bottom showing combined totals
 - **Staff Performance Tab**:
   - Per-staff metrics: NDP, RDP, Total Form, Total OMSET
   - AVG/FORM and % NDP calculations
