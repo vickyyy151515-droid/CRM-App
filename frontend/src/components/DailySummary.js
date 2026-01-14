@@ -81,6 +81,13 @@ export default function DailySummary({ isAdmin = false }) {
 
   const isToday = selectedDate === new Date().toISOString().split('T')[0];
 
+  const toggleStaffExpand = (staffId) => {
+    setExpandedStaff(prev => ({
+      ...prev,
+      [staffId]: !prev[staffId]
+    }));
+  };
+
   const getRankBadge = (rank, total) => {
     if (!rank) return null;
     
