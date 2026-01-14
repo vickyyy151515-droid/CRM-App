@@ -10,7 +10,8 @@ import StaffDBBonanza from '../components/StaffDBBonanza';
 import StaffMemberWDCRM from '../components/StaffMemberWDCRM';
 import StaffLeaveRequest from '../components/StaffLeaveRequest';
 import StaffIzin from '../components/StaffIzin';
-import { LayoutDashboard, FileSpreadsheet, Clock, User, UserCheck, DollarSign, Gift, CreditCard, CalendarOff, Timer } from 'lucide-react';
+import Leaderboard from '../components/Leaderboard';
+import { LayoutDashboard, FileSpreadsheet, Clock, User, UserCheck, DollarSign, Gift, CreditCard, CalendarOff, Timer, Trophy } from 'lucide-react';
 
 export default function StaffDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('databases');
