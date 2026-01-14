@@ -95,31 +95,51 @@ async def get_staff_performance_analytics(
     
     staff_metrics.sort(key=lambda x: x['total_assigned'], reverse=True)
     
-    daily_data = {}
-    for record in records_in_period:
-        date = record.get('assigned_at', '')[:10]
-        if date not in daily_data:
-            daily_data[date] = {'date': date, 'assigned': 0, 'wa_checked': 0, 'responded': 0}
-        daily_data[date]['assigned'] += 1
-        if record.get('whatsapp_status'):
-            daily_data[date]['wa_checked'] += 1
-        if record.get('respond_status') == 'ya':
-            daily_data[date]['responded'] += 1
+    # Get daily chart data using aggregation
+    daily_pipeline = [
+        {'$match': {**record_query, 'assigned_at': {'$gte': start_date}}},
+        {'$addFields': {'date_str': {'$substr': ['$assigned_at', 0, 10]}}},
+        {'$group': {
+            '_id': '$date_str',
+            'assigned': {'$sum': 1},
+            'wa_checked': {'$sum': {'$cond': [{'$ne': ['$whatsapp_status', None]}, 1, 0]}},
+            'responded': {'$sum': {'$cond': [{'$eq': ['$respond_status', 'ya']}, 1, 0]}}
+        }},
+        {'$sort': {'_id': 1}}
+    ]
+    daily_results = await db.customer_records.aggregate(daily_pipeline).to_list(1000)
+    daily_chart = [{'date': d['_id'], 'assigned': d['assigned'], 'wa_checked': d['wa_checked'], 'responded': d['responded']} for d in daily_results]
     
-    daily_chart = sorted(daily_data.values(), key=lambda x: x['date'])
+    # Get overall summary using aggregation
+    summary_pipeline = [
+        {'$match': record_query},
+        {'$group': {
+            '_id': None,
+            'total': {'$sum': 1},
+            'wa_ada': {'$sum': {'$cond': [{'$eq': ['$whatsapp_status', 'ada']}, 1, 0]}},
+            'wa_tidak': {'$sum': {'$cond': [{'$eq': ['$whatsapp_status', 'tidak']}, 1, 0]}},
+            'wa_ceklis1': {'$sum': {'$cond': [{'$eq': ['$whatsapp_status', 'ceklis1']}, 1, 0]}},
+            'resp_ya': {'$sum': {'$cond': [{'$eq': ['$respond_status', 'ya']}, 1, 0]}},
+            'resp_tidak': {'$sum': {'$cond': [{'$eq': ['$respond_status', 'tidak']}, 1, 0]}},
+            'in_period': {'$sum': {'$cond': [{'$gte': ['$assigned_at', start_date]}, 1, 0]}}
+        }}
+    ]
+    summary_result = await db.customer_records.aggregate(summary_pipeline).to_list(1)
+    summary = summary_result[0] if summary_result else {'total': 0, 'wa_ada': 0, 'wa_tidak': 0, 'wa_ceklis1': 0, 'resp_ya': 0, 'resp_tidak': 0, 'in_period': 0}
     
-    total_all = len(records)
-    wa_all_ada = len([r for r in records if r.get('whatsapp_status') == 'ada'])
-    wa_all_tidak = len([r for r in records if r.get('whatsapp_status') == 'tidak'])
-    wa_all_ceklis1 = len([r for r in records if r.get('whatsapp_status') == 'ceklis1'])
+    total_all = summary.get('total', 0)
+    wa_all_ada = summary.get('wa_ada', 0)
+    wa_all_tidak = summary.get('wa_tidak', 0)
+    wa_all_ceklis1 = summary.get('wa_ceklis1', 0)
     wa_all_checked = wa_all_ada + wa_all_tidak + wa_all_ceklis1
-    resp_all_ya = len([r for r in records if r.get('respond_status') == 'ya'])
-    resp_all_tidak = len([r for r in records if r.get('respond_status') == 'tidak'])
+    resp_all_ya = summary.get('resp_ya', 0)
+    resp_all_tidak = summary.get('resp_tidak', 0)
+    records_in_period_count = summary.get('in_period', 0)
     
     return {
         'period': period, 'start_date': start_date, 'end_date': end_date,
         'summary': {
-            'total_records': total_all, 'records_in_period': len(records_in_period),
+            'total_records': total_all, 'records_in_period': records_in_period_count,
             'whatsapp_ada': wa_all_ada, 'whatsapp_tidak': wa_all_tidak, 'whatsapp_ceklis1': wa_all_ceklis1,
             'whatsapp_checked': wa_all_checked,
             'whatsapp_rate': round((wa_all_ada / wa_all_checked * 100) if wa_all_checked > 0 else 0, 1),
