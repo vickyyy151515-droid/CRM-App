@@ -8,6 +8,7 @@ from .notifications import router as notifications_router
 from .bulk import router as bulk_router
 from .products import router as products_router
 from .analytics import router as analytics_router
+from .izin import router as izin_router
 
 __all__ = [
     'set_database', 
@@ -17,5 +18,6 @@ __all__ = [
     'notifications_router',
     'bulk_router',
     'products_router',
-    'analytics_router'
+    'analytics_router',
+    'izin_router'
 ]
