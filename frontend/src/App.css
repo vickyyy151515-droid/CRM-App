@@ -2,3 +2,146 @@
   min-height: 100vh;
   background-color: #f8fafc;
 }
+
+/* Dark mode background */
+.dark .App,
+.dark body {
+  background-color: #0f172a;
+}
+
+/* Dark mode for cards and containers */
+.dark .bg-white {
+  background-color: #1e293b !important;
+}
+
+/* Dark mode text colors */
+.dark .text-slate-900 {
+  color: #f1f5f9 !important;
+}
+
+.dark .text-slate-800 {
+  color: #e2e8f0 !important;
+}
+
+.dark .text-slate-700 {
+  color: #cbd5e1 !important;
+}
+
+.dark .text-slate-600 {
+  color: #94a3b8 !important;
+}
+
+/* Dark mode borders */
+.dark .border-slate-200 {
+  border-color: #334155 !important;
+}
+
+.dark .border-slate-100 {
+  border-color: #1e293b !important;
+}
+
+/* Dark mode hover states */
+.dark .hover\:bg-slate-50:hover {
+  background-color: #334155 !important;
+}
+
+.dark .hover\:bg-slate-100:hover {
+  background-color: #334155 !important;
+}
+
+/* Dark mode for bg-slate backgrounds */
+.dark .bg-slate-50 {
+  background-color: #1e293b !important;
+}
+
+.dark .bg-slate-100 {
+  background-color: #334155 !important;
+}
+
+/* Dark mode selects and inputs */
+.dark select,
+.dark input[type="text"],
+.dark input[type="email"],
+.dark input[type="password"],
+.dark input[type="number"],
+.dark input[type="date"],
+.dark textarea {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+
+.dark select option {
+  background-color: #1e293b;
+  color: #e2e8f0;
+}
+
+/* Dark mode tables */
+.dark table {
+  background-color: #1e293b;
+}
+
+.dark thead {
+  background-color: #0f172a !important;
+}
+
+.dark th {
+  color: #94a3b8 !important;
+}
+
+.dark tbody tr:hover {
+  background-color: #334155 !important;
+}
+
+/* Dark mode divide colors */
+.dark .divide-slate-100 > * + * {
+  border-color: #334155 !important;
+}
+
+.dark .divide-slate-200 > * + * {
+  border-color: #334155 !important;
+}
+
+/* Keep gradient backgrounds vibrant in dark mode */
+.dark .bg-gradient-to-r,
+.dark .bg-gradient-to-br {
+  opacity: 0.9;
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Recharts dark mode */
+.dark .recharts-cartesian-grid-horizontal line,
+.dark .recharts-cartesian-grid-vertical line {
+  stroke: #334155;
+}
+
+.dark .recharts-text {
+  fill: #94a3b8;
+}
+
+.dark .recharts-tooltip-wrapper .recharts-default-tooltip {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+}
+
+.dark .recharts-legend-item-text {
+  color: #94a3b8 !important;
+}
