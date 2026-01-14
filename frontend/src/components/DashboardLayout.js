@@ -293,7 +293,7 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
         </nav>
 
         {/* Settings & User Section */}
-        <div className="p-3 border-t border-slate-200">
+        <div className="p-3 border-t border-slate-200 dark:border-slate-800">
           {/* Configure Sidebar Button (Admin only) */}
           {user.role === 'admin' && (
             <button
@@ -301,7 +301,7 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
               data-testid="sidebar-settings-btn"
               title={collapsed ? 'Configure Sidebar' : ''}
               className={`
-                w-full flex items-center gap-2 py-2 mb-2 text-sm text-slate-500 hover:bg-slate-100 rounded-lg transition-colors
+                w-full flex items-center gap-2 py-2 mb-2 text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors
                 ${collapsed ? 'lg:justify-center lg:px-2 px-4' : 'px-4'}
                 group relative
               `}
@@ -326,15 +326,15 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
           {/* User Info */}
           {!collapsed && (
             <div className="mb-3 px-2">
-              <p className="text-sm font-medium text-slate-900 truncate">{user.name}</p>
-              <p className="text-xs text-slate-500 truncate">{user.email}</p>
+              <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{user.name}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
             </div>
           )}
           
           {/* Collapsed user avatar */}
           {collapsed && (
             <div className="hidden lg:flex justify-center mb-3 group relative">
-              <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-semibold">
+              <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-semibold">
                 {user.name?.charAt(0).toUpperCase()}
               </div>
               <div className="
@@ -355,7 +355,7 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
             data-testid="logout-button"
             title={collapsed ? 'Sign Out' : ''}
             className={`
-              w-full flex items-center gap-2 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors
+              w-full flex items-center gap-2 py-2 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors
               ${collapsed ? 'lg:justify-center lg:px-2 px-4' : 'px-4'}
               group relative
             `}
