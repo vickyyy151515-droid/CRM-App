@@ -382,9 +382,9 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
           data-testid="collapse-toggle"
           className="
             hidden lg:flex absolute -right-3 top-20 
-            w-6 h-6 bg-white border border-slate-200 rounded-full
-            items-center justify-center text-slate-500 hover:text-slate-900
-            hover:bg-slate-50 transition-colors shadow-sm z-50
+            w-6 h-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full
+            items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white
+            hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm z-50
           "
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
