@@ -400,7 +400,7 @@ export default function StaffProgress() {
 
       {/* Staff Progress */}
       <div className="mb-8">
-        <h3 className="text-xl font-semibold text-slate-900 dark:text-white dark:text-white mb-4 flex items-center gap-2">
+        <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
           <Users className="text-indigo-600" size={20} />
           Staff Performance
         </h3>
@@ -423,7 +423,7 @@ export default function StaffProgress() {
                     <Users className="text-indigo-600" size={18} />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-slate-900 dark:text-white dark:text-white">{staff.name}</h4>
+                    <h4 className="font-semibold text-slate-900 dark:text-white">{staff.name}</h4>
                     <p className="text-xs text-slate-500 dark:text-slate-400">{staff.total} customers assigned</p>
                   </div>
                 </div>
@@ -463,7 +463,7 @@ export default function StaffProgress() {
                     <p className="text-xs font-medium text-slate-500 mb-2">WhatsApp Status</p>
                     <div className="flex items-center justify-between text-sm mb-1">
                       <span className="text-slate-600 dark:text-slate-400">Check Progress</span>
-                      <span className="font-semibold text-slate-900 dark:text-white dark:text-white">{waProgressRate}%</span>
+                      <span className="font-semibold text-slate-900 dark:text-white">{waProgressRate}%</span>
                     </div>
                     <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 mb-2">
                       <div 
@@ -492,7 +492,7 @@ export default function StaffProgress() {
                     <p className="text-xs font-medium text-slate-500 mb-2">Respond Status</p>
                     <div className="flex items-center justify-between text-sm mb-1">
                       <span className="text-slate-600 dark:text-slate-400">Check Progress</span>
-                      <span className="font-semibold text-slate-900 dark:text-white dark:text-white">{respondProgressRate}%</span>
+                      <span className="font-semibold text-slate-900 dark:text-white">{respondProgressRate}%</span>
                     </div>
                     <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 mb-2">
                       <div 
@@ -543,7 +543,7 @@ export default function StaffProgress() {
 
       {/* Database Quality Report */}
       <div>
-        <h3 className="text-xl font-semibold text-slate-900 dark:text-white dark:text-white mb-4 flex items-center gap-2">
+        <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
           <Package className="text-indigo-600" size={20} />
           Database Quality Report
         </h3>

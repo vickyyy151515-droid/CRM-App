@@ -444,7 +444,7 @@ export default function AdminMemberWDCRM() {
                 <div className="flex items-center gap-4 sm:gap-6">
                   <div className="text-right">
                     <p className="text-sm text-slate-600 dark:text-slate-400">
-                      <span className="font-semibold text-slate-900 dark:text-white dark:text-white">{database.total_records}</span> total
+                      <span className="font-semibold text-slate-900 dark:text-white">{database.total_records}</span> total
                     </p>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                       <span className="text-emerald-600 font-medium">{database.available_count}</span> available • 

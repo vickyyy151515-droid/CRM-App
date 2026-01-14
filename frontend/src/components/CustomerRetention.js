@@ -292,17 +292,17 @@ export default function CustomerRetention({ isAdmin = false }) {
               </div>
               <p className="text-2xl font-bold text-slate-900 dark:text-white">{formatNumber(overview.total_customers)}</p>
             </div>
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-5">
+            <div className="bg-gradient-to-br from-green-50 dark:from-green-900/30 to-emerald-50 dark:to-emerald-900/30 border border-green-200 dark:border-green-800 rounded-xl p-5">
               <div className="flex items-center gap-2 mb-2">
                 <UserPlus className="text-green-600" size={20} />
                 <span className="text-sm font-medium text-green-700 dark:text-green-400">New (NDP)</span>
               </div>
               <p className="text-2xl font-bold text-slate-900 dark:text-white">{formatNumber(overview.ndp_customers)}</p>
             </div>
-            <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-xl p-5">
+            <div className="bg-gradient-to-br from-purple-50 dark:from-purple-900/30 to-violet-50 dark:to-violet-900/30 border border-purple-200 dark:border-purple-800 rounded-xl p-5">
               <div className="flex items-center gap-2 mb-2">
                 <RefreshCcw className="text-purple-600" size={20} />
-                <span className="text-sm font-medium text-purple-700">Returning (RDP)</span>
+                <span className="text-sm font-medium text-purple-700 dark:text-purple-300">Returning (RDP)</span>
               </div>
               <p className="text-2xl font-bold text-slate-900 dark:text-white">{formatNumber(overview.rdp_customers)}</p>
             </div>
@@ -341,7 +341,7 @@ export default function CustomerRetention({ isAdmin = false }) {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <BarChart3 className="text-indigo-600" size={20} />
-                  <h3 className="font-semibold text-slate-900 dark:text-white dark:text-white">Daily NDP vs RDP Trend</h3>
+                  <h3 className="font-semibold text-slate-900 dark:text-white">Daily NDP vs RDP Trend</h3>
                 </div>
                 <div className="text-sm text-slate-500 dark:text-slate-400">
                   Avg: {trend.summary.avg_daily_ndp} NDP, {trend.summary.avg_daily_rdp} RDP/day
@@ -372,12 +372,12 @@ export default function CustomerRetention({ isAdmin = false }) {
           {overview.top_loyal_customers && overview.top_loyal_customers.length > 0 && (
             <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
               <div 
-                className="px-5 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer"
+                className="px-5 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center justify-between cursor-pointer"
                 onClick={() => setShowTopCustomers(!showTopCustomers)}
               >
                 <div className="flex items-center gap-2">
                   <Award className="text-amber-500" size={20} />
-                  <h3 className="font-semibold text-slate-900 dark:text-white dark:text-white">Top Loyal Customers</h3>
+                  <h3 className="font-semibold text-slate-900 dark:text-white">Top Loyal Customers</h3>
                 </div>
                 {showTopCustomers ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
               </div>
@@ -398,7 +398,7 @@ export default function CustomerRetention({ isAdmin = false }) {
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <p className="font-semibold text-slate-900 dark:text-white dark:text-white">{customer.customer_name}</p>
+                              <p className="font-semibold text-slate-900 dark:text-white">{customer.customer_name}</p>
                               <span className={`px-2 py-0.5 text-xs font-medium rounded-full border ${badge.color}`}>
                                 {badge.label}
                               </span>
@@ -430,10 +430,10 @@ export default function CustomerRetention({ isAdmin = false }) {
         </div>
       ) : activeView === 'customers' ? (
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+          <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Users className="text-indigo-600" size={20} />
-              <h3 className="font-semibold text-slate-900 dark:text-white dark:text-white">Customer List</h3>
+              <h3 className="font-semibold text-slate-900 dark:text-white">Customer List</h3>
               <span className="text-sm text-slate-500 dark:text-slate-400">({customers.length} shown)</span>
             </div>
             <div className="flex items-center gap-2">
@@ -513,10 +513,10 @@ export default function CustomerRetention({ isAdmin = false }) {
         </div>
       ) : activeView === 'by-product' && productBreakdown ? (
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-200 bg-slate-50">
+          <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
             <div className="flex items-center gap-2">
               <Package className="text-indigo-600" size={20} />
-              <h3 className="font-semibold text-slate-900 dark:text-white dark:text-white">Retention by Product</h3>
+              <h3 className="font-semibold text-slate-900 dark:text-white">Retention by Product</h3>
             </div>
           </div>
           
@@ -550,7 +550,7 @@ export default function CustomerRetention({ isAdmin = false }) {
                           <span className="font-medium text-slate-900 dark:text-white">{product.product_name}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-center font-semibold text-slate-900 dark:text-white dark:text-white">{product.total_customers}</td>
+                      <td className="px-4 py-3 text-center font-semibold text-slate-900 dark:text-white">{product.total_customers}</td>
                       <td className="px-4 py-3 text-center text-green-600">{product.ndp_customers}</td>
                       <td className="px-4 py-3 text-center text-purple-600">{product.rdp_customers}</td>
                       <td className="px-4 py-3 text-center">
@@ -570,10 +570,10 @@ export default function CustomerRetention({ isAdmin = false }) {
         </div>
       ) : activeView === 'by-staff' && staffBreakdown ? (
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-200 bg-slate-50">
+          <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
             <div className="flex items-center gap-2">
               <Users className="text-indigo-600" size={20} />
-              <h3 className="font-semibold text-slate-900 dark:text-white dark:text-white">Retention by Staff</h3>
+              <h3 className="font-semibold text-slate-900 dark:text-white">Retention by Staff</h3>
             </div>
           </div>
           
@@ -610,7 +610,7 @@ export default function CustomerRetention({ isAdmin = false }) {
                           <span className="font-medium text-slate-900 dark:text-white">{staff.staff_name}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-center font-semibold text-slate-900 dark:text-white dark:text-white">{staff.total_customers}</td>
+                      <td className="px-4 py-3 text-center font-semibold text-slate-900 dark:text-white">{staff.total_customers}</td>
                       <td className="px-4 py-3 text-center text-green-600">{staff.ndp_customers}</td>
                       <td className="px-4 py-3 text-center text-purple-600">{staff.rdp_customers}</td>
                       <td className="px-4 py-3 text-center text-amber-600">{staff.loyal_customers}</td>
@@ -638,7 +638,7 @@ export default function CustomerRetention({ isAdmin = false }) {
         <div className="space-y-6">
           {/* Alert Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-gradient-to-br from-red-50 to-rose-50 border border-red-200 rounded-xl p-5">
+            <div className="bg-gradient-to-br from-red-50 dark:from-red-900/30 to-rose-50 dark:to-rose-900/30 border border-red-200 dark:border-red-800 rounded-xl p-5">
               <div className="flex items-center gap-2 mb-2">
                 <AlertTriangle className="text-red-600" size={20} />
                 <span className="text-sm font-medium text-red-700">Critical (14+ days)</span>
@@ -670,10 +670,10 @@ export default function CustomerRetention({ isAdmin = false }) {
 
           {/* Alert List */}
           <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+            <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="text-red-500" size={20} />
-                <h3 className="font-semibold text-slate-900 dark:text-white dark:text-white">At-Risk Customers</h3>
+                <h3 className="font-semibold text-slate-900 dark:text-white">At-Risk Customers</h3>
                 <span className="text-sm text-slate-500 dark:text-slate-400">Customers who need follow-up</span>
               </div>
               <select
@@ -717,7 +717,7 @@ export default function CustomerRetention({ isAdmin = false }) {
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <p className="font-semibold text-slate-900 dark:text-white dark:text-white">{alert.customer_name}</p>
+                              <p className="font-semibold text-slate-900 dark:text-white">{alert.customer_name}</p>
                               <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
                                 alert.risk_level === 'critical' ? 'bg-red-100 text-red-700' :
                                 alert.risk_level === 'high' ? 'bg-orange-100 text-orange-700' :
