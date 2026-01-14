@@ -401,12 +401,12 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
             <Menu size={24} />
           </button>
           <h1 className="text-lg font-bold text-slate-900">CRM Pro</h1>
-          <NotificationBell />
+          <NotificationBell userRole={user?.role} />
         </header>
 
         {/* Desktop notification bell */}
         <div className="hidden lg:flex justify-end p-4 pb-0">
-          <NotificationBell />
+          <NotificationBell userRole={user?.role} />
         </div>
 
         <main className="flex-1 overflow-auto">
