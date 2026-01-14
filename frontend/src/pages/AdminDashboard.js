@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import DashboardLayout from '../components/DashboardLayout';
 import UploadDatabase from '../components/UploadDatabase';
 import DatabaseList from '../components/DatabaseList';
+import DatabaseOverview from '../components/DatabaseOverview';
 import DownloadRequests from '../components/DownloadRequests';
 import DownloadHistory from '../components/DownloadHistory';
 import CreateUser from '../components/CreateUser';
