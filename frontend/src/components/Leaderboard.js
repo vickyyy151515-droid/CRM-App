@@ -148,39 +148,39 @@ export default function Leaderboard({ isAdmin = false }) {
 
       {/* Target Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4">
+        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
-            <Target className="text-emerald-600" size={18} />
-            <span className="text-sm font-medium text-emerald-700">Monthly OMSET Target</span>
+            <Target className="text-emerald-600 dark:text-emerald-400" size={18} />
+            <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">Monthly OMSET Target</span>
           </div>
-          <p className="text-2xl font-bold text-slate-900">{formatCurrency(targets.monthly_omset)}</p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-white">{formatCurrency(targets.monthly_omset)}</p>
         </div>
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4">
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
-            <UserPlus className="text-blue-600" size={18} />
-            <span className="text-sm font-medium text-blue-700">Daily NDP Target</span>
+            <UserPlus className="text-blue-600 dark:text-blue-400" size={18} />
+            <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Daily NDP Target</span>
           </div>
-          <p className="text-2xl font-bold text-slate-900">{targets.daily_ndp} NDP/day</p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-white">{targets.daily_ndp} NDP/day</p>
         </div>
-        <div className="bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-200 rounded-xl p-4">
+        <div className="bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-900/30 dark:to-purple-900/30 border border-violet-200 dark:border-violet-800 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
-            <RefreshCcw className="text-violet-600" size={18} />
-            <span className="text-sm font-medium text-violet-700">Daily RDP Target</span>
+            <RefreshCcw className="text-violet-600 dark:text-violet-400" size={18} />
+            <span className="text-sm font-medium text-violet-700 dark:text-violet-300">Daily RDP Target</span>
           </div>
-          <p className="text-2xl font-bold text-slate-900">{targets.daily_rdp} RDP/day</p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-white">{targets.daily_rdp} RDP/day</p>
         </div>
       </div>
 
       {/* Period Toggle & Tabs */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         {/* Ranking Tabs */}
-        <div className="flex bg-slate-100 rounded-lg p-1">
+        <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
           <button
             onClick={() => setActiveTab('omset')}
             className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
               activeTab === 'omset' 
-                ? 'bg-white text-slate-900 shadow-sm' 
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' 
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <DollarSign size={16} className="inline mr-1" />
@@ -190,8 +190,8 @@ export default function Leaderboard({ isAdmin = false }) {
             onClick={() => setActiveTab('ndp')}
             className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
               activeTab === 'ndp' 
-                ? 'bg-white text-slate-900 shadow-sm' 
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' 
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <UserPlus size={16} className="inline mr-1" />
