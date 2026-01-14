@@ -87,10 +87,10 @@ export default function Leaderboard({ isAdmin = false }) {
   };
 
   const getRankBg = (rank) => {
-    if (rank === 1) return 'bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-200';
-    if (rank === 2) return 'bg-gradient-to-r from-slate-50 to-gray-50 border-gray-200';
-    if (rank === 3) return 'bg-gradient-to-r from-orange-50 to-amber-50 border-orange-200';
-    return 'bg-white border-slate-200';
+    if (rank === 1) return 'bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/30 dark:to-amber-900/30 border-yellow-200 dark:border-yellow-800';
+    if (rank === 2) return 'bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-800 dark:to-gray-800 border-gray-200 dark:border-gray-700';
+    if (rank === 3) return 'bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/30 dark:to-amber-900/30 border-orange-200 dark:border-orange-800';
+    return 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700';
   };
 
   const calculateProgress = (current, target) => {
