@@ -452,6 +452,23 @@ export default function ReportCRM() {
               </div>
             );
           })}
+
+          {/* Grand Total for Monthly Detail */}
+          {monthlyData.length > 0 && (
+            <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl shadow-sm p-4 text-white">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-lg">Grand Total - {selectedYear}</span>
+                <div className="flex gap-6 text-sm">
+                  <span>NDP: <strong>{formatNumber(monthlyData.reduce((sum, d) => sum + (d.new_id || 0), 0))}</strong></span>
+                  <span>RDP: <strong>{formatNumber(monthlyData.reduce((sum, d) => sum + (d.rdp || 0), 0))}</strong></span>
+                  <span>Form: <strong>{formatNumber(monthlyData.reduce((sum, d) => sum + (d.total_form || 0), 0))}</strong></span>
+                  <span className="text-amber-300 text-lg font-bold">
+                    {formatRupiah(monthlyData.reduce((sum, d) => sum + (d.nominal || 0), 0))}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
