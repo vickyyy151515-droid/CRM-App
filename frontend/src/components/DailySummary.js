@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Calendar, Trophy, TrendingUp, Users, DollarSign, UserPlus, RefreshCcw, ChevronLeft, ChevronRight, Award, Target } from 'lucide-react';
+import { Calendar, Trophy, TrendingUp, Users, DollarSign, UserPlus, RefreshCcw, ChevronLeft, ChevronRight, Award, Target, Package, ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function DailySummary({ isAdmin = false }) {
   const [summary, setSummary] = useState(null);
