@@ -77,6 +77,7 @@ api_router.include_router(followup_router)
 api_router.include_router(daily_summary_router)
 api_router.include_router(funnel_router)
 api_router.include_router(retention_router)
+api_router.include_router(search_router)
 
 # ==================== CORE ENDPOINTS ====================
 
