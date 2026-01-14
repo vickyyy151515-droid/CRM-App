@@ -220,48 +220,135 @@ export default function DailySummary({ isAdmin = false }) {
           )}
 
           {/* Staff Breakdown */}
-          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden mb-6">
             <div className="px-5 py-4 border-b border-slate-200 bg-slate-50">
               <h3 className="font-semibold text-slate-900">Staff Performance Breakdown</h3>
+              <p className="text-xs text-slate-500 mt-1">Click on a staff member to see their product breakdown</p>
             </div>
             <div className="divide-y divide-slate-100">
               {(summary.staff_breakdown || []).length === 0 ? (
                 <div className="p-8 text-center text-slate-500">No staff data for this date</div>
               ) : (
                 summary.staff_breakdown.map((staff, index) => (
-                  <div key={staff.staff_id} className="p-4 flex items-center justify-between hover:bg-slate-50">
-                    <div className="flex items-center gap-4">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                        index === 0 ? 'bg-yellow-100 text-yellow-700' :
-                        index === 1 ? 'bg-slate-200 text-slate-700' :
-                        index === 2 ? 'bg-orange-100 text-orange-700' :
-                        'bg-slate-100 text-slate-600'
-                      }`}>
-                        {index + 1}
+                  <div key={staff.staff_id}>
+                    <div 
+                      className="p-4 flex items-center justify-between hover:bg-slate-50 cursor-pointer"
+                      onClick={() => toggleStaffExpand(staff.staff_id)}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                          index === 0 ? 'bg-yellow-100 text-yellow-700' :
+                          index === 1 ? 'bg-slate-200 text-slate-700' :
+                          index === 2 ? 'bg-orange-100 text-orange-700' :
+                          'bg-slate-100 text-slate-600'
+                        }`}>
+                          {index + 1}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-slate-900">{staff.staff_name}</p>
+                          <p className="text-sm text-slate-500">{staff.form_count} forms submitted</p>
+                        </div>
+                        {staff.product_breakdown && staff.product_breakdown.length > 0 && (
+                          expandedStaff[staff.staff_id] ? 
+                            <ChevronUp size={18} className="text-slate-400" /> : 
+                            <ChevronDown size={18} className="text-slate-400" />
+                        )}
                       </div>
-                      <div>
-                        <p className="font-semibold text-slate-900">{staff.staff_name}</p>
-                        <p className="text-sm text-slate-500">{staff.form_count} forms submitted</p>
+                      <div className="flex items-center gap-6 text-right">
+                        <div>
+                          <p className="font-bold text-emerald-600">{formatCurrency(staff.total_omset)}</p>
+                          <p className="text-xs text-slate-500">OMSET</p>
+                        </div>
+                        <div>
+                          <p className="font-bold text-blue-600">{staff.ndp_count}</p>
+                          <p className="text-xs text-slate-500">NDP</p>
+                        </div>
+                        <div>
+                          <p className="font-bold text-violet-600">{staff.rdp_count}</p>
+                          <p className="text-xs text-slate-500">RDP</p>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-6 text-right">
-                      <div>
-                        <p className="font-bold text-emerald-600">{formatCurrency(staff.total_omset)}</p>
-                        <p className="text-xs text-slate-500">OMSET</p>
+                    {/* Staff's Product Breakdown */}
+                    {expandedStaff[staff.staff_id] && staff.product_breakdown && staff.product_breakdown.length > 0 && (
+                      <div className="bg-slate-50 border-t border-slate-100 px-4 py-3">
+                        <p className="text-xs font-medium text-slate-500 mb-2 pl-12">Product Breakdown:</p>
+                        <div className="pl-12 space-y-2">
+                          {staff.product_breakdown.map((product) => (
+                            <div key={product.product_id} className="flex items-center justify-between bg-white rounded-lg p-3 border border-slate-200">
+                              <div className="flex items-center gap-2">
+                                <Package size={14} className="text-indigo-500" />
+                                <span className="text-sm font-medium text-slate-700">{product.product_name}</span>
+                              </div>
+                              <div className="flex items-center gap-4 text-xs">
+                                <span className="text-emerald-600 font-semibold">{formatCurrency(product.total_omset)}</span>
+                                <span className="text-blue-600">{product.ndp_count} NDP</span>
+                                <span className="text-violet-600">{product.rdp_count} RDP</span>
+                                <span className="text-slate-500">{product.form_count} forms</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-bold text-blue-600">{staff.ndp_count}</p>
-                        <p className="text-xs text-slate-500">NDP</p>
-                      </div>
-                      <div>
-                        <p className="font-bold text-violet-600">{staff.rdp_count}</p>
-                        <p className="text-xs text-slate-500">RDP</p>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 ))
               )}
             </div>
+          </div>
+
+          {/* Overall Product Breakdown */}
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <div 
+              className="px-5 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer"
+              onClick={() => setShowProductBreakdown(!showProductBreakdown)}
+            >
+              <div className="flex items-center gap-2">
+                <Package className="text-indigo-600" size={20} />
+                <h3 className="font-semibold text-slate-900">Product Performance</h3>
+              </div>
+              {showProductBreakdown ? <ChevronUp size={20} className="text-slate-400" /> : <ChevronDown size={20} className="text-slate-400" />}
+            </div>
+            {showProductBreakdown && (
+              <div className="divide-y divide-slate-100">
+                {(summary.product_breakdown || []).length === 0 ? (
+                  <div className="p-8 text-center text-slate-500">No product data for this date</div>
+                ) : (
+                  summary.product_breakdown.map((product, index) => (
+                    <div key={product.product_id} className="p-4 flex items-center justify-between hover:bg-slate-50">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                          index === 0 ? 'bg-indigo-100 text-indigo-700' :
+                          index === 1 ? 'bg-slate-200 text-slate-700' :
+                          index === 2 ? 'bg-purple-100 text-purple-700' :
+                          'bg-slate-100 text-slate-600'
+                        }`}>
+                          {index + 1}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-slate-900">{product.product_name}</p>
+                          <p className="text-sm text-slate-500">{product.form_count} deposits</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-6 text-right">
+                        <div>
+                          <p className="font-bold text-emerald-600">{formatCurrency(product.total_omset)}</p>
+                          <p className="text-xs text-slate-500">OMSET</p>
+                        </div>
+                        <div>
+                          <p className="font-bold text-blue-600">{product.ndp_count}</p>
+                          <p className="text-xs text-slate-500">NDP</p>
+                        </div>
+                        <div>
+                          <p className="font-bold text-violet-600">{product.rdp_count}</p>
+                          <p className="text-xs text-slate-500">RDP</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
         </div>
       ) : (
