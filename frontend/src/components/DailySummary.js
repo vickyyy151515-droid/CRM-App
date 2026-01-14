@@ -168,28 +168,28 @@ export default function DailySummary({ isAdmin = false }) {
         <div>
           {/* Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-5">
+            <div className="bg-gradient-to-br from-emerald-50 dark:from-emerald-900/30 to-teal-50 dark:to-teal-900/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-5">
               <div className="flex items-center gap-2 mb-2">
                 <DollarSign className="text-emerald-600" size={20} />
                 <span className="text-sm font-medium text-emerald-700">Total OMSET</span>
               </div>
               <p className="text-2xl font-bold text-slate-900 dark:text-white">{formatCurrency(summary.total_omset)}</p>
             </div>
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5">
+            <div className="bg-gradient-to-br from-blue-50 dark:from-blue-900/30 to-indigo-50 dark:to-indigo-900/30 border border-blue-200 dark:border-blue-800 rounded-xl p-5">
               <div className="flex items-center gap-2 mb-2">
                 <UserPlus className="text-blue-600" size={20} />
                 <span className="text-sm font-medium text-blue-700">Total NDP</span>
               </div>
               <p className="text-2xl font-bold text-slate-900 dark:text-white">{summary.total_ndp || 0}</p>
             </div>
-            <div className="bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-200 rounded-xl p-5">
+            <div className="bg-gradient-to-br from-violet-50 dark:from-violet-900/30 to-purple-50 dark:to-purple-900/30 border border-violet-200 dark:border-violet-800 rounded-xl p-5">
               <div className="flex items-center gap-2 mb-2">
                 <RefreshCcw className="text-violet-600" size={20} />
                 <span className="text-sm font-medium text-violet-700">Total RDP</span>
               </div>
               <p className="text-2xl font-bold text-slate-900 dark:text-white">{summary.total_rdp || 0}</p>
             </div>
-            <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-5">
+            <div className="bg-gradient-to-br from-amber-50 dark:from-amber-900/30 to-orange-50 dark:to-orange-900/30 border border-amber-200 dark:border-amber-800 rounded-xl p-5">
               <div className="flex items-center gap-2 mb-2">
                 <Users className="text-amber-600" size={20} />
                 <span className="text-sm font-medium text-amber-700">Total Forms</span>
@@ -200,7 +200,7 @@ export default function DailySummary({ isAdmin = false }) {
 
           {/* Top Performer */}
           {summary.top_performer && (
-            <div className="bg-gradient-to-r from-yellow-50 via-amber-50 to-orange-50 border border-yellow-200 rounded-xl p-5 mb-6">
+            <div className="bg-gradient-to-r from-yellow-50 dark:from-yellow-900/30 via-amber-50 dark:via-amber-900/30 to-orange-50 dark:to-orange-900/30 border border-yellow-200 dark:border-yellow-800 rounded-xl p-5 mb-6">
               <div className="flex items-center gap-3 mb-3">
                 <Trophy className="text-yellow-600" size={24} />
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Top Performer of the Day</h3>
@@ -363,28 +363,28 @@ export default function DailySummary({ isAdmin = false }) {
 
           {/* My Stats Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-5">
+            <div className="bg-gradient-to-br from-emerald-50 dark:from-emerald-900/30 to-teal-50 dark:to-teal-900/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-5">
               <div className="flex items-center gap-2 mb-2">
                 <DollarSign className="text-emerald-600" size={20} />
                 <span className="text-sm font-medium text-emerald-700">My OMSET</span>
               </div>
               <p className="text-2xl font-bold text-slate-900 dark:text-white">{formatCurrency(summary.my_stats?.total_omset)}</p>
             </div>
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5">
+            <div className="bg-gradient-to-br from-blue-50 dark:from-blue-900/30 to-indigo-50 dark:to-indigo-900/30 border border-blue-200 dark:border-blue-800 rounded-xl p-5">
               <div className="flex items-center gap-2 mb-2">
                 <UserPlus className="text-blue-600" size={20} />
                 <span className="text-sm font-medium text-blue-700">My NDP</span>
               </div>
               <p className="text-2xl font-bold text-slate-900 dark:text-white">{summary.my_stats?.ndp_count || 0}</p>
             </div>
-            <div className="bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-200 rounded-xl p-5">
+            <div className="bg-gradient-to-br from-violet-50 dark:from-violet-900/30 to-purple-50 dark:to-purple-900/30 border border-violet-200 dark:border-violet-800 rounded-xl p-5">
               <div className="flex items-center gap-2 mb-2">
                 <RefreshCcw className="text-violet-600" size={20} />
                 <span className="text-sm font-medium text-violet-700">My RDP</span>
               </div>
               <p className="text-2xl font-bold text-slate-900 dark:text-white">{summary.my_stats?.rdp_count || 0}</p>
             </div>
-            <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-5">
+            <div className="bg-gradient-to-br from-amber-50 dark:from-amber-900/30 to-orange-50 dark:to-orange-900/30 border border-amber-200 dark:border-amber-800 rounded-xl p-5">
               <div className="flex items-center gap-2 mb-2">
                 <Target className="text-amber-600" size={20} />
                 <span className="text-sm font-medium text-amber-700">My Forms</span>
@@ -414,7 +414,7 @@ export default function DailySummary({ isAdmin = false }) {
 
           {/* Top Performer */}
           {summary.top_performer && summary.top_performer.staff_id !== summary.my_stats?.staff_id && (
-            <div className="bg-gradient-to-r from-yellow-50 via-amber-50 to-orange-50 border border-yellow-200 rounded-xl p-5 mb-6">
+            <div className="bg-gradient-to-r from-yellow-50 dark:from-yellow-900/30 via-amber-50 dark:via-amber-900/30 to-orange-50 dark:to-orange-900/30 border border-yellow-200 dark:border-yellow-800 rounded-xl p-5 mb-6">
               <div className="flex items-center gap-2 mb-2">
                 <Trophy className="text-yellow-600" size={20} />
                 <span className="text-sm font-medium text-yellow-700">Today's Top Performer</span>

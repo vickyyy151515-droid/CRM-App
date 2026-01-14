@@ -323,13 +323,13 @@ export default function AdminMemberWDCRM() {
             placeholder="Database name..."
             value={uploadName}
             onChange={(e) => setUploadName(e.target.value)}
-            className="flex-1 h-10 px-4 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="flex-1 h-10 px-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             data-testid="memberwd-db-name"
           />
           <select
             value={uploadProductId}
             onChange={(e) => setUploadProductId(e.target.value)}
-            className="h-10 px-4 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[180px]"
+            className="h-10 px-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[180px]"
             data-testid="memberwd-product-select"
           >
             <option value="">Select Product...</option>
@@ -341,7 +341,7 @@ export default function AdminMemberWDCRM() {
             type="file"
             accept=".csv,.xlsx,.xls"
             onChange={(e) => setSelectedFile(e.target.files[0])}
-            className="flex-1 h-10 px-4 py-2 rounded-lg border border-slate-200 text-sm file:mr-4 file:py-1 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+            className="flex-1 h-10 px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm file:mr-4 file:py-1 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
             data-testid="memberwd-file-input"
           />
           <button
@@ -364,7 +364,7 @@ export default function AdminMemberWDCRM() {
         <select
           value={filterProduct}
           onChange={(e) => setFilterProduct(e.target.value)}
-          className="h-10 px-4 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[200px]"
+          className="h-10 px-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[200px]"
           data-testid="memberwd-filter-product"
         >
           <option value="">All Products</option>
@@ -581,13 +581,13 @@ export default function AdminMemberWDCRM() {
                         placeholder="Search records..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full h-9 pl-9 pr-4 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full h-9 pl-9 pr-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       />
                     </div>
                     <select
                       value={filterStatus}
                       onChange={(e) => setFilterStatus(e.target.value)}
-                      className="h-9 px-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
                       <option value="all">All Status</option>
                       <option value="available">Available</option>

@@ -285,7 +285,7 @@ export default function CustomerRetention({ isAdmin = false }) {
         <div className="space-y-6">
           {/* Key Metrics */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5">
+            <div className="bg-gradient-to-br from-blue-50 dark:from-blue-900/30 to-indigo-50 dark:to-indigo-900/30 border border-blue-200 dark:border-blue-800 rounded-xl p-5">
               <div className="flex items-center gap-2 mb-2">
                 <Users className="text-blue-600" size={20} />
                 <span className="text-sm font-medium text-blue-700">Total Customers</span>
