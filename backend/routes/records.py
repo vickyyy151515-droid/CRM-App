@@ -228,15 +228,38 @@ async def get_databases_with_stats(search: Optional[str] = None, product_id: Opt
     
     databases = await db.databases.find(query, {'_id': 0}).sort('uploaded_at', -1).to_list(1000)
     
+    # Get all database IDs for aggregation
+    db_ids = [d['id'] for d in databases]
+    
+    # Use aggregation to get counts for all databases in one query (fixes N+1 problem)
+    counts_pipeline = [
+        {'$match': {'database_id': {'$in': db_ids}}},
+        {'$group': {
+            '_id': {'database_id': '$database_id', 'status': '$status'},
+            'count': {'$sum': 1}
+        }}
+    ]
+    counts_result = await db.customer_records.aggregate(counts_pipeline).to_list(10000)
+    
+    # Build lookup dictionary
+    counts_lookup = {}
+    for item in counts_result:
+        db_id = item['_id']['database_id']
+        status = item['_id']['status']
+        if db_id not in counts_lookup:
+            counts_lookup[db_id] = {'available': 0, 'requested': 0, 'assigned': 0}
+        counts_lookup[db_id][status] = item['count']
+    
     result = []
     for db_item in databases:
         if isinstance(db_item['uploaded_at'], str):
             db_item['uploaded_at'] = datetime.fromisoformat(db_item['uploaded_at'])
         
-        # Get record counts by status
-        available_count = await db.customer_records.count_documents({'database_id': db_item['id'], 'status': 'available'})
-        requested_count = await db.customer_records.count_documents({'database_id': db_item['id'], 'status': 'requested'})
-        assigned_count = await db.customer_records.count_documents({'database_id': db_item['id'], 'status': 'assigned'})
+        # Get record counts from lookup
+        counts = counts_lookup.get(db_item['id'], {'available': 0, 'requested': 0, 'assigned': 0})
+        available_count = counts.get('available', 0)
+        requested_count = counts.get('requested', 0)
+        assigned_count = counts.get('assigned', 0)
         total_count = available_count + requested_count + assigned_count
         
         result.append({
