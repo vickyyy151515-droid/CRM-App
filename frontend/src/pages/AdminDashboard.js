@@ -193,6 +193,8 @@ export default function AdminDashboard({ user, onLogout }) {
         return <Leaderboard isAdmin={true} />;
       case 'daily-summary':
         return <DailySummary isAdmin={true} />;
+      case 'funnel':
+        return <ConversionFunnel isAdmin={true} />;
       default:
         return null;
     }
