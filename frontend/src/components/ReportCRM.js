@@ -455,86 +455,157 @@ export default function ReportCRM() {
         </div>
       )}
 
-      {/* Daily Report Tab */}
+      {/* Daily Report Tab - Grouped by Staff and Product */}
       {activeTab === 'daily' && (
         <div className="space-y-4" data-testid="daily-tab-content">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+            <div className="flex items-center justify-between">
               <h3 className="font-semibold text-slate-800">
                 Daily Report - {MONTH_NAMES[selectedMonth]} {selectedYear}
               </h3>
-              <span className="text-sm text-slate-500">{dailyData.length} days with data</span>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-slate-600">Tanggal</th>
-                    <th className="px-4 py-3 text-right text-slate-600">NEW ID (NDP)</th>
-                    <th className="px-4 py-3 text-right text-slate-600">ID RDP</th>
-                    <th className="px-4 py-3 text-right text-slate-600">TOTAL FORM</th>
-                    <th className="px-4 py-3 text-right text-slate-600">NOMINAL</th>
-                    <th className="px-4 py-3 text-right text-slate-600">% NDP</th>
-                    <th className="px-4 py-3 text-right text-slate-600">AVG/FORM</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {dailyData.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="px-4 py-12 text-center text-slate-500">
-                        No data for this month
-                      </td>
-                    </tr>
-                  ) : (
-                    dailyData.map((d, i) => {
-                      const totalCustomers = (d.new_id || 0) + (d.rdp || 0);
-                      const ndpPercent = totalCustomers > 0 ? ((d.new_id || 0) / totalCustomers * 100).toFixed(1) : 0;
-                      const avgPerForm = d.total_form > 0 ? Math.round((d.nominal || 0) / d.total_form) : 0;
-                      
-                      return (
-                        <tr key={i} className="hover:bg-slate-50">
-                          <td className="px-4 py-3 text-slate-900 font-medium">{d.date}</td>
-                          <td className="px-4 py-3 text-right text-blue-600 font-medium">{formatNumber(d.new_id)}</td>
-                          <td className="px-4 py-3 text-right text-green-600 font-medium">{formatNumber(d.rdp)}</td>
-                          <td className="px-4 py-3 text-right text-purple-600 font-medium">{formatNumber(d.total_form)}</td>
-                          <td className="px-4 py-3 text-right text-amber-600 font-medium">{formatRupiah(d.nominal)}</td>
-                          <td className="px-4 py-3 text-right">
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${
-                              ndpPercent >= 50 ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'
-                            }`}>
-                              {ndpPercent}%
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-right text-slate-600">{formatRupiah(avgPerForm)}</td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-                {dailyData.length > 0 && (
-                  <tfoot className="bg-slate-100">
-                    <tr className="font-bold">
-                      <td className="px-4 py-3 text-slate-900">TOTAL</td>
-                      <td className="px-4 py-3 text-right text-blue-700">
-                        {formatNumber(dailyData.reduce((sum, d) => sum + (d.new_id || 0), 0))}
-                      </td>
-                      <td className="px-4 py-3 text-right text-green-700">
-                        {formatNumber(dailyData.reduce((sum, d) => sum + (d.rdp || 0), 0))}
-                      </td>
-                      <td className="px-4 py-3 text-right text-purple-700">
-                        {formatNumber(dailyData.reduce((sum, d) => sum + (d.total_form || 0), 0))}
-                      </td>
-                      <td className="px-4 py-3 text-right text-amber-700">
-                        {formatRupiah(dailyData.reduce((sum, d) => sum + (d.nominal || 0), 0))}
-                      </td>
-                      <td className="px-4 py-3 text-right">-</td>
-                      <td className="px-4 py-3 text-right">-</td>
-                    </tr>
-                  </tfoot>
-                )}
-              </table>
+              <span className="text-sm text-slate-500">{dailyByStaff.length} staff with data</span>
             </div>
           </div>
+
+          {dailyByStaff.length === 0 ? (
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center text-slate-500">
+              No data for this month
+            </div>
+          ) : (
+            dailyByStaff.map((staff) => {
+              const isStaffExpanded = expandedStaff[staff.staff_id];
+              const staffTotals = staff.totals;
+              
+              return (
+                <div key={staff.staff_id} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                  {/* Staff Header */}
+                  <button
+                    onClick={() => toggleStaff(staff.staff_id)}
+                    className="w-full px-4 py-4 flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-lg">
+                        {staff.staff_name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="text-left">
+                        <div className="font-semibold text-slate-800">{staff.staff_name}</div>
+                        <div className="text-sm text-slate-500">{staff.products.length} product(s)</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-6">
+                      <div className="text-right">
+                        <div className="flex gap-4 text-sm">
+                          <span className="text-blue-600 font-medium">NDP: {formatNumber(staffTotals.new_id)}</span>
+                          <span className="text-green-600 font-medium">RDP: {formatNumber(staffTotals.rdp)}</span>
+                          <span className="text-purple-600 font-medium">Form: {formatNumber(staffTotals.total_form)}</span>
+                        </div>
+                        <div className="text-amber-600 font-bold text-lg">{formatRupiah(staffTotals.nominal)}</div>
+                      </div>
+                      {isStaffExpanded ? <ChevronUp size={24} className="text-slate-400" /> : <ChevronDown size={24} className="text-slate-400" />}
+                    </div>
+                  </button>
+
+                  {/* Staff Content - Products */}
+                  {isStaffExpanded && (
+                    <div className="p-4 space-y-3 bg-slate-50">
+                      {staff.products.map((product) => {
+                        const productKey = `${staff.staff_id}-${product.product_id}`;
+                        const isProductExpanded = expandedProducts[productKey];
+                        const productTotals = product.totals;
+                        
+                        return (
+                          <div key={product.product_id} className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                            {/* Product Header */}
+                            <button
+                              onClick={() => toggleProduct(staff.staff_id, product.product_id)}
+                              className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 transition-colors"
+                            >
+                              <div className="flex items-center gap-3">
+                                <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium">
+                                  {product.product_name}
+                                </span>
+                                <span className="text-sm text-slate-500">{product.daily.length} day(s)</span>
+                              </div>
+                              <div className="flex items-center gap-4">
+                                <div className="flex gap-3 text-sm">
+                                  <span className="text-blue-600">NDP: {formatNumber(productTotals.new_id)}</span>
+                                  <span className="text-green-600">RDP: {formatNumber(productTotals.rdp)}</span>
+                                  <span className="text-amber-600 font-semibold">{formatRupiah(productTotals.nominal)}</span>
+                                </div>
+                                {isProductExpanded ? <ChevronUp size={18} className="text-slate-400" /> : <ChevronDown size={18} className="text-slate-400" />}
+                              </div>
+                            </button>
+
+                            {/* Product Daily Data */}
+                            {isProductExpanded && (
+                              <div className="border-t border-slate-200">
+                                <table className="w-full text-sm">
+                                  <thead className="bg-slate-50">
+                                    <tr>
+                                      <th className="px-4 py-2 text-left text-slate-600">Tanggal</th>
+                                      <th className="px-4 py-2 text-right text-slate-600">NDP</th>
+                                      <th className="px-4 py-2 text-right text-slate-600">RDP</th>
+                                      <th className="px-4 py-2 text-right text-slate-600">Form</th>
+                                      <th className="px-4 py-2 text-right text-slate-600">Nominal</th>
+                                      <th className="px-4 py-2 text-right text-slate-600">AVG/Form</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-slate-100">
+                                    {product.daily.map((day, idx) => {
+                                      const avgPerForm = day.total_form > 0 ? Math.round(day.nominal / day.total_form) : 0;
+                                      return (
+                                        <tr key={idx} className="hover:bg-slate-50">
+                                          <td className="px-4 py-2 text-slate-900">{day.date}</td>
+                                          <td className="px-4 py-2 text-right text-blue-600 font-medium">{formatNumber(day.new_id)}</td>
+                                          <td className="px-4 py-2 text-right text-green-600 font-medium">{formatNumber(day.rdp)}</td>
+                                          <td className="px-4 py-2 text-right text-purple-600 font-medium">{formatNumber(day.total_form)}</td>
+                                          <td className="px-4 py-2 text-right text-amber-600 font-medium">{formatRupiah(day.nominal)}</td>
+                                          <td className="px-4 py-2 text-right text-slate-500">{formatRupiah(avgPerForm)}</td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                  <tfoot className="bg-slate-100">
+                                    <tr className="font-semibold">
+                                      <td className="px-4 py-2 text-slate-900">Total</td>
+                                      <td className="px-4 py-2 text-right text-blue-700">{formatNumber(productTotals.new_id)}</td>
+                                      <td className="px-4 py-2 text-right text-green-700">{formatNumber(productTotals.rdp)}</td>
+                                      <td className="px-4 py-2 text-right text-purple-700">{formatNumber(productTotals.total_form)}</td>
+                                      <td className="px-4 py-2 text-right text-amber-700">{formatRupiah(productTotals.nominal)}</td>
+                                      <td className="px-4 py-2 text-right text-slate-600">
+                                        {productTotals.total_form > 0 ? formatRupiah(Math.round(productTotals.nominal / productTotals.total_form)) : '-'}
+                                      </td>
+                                    </tr>
+                                  </tfoot>
+                                </table>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+
+          {/* Grand Total */}
+          {dailyByStaff.length > 0 && (
+            <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl shadow-sm p-4 text-white">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-lg">Grand Total - {MONTH_NAMES[selectedMonth]} {selectedYear}</span>
+                <div className="flex gap-6 text-sm">
+                  <span>NDP: <strong>{formatNumber(dailyByStaff.reduce((sum, s) => sum + s.totals.new_id, 0))}</strong></span>
+                  <span>RDP: <strong>{formatNumber(dailyByStaff.reduce((sum, s) => sum + s.totals.rdp, 0))}</strong></span>
+                  <span>Form: <strong>{formatNumber(dailyByStaff.reduce((sum, s) => sum + s.totals.total_form, 0))}</strong></span>
+                  <span className="text-amber-300 text-lg font-bold">
+                    {formatRupiah(dailyByStaff.reduce((sum, s) => sum + s.totals.nominal, 0))}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
