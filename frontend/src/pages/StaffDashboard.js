@@ -126,7 +126,7 @@ export default function StaffDashboard({ user, onLogout }) {
     { id: 'memberwd', label: t('nav.memberWDCRM'), icon: CreditCard },
     { id: 'leave', label: t('nav.offDaySakit'), icon: CalendarOff },
     { id: 'izin', label: t('nav.izin'), icon: Timer }
-  ], [t]);
+  ], [t, language]);
 
   return (
     <DashboardLayout
