@@ -159,20 +159,82 @@ async def get_business_analytics(period: str = 'month', product_id: Optional[str
     if product_id:
         omset_query['product_id'] = product_id
     
-    # Use aggregation for daily OMSET data
-    daily_pipeline = [
-        {'$match': omset_query},
-        {'$group': {
-            '_id': '$date',
-            'total': {'$sum': '$depo_total'},
-            'count': {'$sum': 1},
-            'ndp': {'$sum': {'$cond': [{'$eq': ['$customer_type', 'NDP']}, 1, 0]}},
-            'rdp': {'$sum': {'$cond': [{'$eq': ['$customer_type', 'RDP']}, 1, 0]}}
-        }},
-        {'$sort': {'_id': 1}}
-    ]
-    daily_results = await db.omset_records.aggregate(daily_pipeline).to_list(1000)
-    omset_chart = [{'date': d['_id'], 'total': d['total'], 'count': d['count'], 'ndp': d['ndp'], 'rdp': d['rdp']} for d in daily_results]
+    # Helper function to normalize customer ID
+    def normalize_customer_id(customer_id: str) -> str:
+        if not customer_id:
+            return ""
+        return customer_id.strip().lower()
+    
+    # Fetch records for unique customer calculation
+    records = await db.omset_records.find(omset_query, {'_id': 0}).to_list(100000)
+    
+    # Build customer_first_date for NDP detection
+    all_records = await db.omset_records.find({}, {'_id': 0, 'customer_id': 1, 'customer_id_normalized': 1, 'product_id': 1, 'record_date': 1}).to_list(100000)
+    customer_first_date = {}
+    for record in sorted(all_records, key=lambda x: x['record_date']):
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (cid_normalized, record['product_id'])
+        if key not in customer_first_date:
+            customer_first_date[key] = record['record_date']
+    
+    # Calculate daily stats with unique customers
+    daily_stats = {}
+    for record in records:
+        date = record.get('date') or record.get('record_date')
+        if not date:
+            continue
+        
+        if date not in daily_stats:
+            daily_stats[date] = {
+                'total': 0,
+                'count': 0,
+                'ndp_customers': set(),
+                'rdp_customers': set()
+            }
+        
+        daily_stats[date]['total'] += record.get('depo_total', 0) or 0
+        daily_stats[date]['count'] += 1
+        
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (cid_normalized, record['product_id'])
+        first_date = customer_first_date.get(key)
+        
+        if first_date == date:
+            daily_stats[date]['ndp_customers'].add(cid_normalized)
+        else:
+            daily_stats[date]['rdp_customers'].add(cid_normalized)
+    
+    # Build omset_chart
+    omset_chart = []
+    total_ndp = 0
+    total_rdp = 0
+    ndp_omset = 0
+    rdp_omset = 0
+    
+    for date, stats in sorted(daily_stats.items()):
+        ndp_count = len(stats['ndp_customers'])
+        rdp_count = len(stats['rdp_customers'])
+        total_ndp += ndp_count
+        total_rdp += rdp_count
+        omset_chart.append({
+            'date': date,
+            'total': stats['total'],
+            'count': stats['count'],
+            'ndp': ndp_count,
+            'rdp': rdp_count
+        })
+    
+    # Calculate NDP/RDP OMSET separately
+    for record in records:
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (cid_normalized, record['product_id'])
+        first_date = customer_first_date.get(key)
+        date = record.get('date') or record.get('record_date')
+        
+        if first_date == date:
+            ndp_omset += record.get('depo_total', 0) or 0
+        else:
+            rdp_omset += record.get('depo_total', 0) or 0
     
     # Product OMSET aggregation
     product_pipeline = [
@@ -199,25 +261,6 @@ async def get_business_analytics(period: str = 'month', product_id: Optional[str
         })
     
     product_omset.sort(key=lambda x: x['total_omset'], reverse=True)
-    
-    # Summary aggregation
-    summary_pipeline = [
-        {'$match': omset_query},
-        {'$group': {
-            '_id': None,
-            'total_ndp': {'$sum': {'$cond': [{'$eq': ['$customer_type', 'NDP']}, 1, 0]}},
-            'total_rdp': {'$sum': {'$cond': [{'$eq': ['$customer_type', 'RDP']}, 1, 0]}},
-            'ndp_omset': {'$sum': {'$cond': [{'$eq': ['$customer_type', 'NDP']}, '$depo_total', 0]}},
-            'rdp_omset': {'$sum': {'$cond': [{'$eq': ['$customer_type', 'RDP']}, '$depo_total', 0]}}
-        }}
-    ]
-    summary_result = await db.omset_records.aggregate(summary_pipeline).to_list(1)
-    summary = summary_result[0] if summary_result else {'total_ndp': 0, 'total_rdp': 0, 'ndp_omset': 0, 'rdp_omset': 0}
-    
-    total_ndp = summary.get('total_ndp', 0)
-    total_rdp = summary.get('total_rdp', 0)
-    ndp_omset = summary.get('ndp_omset', 0)
-    rdp_omset = summary.get('rdp_omset', 0)
     
     # Database utilization using aggregation
     db_counts_pipeline = [
