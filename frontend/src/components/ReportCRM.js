@@ -357,9 +357,9 @@ export default function ReportCRM() {
           </div>
 
           {/* Nominal (OMSET) Progress Chart */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-            <h3 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
-              <DollarSign size={18} className="text-amber-600" />
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+            <h3 className="font-semibold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+              <DollarSign size={18} className="text-amber-600 dark:text-amber-400" />
               Monthly Progress - OMSET (Nominal)
             </h3>
             <div className="h-80">
