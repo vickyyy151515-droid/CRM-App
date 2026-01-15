@@ -110,6 +110,7 @@ const id = {
     customerRetention: 'Retensi Pelanggan',
     exportCenter: 'Pusat Ekspor',
     scheduledReports: 'Laporan Terjadwal',
+    userActivity: 'Aktivitas Pengguna',
     downloadHistory: 'Riwayat Unduhan',
     userManagement: 'Kelola Pengguna',
     productManagement: 'Kelola Produk',
