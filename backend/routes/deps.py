@@ -34,8 +34,10 @@ def get_db():
     """Get the database instance"""
     return db
 
-# Auth configuration
-JWT_SECRET = os.environ.get('JWT_SECRET', 'your-secret-key-change-in-production')
+# Auth configuration - JWT_SECRET must be set in environment
+JWT_SECRET = os.environ.get('JWT_SECRET')
+if not JWT_SECRET:
+    raise ValueError("JWT_SECRET environment variable must be set")
 JWT_ALGORITHM = 'HS256'
 security = HTTPBearer()
 
