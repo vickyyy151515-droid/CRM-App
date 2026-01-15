@@ -205,33 +205,33 @@ export default function AdminDashboard({ user, onLogout }) {
     }
   };
 
-  const menuItems = [
+  const menuItems = useMemo(() => [
     { id: 'overview', label: t('nav.overview'), icon: LayoutDashboard, badge: 0 },
     { id: 'leaderboard', label: t('nav.leaderboard'), icon: Trophy, badge: 0 },
     { id: 'daily-summary', label: t('nav.dailySummary'), icon: CalendarDays, badge: 0 },
     { id: 'funnel', label: t('nav.conversionFunnel'), icon: Filter, badge: 0 },
     { id: 'retention', label: t('nav.customerRetention'), icon: Heart, badge: 0 },
-    { id: 'analytics', label: t('nav.advancedAnalytics') || 'Advanced Analytics', icon: PieChart, badge: 0 },
+    { id: 'analytics', label: t('nav.advancedAnalytics'), icon: PieChart, badge: 0 },
     { id: 'export', label: t('nav.exportCenter'), icon: Download, badge: 0 },
     { id: 'report', label: t('nav.reportCRM'), icon: FileText, badge: 0 },
     { id: 'bonus', label: t('nav.bonusCalculation'), icon: Calculator, badge: 0 },
-    { id: 'leave', label: t('nav.leaveRequests') || 'Leave Requests', icon: CalendarOff, badge: 0 },
+    { id: 'leave', label: t('nav.leaveRequests'), icon: CalendarOff, badge: 0 },
     { id: 'leave-calendar', label: t('nav.leaveCalendar'), icon: Calendar, badge: 0 },
-    { id: 'izin-monitor', label: t('nav.monitorIzin') || 'Monitor Izin', icon: Timer, badge: 0 },
+    { id: 'izin-monitor', label: t('nav.monitorIzin'), icon: Timer, badge: 0 },
     { id: 'progress', label: t('nav.staffProgress'), icon: BarChart, badge: 0 },
     { id: 'omset', label: t('nav.omsetCRM'), icon: DollarSign, badge: 0 },
     { id: 'reserved', label: t('nav.reservedMembers'), icon: UserCheck, badge: stats.pendingReservations },
     { id: 'bonanza', label: t('nav.dbBonanza'), icon: Gift, badge: 0 },
     { id: 'memberwd', label: t('nav.memberWDCRM'), icon: CreditCard, badge: 0 },
-    { id: 'upload', label: t('nav.uploadDatabase') || 'Upload Database', icon: Upload, badge: 0 },
-    { id: 'databases', label: t('nav.manageDatabases') || 'Manage Databases', icon: FileSpreadsheet, badge: 0 },
-    { id: 'assignments', label: t('nav.viewAssignments') || 'View All Assignments', icon: List, badge: 0 },
-    { id: 'requests', label: t('nav.downloadRequests') || 'Download Requests', icon: Clock, badge: stats.pendingRequests },
+    { id: 'upload', label: t('nav.uploadDatabase'), icon: Upload, badge: 0 },
+    { id: 'databases', label: t('nav.manageDatabases'), icon: FileSpreadsheet, badge: 0 },
+    { id: 'assignments', label: t('nav.viewAssignments'), icon: List, badge: 0 },
+    { id: 'requests', label: t('nav.downloadRequests'), icon: Clock, badge: stats.pendingRequests },
     { id: 'history', label: t('nav.downloadHistory'), icon: LayoutDashboard, badge: 0 },
     { id: 'products', label: t('nav.productManagement'), icon: Package, badge: 0 },
     { id: 'manage-users', label: t('nav.userManagement'), icon: UserCog, badge: 0 },
-    { id: 'users', label: t('nav.createUser') || 'Create User', icon: Users, badge: 0 }
-  ];
+    { id: 'users', label: t('nav.createUser'), icon: Users, badge: 0 }
+  ], [t, stats.pendingReservations, stats.pendingRequests]);
 
   return (
     <DashboardLayout
