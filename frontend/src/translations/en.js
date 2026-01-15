@@ -109,6 +109,7 @@ const en = {
     conversionFunnel: 'Conversion Funnel',
     customerRetention: 'Customer Retention',
     exportCenter: 'Export Center',
+    scheduledReports: 'Scheduled Reports',
     downloadHistory: 'Download History',
     userManagement: 'Manage Users',
     productManagement: 'Manage Products',
