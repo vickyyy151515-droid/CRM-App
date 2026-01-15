@@ -371,21 +371,78 @@ async def create_download_request(request_data: DownloadRequestCreate, user: Use
     if request_data.record_count <= 0:
         raise HTTPException(status_code=400, detail="Record count must be greater than 0")
     
-    available_records = await db.customer_records.find(
+    # Get all reserved member names for this product (case-insensitive)
+    product_id = database.get('product_id')
+    reserved_members = await db.reserved_members.find(
+        {'product_id': product_id, 'status': {'$in': ['pending', 'approved']}},
+        {'_id': 0, 'customer_name': 1}
+    ).to_list(10000)
+    
+    # Create a set of reserved names (normalized to uppercase for case-insensitive comparison)
+    reserved_names = set()
+    for member in reserved_members:
+        name = member.get('customer_name', '').strip().upper()
+        if name:
+            reserved_names.add(name)
+    
+    # Get all available records from the database (get more than needed to account for duplicates)
+    # Fetch up to 3x the requested amount to have enough replacements
+    fetch_limit = min(request_data.record_count * 3, 10000)
+    all_available_records = await db.customer_records.find(
         {'database_id': request_data.database_id, 'status': 'available'},
         {'_id': 0}
-    ).sort('row_number', 1).to_list(request_data.record_count)
+    ).sort('row_number', 1).to_list(fetch_limit)
     
-    if len(available_records) == 0:
+    if len(all_available_records) == 0:
         raise HTTPException(status_code=400, detail="No available records in this database")
     
-    if len(available_records) < request_data.record_count:
+    # Filter out records that have customer names in Reserved Members
+    valid_records = []
+    skipped_records = []
+    
+    for record in all_available_records:
+        # Try to get customer name from common field names
+        row_data = record.get('row_data', {})
+        customer_name = None
+        
+        # Check common name fields (case-insensitive keys)
+        for key in row_data:
+            key_lower = key.lower()
+            if key_lower in ['name', 'nama', 'customer_name', 'customer', 'nama_customer', 'full_name', 'fullname']:
+                customer_name = row_data[key]
+                break
+        
+        # Normalize customer name for comparison
+        if customer_name:
+            normalized_name = str(customer_name).strip().upper()
+            
+            if normalized_name in reserved_names:
+                # This record is reserved, skip it
+                skipped_records.append({
+                    'record_id': record['id'],
+                    'customer_name': customer_name,
+                    'reason': 'Reserved by another staff'
+                })
+                continue
+        
+        valid_records.append(record)
+        
+        # Stop once we have enough valid records
+        if len(valid_records) >= request_data.record_count:
+            break
+    
+    # Check if we have enough valid records
+    if len(valid_records) < request_data.record_count:
+        available_count = len(valid_records)
+        reserved_count = len(skipped_records)
         raise HTTPException(
             status_code=400, 
-            detail=f"Only {len(available_records)} records available, but you requested {request_data.record_count}"
+            detail=f"Only {available_count} non-reserved records available ({reserved_count} records skipped due to Reserved Member duplicates). You requested {request_data.record_count}."
         )
     
-    record_ids = [record['id'] for record in available_records]
+    # Use only the requested number of valid records
+    selected_records = valid_records[:request_data.record_count]
+    record_ids = [record['id'] for record in selected_records]
     
     request = DownloadRequest(
         database_id=request_data.database_id,
@@ -398,6 +455,8 @@ async def create_download_request(request_data: DownloadRequestCreate, user: Use
     
     doc = request.model_dump()
     doc['requested_at'] = doc['requested_at'].isoformat()
+    # Store info about skipped records for transparency
+    doc['skipped_reserved_count'] = len(skipped_records)
     
     await db.download_requests.insert_one(doc)
     
