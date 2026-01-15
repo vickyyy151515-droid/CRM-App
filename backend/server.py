@@ -80,6 +80,7 @@ api_router.include_router(daily_summary_router)
 api_router.include_router(funnel_router)
 api_router.include_router(retention_router)
 api_router.include_router(search_router)
+api_router.include_router(scheduled_reports_router)
 # WebSocket routes are added at the app level (not under /api)
 app.include_router(websocket_router)
 
