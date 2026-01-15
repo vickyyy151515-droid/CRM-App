@@ -112,20 +112,20 @@ export default function StaffDashboard({ user, onLogout }) {
   };
 
   const menuItems = [
-    { id: 'databases', label: 'Browse Databases', icon: FileSpreadsheet },
-    { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
-    { id: 'daily-summary', label: 'Daily Summary', icon: CalendarDays },
-    { id: 'funnel', label: 'Conversion Funnel', icon: Filter },
-    { id: 'retention', label: 'Customer Retention', icon: Heart },
-    { id: 'followups', label: 'Follow-up Reminders', icon: Bell },
-    { id: 'requests', label: 'My Requests', icon: Clock },
-    { id: 'assigned', label: 'My Assigned Customers', icon: User },
-    { id: 'reserved', label: 'Reserved Member CRM', icon: UserCheck },
-    { id: 'omset', label: 'OMSET CRM', icon: DollarSign },
-    { id: 'bonanza', label: 'DB Bonanza', icon: Gift },
-    { id: 'memberwd', label: 'Member WD CRM', icon: CreditCard },
-    { id: 'leave', label: 'Off Day / Sakit', icon: CalendarOff },
-    { id: 'izin', label: 'Izin', icon: Timer }
+    { id: 'databases', label: t('nav.browseDatabases'), icon: FileSpreadsheet },
+    { id: 'leaderboard', label: t('nav.leaderboard'), icon: Trophy },
+    { id: 'daily-summary', label: t('nav.dailySummary'), icon: CalendarDays },
+    { id: 'funnel', label: t('nav.conversionFunnel'), icon: Filter },
+    { id: 'retention', label: t('nav.customerRetention'), icon: Heart },
+    { id: 'followups', label: t('nav.followUpReminders'), icon: Bell },
+    { id: 'requests', label: t('nav.myRequests'), icon: Clock },
+    { id: 'assigned', label: t('nav.myAssignedCustomers'), icon: User },
+    { id: 'reserved', label: t('nav.reservedMembers'), icon: UserCheck },
+    { id: 'omset', label: t('nav.omsetCRM'), icon: DollarSign },
+    { id: 'bonanza', label: t('nav.dbBonanza'), icon: Gift },
+    { id: 'memberwd', label: t('nav.memberWDCRM'), icon: CreditCard },
+    { id: 'leave', label: t('nav.offDaySakit'), icon: CalendarOff },
+    { id: 'izin', label: t('nav.izin'), icon: Timer }
   ];
 
   return (
