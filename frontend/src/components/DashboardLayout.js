@@ -379,18 +379,25 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
             )}
           </button>
 
-          {/* User Info */}
+          {/* User Info with role badge */}
           {!collapsed && (
             <div className="mb-3 px-2">
-              <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{user.name}</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
+              <div className="flex items-center gap-2 mb-1">
+                <div className={`w-8 h-8 rounded-full ${roleTheme.avatarBg} flex items-center justify-center text-white font-semibold text-sm`}>
+                  {user.name?.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{user.name}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
+                </div>
+              </div>
             </div>
           )}
           
-          {/* Collapsed user avatar */}
+          {/* Collapsed user avatar with role color */}
           {collapsed && (
             <div className="hidden lg:flex justify-center mb-3 group relative">
-              <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-semibold">
+              <div className={`w-10 h-10 rounded-full ${roleTheme.avatarBg} flex items-center justify-center text-white font-semibold shadow-lg`}>
                 {user.name?.charAt(0).toUpperCase()}
               </div>
               <div className="
@@ -400,6 +407,7 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
               ">
                 <span className="font-medium">{user.name}</span>
                 <span className="text-slate-400 text-xs">{user.email}</span>
+                <span className={`text-xs mt-1 ${roleTheme.text}`}>{getRoleDisplayName(user.role)}</span>
                 <div className="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
               </div>
             </div>
