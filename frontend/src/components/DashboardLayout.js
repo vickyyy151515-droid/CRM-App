@@ -127,7 +127,7 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
     return configuredMenu;
   };
 
-  const organizedMenu = buildMenu();
+  const organizedMenu = useMemo(() => buildMenu(), [menuItems, sidebarConfig, openFolders]);
 
   const renderMenuItem = (item, isInFolder = false) => {
     const Icon = item.icon;
