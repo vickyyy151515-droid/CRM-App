@@ -500,13 +500,13 @@ Build a Customer Relationship Management (CRM) application where:
 - None - All P1 tasks completed!
 
 ### ✅ COMPLETED: Database Request Duplicate Check (Jan 15, 2026)
-- **Feature**: When staff requests database records, system automatically filters out customers already in Reserved Members
+- **Feature**: When staff requests database records, system automatically filters out records where `username` matches Reserved Members' `customer_name`
 - **Logic**:
-  - Checks customer names in `row_data` against Reserved Members for the same product
+  - Compares `username` field in database records against `customer_name` in Reserved Members for the same product
   - Case-insensitive comparison (e.g., "JOHN" matches "John")
   - Skips reserved records and replaces with next available records
   - Staff always receives exact count requested (if enough non-reserved records exist)
-- **Common Name Fields Checked**: name, nama, customer_name, customer, nama_customer, full_name, fullname
+- **Username Fields Checked**: username, user_name, user, id, userid, user_id
 - **Error Handling**: If not enough non-reserved records available, returns detailed error message
 - **File Modified**: `backend/routes/records.py` - `create_download_request` function
 
