@@ -614,6 +614,49 @@ Build a Customer Relationship Management (CRM) application where:
   - `frontend/src/pages/ScheduledReports.js` - Added Staff Offline Alerts UI section
 - **Test Coverage**: Created `/app/tests/test_staff_offline_alerts.py` with 6 passing tests
 
+### ✅ COMPLETED: Master Admin Role & Page Access Control (Jan 15, 2026)
+- **Purpose**: Create role hierarchy with Master Admin having full control over admins and page access
+- **Role Hierarchy**:
+  - `master_admin` (level 3): Full control, can edit all users, can restrict admin page access
+  - `admin` (level 2): Can edit staff only, cannot edit admin or master_admin users
+  - `staff` (level 1): Can only manage own profile
+- **Backend Endpoints**:
+  - `PUT /api/users/{id}` - Enforces role hierarchy on edit operations
+  - `DELETE /api/users/{id}` - Enforces role hierarchy on delete operations
+  - `PUT /api/users/{id}/page-access` - Master Admin only, sets blocked pages for admin users
+  - `GET /api/users/{id}/page-access` - Returns blocked pages for a user
+  - `GET /api/auth/login` - Returns blocked_pages in user object
+  - `GET /api/auth/me` - Returns blocked_pages for current user
+- **Page Access Control**:
+  - Master Admin can block specific pages for normal admins
+  - Blocked pages are hidden from admin's sidebar
+  - Admin cannot access blocked pages directly
+- **Frontend UI** (ManageUsers.js):
+  - Stats cards showing Master Admin count
+  - Role badges with crown icon for Master Admin
+  - "No permission" shown for users that can't be edited
+  - Gear icon for page access control (Master Admin only, on admin users)
+  - Page Access Control modal with toggleable page list
+  - Lock/unlock icons showing blocked state
+- **CreateUser.js Updates**:
+  - Role dropdown filtered by current user's role level
+  - Role descriptions explaining permissions
+- **AdminDashboard.js Updates**:
+  - menuItems filtered based on user.blocked_pages
+  - Master admin sees all pages, admins see only unblocked pages
+- **Files Modified**:
+  - `backend/routes/auth.py` - Added role hierarchy enforcement, page-access endpoints
+  - `backend/routes/deps.py` - Added can_manage_user function, ROLE_HIERARCHY, get_master_admin_user
+  - `frontend/src/components/ManageUsers.js` - Complete rewrite with page access UI
+  - `frontend/src/components/CreateUser.js` - Role filtering and descriptions
+  - `frontend/src/pages/AdminDashboard.js` - Menu filtering for blocked pages
+  - `frontend/src/App.js` - Route master_admin to AdminDashboard
+- **Test Coverage**: Created `/app/tests/test_role_hierarchy.py` with 12 passing tests
+- **Credentials**:
+  - Master Admin: masteradmin@crm.com / master123
+  - Admin: admin@crm.com / admin123
+  - Staff: staff@crm.com / staff123
+
 ### P2: Future Enhancements
 - Email notifications for important updates
 - Scheduled automated reports from Export Center
