@@ -1,39 +1,41 @@
 <analysis>**original_problem_statement**: The user wants to build a Customer Relationship Management (CRM) application.
 
-Initial requirements evolved significantly to include:
--   **Core CRM**: Product Categorization, Record-Level Assignment for staff, WhatsApp integration helpers, and Customer Status Tracking.
--   **Advanced Workflows**: A Reserved Member system, a comprehensive OMSET CRM for staff to log daily customer deposits, and a DB Bonanza & Member WD system for admins to upload and assign customer databases.
--   **Admin Tooling**: Dashboards for assignments and staff performance, a user management page, bulk operations, an export center for CSV/Excel reports, and a notification system.
--   **Modernization**: A mobile-responsive UI, an advanced analytics dashboard with draggable widgets, and correcting the entire application's timezone to 'Asia/Jakarta'.
--   **Reporting & Bonuses**: A Report CRM page that mirrors a complex Excel sheet, a CRM Bonus Calculation page, and a staff leaderboard.
--   **HR Management**: An Off Day/Sakit (Leave) system and an Izin (Short Break) tracking system.
--   **UI/UX Enhancements**: A collapsible, fully customizable admin sidebar, a global search feature, and a dark mode theme.
--   **Sales & Performance**: Staff Leaderboard with configurable targets, customer follow-up reminders, daily performance summary reports, a sales conversion funnel, customer retention tracking, and at-risk customer alerts.
--   **Internationalization**: The ability to switch the UI language between English and Indonesian.
--   **Deployment Readiness**: Add a  endpoint for Kubernetes health probes.
--   **Logic Correction**: The logic for calculating RDP (Returning Depositor) should be updated. A unique customer should only be counted as one RDP per day, regardless of how many deposits they make. This logic needs to be applied globally across all reports, calculations, and dashboards.
+The application has evolved to include:
+-   **Core CRM**: Product Categorization, Record-Level Assignment, Reserved Member system, and Customer Status Tracking.
+-   **Sales Workflows**: OMSET CRM for daily deposits, DB Bonanza & Member WD for database management.
+-   **Admin Tooling**: Dashboards, user management, bulk operations, and a notification system.
+-   **Reporting & Analytics**: A complex Report CRM page, CRM Bonus Calculation, a staff leaderboard, and an advanced analytics dashboard.
+-   **HR Features**: Leave (Off Day/Sakit) and Short Break (Izin) tracking.
+-   **UI/UX**: A customizable dark-mode-ready sidebar, global search, and internationalization (EN/ID).
+-   **Performance Tracking**: Sales funnels, customer retention/at-risk alerts, and daily performance summaries.
+-   **Deployment**: A  endpoint for Kubernetes readiness.
+-   **Business Logic**: Corrected RDP (Returning Depositor) logic to count unique customers per day.
+-   **Bulk Operations**: A feature to bulk-add reserved members.
+-   **Real-time Monitoring**: A user activity page to track online, idle, and offline users.
+-   **Automated Notifications**:
+    -   Scheduled daily summary reports sent to a Telegram chat.
+    -   Scheduled daily at-risk customer alerts sent to a Telegram group.
+    -   Scheduled daily alerts for staff members who are not online.
+-   **Data Integrity**: A feature to check for and skip duplicate customer records (based on ) in the Reserved Members list when staff request new databases.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A sophisticated, full-stack CRM application with a modular FastAPI backend and a React frontend. The application has robust role-based authentication (Admin/Staff) and a wide range of features.
+A sophisticated, full-stack CRM application with a modular FastAPI backend and a React frontend. The application features role-based access, a wide range of CRM functionalities, advanced analytics, and a highly customized UI with dark mode and internationalization.
 
-Key features implemented include:
--   Modular backend with 17 route modules.
--   Comprehensive sales and performance analytics.
--   UI/UX enhancements like Dark Mode, Global Search (), and a customizable sidebar.
--   **Internationalization (i18n)**: The UI can be switched between English and Indonesian.
--   **Deployment Readiness**: A  endpoint has been added for Kubernetes.
--   **Corrected RDP Logic**: The logic for counting Returning Depositors (RDP) has been updated across most of the application to count unique customers per day, rather than total records.
+Recent additions include:
+- A user activity monitoring page showing real-time status (Online, Idle, Offline).
+- A comprehensive scheduled reporting system integrated with Telegram for:
+    - Daily summary reports.
+    - At-risk customer alerts.
+- A feature to bulk-add reserved members via the admin panel.
+- A data integrity check to prevent assignment of reserved customers to staff.
 
 **Last working item**:
--   **Last item agent was working**: The agent was working on a batch of three user-reported issues:
-    1.  The RDP count in the Report CRM (Daily and Staff Performance tabs) was still incorrect.
-    2.  The Report CRM page had hardcoded colors and was not dark-mode friendly.
-    3.  The at-risk customer alert in the Customer Retention feature was showing incorrect days since last deposit because it wasn't normalizing customer IDs.
+-   **Last item agent was working**: Implementing a scheduled Telegram notification to alert admins about staff members who are not logged in/online by a specific time each day. The agent has successfully implemented all the necessary backend logic for this feature.
 -   **Status**: IN PROGRESS
 -   **Agent Testing Done**: N
--   **Which testing method agent to use?**: screenshot tool. The agent was attempting to verify the dark mode fix for  but was unable to find the correct  for the dark mode toggle. The next agent should find the toggle, take a screenshot in dark mode, and then verify the logic fixes in the UI.
+-   **Which testing method agent to use?**: both. The backend logic is complete and needs testing via . The frontend UI for configuring this new alert needs to be created in  and verified with the screenshot tool.
 -   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
@@ -42,48 +44,49 @@ Key features implemented include:
   **Issues Detail**:
   -   **Issue 1**: WebSocket Connection Fails with 1006 Error
       -   **Attempted fixes**: The agent correctly implemented the WebSocket backend and frontend logic. Testing confirmed the backend endpoint is reachable, but the connection from the frontend fails.
-      -   **Next debug checklist**: This is an environmental issue with the preview deployment's ingress configuration, which doesn't support WebSocket upgrades. The implementation is correct, and the polling fallback works as intended. No immediate action is required by the agent. This will likely work correctly in a production environment with proper configuration.
-      -   **Why fix this issue and what will be achieved with the fix?**: Resolving this would enable true real-time notifications. However, it's blocked by infrastructure limitations in the preview environment.
+      -   **Next debug checklist**: This is an environmental issue with the preview deployment's ingress configuration, which doesn't support WebSocket upgrades. The implementation is correct, and the polling fallback for notifications works as intended. No immediate action is required.
+      -   **Why fix this issue and what will be achieved with the fix?**: Resolving this would enable true real-time notifications.
       -   **Status**: BLOCKED
       -   **Is recurring issue?**: N
       -   **Should Test frontend/backend/both after fix?**: Both
       -   **Blocked on other issue**: Environment/Infrastructure
 
 **In progress Task List**:
--   **Task 1**: Verify and finalize fixes for user-reported issues (Priority: P0)
+-   **Task 1**: Complete Offline Staff Alert Notification Feature (Priority: P0)
 
  Task Detail:
   -   **Task 1**:
-     -   **Where to resume**: The agent has already implemented code changes to fix the three reported issues. The immediate next step is to verify the dark mode fix in . The agent was stuck trying to take a screenshot because it couldn't find the dark mode toggle. The next agent needs to locate the toggle's , switch to dark mode, navigate to the Report CRM page, and take a screenshot to confirm the UI is fixed. After that, verify the RDP counts and at-risk customer logic are correct in the UI.
-     -   **What will be achieved with this?**: All three user-reported bugs will be resolved, ensuring consistent RDP logic, a functional UI in dark mode, and accurate customer retention alerts.
+     -   **Where to resume**: The backend logic is complete in , including the scheduler job and API endpoints. The next step is to update the frontend page at  to add a new UI section for configuring this alert (setting the time, enabling/disabling it). This will be similar to the At-Risk Customer Alerts section already on that page.
+     -   **What will be achieved with this?**: Admins will be able to configure and receive daily Telegram notifications about staff members who have not logged in by 11:00 AM, improving team accountability.
      -   **Status**: IN PROGRESS
-     -   **Should Test frontend/backend/both after fix?**: Frontend
+     -   **Should Test frontend/backend/both after fix?**: Both
      -   **Blocked on something**: None
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks**:
-    -   **Email Notifications (P2)**: Augment the current in-app system with email alerts.
-    -   **Scheduled Reports (P2)**: Allow admins to schedule automated report generation from the Export Center.
+    -   **Email Notifications (P2)**: Augment the current in-app/Telegram system with email alerts.
+    -   **Scheduled Reports from Export Center (P2)**: Allow admins to schedule automated CSV/Excel report generation.
+    -   **CSV Import for Reserved Members (P2)**: Allow importing a list of reserved members from a CSV file.
 -   **Future Tasks**:
     -   **Quick Actions on Overview (P2)**: Add buttons to the Database Overview cards for quick actions like assigning records.
-    -   **Financial ROI Tracking (P2)**: Enhance the Report CRM to include cost inputs to calculate financial metrics like ROI.
+    -   **Financial ROI Tracking (P2)**: Enhance the Report CRM to include cost inputs to calculate financial metrics.
     -   **Izin Analytics (P2)**: Add reports for the Izin feature showing staff break patterns.
-    -   **AI-Powered Suggestions (P3)**: Implement agent-suggested enhancements like AI-generated follow-up messages or funnel drop alerts.
-    -   **Sidebar Search (P3)**: Add a search/filter bar to the admin sidebar to quickly find pages.
-    -   **Convert to PWA (P3)**: Convert the app to a Progressive Web App for a native-like mobile experience.
+    -   **AI-Powered Suggestions (P3)**: Implement agent-suggested enhancements like AI-generated follow-up messages.
+    -   **Sidebar Search (P3)**: Add a search/filter bar to the admin sidebar.
+    -   **Convert to PWA (P3)**: Convert the app to a Progressive Web App.
+    -   **User Activity History (P3)**: Add a historical view of user login/logout patterns.
 
 **Completed work in this session**
--   **Internationalization (i18n) Feature**: Successfully implemented and tested a language switcher to toggle the UI between English and Indonesian. This included creating the , translation files, and integrating the translation function across dozens of components.
--   **Kubernetes Deployment Fix**: Added a  endpoint to  to resolve a deployment failure caused by failing Kubernetes health probes.
--   **Global RDP Logic Correction**: Updated the logic for counting Returning Depositors (RDP) to count unique customers per day. This was a complex change that required modifying multiple backend files:
-    -   
-    -   
-    -   
-    -   
-    -   
-    -   
--   **Customer Retention Logic Fix**: Updated  to use normalized customer IDs, fixing a bug where at-risk alerts were not correctly identifying customers with varied name casings.
--   **Report CRM Dark Mode Fix**: Updated  with appropriate TailwindCSS classes to make the UI compatible with dark mode.
+- **User Activity Monitor**: Created a new page () and corresponding backend endpoints (, ) to track and display real-time user status (Online, Idle, Offline).
+- **Deployment Readiness & JWT Fix**: Ran a health check, identified hardcoded JWT secret fallbacks in  and , and removed them to ensure the application fails fast if the environment variable is not set.
+- **Database Request Duplicate Check (Fixed)**: Implemented and then corrected a feature in  that prevents staff from being assigned database records where the customer  is already in the Reserved Members list.
+- **Scheduled Telegram At-Risk Alerts**: Implemented a scheduled job to send daily alerts about at-risk customers to a specified Telegram group chat, complete with a configuration UI on the frontend.
+- **Scheduled Telegram Daily Reports**: Implemented a feature for admins to receive a daily performance summary report via Telegram, with a full configuration UI.
+- **Bulk Add Reserved Members**: Added a new feature to the Reserved Members admin page allowing for the bulk creation of reserved members from a list of names.
+- **Bug Fixes (RDP, Dark Mode, Retention)**:
+    - Comprehensively fixed dark mode styling in .
+    - Corrected the RDP (Returning Depositor) counting logic in multiple sections of  to count unique customers per day.
+    - Verified the fix for at-risk customer alerts in  which now uses normalized customer IDs.
 
 **Earlier issues found/mentioned but not fixed**
 -   None.
@@ -98,51 +101,60 @@ Key features implemented include:
 -   **Frontend**: React, , , TailwindCSS, React Context API.
 -   **Backend**: FastAPI, PyMongo, Pydantic, JWT.
 -   **Database**: MongoDB.
--   **Internationalization (i18n)**: React Context and JSON files for translations.
--   **Dynamic Calculation**: RDP counts are calculated at query-time using MongoDB aggregation pipelines or Python logic, not stored in the database, allowing for flexibility.
+-   **Scheduling**:  for running background jobs (Telegram notifications).
+-   **Real-time (Polling)**: A frontend heartbeat polls a backend endpoint to update user activity status.
 
 **key DB schema**
--   No schema changes were made in this session. The logic was changed at the application layer.
+-   **users** collection: Added  (datetime) and  (datetime) fields.
+-   **user_activity** collection: (Implicitly used) No, activity status is calculated from the  collection.
+-   **settings** collection: A document with  stores all Telegram scheduling configurations, including bot tokens, chat IDs, schedules, and feature toggles.
 
 **changes in tech stack**
--   None.
+-   : Added for backend job scheduling.
+-   : Added for Telegram integration.
+-: Added for Telegram integration.
 
 **All files of reference**
--   **/app/backend/server.py**: Updated to add the  endpoint.
--   **/app/backend/routes/{omset, bonus, daily_summary, report, leaderboard, analytics, retention}.py**: All were updated to implement the new unique-customer-per-day RDP logic.
--   **/app/frontend/src/contexts/LanguageContext.js**: Updated to provide a more convenient translation function.
--   **/app/frontend/src/translations/{en.js, id.js}**: Populated with translations for most of the application UI.
--   **/app/frontend/src/components/ReportCRM.js**: Updated to fix hardcoded colors and support dark mode.
--   Numerous files in  and  were updated to replace hardcoded text with translation keys.
+-   **/app/backend/routes/scheduled_reports.py**: New file containing all logic for scheduled Telegram reports and alerts.
+-   **/app/frontend/src/pages/ScheduledReports.js**: New page for configuring all scheduled Telegram features.
+-   **/app/frontend/src/pages/UserActivity.js**: New page for monitoring user online/offline status.
+-   **/app/backend/routes/auth.py**: Modified to track user login and activity.
+-   **/app/frontend/src/App.js**: Modified to send a periodic heartbeat to track user activity.
+-   **/app/backend/routes/records.py**: Modified to implement the duplicate username check against reserved members.
+-   **/app/backend/routes/report.py**: Modified to fix RDP calculation logic.
+-   **/app/frontend/src/components/ReportCRM.js**: Modified to fix dark mode UI.
 
 **Areas that need refactoring**:
 -   None identified.
 
 **key api endpoints**
--   : New backend endpoint for Kubernetes health checks.
--   All analytics and reporting endpoints (e.g., , , , ) now return data based on the new RDP logic.
+-   : Updates the  timestamp for the current user.
+-   : Returns a list of all users with their calculated activity status (Online, Idle, Offline).
+-   : (New) Endpoint to handle user logout.
+-   : Retrieves the current Telegram scheduler configuration.
+-   : Saves the configuration for the daily summary report.
+-   : Saves the configuration for the at-risk customer alerts.
+-   : Saves configuration for offline staff alerts.
+-   : Manually triggers the daily summary report.
+-   : Manually triggers the at-risk customer alert.
+-   : Bulk adds a list of names to the reserved members list.
 
 **Critical Info for New Agent**
--   Your immediate priority is to finish verifying the batch of three fixes that are currently in progress.
--   The previous agent was stuck trying to verify the dark mode UI fix for the Report CRM page. You need to find the correct  for the dark mode toggle button, use it to switch the theme, and then take a screenshot of the Report CRM page to confirm the styling is correct.
--   After verifying the UI, double-check that the RDP counts in the Report CRM and the alerts in the Customer Retention page are now behaving as the user expects.
--   The change in RDP logic was complex and touched many files. Be aware that the core principle is to count *unique normalized customer IDs per day* for any RDP metric.
+-   Your immediate priority is to complete the Offline Staff Alert feature. The backend work is already done in . You need to build the UI for it in .
+-   The pattern for adding new scheduled alerts is established: add fields to the  model, create a generation function, add a job to the scheduler, update the API endpoints, and finally add a UI configuration section to the  page.
+-   The agent encountered a visual discrepancy with the screenshot tool where dark mode appeared light, but the underlying computed CSS styles were correct. Trust the computed styles from the browser () over the visual output of the screenshot if you encounter similar issues.
 
 **documents and test reports created in this job**
 -   
--    (updated)
+-    (updated multiple times)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User**: Confirms the explanation about deployments and asks to deploy the i18n feature.
-2.  **User**: Reports that the deployment is failing and provides logs.
-3.  **Agent**: Identifies the missing  endpoint from the logs.
-4.  **Agent**: Implements the  endpoint and confirms the app is ready for deployment.
-5.  **User**: Reports that the RDP logic is still wrong, as multiple deposits from the same customer on the same day are being counted as multiple RDPs. Asks for a fix that also updates reports and bonus calculations.
-6.  **Agent**: Implements fixes across , , and .
-7.  **User**: Provides a screenshot showing the RDP count is still wrong on the Staff OMSET CRM page.
-8.  **Agent**: Realizes the fix was incomplete and updates  to fix the summary stats endpoint.
-9.  **User**: Confirms the previous RDP fix works on deployment but states that existing records also need to reflect the new logic.
-10. **User**: Reports three new issues: RDP count is still wrong in Report CRM, the Report CRM daily report has bad colors in dark mode, and the at-risk customer feature shows an incorrect 14 days since last deposit alert.
+1.  **User**: Asks for a page to show user activity (online, idle, logged out). (Implemented)
+2.  **Agent**: Implements the user activity monitor and finishes.
+3.  **User**: Asks for a notification if a staff member is not online by 11:00 AM. (In Progress)
+4.  **Agent**: Implements the backend logic for the offline staff alert.
+5.  **User**: (Pending) The next user interaction will likely be to approve the plan to finish the offline staff alert UI.
+*(The history is very long, this is a summary of the most recent requests)*
 
 **Project Health Check:**
 -   **Broken**: WebSocket connection in the preview environment (known infrastructure limitation, work is blocked).
@@ -150,15 +162,18 @@ Key features implemented include:
 
 **3rd Party Integrations**
 -   **@dnd-kit/core, @dnd-kit/sortable**: Used for sidebar customization.
--   **xlsx**: Used for frontend Excel/CSV creation in the Export Center.
+-   **xlsx**: Used for frontend Excel/CSV creation.
 -   **recharts**: Used for frontend charting.
 -   **pytz**: Used for backend timezone handling.
+-   **python-telegram-bot**: Used for sending messages via the Telegram Bot API.
+-   **APScheduler**: Used for scheduling backend jobs (e.g., sending daily reports).
+-   **emergentintegrations**: Used as a helper for Telegram integration.
 
 **Testing status**
--   **Testing agent used after significant changes**: YES. The testing agent was used to verify the internationalization (i18n) feature, and all tests passed.
+-   **Testing agent used after significant changes**: YES. It was used to verify the initial batch of bug fixes (RDP, dark mode, retention).
 -   **Troubleshoot agent used after agent stuck in loop**: NO
--   **Test files created**: None.
--   **Known regressions**: The RDP logic was found to be inconsistently implemented, but the agent has since performed a more thorough fix across all relevant backend modules.
+-   **Test files created**: A test case was added to  by the testing agent.
+-   **Known regressions**: None.
 
 **Credentials to test flow:**
 -   **Admin**:
@@ -167,6 +182,10 @@ Key features implemented include:
 -   **Staff**:
     -   Email: 
     -   Password: 
+-   **Telegram Credentials**:
+    -   Bot Token:  (Provided by user)
+    -   Admin Chat ID:  (Provided by user)
+    -   Group Chat ID:  (Provided by user)
 
 **What agent forgot to execute**
--   Initially, the agent's fix for the RDP logic was incomplete. It fixed some endpoints but missed others (, , , ). The agent later identified this oversight and applied the fix more comprehensively. This highlights the interconnectedness of the reporting features.</analysis>
+-   Initially, the agent made an incorrect assumption about the column to check for the database duplicate feature ( instead of ), but this was quickly corrected by the user and fixed by the agent.</analysis>
