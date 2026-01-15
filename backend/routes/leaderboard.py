@@ -25,6 +25,12 @@ DEFAULT_TARGETS = {
 
 # ==================== HELPER FUNCTIONS ====================
 
+def normalize_customer_id(customer_id: str) -> str:
+    """Normalize customer ID for consistent comparison"""
+    if not customer_id:
+        return ""
+    return customer_id.strip().lower()
+
 async def get_targets():
     """Get current targets from database or return defaults"""
     db = get_db()
@@ -55,73 +61,113 @@ async def get_leaderboard(
     else:  # all time
         query = {}
     
-    # Use aggregation for staff stats - much more efficient than loading all records
-    staff_pipeline = [
-        {'$match': query},
-        {'$group': {
-            '_id': '$staff_id',
-            'total_omset': {'$sum': '$depo_total'},
-            'total_ndp': {'$sum': {'$cond': [{'$eq': ['$customer_type', 'NDP']}, 1, 0]}},
-            'total_rdp': {'$sum': {'$cond': [{'$eq': ['$customer_type', 'RDP']}, 1, 0]}},
-            'days_worked': {'$addToSet': '$record_date'}
-        }}
-    ]
-    staff_results = await db.omset_records.aggregate(staff_pipeline).to_list(1000)
+    # Fetch records for calculating unique customers
+    records = await db.omset_records.find(query, {'_id': 0}).to_list(100000)
+    today_records = await db.omset_records.find({'record_date': today}, {'_id': 0}).to_list(10000)
     
-    # Get today's stats separately
-    today_pipeline = [
-        {'$match': {'record_date': today}},
-        {'$group': {
-            '_id': '$staff_id',
-            'today_ndp': {'$sum': {'$cond': [{'$eq': ['$customer_type', 'NDP']}, 1, 0]}},
-            'today_rdp': {'$sum': {'$cond': [{'$eq': ['$customer_type', 'RDP']}, 1, 0]}}
-        }}
-    ]
-    today_results = await db.omset_records.aggregate(today_pipeline).to_list(1000)
-    today_lookup = {t['_id']: t for t in today_results}
+    # Build customer_first_date for NDP detection (need all records for this)
+    all_records = await db.omset_records.find({}, {'_id': 0, 'customer_id': 1, 'customer_id_normalized': 1, 'product_id': 1, 'record_date': 1}).to_list(100000)
+    customer_first_date = {}
+    for record in sorted(all_records, key=lambda x: x['record_date']):
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (cid_normalized, record['product_id'])
+        if key not in customer_first_date:
+            customer_first_date[key] = record['record_date']
     
     # Get all staff users
     staff_users = await db.users.find({'role': 'staff'}, {'_id': 0}).to_list(100)
     staff_map = {s['id']: s for s in staff_users}
     
-    # Build result from aggregation
-    staff_stats_lookup = {s['_id']: s for s in staff_results}
-    
+    # Calculate stats for each staff - with unique RDP customers per day
     staff_stats = {}
     for staff in staff_users:
-        agg_stats = staff_stats_lookup.get(staff['id'], {})
-        today_stats = today_lookup.get(staff['id'], {})
         staff_stats[staff['id']] = {
             'staff_id': staff['id'],
             'staff_name': staff['name'],
-            'total_omset': agg_stats.get('total_omset', 0),
-            'total_ndp': agg_stats.get('total_ndp', 0),
-            'total_rdp': agg_stats.get('total_rdp', 0),
-            'today_ndp': today_stats.get('today_ndp', 0),
-            'today_rdp': today_stats.get('today_rdp', 0),
-            'days_worked': len(agg_stats.get('days_worked', []))
+            'total_omset': 0,
+            'total_ndp': 0,
+            'total_rdp': 0,
+            'today_ndp': 0,
+            'today_rdp': 0,
+            'days_worked': set(),
+            'daily_ndp_customers': {},  # {date: set(customer_ids)}
+            'daily_rdp_customers': {}   # {date: set(customer_ids)}
         }
     
-    # Also include staff from records who might have been deleted
-    for result in staff_results:
-        staff_id = result['_id']
+    # Process records
+    for record in records:
+        staff_id = record['staff_id']
+        date = record['record_date']
+        
+        # Initialize staff if not exists (for deleted staff)
         if staff_id not in staff_stats:
-            today_stats = today_lookup.get(staff_id, {})
             staff_stats[staff_id] = {
                 'staff_id': staff_id,
-                'staff_name': 'Unknown',
-                'total_omset': result.get('total_omset', 0),
-                'total_ndp': result.get('total_ndp', 0),
-                'total_rdp': result.get('total_rdp', 0),
-                'today_ndp': today_stats.get('today_ndp', 0),
-                'today_rdp': today_stats.get('today_rdp', 0),
-                'days_worked': len(result.get('days_worked', []))
+                'staff_name': record.get('staff_name', 'Unknown'),
+                'total_omset': 0,
+                'total_ndp': 0,
+                'total_rdp': 0,
+                'today_ndp': 0,
+                'today_rdp': 0,
+                'days_worked': set(),
+                'daily_ndp_customers': {},
+                'daily_rdp_customers': {}
             }
+        
+        staff_stats[staff_id]['total_omset'] += record.get('depo_total', 0) or 0
+        staff_stats[staff_id]['days_worked'].add(date)
+        
+        # Initialize daily tracking sets
+        if date not in staff_stats[staff_id]['daily_ndp_customers']:
+            staff_stats[staff_id]['daily_ndp_customers'][date] = set()
+            staff_stats[staff_id]['daily_rdp_customers'][date] = set()
+        
+        # Check NDP/RDP
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (cid_normalized, record['product_id'])
+        first_date = customer_first_date.get(key)
+        
+        if first_date == date:
+            # NDP - count unique per day
+            if cid_normalized not in staff_stats[staff_id]['daily_ndp_customers'][date]:
+                staff_stats[staff_id]['daily_ndp_customers'][date].add(cid_normalized)
+                staff_stats[staff_id]['total_ndp'] += 1
+        else:
+            # RDP - count unique per day (NEW LOGIC)
+            if cid_normalized not in staff_stats[staff_id]['daily_rdp_customers'][date]:
+                staff_stats[staff_id]['daily_rdp_customers'][date].add(cid_normalized)
+                staff_stats[staff_id]['total_rdp'] += 1
+    
+    # Calculate today's stats separately
+    today_ndp_customers = {}  # {staff_id: set(customer_ids)}
+    today_rdp_customers = {}  # {staff_id: set(customer_ids)}
+    
+    for record in today_records:
+        staff_id = record['staff_id']
+        
+        if staff_id not in today_ndp_customers:
+            today_ndp_customers[staff_id] = set()
+            today_rdp_customers[staff_id] = set()
+        
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (cid_normalized, record['product_id'])
+        first_date = customer_first_date.get(key)
+        
+        if first_date == today:
+            if cid_normalized not in today_ndp_customers[staff_id]:
+                today_ndp_customers[staff_id].add(cid_normalized)
+                if staff_id in staff_stats:
+                    staff_stats[staff_id]['today_ndp'] += 1
+        else:
+            if cid_normalized not in today_rdp_customers[staff_id]:
+                today_rdp_customers[staff_id].add(cid_normalized)
+                if staff_id in staff_stats:
+                    staff_stats[staff_id]['today_rdp'] += 1
     
     # Convert to list and calculate averages
     leaderboard = []
     for staff_id, stats in staff_stats.items():
-        days_count = stats['days_worked'] if isinstance(stats['days_worked'], int) else len(stats['days_worked'])
+        days_count = len(stats['days_worked'])
         leaderboard.append({
             'staff_id': stats['staff_id'],
             'staff_name': stats['staff_name'],
