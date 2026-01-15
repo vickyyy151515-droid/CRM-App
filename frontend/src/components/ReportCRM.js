@@ -787,27 +787,27 @@ export default function ReportCRM() {
       {/* Staff Performance Tab */}
       {activeTab === 'staff' && (
         <div className="space-y-4" data-testid="staff-tab-content">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
-              <h3 className="font-semibold text-slate-800">Staff Performance - {selectedYear}</h3>
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="px-4 py-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+              <h3 className="font-semibold text-slate-800 dark:text-white">Staff Performance - {selectedYear}</h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-slate-50">
+                <thead className="bg-slate-50 dark:bg-slate-900">
                   <tr>
-                    <th className="px-4 py-3 text-left text-slate-600">Staff</th>
-                    <th className="px-4 py-3 text-right text-slate-600">NEW ID (NDP)</th>
-                    <th className="px-4 py-3 text-right text-slate-600">ID RDP</th>
-                    <th className="px-4 py-3 text-right text-slate-600">TOTAL FORM</th>
-                    <th className="px-4 py-3 text-right text-slate-600">TOTAL OMSET</th>
-                    <th className="px-4 py-3 text-right text-slate-600">AVG/FORM</th>
-                    <th className="px-4 py-3 text-right text-slate-600">% NDP</th>
+                    <th className="px-4 py-3 text-left text-slate-600 dark:text-slate-300">Staff</th>
+                    <th className="px-4 py-3 text-right text-slate-600 dark:text-slate-300">NEW ID (NDP)</th>
+                    <th className="px-4 py-3 text-right text-slate-600 dark:text-slate-300">ID RDP</th>
+                    <th className="px-4 py-3 text-right text-slate-600 dark:text-slate-300">TOTAL FORM</th>
+                    <th className="px-4 py-3 text-right text-slate-600 dark:text-slate-300">TOTAL OMSET</th>
+                    <th className="px-4 py-3 text-right text-slate-600 dark:text-slate-300">AVG/FORM</th>
+                    <th className="px-4 py-3 text-right text-slate-600 dark:text-slate-300">% NDP</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                   {staffPerformance.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-4 py-12 text-center text-slate-500">
+                      <td colSpan={7} className="px-4 py-12 text-center text-slate-500 dark:text-slate-400">
                         No staff data available
                       </td>
                     </tr>
@@ -818,18 +818,18 @@ export default function ReportCRM() {
                       const avgPerForm = staff.total_form > 0 ? Math.round((staff.nominal || 0) / staff.total_form) : 0;
                       
                       return (
-                        <tr key={i} className="hover:bg-slate-50">
+                        <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-700">
                           <td className="px-4 py-3">
-                            <div className="font-medium text-slate-900">{staff.staff_name}</div>
+                            <div className="font-medium text-slate-900 dark:text-white">{staff.staff_name}</div>
                           </td>
-                          <td className="px-4 py-3 text-right text-blue-600 font-medium">{formatNumber(staff.new_id)}</td>
-                          <td className="px-4 py-3 text-right text-green-600 font-medium">{formatNumber(staff.rdp)}</td>
-                          <td className="px-4 py-3 text-right text-purple-600 font-medium">{formatNumber(staff.total_form)}</td>
-                          <td className="px-4 py-3 text-right text-amber-600 font-medium">{formatRupiah(staff.nominal)}</td>
-                          <td className="px-4 py-3 text-right text-slate-600">{formatRupiah(avgPerForm)}</td>
+                          <td className="px-4 py-3 text-right text-blue-600 dark:text-blue-400 font-medium">{formatNumber(staff.new_id)}</td>
+                          <td className="px-4 py-3 text-right text-green-600 dark:text-green-400 font-medium">{formatNumber(staff.rdp)}</td>
+                          <td className="px-4 py-3 text-right text-purple-600 dark:text-purple-400 font-medium">{formatNumber(staff.total_form)}</td>
+                          <td className="px-4 py-3 text-right text-amber-600 dark:text-amber-400 font-medium">{formatRupiah(staff.nominal)}</td>
+                          <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">{formatRupiah(avgPerForm)}</td>
                           <td className="px-4 py-3 text-right">
                             <span className={`px-2 py-1 rounded text-xs font-medium ${
-                              ndpPercent >= 50 ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'
+                              ndpPercent >= 50 ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
                             }`}>
                               {ndpPercent}%
                             </span>
@@ -840,19 +840,19 @@ export default function ReportCRM() {
                   )}
                 </tbody>
                 {staffPerformance.length > 0 && (
-                  <tfoot className="bg-slate-100">
+                  <tfoot className="bg-slate-100 dark:bg-slate-900">
                     <tr className="font-bold">
-                      <td className="px-4 py-3 text-slate-900">TOTAL</td>
-                      <td className="px-4 py-3 text-right text-blue-700">
+                      <td className="px-4 py-3 text-slate-900 dark:text-white">TOTAL</td>
+                      <td className="px-4 py-3 text-right text-blue-700 dark:text-blue-400">
                         {formatNumber(staffPerformance.reduce((sum, s) => sum + (s.new_id || 0), 0))}
                       </td>
-                      <td className="px-4 py-3 text-right text-green-700">
+                      <td className="px-4 py-3 text-right text-green-700 dark:text-green-400">
                         {formatNumber(staffPerformance.reduce((sum, s) => sum + (s.rdp || 0), 0))}
                       </td>
-                      <td className="px-4 py-3 text-right text-purple-700">
+                      <td className="px-4 py-3 text-right text-purple-700 dark:text-purple-400">
                         {formatNumber(staffPerformance.reduce((sum, s) => sum + (s.total_form || 0), 0))}
                       </td>
-                      <td className="px-4 py-3 text-right text-amber-700">
+                      <td className="px-4 py-3 text-right text-amber-700 dark:text-amber-400">
                         {formatRupiah(staffPerformance.reduce((sum, s) => sum + (s.nominal || 0), 0))}
                       </td>
                       <td className="px-4 py-3 text-right">-</td>
