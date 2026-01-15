@@ -633,17 +633,17 @@ export default function ReportCRM() {
       {/* Daily Report Tab - Grouped by Staff and Product */}
       {activeTab === 'daily' && (
         <div className="space-y-4" data-testid="daily-tab-content">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-slate-800">
+              <h3 className="font-semibold text-slate-800 dark:text-white">
                 Daily Report - {MONTH_NAMES[selectedMonth]} {selectedYear}
               </h3>
-              <span className="text-sm text-slate-500">{dailyByStaff.length} staff with data</span>
+              <span className="text-sm text-slate-500 dark:text-slate-400">{dailyByStaff.length} staff with data</span>
             </div>
           </div>
 
           {dailyByStaff.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center text-slate-500">
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-12 text-center text-slate-500 dark:text-slate-400">
               No data for this month
             </div>
           ) : (
@@ -652,29 +652,29 @@ export default function ReportCRM() {
               const staffTotals = staff.totals;
               
               return (
-                <div key={staff.staff_id} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div key={staff.staff_id} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                   {/* Staff Header */}
                   <button
                     onClick={() => toggleStaff(staff.staff_id)}
-                    className="w-full px-4 py-4 flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 transition-colors"
+                    className="w-full px-4 py-4 flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-700 dark:to-slate-700 hover:from-blue-100 hover:to-indigo-100 dark:hover:from-slate-600 dark:hover:to-slate-600 transition-colors"
                   >
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-lg">
                         {staff.staff_name.charAt(0).toUpperCase()}
                       </div>
                       <div className="text-left">
-                        <div className="font-semibold text-slate-800">{staff.staff_name}</div>
-                        <div className="text-sm text-slate-500">{staff.products.length} product(s)</div>
+                        <div className="font-semibold text-slate-800 dark:text-white">{staff.staff_name}</div>
+                        <div className="text-sm text-slate-500 dark:text-slate-400">{staff.products.length} product(s)</div>
                       </div>
                     </div>
                     <div className="flex items-center gap-6">
                       <div className="text-right">
                         <div className="flex gap-4 text-sm">
-                          <span className="text-blue-600 font-medium">NDP: {formatNumber(staffTotals.new_id)}</span>
-                          <span className="text-green-600 font-medium">RDP: {formatNumber(staffTotals.rdp)}</span>
-                          <span className="text-purple-600 font-medium">Form: {formatNumber(staffTotals.total_form)}</span>
+                          <span className="text-blue-600 dark:text-blue-400 font-medium">NDP: {formatNumber(staffTotals.new_id)}</span>
+                          <span className="text-green-600 dark:text-green-400 font-medium">RDP: {formatNumber(staffTotals.rdp)}</span>
+                          <span className="text-purple-600 dark:text-purple-400 font-medium">Form: {formatNumber(staffTotals.total_form)}</span>
                         </div>
-                        <div className="text-amber-600 font-bold text-lg">{formatRupiah(staffTotals.nominal)}</div>
+                        <div className="text-amber-600 dark:text-amber-400 font-bold text-lg">{formatRupiah(staffTotals.nominal)}</div>
                       </div>
                       {isStaffExpanded ? <ChevronUp size={24} className="text-slate-400" /> : <ChevronDown size={24} className="text-slate-400" />}
                     </div>
@@ -682,30 +682,30 @@ export default function ReportCRM() {
 
                   {/* Staff Content - Products */}
                   {isStaffExpanded && (
-                    <div className="p-4 space-y-3 bg-slate-50">
+                    <div className="p-4 space-y-3 bg-slate-50 dark:bg-slate-900">
                       {staff.products.map((product) => {
                         const productKey = `${staff.staff_id}-${product.product_id}`;
                         const isProductExpanded = expandedProducts[productKey];
                         const productTotals = product.totals;
                         
                         return (
-                          <div key={product.product_id} className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                          <div key={product.product_id} className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                             {/* Product Header */}
                             <button
                               onClick={() => toggleProduct(staff.staff_id, product.product_id)}
-                              className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 transition-colors"
+                              className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                             >
                               <div className="flex items-center gap-3">
-                                <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium">
+                                <span className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-full text-sm font-medium">
                                   {product.product_name}
                                 </span>
-                                <span className="text-sm text-slate-500">{product.daily.length} day(s)</span>
+                                <span className="text-sm text-slate-500 dark:text-slate-400">{product.daily.length} day(s)</span>
                               </div>
                               <div className="flex items-center gap-4">
                                 <div className="flex gap-3 text-sm">
-                                  <span className="text-blue-600">NDP: {formatNumber(productTotals.new_id)}</span>
-                                  <span className="text-green-600">RDP: {formatNumber(productTotals.rdp)}</span>
-                                  <span className="text-amber-600 font-semibold">{formatRupiah(productTotals.nominal)}</span>
+                                  <span className="text-blue-600 dark:text-blue-400">NDP: {formatNumber(productTotals.new_id)}</span>
+                                  <span className="text-green-600 dark:text-green-400">RDP: {formatNumber(productTotals.rdp)}</span>
+                                  <span className="text-amber-600 dark:text-amber-400 font-semibold">{formatRupiah(productTotals.nominal)}</span>
                                 </div>
                                 {isProductExpanded ? <ChevronUp size={18} className="text-slate-400" /> : <ChevronDown size={18} className="text-slate-400" />}
                               </div>
@@ -713,41 +713,41 @@ export default function ReportCRM() {
 
                             {/* Product Daily Data */}
                             {isProductExpanded && (
-                              <div className="border-t border-slate-200">
+                              <div className="border-t border-slate-200 dark:border-slate-700">
                                 <table className="w-full text-sm">
-                                  <thead className="bg-slate-50">
+                                  <thead className="bg-slate-50 dark:bg-slate-900">
                                     <tr>
-                                      <th className="px-4 py-2 text-left text-slate-600">Tanggal</th>
-                                      <th className="px-4 py-2 text-right text-slate-600">NDP</th>
-                                      <th className="px-4 py-2 text-right text-slate-600">RDP</th>
-                                      <th className="px-4 py-2 text-right text-slate-600">Form</th>
-                                      <th className="px-4 py-2 text-right text-slate-600">Nominal</th>
-                                      <th className="px-4 py-2 text-right text-slate-600">AVG/Form</th>
+                                      <th className="px-4 py-2 text-left text-slate-600 dark:text-slate-300">Tanggal</th>
+                                      <th className="px-4 py-2 text-right text-slate-600 dark:text-slate-300">NDP</th>
+                                      <th className="px-4 py-2 text-right text-slate-600 dark:text-slate-300">RDP</th>
+                                      <th className="px-4 py-2 text-right text-slate-600 dark:text-slate-300">Form</th>
+                                      <th className="px-4 py-2 text-right text-slate-600 dark:text-slate-300">Nominal</th>
+                                      <th className="px-4 py-2 text-right text-slate-600 dark:text-slate-300">AVG/Form</th>
                                     </tr>
                                   </thead>
-                                  <tbody className="divide-y divide-slate-100">
+                                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                     {product.daily.map((day, idx) => {
                                       const avgPerForm = day.total_form > 0 ? Math.round(day.nominal / day.total_form) : 0;
                                       return (
-                                        <tr key={idx} className="hover:bg-slate-50">
-                                          <td className="px-4 py-2 text-slate-900">{day.date}</td>
-                                          <td className="px-4 py-2 text-right text-blue-600 font-medium">{formatNumber(day.new_id)}</td>
-                                          <td className="px-4 py-2 text-right text-green-600 font-medium">{formatNumber(day.rdp)}</td>
-                                          <td className="px-4 py-2 text-right text-purple-600 font-medium">{formatNumber(day.total_form)}</td>
-                                          <td className="px-4 py-2 text-right text-amber-600 font-medium">{formatRupiah(day.nominal)}</td>
-                                          <td className="px-4 py-2 text-right text-slate-500">{formatRupiah(avgPerForm)}</td>
+                                        <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700">
+                                          <td className="px-4 py-2 text-slate-900 dark:text-slate-100">{day.date}</td>
+                                          <td className="px-4 py-2 text-right text-blue-600 dark:text-blue-400 font-medium">{formatNumber(day.new_id)}</td>
+                                          <td className="px-4 py-2 text-right text-green-600 dark:text-green-400 font-medium">{formatNumber(day.rdp)}</td>
+                                          <td className="px-4 py-2 text-right text-purple-600 dark:text-purple-400 font-medium">{formatNumber(day.total_form)}</td>
+                                          <td className="px-4 py-2 text-right text-amber-600 dark:text-amber-400 font-medium">{formatRupiah(day.nominal)}</td>
+                                          <td className="px-4 py-2 text-right text-slate-500 dark:text-slate-400">{formatRupiah(avgPerForm)}</td>
                                         </tr>
                                       );
                                     })}
                                   </tbody>
-                                  <tfoot className="bg-slate-100">
+                                  <tfoot className="bg-slate-100 dark:bg-slate-900">
                                     <tr className="font-semibold">
-                                      <td className="px-4 py-2 text-slate-900">Total</td>
-                                      <td className="px-4 py-2 text-right text-blue-700">{formatNumber(productTotals.new_id)}</td>
-                                      <td className="px-4 py-2 text-right text-green-700">{formatNumber(productTotals.rdp)}</td>
-                                      <td className="px-4 py-2 text-right text-purple-700">{formatNumber(productTotals.total_form)}</td>
-                                      <td className="px-4 py-2 text-right text-amber-700">{formatRupiah(productTotals.nominal)}</td>
-                                      <td className="px-4 py-2 text-right text-slate-600">
+                                      <td className="px-4 py-2 text-slate-900 dark:text-white">Total</td>
+                                      <td className="px-4 py-2 text-right text-blue-700 dark:text-blue-400">{formatNumber(productTotals.new_id)}</td>
+                                      <td className="px-4 py-2 text-right text-green-700 dark:text-green-400">{formatNumber(productTotals.rdp)}</td>
+                                      <td className="px-4 py-2 text-right text-purple-700 dark:text-purple-400">{formatNumber(productTotals.total_form)}</td>
+                                      <td className="px-4 py-2 text-right text-amber-700 dark:text-amber-400">{formatRupiah(productTotals.nominal)}</td>
+                                      <td className="px-4 py-2 text-right text-slate-600 dark:text-slate-400">
                                         {productTotals.total_form > 0 ? formatRupiah(Math.round(productTotals.nominal / productTotals.total_form)) : '-'}
                                       </td>
                                     </tr>
