@@ -409,6 +409,15 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
           <h1 className="text-lg font-bold text-slate-900 dark:text-white">CRM Pro</h1>
           <div className="flex items-center gap-2">
             <button
+              onClick={toggleLanguage}
+              className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg flex items-center gap-1"
+              data-testid="language-toggle-mobile"
+              title={language === 'en' ? 'Switch to Indonesian' : 'Ganti ke Inggris'}
+            >
+              <Globe size={18} />
+              <span className="text-xs font-medium uppercase">{language}</span>
+            </button>
+            <button
               onClick={toggleTheme}
               className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
               data-testid="theme-toggle-mobile"
@@ -424,10 +433,19 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
           <GlobalSearch onNavigate={(tab) => setActiveTab(tab)} isAdmin={user?.role === 'admin'} />
           <div className="flex items-center gap-3">
             <button
+              onClick={toggleLanguage}
+              className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-1.5"
+              data-testid="language-toggle"
+              title={language === 'en' ? 'Switch to Indonesian' : 'Ganti ke Inggris'}
+            >
+              <Globe size={18} />
+              <span className="text-xs font-medium uppercase">{language}</span>
+            </button>
+            <button
               onClick={toggleTheme}
               className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
               data-testid="theme-toggle"
-              title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+              title={darkMode ? t('settings.lightMode') : t('settings.darkMode')}
             >
               {darkMode ? <Sun size={20} /> : <Moon size={20} />}
             </button>
