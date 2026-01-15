@@ -136,6 +136,68 @@ export default function ScheduledReports() {
     }
   };
 
+  // At-Risk Alert handlers
+  const handleAtriskSave = async (e) => {
+    e.preventDefault();
+    
+    if (!botToken || !atriskGroupChatId) {
+      toast.error('Please fill in Bot Token and Group Chat ID');
+      return;
+    }
+
+    setAtriskSaving(true);
+    try {
+      await api.post('/scheduled-reports/atrisk-config', {
+        bot_token: botToken,
+        group_chat_id: atriskGroupChatId,
+        enabled: atriskEnabled,
+        alert_hour: atriskHour,
+        alert_minute: atriskMinute,
+        inactive_days_threshold: atriskInactiveDays
+      });
+      toast.success('At-risk alert configuration saved successfully');
+      loadConfig();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to save at-risk configuration');
+    } finally {
+      setAtriskSaving(false);
+    }
+  };
+
+  const handleAtriskTest = async () => {
+    setAtriskTesting(true);
+    try {
+      await api.post('/scheduled-reports/atrisk-test');
+      toast.success('Test message sent to group! Check your Telegram group.');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to send test message');
+    } finally {
+      setAtriskTesting(false);
+    }
+  };
+
+  const handleAtriskSendNow = async () => {
+    setAtriskSending(true);
+    try {
+      await api.post('/scheduled-reports/atrisk-send-now');
+      toast.success('At-risk alert sent to group! Check your Telegram group.');
+      loadConfig();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to send at-risk alert');
+    } finally {
+      setAtriskSending(false);
+    }
+  };
+
+  const handleAtriskPreview = async () => {
+    try {
+      const response = await api.get('/scheduled-reports/atrisk-preview');
+      setAtriskPreview(response.data.alert);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to generate at-risk preview');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64" data-testid="scheduled-reports-loading">
