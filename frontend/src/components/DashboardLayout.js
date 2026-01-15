@@ -1,15 +1,54 @@
-import { LogOut, Menu, X, ChevronLeft, ChevronRight, Settings, ChevronDown, ChevronUp, Folder, FolderOpen, Sun, Moon, Globe } from 'lucide-react';
+import { LogOut, Menu, X, ChevronLeft, ChevronRight, Settings, ChevronDown, ChevronUp, Folder, FolderOpen, Sun, Moon, Globe, Crown, Shield, User } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import NotificationBell from './NotificationBell';
 import SidebarConfigurator from './SidebarConfigurator';
 import GlobalSearch from './GlobalSearch';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme, ROLE_THEMES } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { api } from '../App';
 
 export default function DashboardLayout({ user, onLogout, activeTab, setActiveTab, menuItems, children }) {
-  const { darkMode, toggleTheme } = useTheme();
+  const { darkMode, toggleTheme, setUserRole } = useTheme();
   const { language, toggleLanguage, t } = useLanguage();
+  
+  // Get the theme for current user's role
+  const roleTheme = ROLE_THEMES[user.role] || ROLE_THEMES.staff;
+  
+  // Update role in theme context when user changes
+  useEffect(() => {
+    if (user?.role) {
+      setUserRole(user.role);
+    }
+  }, [user?.role, setUserRole]);
+  
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    const saved = localStorage.getItem('sidebar-collapsed');
+    return saved === 'true';
+  });
+  const [showConfigurator, setShowConfigurator] = useState(false);
+  const [sidebarConfig, setSidebarConfig] = useState(null);
+  const [openFolders, setOpenFolders] = useState({});
+
+  // Get role icon
+  const getRoleIcon = (role) => {
+    switch(role) {
+      case 'master_admin': return Crown;
+      case 'admin': return Shield;
+      default: return User;
+    }
+  };
+
+  const RoleIcon = getRoleIcon(user.role);
+
+  // Get role display name
+  const getRoleDisplayName = (role) => {
+    switch(role) {
+      case 'master_admin': return 'Master Admin';
+      case 'admin': return 'Admin Panel';
+      default: return 'Staff Panel';
+    }
+  };
   
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => {
