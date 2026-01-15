@@ -499,6 +499,26 @@ Build a Customer Relationship Management (CRM) application where:
 ### P1: Next Priority Tasks
 - None - All P1 tasks completed!
 
+### ✅ COMPLETED: Report CRM Bug Fixes (Jan 15, 2026)
+- **Issue 1 - Dark Mode Fix**: Report CRM page now fully supports dark mode
+  - Fixed header, filters, tabs, yearly table, monthly detail, and staff performance sections
+  - Added dark:bg-slate-800/900 classes to all card elements
+  - Added dark:text-white/slate-300 classes to all text elements
+  - Fixed select dropdowns with dark mode backgrounds
+- **Issue 2 - RDP Unique Customer Count Fix**: RDP now counts unique customers per day, not total records
+  - Updated `daily_by_staff` section to track unique customers per staff-product-date
+  - Updated `daily_data` section to track unique customers per day
+  - Updated `staff_performance` section to track unique customers per staff for the year
+  - All sections now use normalized customer IDs for consistent comparison
+- **Issue 3 - Customer Retention At-Risk Alerts Fix**: Confirmed working correctly
+  - Retention alerts already use normalized customer IDs
+  - Days since deposit calculation is accurate
+- **Files Modified**:
+  - `frontend/src/components/ReportCRM.js` - Added dark mode classes throughout
+  - `frontend/src/components/DashboardLayout.js` - Added dark:bg-slate-950 to main element
+  - `backend/routes/report.py` - Fixed RDP logic in daily_by_staff, daily_data, and staff_performance
+- **Test Coverage**: Created `/app/tests/test_report_crm.py` with 7 passing tests
+
 ### P2: Future Enhancements
 - Email notifications for important updates
 - Scheduled automated reports from Export Center
