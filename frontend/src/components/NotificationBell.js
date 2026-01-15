@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { api } from '../App';
 import { Bell, Check, CheckCheck, Trash2, X, AlertCircle, Clock, Wifi, WifiOff } from 'lucide-react';
 import { toast } from 'sonner';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // WebSocket connection status enum
 const WS_STATUS = {
@@ -12,6 +13,7 @@ const WS_STATUS = {
 };
 
 export default function NotificationBell({ userRole }) {
+  const { t } = useLanguage();
   const [notifications, setNotifications] = useState([]);
   const [followupAlerts, setFollowupAlerts] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
