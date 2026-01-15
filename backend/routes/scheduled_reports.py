@@ -498,7 +498,13 @@ async def get_config(user: User = Depends(get_admin_user)):
             'enabled': False,
             'report_hour': 1,
             'report_minute': 0,
-            'last_sent': None
+            'last_sent': None,
+            'atrisk_enabled': False,
+            'atrisk_group_chat_id': None,
+            'atrisk_hour': 11,
+            'atrisk_minute': 0,
+            'atrisk_inactive_days': 14,
+            'atrisk_last_sent': None
         }
     
     # Mask the bot token for security
