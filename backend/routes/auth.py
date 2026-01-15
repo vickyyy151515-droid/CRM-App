@@ -48,6 +48,17 @@ async def login(credentials: UserLogin):
     if not user or not verify_password(credentials.password, user['password_hash']):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
+    # Update login timestamp and set user as online
+    now = get_jakarta_now()
+    await db.users.update_one(
+        {'id': user['id']},
+        {'$set': {
+            'last_login': now.isoformat(),
+            'last_activity': now.isoformat(),
+            'is_online': True
+        }}
+    )
+    
     token = create_token(user['id'], user['email'], user['role'])
     return {
         'token': token,
