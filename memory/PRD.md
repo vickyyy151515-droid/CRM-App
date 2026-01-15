@@ -584,6 +584,36 @@ Build a Customer Relationship Management (CRM) application where:
   - `backend/routes/report.py` - Fixed RDP logic in daily_by_staff, daily_data, and staff_performance
 - **Test Coverage**: Created `/app/tests/test_report_crm.py` with 7 passing tests
 
+### ✅ COMPLETED: Staff Offline Alerts Feature (Jan 15, 2026)
+- **Purpose**: Notify admins when staff members haven't logged in by a specific time
+- **Backend Endpoints**:
+  - `POST /api/scheduled-reports/staff-offline-config` - Save alert configuration
+  - `POST /api/scheduled-reports/staff-offline-send-now` - Manually trigger alert
+  - `GET /api/scheduled-reports/config` - Returns staff_offline_enabled, staff_offline_hour, staff_offline_minute fields
+- **Alert Content**:
+  - Summary: Total staff, online count, offline count
+  - Detailed list of offline staff with email and last login time
+  - List of currently online staff
+- **Features**:
+  - Configurable alert time (default 11:00 AM WIB)
+  - Enable/disable toggle
+  - Uses same Bot Token and Chat ID as Daily Reports (sent to admin's personal chat)
+  - Scheduler automatically sends at configured time
+  - Manual "Check Staff Status Now" button for instant check
+- **Staff Status Logic**:
+  - Online: Active within last 30 minutes
+  - Offline: No activity for 30+ minutes or logged out
+- **Frontend UI** (in ScheduledReports.js):
+  - Staff Offline Alerts section with red theme
+  - Status card showing schedule and last sent time
+  - Configuration form with hour/minute dropdowns and enable toggle
+  - Alert Actions panel with "Check Staff Status Now" button
+  - Info section explaining how it works
+- **Files Modified**:
+  - `backend/routes/scheduled_reports.py` - Added generate_staff_offline_alert, send_staff_offline_alert, config endpoint
+  - `frontend/src/pages/ScheduledReports.js` - Added Staff Offline Alerts UI section
+- **Test Coverage**: Created `/app/tests/test_staff_offline_alerts.py` with 6 passing tests
+
 ### P2: Future Enhancements
 - Email notifications for important updates
 - Scheduled automated reports from Export Center
