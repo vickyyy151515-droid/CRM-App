@@ -110,6 +110,7 @@ const en = {
     customerRetention: 'Customer Retention',
     exportCenter: 'Export Center',
     scheduledReports: 'Scheduled Reports',
+    userActivity: 'User Activity',
     downloadHistory: 'Download History',
     userManagement: 'Manage Users',
     productManagement: 'Manage Products',
