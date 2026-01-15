@@ -499,6 +499,17 @@ Build a Customer Relationship Management (CRM) application where:
 ### P1: Next Priority Tasks
 - None - All P1 tasks completed!
 
+### ✅ COMPLETED: Database Request Duplicate Check (Jan 15, 2026)
+- **Feature**: When staff requests database records, system automatically filters out customers already in Reserved Members
+- **Logic**:
+  - Checks customer names in `row_data` against Reserved Members for the same product
+  - Case-insensitive comparison (e.g., "JOHN" matches "John")
+  - Skips reserved records and replaces with next available records
+  - Staff always receives exact count requested (if enough non-reserved records exist)
+- **Common Name Fields Checked**: name, nama, customer_name, customer, nama_customer, full_name, fullname
+- **Error Handling**: If not enough non-reserved records available, returns detailed error message
+- **File Modified**: `backend/routes/records.py` - `create_download_request` function
+
 ### ✅ COMPLETED: Scheduled Telegram Reports Feature (Jan 15, 2026)
 - **Daily Report** (1:00 AM WIB to personal chat):
   - NDP, RDP, Total Form, Nominal per staff per product
