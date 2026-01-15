@@ -49,6 +49,13 @@ class BonusConfigUpdate(BaseModel):
 
 # ==================== HELPER FUNCTIONS ====================
 
+# Helper function to normalize customer ID for consistent NDP/RDP comparison
+def normalize_customer_id(customer_id: str) -> str:
+    """Normalize customer ID by removing leading/trailing spaces and converting to lowercase"""
+    if not customer_id:
+        return ""
+    return customer_id.strip().lower()
+
 async def get_bonus_config():
     """Get bonus configuration from database or return defaults"""
     db = get_db()
