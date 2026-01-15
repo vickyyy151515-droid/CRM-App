@@ -214,11 +214,6 @@ async def get_bonus_calculation_data(
             if cid_normalized not in staff_data[sid]['daily_rdp_customers'][date]:
                 staff_data[sid]['daily_rdp_customers'][date].add(cid_normalized)
                 staff_data[sid]['daily_stats'][date]['rdp'] += 1
-        first_date = customer_first_date.get(key)
-        if first_date == date:
-            staff_data[sid]['daily_stats'][date]['ndp'] += 1
-        else:
-            staff_data[sid]['daily_stats'][date]['rdp'] += 1
     
     bonus_config = await get_bonus_config()
     main_tiers = bonus_config['main_tiers']
