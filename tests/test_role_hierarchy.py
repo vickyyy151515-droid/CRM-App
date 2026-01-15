@@ -191,14 +191,14 @@ class TestRoleHierarchy:
             json={"name": original_name}
         )
     
-    def test_admin_cannot_delete_admin_user(self, admin_token, admin_user_id):
-        """Admin should NOT be able to delete another admin user"""
+    def test_admin_cannot_delete_admin_user(self, admin_token, master_admin_user_id):
+        """Admin should NOT be able to delete master_admin user (tests role hierarchy on delete)"""
         headers = {"Authorization": f"Bearer {admin_token}"}
         response = requests.delete(
-            f"{BASE_URL}/api/users/{admin_user_id}",
+            f"{BASE_URL}/api/users/{master_admin_user_id}",
             headers=headers
         )
-        # Should return 403 Forbidden
+        # Should return 403 Forbidden (cannot delete higher role)
         assert response.status_code == 403
 
 
