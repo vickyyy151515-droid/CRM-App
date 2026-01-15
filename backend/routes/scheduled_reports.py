@@ -671,7 +671,11 @@ async def get_config(user: User = Depends(get_admin_user)):
             'atrisk_hour': 11,
             'atrisk_minute': 0,
             'atrisk_inactive_days': 14,
-            'atrisk_last_sent': None
+            'atrisk_last_sent': None,
+            'staff_offline_enabled': False,
+            'staff_offline_hour': 11,
+            'staff_offline_minute': 0,
+            'staff_offline_last_sent': None
         }
     
     # Mask the bot token for security
@@ -689,7 +693,7 @@ async def update_config(config: TelegramConfig, user: User = Depends(get_admin_u
     
     now = datetime.now(JAKARTA_TZ)
     
-    # Get existing config to preserve at-risk settings
+    # Get existing config to preserve at-risk and staff offline settings
     existing = await db.scheduled_report_config.find_one({'id': 'scheduled_report_config'})
     
     update_data = {
