@@ -718,14 +718,17 @@ async def update_config(config: TelegramConfig, user: User = Depends(get_admin_u
         await db.scheduled_report_config.insert_one(update_data)
         updated_config = update_data
     
-    # Restart scheduler with both daily report and at-risk settings
-    if config.enabled or updated_config.get('atrisk_enabled'):
+    # Restart scheduler with all alert settings
+    if config.enabled or updated_config.get('atrisk_enabled') or updated_config.get('staff_offline_enabled'):
         start_scheduler(
             report_hour=config.report_hour,
             report_minute=config.report_minute,
             atrisk_hour=updated_config.get('atrisk_hour', 11),
             atrisk_minute=updated_config.get('atrisk_minute', 0),
-            atrisk_enabled=updated_config.get('atrisk_enabled', False)
+            atrisk_enabled=updated_config.get('atrisk_enabled', False),
+            staff_offline_hour=updated_config.get('staff_offline_hour', 11),
+            staff_offline_minute=updated_config.get('staff_offline_minute', 0),
+            staff_offline_enabled=updated_config.get('staff_offline_enabled', False)
         )
     else:
         stop_scheduler()
