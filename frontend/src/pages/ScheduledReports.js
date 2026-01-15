@@ -42,6 +42,13 @@ export default function ScheduledReports() {
   const [atriskSending, setAtriskSending] = useState(false);
   const [atriskPreview, setAtriskPreview] = useState(null);
 
+  // Staff Offline Alert Form state
+  const [staffOfflineEnabled, setStaffOfflineEnabled] = useState(false);
+  const [staffOfflineHour, setStaffOfflineHour] = useState(11);
+  const [staffOfflineMinute, setStaffOfflineMinute] = useState(0);
+  const [staffOfflineSaving, setStaffOfflineSaving] = useState(false);
+  const [staffOfflineSending, setStaffOfflineSending] = useState(false);
+
   useEffect(() => {
     loadConfig();
   }, []);
@@ -66,6 +73,11 @@ export default function ScheduledReports() {
       setAtriskHour(response.data.atrisk_hour || 11);
       setAtriskMinute(response.data.atrisk_minute || 0);
       setAtriskInactiveDays(response.data.atrisk_inactive_days || 14);
+
+      // Set staff offline alert form values
+      setStaffOfflineEnabled(response.data.staff_offline_enabled || false);
+      setStaffOfflineHour(response.data.staff_offline_hour || 11);
+      setStaffOfflineMinute(response.data.staff_offline_minute || 0);
     } catch (error) {
       toast.error('Failed to load configuration');
     } finally {
@@ -195,6 +207,44 @@ export default function ScheduledReports() {
       setAtriskPreview(response.data.alert);
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to generate at-risk preview');
+    }
+  };
+
+  // Staff Offline Alert handlers
+  const handleStaffOfflineSave = async (e) => {
+    e.preventDefault();
+    
+    if (!botToken || !chatId) {
+      toast.error('Please configure Telegram Bot Token and Chat ID first (in Daily Report section)');
+      return;
+    }
+
+    setStaffOfflineSaving(true);
+    try {
+      await api.post('/scheduled-reports/staff-offline-config', {
+        enabled: staffOfflineEnabled,
+        alert_hour: staffOfflineHour,
+        alert_minute: staffOfflineMinute
+      });
+      toast.success('Staff offline alert configuration saved successfully');
+      loadConfig();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to save staff offline configuration');
+    } finally {
+      setStaffOfflineSaving(false);
+    }
+  };
+
+  const handleStaffOfflineSendNow = async () => {
+    setStaffOfflineSending(true);
+    try {
+      await api.post('/scheduled-reports/staff-offline-send-now');
+      toast.success('Staff offline alert sent! Check your Telegram.');
+      loadConfig();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to send staff offline alert');
+    } finally {
+      setStaffOfflineSending(false);
     }
   };
 
