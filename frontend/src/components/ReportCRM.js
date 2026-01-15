@@ -176,8 +176,8 @@ export default function ReportCRM() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Report CRM</h1>
-          <p className="text-slate-500 text-sm mt-1">Comprehensive OMSET reporting & analytics</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Report CRM</h1>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Comprehensive OMSET reporting & analytics</p>
         </div>
         <button
           onClick={exportToExcel}
@@ -190,18 +190,18 @@ export default function ReportCRM() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
         <div className="flex items-center gap-2 mb-4">
-          <Filter size={18} className="text-slate-500" />
-          <span className="font-medium text-slate-700">Filters</span>
+          <Filter size={18} className="text-slate-500 dark:text-slate-400" />
+          <span className="font-medium text-slate-700 dark:text-slate-200">Filters</span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-600 mb-1">Year</label>
+            <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Year</label>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
               data-testid="year-filter"
             >
               {years.map(year => (
@@ -210,11 +210,11 @@ export default function ReportCRM() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-600 mb-1">Month (for Daily View)</label>
+            <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Month (for Daily View)</label>
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
               data-testid="month-filter"
             >
               {MONTH_NAMES.map((name, idx) => (
@@ -223,11 +223,11 @@ export default function ReportCRM() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-600 mb-1">Product</label>
+            <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Product</label>
             <select
               value={selectedProduct}
               onChange={(e) => setSelectedProduct(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
               data-testid="product-filter"
             >
               <option value="">All Products</option>
@@ -237,11 +237,11 @@ export default function ReportCRM() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-600 mb-1">Staff</label>
+            <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Staff</label>
             <select
               value={selectedStaff}
               onChange={(e) => setSelectedStaff(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
               data-testid="staff-filter"
             >
               <option value="">All Staff</option>
@@ -254,7 +254,7 @@ export default function ReportCRM() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-slate-200 overflow-x-auto">
+      <div className="flex gap-2 border-b border-slate-200 dark:border-slate-700 overflow-x-auto">
         {[
           { id: 'yearly', label: 'Yearly Summary', icon: BarChart3 },
           { id: 'monthly', label: 'Monthly Detail', icon: Calendar },
@@ -266,8 +266,8 @@ export default function ReportCRM() {
             onClick={() => setActiveTab(tab.id)}
             className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === tab.id
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-slate-500 hover:text-slate-700'
+                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
             }`}
             data-testid={`tab-${tab.id}`}
           >
