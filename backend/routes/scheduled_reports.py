@@ -439,8 +439,10 @@ async def send_scheduled_report():
         print(f"Error sending scheduled report: {e}")
 
 
-def start_scheduler(hour: int = 1, minute: int = 0):
-    """Start the APScheduler with the configured schedule"""
+def start_scheduler(report_hour: int = 1, report_minute: int = 0, 
+                    atrisk_hour: int = None, atrisk_minute: int = None, 
+                    atrisk_enabled: bool = False):
+    """Start the APScheduler with the configured schedules"""
     global scheduler
     
     if scheduler is not None:
@@ -448,16 +450,27 @@ def start_scheduler(hour: int = 1, minute: int = 0):
     
     scheduler = AsyncIOScheduler(timezone=JAKARTA_TZ)
     
-    # Schedule the job to run daily at the specified time
+    # Schedule daily report
     scheduler.add_job(
         send_scheduled_report,
-        CronTrigger(hour=hour, minute=minute, timezone=JAKARTA_TZ),
+        CronTrigger(hour=report_hour, minute=report_minute, timezone=JAKARTA_TZ),
         id='daily_report',
         replace_existing=True
     )
+    print(f"Daily report scheduled at {report_hour:02d}:{report_minute:02d} WIB")
+    
+    # Schedule at-risk alerts if enabled
+    if atrisk_enabled and atrisk_hour is not None:
+        scheduler.add_job(
+            send_atrisk_alert,
+            CronTrigger(hour=atrisk_hour, minute=atrisk_minute or 0, timezone=JAKARTA_TZ),
+            id='atrisk_alert',
+            replace_existing=True
+        )
+        print(f"At-risk alerts scheduled at {atrisk_hour:02d}:{atrisk_minute or 0:02d} WIB")
     
     scheduler.start()
-    print(f"Scheduler started - Daily report will be sent at {hour:02d}:{minute:02d} WIB")
+    print("Scheduler started successfully")
 
 
 def stop_scheduler():
