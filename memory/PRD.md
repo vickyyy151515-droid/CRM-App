@@ -438,6 +438,21 @@ Build a Customer Relationship Management (CRM) application where:
   - `frontend/src/components/NotificationBell.js` - WebSocket client integration
 - **Note**: WebSocket may require proper ingress configuration for production. Fallback polling ensures notifications always work.
 
+### ✅ COMPLETED: NDP/RDP Customer Name Normalization Fix (Jan 15, 2026)
+- **Problem**: Customer names with different capitalization, leading/trailing spaces were treated as different customers for NDP/RDP logic
+  - Example: "John Doe", "john doe", " JOHN DOE " were counted as separate customers
+- **Solution**: Normalize customer IDs before comparison
+- **Changes**:
+  - Added `normalize_customer_id()` helper function (trims spaces, converts to lowercase)
+  - New records store `customer_id_normalized` field for efficient comparison
+  - New records store `customer_type` field (NDP/RDP) at insert time
+  - Added migration endpoint `/api/omset/migrate-normalize` to update existing records
+- **Modified Files**:
+  - `backend/routes/omset.py` - Create, NDP/RDP calculation, migration endpoint
+  - `backend/routes/bonus.py` - Bonus calculation uses normalized comparison
+  - `backend/routes/daily_summary.py` - Daily summary uses normalized comparison
+- **Migration**: Run `POST /api/omset/migrate-normalize` (admin only) to update existing records
+
 ### ✅ COMPLETED: Global Search (Jan 15, 2026)
 - **Keyboard Shortcut**: Ctrl/Cmd + K to open search modal
 - **Multi-Category Search**: Searches across:
