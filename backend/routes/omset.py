@@ -13,6 +13,13 @@ from .deps import get_db, get_current_user, get_admin_user, get_jakarta_now, Use
 
 router = APIRouter(tags=["OMSET CRM"])
 
+# Helper function to normalize customer ID for consistent NDP/RDP comparison
+def normalize_customer_id(customer_id: str) -> str:
+    """Normalize customer ID by removing leading/trailing spaces and converting to lowercase"""
+    if not customer_id:
+        return ""
+    return customer_id.strip().lower()
+
 # ==================== PYDANTIC MODELS ====================
 
 class OmsetRecord(BaseModel):
