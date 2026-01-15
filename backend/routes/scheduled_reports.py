@@ -522,6 +522,9 @@ async def update_config(config: TelegramConfig, user: User = Depends(get_admin_u
     
     now = datetime.now(JAKARTA_TZ)
     
+    # Get existing config to preserve at-risk settings
+    existing = await db.scheduled_report_config.find_one({'id': 'scheduled_report_config'})
+    
     update_data = {
         'id': 'scheduled_report_config',
         'telegram_bot_token': config.bot_token,
@@ -532,25 +535,76 @@ async def update_config(config: TelegramConfig, user: User = Depends(get_admin_u
         'updated_at': now.isoformat()
     }
     
-    # Check if config exists
+    if existing:
+        await db.scheduled_report_config.update_one(
+            {'id': 'scheduled_report_config'},
+            {'$set': update_data}
+        )
+        # Get updated config for scheduler
+        updated_config = await db.scheduled_report_config.find_one({'id': 'scheduled_report_config'}, {'_id': 0})
+    else:
+        update_data['created_at'] = now.isoformat()
+        await db.scheduled_report_config.insert_one(update_data)
+        updated_config = update_data
+    
+    # Restart scheduler with both daily report and at-risk settings
+    if config.enabled or updated_config.get('atrisk_enabled'):
+        start_scheduler(
+            report_hour=config.report_hour,
+            report_minute=config.report_minute,
+            atrisk_hour=updated_config.get('atrisk_hour', 11),
+            atrisk_minute=updated_config.get('atrisk_minute', 0),
+            atrisk_enabled=updated_config.get('atrisk_enabled', False)
+        )
+    else:
+        stop_scheduler()
+    
+    return {'success': True, 'message': 'Configuration updated successfully'}
+
+
+@router.post("/scheduled-reports/atrisk-config")
+async def update_atrisk_config(config: AtRiskAlertConfig, user: User = Depends(get_admin_user)):
+    """Update at-risk alert configuration"""
+    db = get_db()
+    
+    now = datetime.now(JAKARTA_TZ)
+    
+    # Get existing config
     existing = await db.scheduled_report_config.find_one({'id': 'scheduled_report_config'})
+    
+    update_data = {
+        'telegram_bot_token': config.bot_token,
+        'atrisk_enabled': config.enabled,
+        'atrisk_group_chat_id': config.group_chat_id,
+        'atrisk_hour': config.alert_hour,
+        'atrisk_minute': config.alert_minute,
+        'atrisk_inactive_days': config.inactive_days_threshold,
+        'updated_at': now.isoformat()
+    }
     
     if existing:
         await db.scheduled_report_config.update_one(
             {'id': 'scheduled_report_config'},
             {'$set': update_data}
         )
+        updated_config = await db.scheduled_report_config.find_one({'id': 'scheduled_report_config'}, {'_id': 0})
     else:
+        update_data['id'] = 'scheduled_report_config'
         update_data['created_at'] = now.isoformat()
         await db.scheduled_report_config.insert_one(update_data)
+        updated_config = update_data
     
-    # Restart scheduler if enabled
-    if config.enabled:
-        start_scheduler(config.report_hour, config.report_minute)
-    else:
-        stop_scheduler()
+    # Restart scheduler
+    if updated_config.get('enabled') or config.enabled:
+        start_scheduler(
+            report_hour=updated_config.get('report_hour', 1),
+            report_minute=updated_config.get('report_minute', 0),
+            atrisk_hour=config.alert_hour,
+            atrisk_minute=config.alert_minute,
+            atrisk_enabled=config.enabled
+        )
     
-    return {'success': True, 'message': 'Configuration updated successfully'}
+    return {'success': True, 'message': 'At-risk alert configuration updated successfully'}
 
 
 @router.post("/scheduled-reports/test")
