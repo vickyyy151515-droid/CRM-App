@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
 import { Eye, EyeOff } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function Login({ onLogin }) {
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -15,10 +17,10 @@ export default function Login({ onLogin }) {
 
     try {
       const response = await api.post('/auth/login', { email, password });
-      toast.success('Login successful!');
+      toast.success(t('common.success') + '!');
       onLogin(response.data.user, response.data.token);
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Login failed');
+      toast.error(error.response?.data?.detail || t('auth.invalidCredentials'));
     } finally {
       setLoading(false);
     }
@@ -33,14 +35,14 @@ export default function Login({ onLogin }) {
               CRM Pro
             </h1>
             <p className="text-base leading-relaxed text-slate-600">
-              Secure database management system
+              {t('auth.loginSubtitle')}
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6" data-testid="login-form">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
-                Email Address
+                {t('auth.email')}
               </label>
               <input
                 id="email"
@@ -56,7 +58,7 @@ export default function Login({ onLogin }) {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-2">
-                Password
+                {t('auth.password')}
               </label>
               <div className="relative">
                 <input
@@ -67,7 +69,7 @@ export default function Login({ onLogin }) {
                   required
                   data-testid="login-password-input"
                   className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
-                  placeholder="Enter your password"
+                  placeholder={t('auth.password')}
                 />
                 <button
                   type="button"
@@ -86,7 +88,7 @@ export default function Login({ onLogin }) {
               data-testid="login-submit-button"
               className="w-full bg-slate-900 text-white hover:bg-slate-800 shadow-sm font-medium px-6 py-2.5 rounded-md transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? t('auth.loggingIn') : t('auth.loginButton')}
             </button>
           </form>
 
@@ -107,10 +109,10 @@ export default function Login({ onLogin }) {
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-slate-900/20 flex items-end p-12">
           <div className="text-white">
             <h2 className="text-3xl font-semibold tracking-tight mb-3">
-              Streamline Your Database Management
+              {t('auth.loginTitle')}
             </h2>
             <p className="text-base leading-relaxed text-slate-200">
-              Secure upload, approval workflow, and download tracking all in one place.
+              {t('auth.loginSubtitle')}
             </p>
           </div>
         </div>
