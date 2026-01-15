@@ -686,7 +686,8 @@ async def get_omset_record_types(
     date_records = [r for r in all_records if r['record_date'] == record_date]
     
     for record in date_records:
-        cid = record['customer_id']
+        # Use normalized customer_id for comparison
+        cid = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
         first_date = customer_first_date.get(cid)
         record['record_type'] = 'NDP' if first_date == record_date else 'RDP'
         if isinstance(record.get('created_at'), str):
