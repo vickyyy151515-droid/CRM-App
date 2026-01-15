@@ -499,6 +499,21 @@ Build a Customer Relationship Management (CRM) application where:
 ### P1: Next Priority Tasks
 - None - All P1 tasks completed!
 
+### ✅ COMPLETED: Bulk Add Reserved Members Feature (Jan 15, 2026)
+- **New Backend Endpoint**: `POST /api/reserved-members/bulk`
+  - Accepts list of customer names, product ID, and staff ID
+  - Processes all names in one request
+  - Skips duplicates (case-insensitive) with detailed skip reasons
+  - Returns summary with added count, skipped count, and details
+- **New Frontend UI**: Expandable "Bulk Add Reservations" panel
+  - Product and Staff dropdowns
+  - Large textarea for entering customer names (one per line)
+  - Real-time count of entered names
+  - Results panel showing added/skipped counts and details
+- **Files Modified**:
+  - `backend/routes/records.py` - Added BulkReservedMemberCreate model and bulk endpoint
+  - `frontend/src/components/AdminReservedMembers.js` - Added bulk add UI
+
 ### ✅ COMPLETED: Report CRM Bug Fixes (Jan 15, 2026)
 - **Issue 1 - Dark Mode Fix**: Report CRM page now fully supports dark mode
   - Fixed header, filters, tabs, yearly table, monthly detail, and staff performance sections
