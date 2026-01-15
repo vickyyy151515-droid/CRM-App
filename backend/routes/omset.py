@@ -701,7 +701,7 @@ async def get_omset_ndp_rdp(
     date_records = [r for r in all_records if r['record_date'] == record_date]
     
     ndp_customers = set()
-    rdp_count = 0
+    rdp_customers = set()  # Track unique RDP customers (NEW)
     ndp_total = 0
     rdp_total = 0
     
@@ -714,7 +714,8 @@ async def get_omset_ndp_rdp(
             ndp_customers.add(cid)
             ndp_total += record.get('depo_total', 0)
         else:
-            rdp_count += 1
+            # RDP - count unique customers (NEW LOGIC)
+            rdp_customers.add(cid)
             rdp_total += record.get('depo_total', 0)
     
     return {
@@ -722,7 +723,7 @@ async def get_omset_ndp_rdp(
         'product_id': product_id,
         'ndp_count': len(ndp_customers),
         'ndp_total': ndp_total,
-        'rdp_count': rdp_count,
+        'rdp_count': len(rdp_customers),  # Count unique RDP customers
         'rdp_total': rdp_total,
         'total_records': len(date_records)
     }
