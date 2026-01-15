@@ -74,10 +74,19 @@ async def login(credentials: UserLogin):
         }
     }
 
-@router.get("/auth/me", response_model=User)
+@router.get("/auth/me")
 async def get_me(user: User = Depends(get_current_user)):
-    """Get current user info"""
-    return user
+    """Get current user info including blocked_pages"""
+    db = get_db()
+    user_data = await db.users.find_one({'id': user.id}, {'_id': 0, 'password_hash': 0})
+    return {
+        'id': user_data['id'],
+        'email': user_data['email'],
+        'name': user_data['name'],
+        'role': user_data['role'],
+        'blocked_pages': user_data.get('blocked_pages', []),
+        'created_at': user_data.get('created_at')
+    }
 
 @router.post("/auth/logout")
 async def logout(user: User = Depends(get_current_user)):
