@@ -5,13 +5,11 @@ import SidebarConfigurator from './SidebarConfigurator';
 import GlobalSearch from './GlobalSearch';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { createTranslator } from '../translations';
 import { api } from '../App';
 
 export default function DashboardLayout({ user, onLogout, activeTab, setActiveTab, menuItems, children }) {
   const { darkMode, toggleTheme } = useTheme();
-  const { language, toggleLanguage } = useLanguage();
-  const t = createTranslator(language);
+  const { language, toggleLanguage, t } = useLanguage();
   
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => {
