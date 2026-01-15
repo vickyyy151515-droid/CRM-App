@@ -211,7 +211,7 @@ export default function AdminDashboard({ user, onLogout }) {
     }
   };
 
-  const menuItems = useMemo(() => [
+  const allMenuItems = useMemo(() => [
     { id: 'overview', label: t('nav.overview'), icon: LayoutDashboard, badge: 0 },
     { id: 'leaderboard', label: t('nav.leaderboard'), icon: Trophy, badge: 0 },
     { id: 'daily-summary', label: t('nav.dailySummary'), icon: CalendarDays, badge: 0 },
@@ -240,6 +240,15 @@ export default function AdminDashboard({ user, onLogout }) {
     { id: 'manage-users', label: t('nav.userManagement'), icon: UserCog, badge: 0 },
     { id: 'users', label: t('nav.createUser'), icon: Users, badge: 0 }
   ], [t, language, stats.pendingReservations, stats.pendingRequests]);
+
+  // Filter out blocked pages for admin users (master_admin has full access)
+  const menuItems = useMemo(() => {
+    if (user.role === 'master_admin') {
+      return allMenuItems;
+    }
+    const blockedPages = user.blocked_pages || [];
+    return allMenuItems.filter(item => !blockedPages.includes(item.id));
+  }, [allMenuItems, user.role, user.blocked_pages]);
 
   return (
     <DashboardLayout
