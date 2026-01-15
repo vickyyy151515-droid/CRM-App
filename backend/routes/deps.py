@@ -92,9 +92,15 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         raise HTTPException(status_code=401, detail="Invalid token")
 
 async def get_admin_user(user: User = Depends(get_current_user)) -> User:
-    """Ensure current user is an admin"""
-    if user.role != 'admin':
+    """Ensure current user is an admin or master_admin"""
+    if user.role not in ['admin', 'master_admin']:
         raise HTTPException(status_code=403, detail="Admin access required")
+    return user
+
+async def get_master_admin_user(user: User = Depends(get_current_user)) -> User:
+    """Ensure current user is a master_admin"""
+    if user.role != 'master_admin':
+        raise HTTPException(status_code=403, detail="Master Admin access required")
     return user
 
 async def get_staff_user(user: User = Depends(get_current_user)) -> User:
@@ -102,6 +108,17 @@ async def get_staff_user(user: User = Depends(get_current_user)) -> User:
     if user.role != 'staff':
         raise HTTPException(status_code=403, detail="Staff access required")
     return user
+
+# Role hierarchy for permission checking
+ROLE_HIERARCHY = {
+    'master_admin': 3,  # Highest - can manage everyone
+    'admin': 2,         # Can manage staff only
+    'staff': 1          # Lowest - can only manage self
+}
+
+def can_manage_user(manager_role: str, target_role: str) -> bool:
+    """Check if manager_role can manage target_role based on hierarchy"""
+    return ROLE_HIERARCHY.get(manager_role, 0) > ROLE_HIERARCHY.get(target_role, 0)
 
 # ==================== PASSWORD UTILITIES ====================
 
