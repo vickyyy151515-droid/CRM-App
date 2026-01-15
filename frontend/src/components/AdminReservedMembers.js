@@ -274,6 +274,149 @@ export default function AdminReservedMembers({ onUpdate }) {
         </form>
       </div>
 
+      {/* Bulk Add Section */}
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm mb-6 overflow-hidden">
+        <button
+          onClick={() => setShowBulkAdd(!showBulkAdd)}
+          className="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+          data-testid="btn-toggle-bulk-add"
+        >
+          <div className="flex items-center gap-3">
+            <Upload size={20} className="text-emerald-600" />
+            <span className="text-lg font-medium text-slate-900 dark:text-white">Bulk Add Reservations</span>
+            <span className="text-sm text-slate-500 dark:text-slate-400">(Add multiple customers at once)</span>
+          </div>
+          <span className={`transform transition-transform ${showBulkAdd ? 'rotate-180' : ''}`}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </span>
+        </button>
+        
+        {showBulkAdd && (
+          <div className="px-6 pb-6 border-t border-slate-200 dark:border-slate-700">
+            <div className="pt-4">
+              <form onSubmit={handleBulkAdd} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                      Product
+                    </label>
+                    <select
+                      value={bulkProduct}
+                      onChange={(e) => setBulkProduct(e.target.value)}
+                      className="w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                      data-testid="bulk-select-product"
+                    >
+                      <option value="">Select Product</option>
+                      {products.map(product => (
+                        <option key={product.id} value={product.id}>{product.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                      Staff
+                    </label>
+                    <select
+                      value={bulkStaff}
+                      onChange={(e) => setBulkStaff(e.target.value)}
+                      className="w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                      data-testid="bulk-select-staff"
+                    >
+                      <option value="">Select Staff</option>
+                      {staffList.map(staff => (
+                        <option key={staff.id} value={staff.id}>{staff.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    Customer Names <span className="text-slate-400 font-normal">(one per line)</span>
+                  </label>
+                  <textarea
+                    value={bulkCustomerNames}
+                    onChange={(e) => setBulkCustomerNames(e.target.value)}
+                    placeholder="John Doe&#10;Jane Smith&#10;Michael Johnson&#10;..."
+                    rows={8}
+                    className="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white font-mono text-sm resize-y"
+                    data-testid="bulk-textarea-names"
+                  />
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    {bulkCustomerNames.split('\n').filter(n => n.trim()).length} customer name(s) entered
+                  </p>
+                </div>
+                
+                <div className="flex items-center gap-4">
+                  <button
+                    type="submit"
+                    disabled={bulkSubmitting || !bulkProduct || !bulkStaff || !bulkCustomerNames.trim()}
+                    className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                    data-testid="btn-bulk-add"
+                  >
+                    <Upload size={18} />
+                    {bulkSubmitting ? 'Processing...' : 'Bulk Add All'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBulkCustomerNames('');
+                      setBulkResult(null);
+                    }}
+                    className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </form>
+              
+              {/* Bulk Add Results */}
+              {bulkResult && (
+                <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700" data-testid="bulk-result">
+                  <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                    <FileText size={16} />
+                    Bulk Add Results
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
+                    <div>
+                      <span className="text-slate-500 dark:text-slate-400">Total Processed:</span>
+                      <span className="ml-2 font-semibold text-slate-900 dark:text-white">{bulkResult.total_processed}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 dark:text-slate-400">Added:</span>
+                      <span className="ml-2 font-semibold text-emerald-600">{bulkResult.added_count}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 dark:text-slate-400">Skipped:</span>
+                      <span className="ml-2 font-semibold text-amber-600">{bulkResult.skipped_count}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 dark:text-slate-400">Staff:</span>
+                      <span className="ml-2 font-semibold text-slate-900 dark:text-white">{bulkResult.staff_name}</span>
+                    </div>
+                  </div>
+                  
+                  {bulkResult.skipped?.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+                      <p className="text-xs font-medium text-amber-600 mb-2">Skipped Names (already reserved):</p>
+                      <div className="max-h-32 overflow-y-auto">
+                        {bulkResult.skipped.map((item, idx) => (
+                          <p key={idx} className="text-xs text-slate-600 dark:text-slate-400">
+                            • {item.customer_name} - <span className="text-slate-400">{item.reason}</span>
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Filter and Search */}
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <div className="relative flex-1">
