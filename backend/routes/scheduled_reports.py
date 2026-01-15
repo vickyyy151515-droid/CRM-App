@@ -596,7 +596,9 @@ async def send_scheduled_report():
 
 def start_scheduler(report_hour: int = 1, report_minute: int = 0, 
                     atrisk_hour: int = None, atrisk_minute: int = None, 
-                    atrisk_enabled: bool = False):
+                    atrisk_enabled: bool = False,
+                    staff_offline_hour: int = None, staff_offline_minute: int = None,
+                    staff_offline_enabled: bool = False):
     """Start the APScheduler with the configured schedules"""
     global scheduler
     
@@ -623,6 +625,16 @@ def start_scheduler(report_hour: int = 1, report_minute: int = 0,
             replace_existing=True
         )
         print(f"At-risk alerts scheduled at {atrisk_hour:02d}:{atrisk_minute or 0:02d} WIB")
+    
+    # Schedule staff offline alerts if enabled
+    if staff_offline_enabled and staff_offline_hour is not None:
+        scheduler.add_job(
+            send_staff_offline_alert,
+            CronTrigger(hour=staff_offline_hour, minute=staff_offline_minute or 0, timezone=JAKARTA_TZ),
+            id='staff_offline_alert',
+            replace_existing=True
+        )
+        print(f"Staff offline alerts scheduled at {staff_offline_hour:02d}:{staff_offline_minute or 0:02d} WIB")
     
     scheduler.start()
     print("Scheduler started successfully")
