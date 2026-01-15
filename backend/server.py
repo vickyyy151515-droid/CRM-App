@@ -121,6 +121,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+@app.on_event("startup")
+async def startup_event():
+    """Initialize scheduler on startup"""
+    logger.info("Starting up CRM Pro API...")
+    await init_scheduler()
+    logger.info("Scheduler initialized")
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
