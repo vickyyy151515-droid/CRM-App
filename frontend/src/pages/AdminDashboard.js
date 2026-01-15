@@ -250,6 +250,12 @@ export default function AdminDashboard({ user, onLogout }) {
     return allMenuItems.filter(item => !blockedPages.includes(item.id));
   }, [allMenuItems, user.role, user.blocked_pages]);
 
+  // Handle user profile update
+  const handleUserUpdate = (updatedUser) => {
+    // Force page reload to refresh user data
+    window.location.reload();
+  };
+
   return (
     <DashboardLayout
       user={user}
@@ -257,6 +263,7 @@ export default function AdminDashboard({ user, onLogout }) {
       activeTab={activeTab}
       setActiveTab={setActiveTab}
       menuItems={menuItems}
+      onUserUpdate={handleUserUpdate}
     >
       {renderContent()}
     </DashboardLayout>
