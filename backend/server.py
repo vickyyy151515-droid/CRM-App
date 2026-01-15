@@ -91,6 +91,11 @@ async def health_check():
     """Health check endpoint for Kubernetes liveness/readiness probes"""
     return {"status": "healthy", "service": "crm-pro-api"}
 
+@api_router.get("/health")
+async def api_health_check():
+    """Health check endpoint accessible via /api/health for ingress routing"""
+    return {"status": "healthy", "service": "crm-pro-api"}
+
 @api_router.get("/server-time")
 async def get_server_time():
     """Get current server time in Jakarta timezone"""
