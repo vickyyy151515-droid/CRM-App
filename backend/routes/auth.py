@@ -96,6 +96,67 @@ async def get_me(user: User = Depends(get_current_user)):
         'created_at': user_data.get('created_at')
     }
 
+@router.post("/auth/change-password")
+async def change_password(request: ChangePasswordRequest, user: User = Depends(get_current_user)):
+    """Change current user's password"""
+    db = get_db()
+    
+    # Get current user with password hash
+    current_user = await db.users.find_one({'id': user.id})
+    if not current_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Verify current password
+    if not verify_password(request.current_password, current_user['password_hash']):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    
+    # Validate new password
+    if len(request.new_password) < 6:
+        raise HTTPException(status_code=400, detail="New password must be at least 6 characters")
+    
+    # Update password
+    new_hash = hash_password(request.new_password)
+    await db.users.update_one(
+        {'id': user.id},
+        {'$set': {'password_hash': new_hash}}
+    )
+    
+    return {'message': 'Password changed successfully'}
+
+@router.put("/auth/profile")
+async def update_profile(request: UpdateProfileRequest, user: User = Depends(get_current_user)):
+    """Update current user's profile (name, email)"""
+    db = get_db()
+    
+    update_data = {}
+    
+    if request.name:
+        update_data['name'] = request.name
+    
+    if request.email:
+        # Check if email is already taken by another user
+        existing = await db.users.find_one({'email': request.email, 'id': {'$ne': user.id}})
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already in use")
+        update_data['email'] = request.email
+    
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    
+    await db.users.update_one({'id': user.id}, {'$set': update_data})
+    
+    # Return updated user
+    updated_user = await db.users.find_one({'id': user.id}, {'_id': 0, 'password_hash': 0})
+    return {
+        'message': 'Profile updated successfully',
+        'user': {
+            'id': updated_user['id'],
+            'email': updated_user['email'],
+            'name': updated_user['name'],
+            'role': updated_user['role']
+        }
+    }
+
 @router.post("/auth/logout")
 async def logout(user: User = Depends(get_current_user)):
     """Logout and update user status"""
