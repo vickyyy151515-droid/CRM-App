@@ -126,7 +126,7 @@ function App() {
                 path="/"
                 element={
                   user ? (
-                    user.role === 'admin' ? (
+                    (user.role === 'admin' || user.role === 'master_admin') ? (
                       <AdminDashboard user={user} onLogout={handleLogout} />
                     ) : (
                       <StaffDashboard user={user} onLogout={handleLogout} />
