@@ -84,6 +84,11 @@ app.include_router(websocket_router)
 
 # ==================== CORE ENDPOINTS ====================
 
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for Kubernetes liveness/readiness probes"""
+    return {"status": "healthy", "service": "crm-pro-api"}
+
 @api_router.get("/server-time")
 async def get_server_time():
     """Get current server time in Jakarta timezone"""
