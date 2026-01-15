@@ -83,6 +83,11 @@ class ReservedMemberCreate(BaseModel):
     product_id: str
     staff_id: Optional[str] = None
 
+class BulkReservedMemberCreate(BaseModel):
+    customer_names: List[str]  # List of customer names (one per line)
+    product_id: str
+    staff_id: str
+
 class DownloadRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
