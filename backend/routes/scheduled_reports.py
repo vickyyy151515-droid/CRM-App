@@ -27,6 +27,15 @@ class TelegramConfig(BaseModel):
     report_hour: int = 1  # Default 1 AM
     report_minute: int = 0
 
+class AtRiskAlertConfig(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    bot_token: str
+    group_chat_id: str
+    enabled: bool = True
+    alert_hour: int = 11  # Default 11 AM
+    alert_minute: int = 0
+    inactive_days_threshold: int = 14  # Alert for customers inactive 14+ days
+
 class ScheduledReportConfig(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = "scheduled_report_config"
@@ -36,6 +45,13 @@ class ScheduledReportConfig(BaseModel):
     report_hour: int = 1
     report_minute: int = 0
     last_sent: Optional[str] = None
+    # At-risk alert settings
+    atrisk_enabled: bool = False
+    atrisk_group_chat_id: Optional[str] = None
+    atrisk_hour: int = 11
+    atrisk_minute: int = 0
+    atrisk_inactive_days: int = 14
+    atrisk_last_sent: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
