@@ -91,6 +91,7 @@ function App() {
           </Routes>
         </BrowserRouter>
       </div>
+      </LanguageProvider>
     </ThemeProvider>
   );
 }
