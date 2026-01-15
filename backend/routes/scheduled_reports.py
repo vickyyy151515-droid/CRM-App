@@ -769,16 +769,91 @@ async def update_atrisk_config(config: AtRiskAlertConfig, user: User = Depends(g
         updated_config = update_data
     
     # Restart scheduler
-    if updated_config.get('enabled') or config.enabled:
+    if updated_config.get('enabled') or config.enabled or updated_config.get('staff_offline_enabled'):
         start_scheduler(
             report_hour=updated_config.get('report_hour', 1),
             report_minute=updated_config.get('report_minute', 0),
             atrisk_hour=config.alert_hour,
             atrisk_minute=config.alert_minute,
-            atrisk_enabled=config.enabled
+            atrisk_enabled=config.enabled,
+            staff_offline_hour=updated_config.get('staff_offline_hour', 11),
+            staff_offline_minute=updated_config.get('staff_offline_minute', 0),
+            staff_offline_enabled=updated_config.get('staff_offline_enabled', False)
         )
     
     return {'success': True, 'message': 'At-risk alert configuration updated successfully'}
+
+
+@router.post("/scheduled-reports/staff-offline-config")
+async def update_staff_offline_config(config: StaffOfflineAlertConfig, user: User = Depends(get_admin_user)):
+    """Update staff offline alert configuration"""
+    db = get_db()
+    
+    now = datetime.now(JAKARTA_TZ)
+    
+    # Get existing config
+    existing = await db.scheduled_report_config.find_one({'id': 'scheduled_report_config'})
+    
+    update_data = {
+        'staff_offline_enabled': config.enabled,
+        'staff_offline_hour': config.alert_hour,
+        'staff_offline_minute': config.alert_minute,
+        'updated_at': now.isoformat()
+    }
+    
+    if existing:
+        await db.scheduled_report_config.update_one(
+            {'id': 'scheduled_report_config'},
+            {'$set': update_data}
+        )
+        updated_config = await db.scheduled_report_config.find_one({'id': 'scheduled_report_config'}, {'_id': 0})
+    else:
+        update_data['id'] = 'scheduled_report_config'
+        update_data['created_at'] = now.isoformat()
+        await db.scheduled_report_config.insert_one(update_data)
+        updated_config = update_data
+    
+    # Restart scheduler
+    if updated_config.get('enabled') or updated_config.get('atrisk_enabled') or config.enabled:
+        start_scheduler(
+            report_hour=updated_config.get('report_hour', 1),
+            report_minute=updated_config.get('report_minute', 0),
+            atrisk_hour=updated_config.get('atrisk_hour', 11),
+            atrisk_minute=updated_config.get('atrisk_minute', 0),
+            atrisk_enabled=updated_config.get('atrisk_enabled', False),
+            staff_offline_hour=config.alert_hour,
+            staff_offline_minute=config.alert_minute,
+            staff_offline_enabled=config.enabled
+        )
+    
+    return {'success': True, 'message': 'Staff offline alert configuration updated successfully'}
+
+
+@router.post("/scheduled-reports/staff-offline-send-now")
+async def send_staff_offline_now(user: User = Depends(get_admin_user)):
+    """Manually trigger the staff offline alert"""
+    db = get_db()
+    config = await db.scheduled_report_config.find_one({'id': 'scheduled_report_config'}, {'_id': 0})
+    
+    if not config or not config.get('telegram_bot_token') or not config.get('telegram_chat_id'):
+        raise HTTPException(status_code=400, detail="Telegram configuration not set")
+    
+    alert = await generate_staff_offline_alert()
+    
+    success = await send_telegram_message(
+        config['telegram_bot_token'],
+        config['telegram_chat_id'],
+        alert
+    )
+    
+    if success:
+        await db.scheduled_report_config.update_one(
+            {'id': 'scheduled_report_config'},
+            {'$set': {'staff_offline_last_sent': datetime.now(JAKARTA_TZ).isoformat()}}
+        )
+        return {'success': True, 'message': 'Staff offline alert sent successfully'}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to send staff offline alert")
 
 
 @router.post("/scheduled-reports/test")
