@@ -216,11 +216,29 @@ async def get_user(user_id: str, admin: User = Depends(get_admin_user)):
 
 @router.put("/users/{user_id}")
 async def update_user(user_id: str, user_data: UserUpdate, admin: User = Depends(get_admin_user)):
-    """Update a user (Admin only)"""
+    """Update a user (Admin only - with role hierarchy enforcement)"""
     db = get_db()
     user = await db.users.find_one({'id': user_id})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    # Role hierarchy check - admins can only edit staff, master_admin can edit anyone
+    target_role = user.get('role', 'staff')
+    if not can_manage_user(admin.role, target_role):
+        raise HTTPException(
+            status_code=403, 
+            detail=f"You don't have permission to edit {target_role} users"
+        )
+    
+    # Prevent role escalation - can't promote someone to a role higher or equal to yours
+    if user_data.role and user_data.role != target_role:
+        new_role_level = ROLE_HIERARCHY.get(user_data.role, 0)
+        admin_role_level = ROLE_HIERARCHY.get(admin.role, 0)
+        if new_role_level >= admin_role_level:
+            raise HTTPException(
+                status_code=403,
+                detail=f"You cannot promote users to {user_data.role} role"
+            )
     
     update_data = {}
     if user_data.name:
@@ -243,7 +261,7 @@ async def update_user(user_id: str, user_data: UserUpdate, admin: User = Depends
 
 @router.delete("/users/{user_id}")
 async def delete_user(user_id: str, admin: User = Depends(get_admin_user)):
-    """Delete a user (Admin only)"""
+    """Delete a user (Admin only - with role hierarchy enforcement)"""
     db = get_db()
     if user_id == admin.id:
         raise HTTPException(status_code=400, detail="Cannot delete yourself")
@@ -252,8 +270,54 @@ async def delete_user(user_id: str, admin: User = Depends(get_admin_user)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
+    # Role hierarchy check
+    target_role = user.get('role', 'staff')
+    if not can_manage_user(admin.role, target_role):
+        raise HTTPException(
+            status_code=403, 
+            detail=f"You don't have permission to delete {target_role} users"
+        )
+    
     await db.users.delete_one({'id': user_id})
     return {'message': 'User deleted successfully'}
+
+# ==================== PAGE ACCESS CONTROL (Master Admin Only) ====================
+
+@router.put("/users/{user_id}/page-access")
+async def update_user_page_access(
+    user_id: str, 
+    access_data: PageAccessUpdate, 
+    master_admin: User = Depends(get_master_admin_user)
+):
+    """Update blocked pages for an admin user (Master Admin only)"""
+    db = get_db()
+    user = await db.users.find_one({'id': user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Can only set page access for admin users
+    if user.get('role') != 'admin':
+        raise HTTPException(
+            status_code=400, 
+            detail="Page access control is only available for admin users"
+        )
+    
+    await db.users.update_one(
+        {'id': user_id},
+        {'$set': {'blocked_pages': access_data.blocked_pages}}
+    )
+    
+    return {'message': 'Page access updated successfully', 'blocked_pages': access_data.blocked_pages}
+
+@router.get("/users/{user_id}/page-access")
+async def get_user_page_access(user_id: str, admin: User = Depends(get_admin_user)):
+    """Get blocked pages for a user"""
+    db = get_db()
+    user = await db.users.find_one({'id': user_id}, {'_id': 0, 'blocked_pages': 1})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return {'blocked_pages': user.get('blocked_pages', [])}
 
 @router.get("/staff-users")
 async def get_staff_users(user: User = Depends(get_current_user)):
