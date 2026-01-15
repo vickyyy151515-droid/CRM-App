@@ -307,16 +307,21 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
         `}
         data-testid="sidebar"
       >
-        {/* Header */}
-        <div className={`p-4 border-b border-slate-200 dark:border-slate-800 flex items-center ${collapsed ? 'lg:justify-center' : 'justify-between'}`}>
+        {/* Header with role-based accent */}
+        <div className={`p-4 border-b border-slate-200 dark:border-slate-800 flex items-center ${collapsed ? 'lg:justify-center' : 'justify-between'} ${roleTheme.headerAccent}`}>
           <div className={`${collapsed ? 'lg:hidden' : ''}`}>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">CRM Pro</h1>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{user.role === 'admin' ? 'Admin Panel' : 'Staff Panel'}</p>
+            <div className="flex items-center gap-1.5 mt-1">
+              <RoleIcon size={14} className={roleTheme.icon} />
+              <p className={`text-sm font-medium ${roleTheme.text}`}>{getRoleDisplayName(user.role)}</p>
+            </div>
           </div>
-          {/* Collapsed logo */}
+          {/* Collapsed logo with role color */}
           {collapsed && (
             <div className="hidden lg:flex items-center justify-center">
-              <span className="text-2xl font-bold text-slate-900 dark:text-white">C</span>
+              <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${roleTheme.bgGradient} flex items-center justify-center`}>
+                <span className="text-lg font-bold text-white">C</span>
+              </div>
             </div>
           )}
           {/* Mobile close button */}
