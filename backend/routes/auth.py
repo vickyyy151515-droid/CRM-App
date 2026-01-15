@@ -75,6 +75,124 @@ async def get_me(user: User = Depends(get_current_user)):
     """Get current user info"""
     return user
 
+@router.post("/auth/logout")
+async def logout(user: User = Depends(get_current_user)):
+    """Logout and update user status"""
+    db = get_db()
+    now = get_jakarta_now()
+    await db.users.update_one(
+        {'id': user.id},
+        {'$set': {
+            'last_logout': now.isoformat(),
+            'is_online': False
+        }}
+    )
+    return {'message': 'Logged out successfully'}
+
+@router.post("/auth/heartbeat")
+async def heartbeat(user: User = Depends(get_current_user)):
+    """Update user's last activity timestamp (call this periodically from frontend)"""
+    db = get_db()
+    now = get_jakarta_now()
+    await db.users.update_one(
+        {'id': user.id},
+        {'$set': {
+            'last_activity': now.isoformat(),
+            'is_online': True
+        }}
+    )
+    return {'status': 'ok', 'timestamp': now.isoformat()}
+
+# ==================== USER ACTIVITY MONITORING ====================
+
+@router.get("/users/activity")
+async def get_user_activity(admin: User = Depends(get_admin_user)):
+    """Get all users' activity status (Admin only)"""
+    db = get_db()
+    from datetime import datetime, timedelta
+    import pytz
+    
+    JAKARTA_TZ = pytz.timezone('Asia/Jakarta')
+    now = datetime.now(JAKARTA_TZ)
+    
+    # Consider user idle if no activity for 5 minutes
+    IDLE_THRESHOLD_MINUTES = 5
+    # Consider user offline if no activity for 30 minutes
+    OFFLINE_THRESHOLD_MINUTES = 30
+    
+    users = await db.users.find({}, {'_id': 0, 'password_hash': 0}).to_list(1000)
+    
+    activity_list = []
+    online_count = 0
+    idle_count = 0
+    offline_count = 0
+    
+    for user in users:
+        last_activity_str = user.get('last_activity')
+        last_login_str = user.get('last_login')
+        last_logout_str = user.get('last_logout')
+        is_online = user.get('is_online', False)
+        
+        status = 'offline'
+        idle_minutes = None
+        
+        if last_activity_str:
+            try:
+                last_activity = datetime.fromisoformat(last_activity_str.replace('Z', '+00:00'))
+                if last_activity.tzinfo is None:
+                    last_activity = JAKARTA_TZ.localize(last_activity)
+                
+                minutes_since_activity = (now - last_activity).total_seconds() / 60
+                
+                if minutes_since_activity < IDLE_THRESHOLD_MINUTES and is_online:
+                    status = 'online'
+                    online_count += 1
+                elif minutes_since_activity < OFFLINE_THRESHOLD_MINUTES and is_online:
+                    status = 'idle'
+                    idle_minutes = int(minutes_since_activity)
+                    idle_count += 1
+                else:
+                    status = 'offline'
+                    offline_count += 1
+                    # Auto-update is_online to false if user has been inactive too long
+                    if is_online:
+                        await db.users.update_one({'id': user['id']}, {'$set': {'is_online': False}})
+            except:
+                status = 'offline'
+                offline_count += 1
+        else:
+            offline_count += 1
+        
+        activity_list.append({
+            'id': user['id'],
+            'name': user['name'],
+            'email': user['email'],
+            'role': user['role'],
+            'status': status,
+            'idle_minutes': idle_minutes,
+            'last_login': last_login_str,
+            'last_activity': last_activity_str,
+            'last_logout': last_logout_str
+        })
+    
+    # Sort: online first, then idle, then offline
+    status_order = {'online': 0, 'idle': 1, 'offline': 2}
+    activity_list.sort(key=lambda x: (status_order.get(x['status'], 3), x['name']))
+    
+    return {
+        'users': activity_list,
+        'summary': {
+            'total': len(users),
+            'online': online_count,
+            'idle': idle_count,
+            'offline': offline_count
+        },
+        'thresholds': {
+            'idle_minutes': IDLE_THRESHOLD_MINUTES,
+            'offline_minutes': OFFLINE_THRESHOLD_MINUTES
+        }
+    }
+
 # ==================== USER MANAGEMENT ENDPOINTS ====================
 
 @router.get("/users")
