@@ -204,6 +204,8 @@ export default function AdminDashboard({ user, onLogout }) {
         return <CustomerRetention isAdmin={true} />;
       case 'scheduled-reports':
         return <ScheduledReports />;
+      case 'user-activity':
+        return <UserActivity />;
       default:
         return null;
     }
@@ -218,6 +220,7 @@ export default function AdminDashboard({ user, onLogout }) {
     { id: 'analytics', label: t('nav.advancedAnalytics'), icon: PieChart, badge: 0 },
     { id: 'export', label: t('nav.exportCenter'), icon: Download, badge: 0 },
     { id: 'scheduled-reports', label: t('nav.scheduledReports') || 'Scheduled Reports', icon: Send, badge: 0 },
+    { id: 'user-activity', label: t('nav.userActivity') || 'User Activity', icon: Activity, badge: 0 },
     { id: 'report', label: t('nav.reportCRM'), icon: FileText, badge: 0 },
     { id: 'bonus', label: t('nav.bonusCalculation'), icon: Calculator, badge: 0 },
     { id: 'leave', label: t('nav.leaveRequests'), icon: CalendarOff, badge: 0 },
