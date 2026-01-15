@@ -1,5 +1,5 @@
 import { LogOut, Menu, X, ChevronLeft, ChevronRight, Settings, ChevronDown, ChevronUp, Folder, FolderOpen, Sun, Moon, Globe } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import NotificationBell from './NotificationBell';
 import SidebarConfigurator from './SidebarConfigurator';
 import GlobalSearch from './GlobalSearch';
