@@ -553,6 +553,12 @@ async def get_customer_alerts(
     jakarta_now = get_jakarta_now()
     today = jakarta_now.strftime('%Y-%m-%d')
     
+    # Helper function to normalize customer ID
+    def normalize_customer_id(customer_id: str) -> str:
+        if not customer_id:
+            return ""
+        return customer_id.strip().lower()
+    
     # Get all OMSET records
     query = {}
     if product_id:
@@ -568,9 +574,10 @@ async def get_customer_alerts(
             'alerts': []
         }
     
-    # Build customer data with last deposit info
+    # Build customer data with last deposit info - USE NORMALIZED CUSTOMER ID
     customer_data = defaultdict(lambda: {
         'customer_id': '',
+        'customer_id_display': '',  # Original display name
         'customer_name': '',
         'product_id': '',
         'product_name': '',
@@ -584,15 +591,21 @@ async def get_customer_alerts(
     })
     
     for record in records:
-        key = (record['customer_id'], record.get('product_id'))
+        # Use normalized customer_id for grouping (same customer with different case = same customer)
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (cid_normalized, record.get('product_id'))
         customer = customer_data[key]
         
-        customer['customer_id'] = record['customer_id']
-        customer['customer_name'] = record.get('customer_name', record['customer_id'])
+        # Store the original customer_id for display (use most recent one)
+        if customer['last_deposit_date'] is None or record['record_date'] > customer['last_deposit_date']:
+            customer['customer_id'] = cid_normalized
+            customer['customer_id_display'] = record['customer_id']  # Original for display
+            customer['customer_name'] = record.get('customer_name', record['customer_id'])
+            customer['staff_id'] = record.get('staff_id')
+            customer['staff_name'] = record.get('staff_name', 'Unknown')
+        
         customer['product_id'] = record.get('product_id')
         customer['product_name'] = record.get('product_name', 'Unknown')
-        customer['staff_id'] = record.get('staff_id')
-        customer['staff_name'] = record.get('staff_name', 'Unknown')
         customer['total_deposits'] += 1
         customer['total_omset'] += record.get('depo_total', 0) or 0
         customer['deposit_dates'].append(record['record_date'])
