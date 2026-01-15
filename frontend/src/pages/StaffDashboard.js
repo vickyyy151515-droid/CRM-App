@@ -55,26 +55,26 @@ export default function StaffDashboard({ user, onLogout }) {
         return (
           <div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm" data-testid="stat-available-databases">
+              <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm" data-testid="stat-available-databases">
                 <div className="flex items-center justify-between mb-3">
-                  <FileSpreadsheet className="text-indigo-600" size={24} />
-                  <span className="text-2xl font-bold text-slate-900">{stats.totalDatabases}</span>
+                  <FileSpreadsheet className="text-indigo-600 dark:text-indigo-400" size={24} />
+                  <span className="text-2xl font-bold text-slate-900 dark:text-white">{stats.totalDatabases}</span>
                 </div>
-                <p className="text-sm text-slate-600">Available Databases</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">{t('database.availableDatabases') || 'Available Databases'}</p>
               </div>
-              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm" data-testid="stat-my-requests">
+              <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm" data-testid="stat-my-requests">
                 <div className="flex items-center justify-between mb-3">
-                  <Clock className="text-amber-600" size={24} />
-                  <span className="text-2xl font-bold text-slate-900">{stats.myRequests}</span>
+                  <Clock className="text-amber-600 dark:text-amber-400" size={24} />
+                  <span className="text-2xl font-bold text-slate-900 dark:text-white">{stats.myRequests}</span>
                 </div>
-                <p className="text-sm text-slate-600">My Requests</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">{t('nav.myRequests')}</p>
               </div>
-              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm" data-testid="stat-my-downloads">
+              <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm" data-testid="stat-my-downloads">
                 <div className="flex items-center justify-between mb-3">
-                  <LayoutDashboard className="text-emerald-600" size={24} />
-                  <span className="text-2xl font-bold text-slate-900">{stats.myDownloads}</span>
+                  <LayoutDashboard className="text-emerald-600 dark:text-emerald-400" size={24} />
+                  <span className="text-2xl font-bold text-slate-900 dark:text-white">{stats.myDownloads}</span>
                 </div>
-                <p className="text-sm text-slate-600">My Downloads</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">{t('database.myDownloads') || 'My Downloads'}</p>
               </div>
             </div>
             <DatabaseList isStaff={true} onUpdate={loadStats} />
