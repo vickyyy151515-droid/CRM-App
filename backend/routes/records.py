@@ -830,6 +830,91 @@ async def create_reserved_member(member_data: ReservedMemberCreate, user: User =
     await db.reserved_members.insert_one(doc)
     return member
 
+
+@router.post("/reserved-members/bulk")
+async def bulk_create_reserved_members(bulk_data: BulkReservedMemberCreate, user: User = Depends(get_admin_user)):
+    """
+    Bulk add reserved members (Admin only).
+    Creates multiple reservations for the same product and staff.
+    Skips duplicates and returns summary of results.
+    """
+    db = get_db()
+    
+    # Validate product
+    product = await db.products.find_one({'id': bulk_data.product_id})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Validate staff
+    staff = await db.users.find_one({'id': bulk_data.staff_id})
+    if not staff:
+        raise HTTPException(status_code=404, detail="Staff not found")
+    
+    # Clean and deduplicate customer names
+    customer_names = []
+    for name in bulk_data.customer_names:
+        cleaned = name.strip()
+        if cleaned and cleaned not in customer_names:
+            customer_names.append(cleaned)
+    
+    if not customer_names:
+        raise HTTPException(status_code=400, detail="No valid customer names provided")
+    
+    # Process each customer name
+    added = []
+    skipped = []
+    
+    for customer_name in customer_names:
+        # Check for existing reservation (case-insensitive)
+        existing = await db.reserved_members.find_one({
+            'customer_name': {'$regex': f'^{customer_name}$', '$options': 'i'},
+            'product_id': bulk_data.product_id,
+            'status': {'$in': ['pending', 'approved']}
+        })
+        
+        if existing:
+            owner = await db.users.find_one({'id': existing['staff_id']})
+            owner_name = owner['name'] if owner else 'Unknown'
+            skipped.append({
+                'customer_name': customer_name,
+                'reason': f"Already reserved by {owner_name}"
+            })
+            continue
+        
+        # Create the reservation
+        member = ReservedMember(
+            customer_name=customer_name,
+            product_id=bulk_data.product_id,
+            product_name=product['name'],
+            staff_id=bulk_data.staff_id,
+            staff_name=staff['name'],
+            status='approved',
+            created_by=user.id,
+            created_by_name=user.name,
+            approved_at=get_jakarta_now(),
+            approved_by=user.id,
+            approved_by_name=user.name
+        )
+        
+        doc = member.model_dump()
+        doc['created_at'] = doc['created_at'].isoformat()
+        doc['approved_at'] = doc['approved_at'].isoformat()
+        
+        await db.reserved_members.insert_one(doc)
+        added.append(customer_name)
+    
+    return {
+        'success': True,
+        'total_processed': len(customer_names),
+        'added_count': len(added),
+        'skipped_count': len(skipped),
+        'added': added,
+        'skipped': skipped,
+        'product_name': product['name'],
+        'staff_name': staff['name']
+    }
+
+
 @router.get("/reserved-members", response_model=List[ReservedMember])
 async def get_reserved_members(status: Optional[str] = None, product_id: Optional[str] = None, user: User = Depends(get_current_user)):
     db = get_db()
