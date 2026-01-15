@@ -165,11 +165,13 @@ async def get_bonus_calculation_data(
     
     all_time_records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
     
+    # Build customer first deposit map (using normalized customer_id)
     customer_first_date = {}
     for record in sorted(all_time_records, key=lambda x: x['record_date']):
-        cid = record['customer_id']
+        # Use normalized customer_id for comparison
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
         pid = record['product_id']
-        key = (cid, pid)
+        key = (cid_normalized, pid)
         if key not in customer_first_date:
             customer_first_date[key] = record['record_date']
     
