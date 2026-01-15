@@ -722,3 +722,47 @@ async def get_omset_record_types(
             record['created_at'] = datetime.fromisoformat(record['created_at'])
     
     return date_records
+
+@router.post("/omset/migrate-normalize")
+async def migrate_normalize_customer_ids(user: User = Depends(get_admin_user)):
+    """
+    Admin-only endpoint to migrate existing records:
+    1. Add customer_id_normalized field to all records
+    2. Recalculate and update customer_type (NDP/RDP) based on normalized customer_id
+    """
+    db = get_db()
+    
+    # Get all omset records
+    all_records = await db.omset_records.find({}).to_list(500000)
+    
+    # Build customer first deposit map using normalized IDs
+    customer_first_date = {}
+    for record in sorted(all_records, key=lambda x: x['record_date']):
+        cid_normalized = normalize_customer_id(record['customer_id'])
+        key = (cid_normalized, record['product_id'])
+        if key not in customer_first_date:
+            customer_first_date[key] = record['record_date']
+    
+    # Update all records
+    updated_count = 0
+    for record in all_records:
+        cid_normalized = normalize_customer_id(record['customer_id'])
+        key = (cid_normalized, record['product_id'])
+        first_date = customer_first_date.get(key)
+        customer_type = 'NDP' if first_date == record['record_date'] else 'RDP'
+        
+        # Update the record
+        await db.omset_records.update_one(
+            {'_id': record['_id']},
+            {'$set': {
+                'customer_id_normalized': cid_normalized,
+                'customer_type': customer_type
+            }}
+        )
+        updated_count += 1
+    
+    return {
+        'message': f'Successfully migrated {updated_count} records',
+        'total_records': len(all_records),
+        'updated_count': updated_count
+    }
