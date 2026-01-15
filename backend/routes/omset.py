@@ -462,7 +462,9 @@ async def export_omset_records(
     
     customer_first_date = {}
     for record in sorted(all_records, key=lambda x: x['record_date']):
-        key = (record['customer_id'], record['product_id'])
+        # Use normalized customer_id for comparison
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (cid_normalized, record['product_id'])
         if key not in customer_first_date:
             customer_first_date[key] = record['record_date']
     
@@ -472,7 +474,9 @@ async def export_omset_records(
     writer.writerow(['Date', 'Product', 'Staff', 'Customer ID', 'Nominal', 'Kelipatan', 'Depo Total', 'Type', 'Keterangan'])
     
     for record in records:
-        key = (record['customer_id'], record['product_id'])
+        # Use normalized customer_id for comparison
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (cid_normalized, record['product_id'])
         first_date = customer_first_date.get(key)
         record_type = 'NDP' if first_date == record['record_date'] else 'RDP'
         
