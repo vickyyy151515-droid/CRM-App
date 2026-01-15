@@ -217,6 +217,10 @@ async def get_report_crm_data(
     selected_month_records = [r for r in all_records if r['record_date'].startswith(selected_month_str)]
     
     staff_daily_data = {}
+    # Track unique customers for NDP and RDP per staff-product-date combination
+    staff_daily_ndp_customers = {}  # {(staff_id, product_id, date): set of customer_ids}
+    staff_daily_rdp_customers = {}  # {(staff_id, product_id, date): set of customer_ids}
+    
     for record in selected_month_records:
         sid = record['staff_id']
         sname = record['staff_name']
@@ -249,20 +253,34 @@ async def get_report_crm_data(
                 'nominal': 0
             }
         
-        key = (record['customer_id'], record['product_id'])
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (cid_normalized, record['product_id'])
         first_date = customer_first_date.get(key)
         is_ndp = first_date == date
         
         nom = record.get('depo_total', 0) or record.get('nominal', 0) or 0
         
+        # Track unique customers per staff-product-date
+        tracking_key = (sid, pid, date)
+        if tracking_key not in staff_daily_ndp_customers:
+            staff_daily_ndp_customers[tracking_key] = set()
+        if tracking_key not in staff_daily_rdp_customers:
+            staff_daily_rdp_customers[tracking_key] = set()
+        
         if is_ndp:
-            staff_daily_data[sid]['products'][pid]['daily'][date]['new_id'] += 1
-            staff_daily_data[sid]['products'][pid]['totals']['new_id'] += 1
-            staff_daily_data[sid]['totals']['new_id'] += 1
+            # Count unique NDP customers per day
+            if cid_normalized not in staff_daily_ndp_customers[tracking_key]:
+                staff_daily_ndp_customers[tracking_key].add(cid_normalized)
+                staff_daily_data[sid]['products'][pid]['daily'][date]['new_id'] += 1
+                staff_daily_data[sid]['products'][pid]['totals']['new_id'] += 1
+                staff_daily_data[sid]['totals']['new_id'] += 1
         else:
-            staff_daily_data[sid]['products'][pid]['daily'][date]['rdp'] += 1
-            staff_daily_data[sid]['products'][pid]['totals']['rdp'] += 1
-            staff_daily_data[sid]['totals']['rdp'] += 1
+            # Count unique RDP customers per day (NEW LOGIC)
+            if cid_normalized not in staff_daily_rdp_customers[tracking_key]:
+                staff_daily_rdp_customers[tracking_key].add(cid_normalized)
+                staff_daily_data[sid]['products'][pid]['daily'][date]['rdp'] += 1
+                staff_daily_data[sid]['products'][pid]['totals']['rdp'] += 1
+                staff_daily_data[sid]['totals']['rdp'] += 1
         
         staff_daily_data[sid]['products'][pid]['daily'][date]['total_form'] += 1
         staff_daily_data[sid]['products'][pid]['daily'][date]['nominal'] += nom
