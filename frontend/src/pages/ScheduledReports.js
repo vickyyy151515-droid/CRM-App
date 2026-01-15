@@ -758,6 +758,163 @@ export default function ScheduledReports() {
           </div>
         </div>
       </div>
+
+      {/* Staff Offline Alerts Section */}
+      <div className="mt-8 border-t border-slate-200 dark:border-slate-700 pt-8">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Users size={24} className="text-red-500" />
+              Staff Offline Alerts
+            </h2>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
+              Get notified when staff members haven't logged in by a specific time
+            </p>
+          </div>
+          <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+            config?.staff_offline_enabled 
+              ? 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-400' 
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+          }`}>
+            {config?.staff_offline_enabled ? '🔴 Active' : '⚫ Inactive'}
+          </div>
+        </div>
+
+        {/* Staff Offline Status Card */}
+        {config?.staff_offline_enabled && (
+          <div className="bg-gradient-to-r from-red-500 to-rose-600 rounded-xl p-6 text-white shadow-lg mb-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Clock size={24} />
+              <span className="text-lg font-semibold">Staff Offline Check Schedule</span>
+            </div>
+            <p className="text-2xl font-bold mb-2">
+              Daily at {String(staffOfflineHour).padStart(2, '0')}:{String(staffOfflineMinute).padStart(2, '0')} WIB
+            </p>
+            <p className="text-red-100 text-sm">
+              Alerts when staff members are not online • Sent to admin's personal chat
+            </p>
+            {config?.staff_offline_last_sent && (
+              <p className="text-red-200 text-xs mt-4">
+                Last sent: {new Date(config.staff_offline_last_sent).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })} WIB
+              </p>
+            )}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Staff Offline Configuration Form */}
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+              <Settings size={20} className="text-red-600" />
+              Alert Configuration
+            </h3>
+            
+            <form onSubmit={handleStaffOfflineSave} className="space-y-4">
+              <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4 mb-4">
+                <p className="text-sm text-slate-600 dark:text-slate-300">
+                  <strong>Note:</strong> This alert uses the same Bot Token and Chat ID configured in the Daily Report section above. 
+                  Make sure to configure those first.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Alert Hour (WIB)
+                  </label>
+                  <select
+                    value={staffOfflineHour}
+                    onChange={(e) => setStaffOfflineHour(Number(e.target.value))}
+                    className="w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                    data-testid="select-staff-offline-hour"
+                  >
+                    {[...Array(24)].map((_, i) => (
+                      <option key={i} value={i}>{String(i).padStart(2, '0')}:00</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Minute
+                  </label>
+                  <select
+                    value={staffOfflineMinute}
+                    onChange={(e) => setStaffOfflineMinute(Number(e.target.value))}
+                    className="w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                    data-testid="select-staff-offline-minute"
+                  >
+                    {[0, 15, 30, 45].map((m) => (
+                      <option key={m} value={m}>:{String(m).padStart(2, '0')}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-3 py-2">
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={staffOfflineEnabled}
+                    onChange={(e) => setStaffOfflineEnabled(e.target.checked)}
+                    className="sr-only peer"
+                    data-testid="toggle-staff-offline-enabled"
+                  />
+                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 dark:peer-focus:ring-red-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-red-600"></div>
+                  <span className="ms-3 text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Enable staff offline alerts
+                  </span>
+                </label>
+              </div>
+              
+              <button
+                type="submit"
+                disabled={staffOfflineSaving}
+                className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                data-testid="btn-save-staff-offline-config"
+              >
+                {staffOfflineSaving ? <RefreshCw className="animate-spin" size={18} /> : <CheckCircle size={18} />}
+                {staffOfflineSaving ? 'Saving...' : 'Save Alert Configuration'}
+              </button>
+            </form>
+          </div>
+
+          {/* Staff Offline Quick Actions */}
+          <div className="space-y-4">
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                <Zap size={20} className="text-red-500" />
+                Alert Actions
+              </h3>
+              
+              <div className="space-y-3">
+                <button
+                  onClick={handleStaffOfflineSendNow}
+                  disabled={staffOfflineSending || !config?.telegram_bot_token || !config?.telegram_chat_id}
+                  className="w-full px-4 py-3 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50 disabled:opacity-50 transition-colors flex items-center gap-3"
+                  data-testid="btn-send-staff-offline-now"
+                >
+                  {staffOfflineSending ? <RefreshCw className="animate-spin" size={18} /> : <Send size={18} />}
+                  <div className="text-left">
+                    <div className="font-medium">Check Staff Status Now</div>
+                    <div className="text-xs text-red-600 dark:text-red-500">Send current staff online/offline status</div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Info Section */}
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
+              <h4 className="font-medium text-red-800 dark:text-red-400 mb-2">How it works:</h4>
+              <ul className="text-sm text-red-700 dark:text-red-500 space-y-1 list-disc list-inside">
+                <li>At the scheduled time, checks which staff are online</li>
+                <li>Staff are considered "online" if active within 30 minutes</li>
+                <li>Alert lists all offline staff with last login time</li>
+                <li>Helps ensure team is working on time</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
