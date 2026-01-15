@@ -10,7 +10,9 @@ import {
   RefreshCw,
   Eye,
   Zap,
-  MessageSquare
+  MessageSquare,
+  AlertTriangle,
+  Users
 } from 'lucide-react';
 
 export default function ScheduledReports() {
@@ -22,12 +24,23 @@ export default function ScheduledReports() {
   const [previewing, setPreviewing] = useState(false);
   const [preview, setPreview] = useState(null);
   
-  // Form state
+  // Daily Report Form state
   const [botToken, setBotToken] = useState('');
   const [chatId, setChatId] = useState('');
   const [enabled, setEnabled] = useState(false);
   const [reportHour, setReportHour] = useState(1);
   const [reportMinute, setReportMinute] = useState(0);
+  
+  // At-Risk Alert Form state
+  const [atriskEnabled, setAtriskEnabled] = useState(false);
+  const [atriskGroupChatId, setAtriskGroupChatId] = useState('');
+  const [atriskHour, setAtriskHour] = useState(11);
+  const [atriskMinute, setAtriskMinute] = useState(0);
+  const [atriskInactiveDays, setAtriskInactiveDays] = useState(14);
+  const [atriskSaving, setAtriskSaving] = useState(false);
+  const [atriskTesting, setAtriskTesting] = useState(false);
+  const [atriskSending, setAtriskSending] = useState(false);
+  const [atriskPreview, setAtriskPreview] = useState(null);
 
   useEffect(() => {
     loadConfig();
@@ -38,7 +51,7 @@ export default function ScheduledReports() {
       const response = await api.get('/scheduled-reports/config');
       setConfig(response.data);
       
-      // Set form values
+      // Set daily report form values
       if (response.data.telegram_bot_token) {
         setBotToken(response.data.telegram_bot_token);
       }
@@ -46,6 +59,13 @@ export default function ScheduledReports() {
       setEnabled(response.data.enabled || false);
       setReportHour(response.data.report_hour || 1);
       setReportMinute(response.data.report_minute || 0);
+      
+      // Set at-risk form values
+      setAtriskEnabled(response.data.atrisk_enabled || false);
+      setAtriskGroupChatId(response.data.atrisk_group_chat_id || '');
+      setAtriskHour(response.data.atrisk_hour || 11);
+      setAtriskMinute(response.data.atrisk_minute || 0);
+      setAtriskInactiveDays(response.data.atrisk_inactive_days || 14);
     } catch (error) {
       toast.error('Failed to load configuration');
     } finally {
