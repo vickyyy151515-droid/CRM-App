@@ -109,6 +109,7 @@ const id = {
     conversionFunnel: 'Funnel Konversi',
     customerRetention: 'Retensi Pelanggan',
     exportCenter: 'Pusat Ekspor',
+    scheduledReports: 'Laporan Terjadwal',
     downloadHistory: 'Riwayat Unduhan',
     userManagement: 'Kelola Pengguna',
     productManagement: 'Kelola Produk',
