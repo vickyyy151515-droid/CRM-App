@@ -670,14 +670,85 @@ async def preview_report(user: User = Depends(get_admin_user)):
     return {'report': report}
 
 
+@router.post("/scheduled-reports/atrisk-test")
+async def test_atrisk_telegram(user: User = Depends(get_admin_user)):
+    """Send a test message to verify at-risk Telegram group configuration"""
+    db = get_db()
+    config = await db.scheduled_report_config.find_one({'id': 'scheduled_report_config'}, {'_id': 0})
+    
+    if not config or not config.get('telegram_bot_token') or not config.get('atrisk_group_chat_id'):
+        raise HTTPException(status_code=400, detail="At-risk Telegram group configuration not set")
+    
+    test_message = (
+        "✅ <b>CRM At-Risk Alert Integration Test</b>\n\n"
+        f"At-risk alerts are configured to run daily at "
+        f"<b>{config.get('atrisk_hour', 11):02d}:{config.get('atrisk_minute', 0):02d} WIB</b>\n\n"
+        f"Threshold: <b>{config.get('atrisk_inactive_days', 14)}+ days</b> inactive\n\n"
+        f"Status: {'🟢 Enabled' if config.get('atrisk_enabled') else '🔴 Disabled'}\n\n"
+        f"<i>Test sent at {datetime.now(JAKARTA_TZ).strftime('%Y-%m-%d %H:%M:%S')} WIB</i>"
+    )
+    
+    success = await send_telegram_message(
+        config['telegram_bot_token'],
+        config['atrisk_group_chat_id'],
+        test_message
+    )
+    
+    if success:
+        return {'success': True, 'message': 'Test message sent to group successfully'}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to send test message. Please check your bot token and group chat ID.")
+
+
+@router.post("/scheduled-reports/atrisk-send-now")
+async def send_atrisk_now(user: User = Depends(get_admin_user)):
+    """Manually trigger the at-risk customer alert"""
+    db = get_db()
+    config = await db.scheduled_report_config.find_one({'id': 'scheduled_report_config'}, {'_id': 0})
+    
+    if not config or not config.get('telegram_bot_token') or not config.get('atrisk_group_chat_id'):
+        raise HTTPException(status_code=400, detail="At-risk Telegram group configuration not set")
+    
+    inactive_days = config.get('atrisk_inactive_days', 14)
+    alert = await generate_atrisk_alert(inactive_days)
+    
+    success = await send_telegram_message(
+        config['telegram_bot_token'],
+        config['atrisk_group_chat_id'],
+        alert
+    )
+    
+    if success:
+        await db.scheduled_report_config.update_one(
+            {'id': 'scheduled_report_config'},
+            {'$set': {'atrisk_last_sent': datetime.now(JAKARTA_TZ).isoformat()}}
+        )
+        return {'success': True, 'message': 'At-risk alert sent successfully'}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to send at-risk alert")
+
+
+@router.get("/scheduled-reports/atrisk-preview")
+async def preview_atrisk(user: User = Depends(get_admin_user)):
+    """Preview the at-risk alert without sending"""
+    db = get_db()
+    config = await db.scheduled_report_config.find_one({'id': 'scheduled_report_config'}, {'_id': 0})
+    inactive_days = config.get('atrisk_inactive_days', 14) if config else 14
+    alert = await generate_atrisk_alert(inactive_days)
+    return {'alert': alert}
+
+
 # Initialize scheduler on startup
 async def init_scheduler():
     """Initialize scheduler from saved config"""
     db = get_db()
     config = await db.scheduled_report_config.find_one({'id': 'scheduled_report_config'}, {'_id': 0})
     
-    if config and config.get('enabled'):
+    if config and (config.get('enabled') or config.get('atrisk_enabled')):
         start_scheduler(
-            config.get('report_hour', 1),
-            config.get('report_minute', 0)
+            report_hour=config.get('report_hour', 1),
+            report_minute=config.get('report_minute', 0),
+            atrisk_hour=config.get('atrisk_hour', 11),
+            atrisk_minute=config.get('atrisk_minute', 0),
+            atrisk_enabled=config.get('atrisk_enabled', False)
         )
