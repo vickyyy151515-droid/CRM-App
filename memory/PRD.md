@@ -499,6 +499,18 @@ Build a Customer Relationship Management (CRM) application where:
 ### P1: Next Priority Tasks
 - None - All P1 tasks completed!
 
+### ✅ COMPLETED: Scheduled Telegram Reports Feature (Jan 15, 2026)
+- **Backend**: New `routes/scheduled_reports.py` module
+  - `GET /api/scheduled-reports/config` - Get current configuration
+  - `POST /api/scheduled-reports/config` - Save Telegram bot token, chat ID, schedule
+  - `POST /api/scheduled-reports/test` - Send test message
+  - `POST /api/scheduled-reports/send-now` - Manually trigger daily report
+  - `GET /api/scheduled-reports/preview` - Preview report without sending
+- **Scheduler**: APScheduler runs daily at configured time (default 1:00 AM WIB)
+- **Report Content**: Daily summary with NDP, RDP, Total Form, Nominal per staff per product
+- **Frontend**: New `pages/ScheduledReports.js` with configuration UI
+- **Dependencies Added**: `python-telegram-bot`, `apscheduler`, `httpx`
+
 ### ✅ COMPLETED: Bulk Add Reserved Members Feature (Jan 15, 2026)
 - **New Backend Endpoint**: `POST /api/reserved-members/bulk`
   - Accepts list of customer names, product ID, and staff ID
