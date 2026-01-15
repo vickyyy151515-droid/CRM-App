@@ -458,8 +458,8 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top bar for mobile */}
-        <header className="lg:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between">
+        {/* Top bar for mobile with role accent */}
+        <header className={`lg:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between ${roleTheme.headerAccent}`}>
           <button
             onClick={() => setSidebarOpen(true)}
             className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
@@ -467,7 +467,10 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
           >
             <Menu size={24} />
           </button>
-          <h1 className="text-lg font-bold text-slate-900 dark:text-white">CRM Pro</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-bold text-slate-900 dark:text-white">CRM Pro</h1>
+            <RoleIcon size={16} className={roleTheme.icon} />
+          </div>
           <div className="flex items-center gap-2">
             <button
               onClick={toggleLanguage}
@@ -489,9 +492,16 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
           </div>
         </header>
 
-        {/* Desktop top bar */}
+        {/* Desktop top bar with role indicator */}
         <div className="hidden lg:flex items-center justify-between p-4 pb-0">
-          <GlobalSearch onNavigate={(tab) => setActiveTab(tab)} isAdmin={user?.role === 'admin'} />
+          <div className="flex items-center gap-4">
+            <GlobalSearch onNavigate={(tab) => setActiveTab(tab)} isAdmin={user?.role === 'admin' || user?.role === 'master_admin'} />
+            {/* Role badge on desktop */}
+            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full ${roleTheme.bgLight} ${roleTheme.border} border`}>
+              <RoleIcon size={14} className={roleTheme.icon} />
+              <span className={`text-xs font-medium ${roleTheme.text}`}>{getRoleDisplayName(user.role)}</span>
+            </div>
+          </div>
           <div className="flex items-center gap-3">
             <button
               onClick={toggleLanguage}
