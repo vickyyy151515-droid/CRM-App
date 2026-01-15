@@ -413,6 +413,150 @@ async def send_atrisk_alert():
         print(f"Error sending at-risk alert: {e}")
 
 
+async def generate_staff_offline_alert() -> str:
+    """Generate alert for staff members who are not online"""
+    db = get_db()
+    
+    jakarta_now = datetime.now(JAKARTA_TZ)
+    
+    # Consider staff offline if no activity in last 30 minutes
+    OFFLINE_THRESHOLD_MINUTES = 30
+    
+    # Get all staff users
+    staff_users = await db.users.find({'role': 'staff'}, {'_id': 0}).to_list(100)
+    
+    if not staff_users:
+        return "📋 <b>Staff Status Check</b>\n\n<i>No staff users found in the system.</i>"
+    
+    online_staff = []
+    offline_staff = []
+    
+    for staff in staff_users:
+        last_activity_str = staff.get('last_activity')
+        is_online = staff.get('is_online', False)
+        status = 'offline'
+        
+        if last_activity_str and is_online:
+            try:
+                last_activity = datetime.fromisoformat(last_activity_str.replace('Z', '+00:00'))
+                if last_activity.tzinfo is None:
+                    last_activity = JAKARTA_TZ.localize(last_activity)
+                
+                minutes_since_activity = (jakarta_now - last_activity).total_seconds() / 60
+                
+                if minutes_since_activity < OFFLINE_THRESHOLD_MINUTES:
+                    status = 'online'
+            except:
+                pass
+        
+        staff_info = {
+            'name': staff.get('name', 'Unknown'),
+            'email': staff.get('email', ''),
+            'last_login': staff.get('last_login'),
+            'last_activity': last_activity_str
+        }
+        
+        if status == 'online':
+            online_staff.append(staff_info)
+        else:
+            offline_staff.append(staff_info)
+    
+    # Format the alert
+    alert_lines = [
+        f"👥 <b>STAFF STATUS REPORT</b>",
+        f"📅 <b>Date:</b> {jakarta_now.strftime('%Y-%m-%d')}",
+        f"⏰ <b>Time:</b> {jakarta_now.strftime('%H:%M')} WIB",
+        ""
+    ]
+    
+    # Summary
+    total_staff = len(staff_users)
+    online_count = len(online_staff)
+    offline_count = len(offline_staff)
+    
+    alert_lines.append(f"📊 <b>Summary:</b>")
+    alert_lines.append(f"   Total Staff: {total_staff}")
+    alert_lines.append(f"   🟢 Online: {online_count}")
+    alert_lines.append(f"   🔴 Offline: {offline_count}")
+    alert_lines.append("")
+    
+    # If all staff are online
+    if offline_count == 0:
+        alert_lines.append("✅ <b>All staff members are currently online!</b>")
+        return "\n".join(alert_lines)
+    
+    # List offline staff
+    alert_lines.append("━━━━━━━━━━━━━━━━━━━━")
+    alert_lines.append(f"🔴 <b>OFFLINE STAFF ({offline_count})</b>")
+    alert_lines.append("")
+    
+    for staff in offline_staff:
+        last_login = staff.get('last_login')
+        if last_login:
+            try:
+                login_dt = datetime.fromisoformat(last_login.replace('Z', '+00:00'))
+                last_login_str = login_dt.strftime('%d %b %H:%M')
+            except:
+                last_login_str = 'Unknown'
+        else:
+            last_login_str = 'Never logged in'
+        
+        alert_lines.append(f"❌ <b>{staff['name']}</b>")
+        alert_lines.append(f"   📧 {staff['email']}")
+        alert_lines.append(f"   🕐 Last login: {last_login_str}")
+        alert_lines.append("")
+    
+    # List online staff (brief)
+    if online_count > 0:
+        alert_lines.append("━━━━━━━━━━━━━━━━━━━━")
+        alert_lines.append(f"🟢 <b>ONLINE STAFF ({online_count})</b>")
+        online_names = [s['name'] for s in online_staff]
+        alert_lines.append(f"   {', '.join(online_names)}")
+    
+    alert_lines.append("")
+    alert_lines.append("💡 <i>Please check on offline staff members.</i>")
+    
+    return "\n".join(alert_lines)
+
+
+async def send_staff_offline_alert():
+    """Task that runs daily to check and alert about offline staff"""
+    db = get_db()
+    
+    # Get config
+    config = await db.scheduled_report_config.find_one({'id': 'scheduled_report_config'}, {'_id': 0})
+    
+    if not config or not config.get('staff_offline_enabled'):
+        print("Staff offline alerts are disabled")
+        return
+    
+    bot_token = config.get('telegram_bot_token')
+    # Send to admin's personal chat
+    chat_id = config.get('telegram_chat_id')
+    
+    if not bot_token or not chat_id:
+        print("Telegram bot token or chat ID not configured for staff offline alerts")
+        return
+    
+    try:
+        # Generate and send alert
+        alert = await generate_staff_offline_alert()
+        success = await send_telegram_message(bot_token, chat_id, alert)
+        
+        if success:
+            # Update last_sent timestamp
+            await db.scheduled_report_config.update_one(
+                {'id': 'scheduled_report_config'},
+                {'$set': {'staff_offline_last_sent': datetime.now(JAKARTA_TZ).isoformat()}}
+            )
+            print(f"Staff offline alert sent successfully at {datetime.now(JAKARTA_TZ)}")
+        else:
+            print("Failed to send staff offline alert")
+            
+    except Exception as e:
+        print(f"Error sending staff offline alert: {e}")
+
+
 async def send_scheduled_report():
     """Task that runs daily to send the report"""
     db = get_db()
