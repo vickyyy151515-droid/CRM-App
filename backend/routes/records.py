@@ -396,31 +396,30 @@ async def create_download_request(request_data: DownloadRequestCreate, user: Use
     if len(all_available_records) == 0:
         raise HTTPException(status_code=400, detail="No available records in this database")
     
-    # Filter out records that have customer names in Reserved Members
+    # Filter out records that have usernames matching Reserved Members' customer_name
     valid_records = []
     skipped_records = []
     
     for record in all_available_records:
-        # Try to get customer name from common field names
         row_data = record.get('row_data', {})
-        customer_name = None
+        username = None
         
-        # Check common name fields (case-insensitive keys)
+        # Check for username field (case-insensitive keys)
         for key in row_data:
             key_lower = key.lower()
-            if key_lower in ['name', 'nama', 'customer_name', 'customer', 'nama_customer', 'full_name', 'fullname']:
-                customer_name = row_data[key]
+            if key_lower in ['username', 'user_name', 'user', 'id', 'userid', 'user_id']:
+                username = row_data[key]
                 break
         
-        # Normalize customer name for comparison
-        if customer_name:
-            normalized_name = str(customer_name).strip().upper()
+        # Normalize username for comparison against reserved customer_name
+        if username:
+            normalized_username = str(username).strip().upper()
             
-            if normalized_name in reserved_names:
-                # This record is reserved, skip it
+            if normalized_username in reserved_names:
+                # This record's username matches a reserved customer_name, skip it
                 skipped_records.append({
                     'record_id': record['id'],
-                    'customer_name': customer_name,
+                    'username': username,
                     'reason': 'Reserved by another staff'
                 })
                 continue
