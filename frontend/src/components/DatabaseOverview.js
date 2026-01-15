@@ -2,8 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
 import { Search, FileSpreadsheet, RefreshCw } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function DatabaseOverview() {
+  const { t } = useLanguage();
   const [databases, setDatabases] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
