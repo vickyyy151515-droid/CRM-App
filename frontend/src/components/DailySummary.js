@@ -2,8 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
 import { Calendar, Trophy, TrendingUp, Users, DollarSign, UserPlus, RefreshCcw, ChevronLeft, ChevronRight, Award, Target, Package, ChevronDown, ChevronUp } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function DailySummary({ isAdmin = false }) {
+  const { t, language } = useLanguage();
   const [summary, setSummary] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,11 +20,11 @@ export default function DailySummary({ isAdmin = false }) {
       const response = await api.get(`/daily-summary?date=${selectedDate}`);
       setSummary(response.data);
     } catch (error) {
-      toast.error('Failed to load daily summary');
+      toast.error(t('messages.somethingWrong'));
     } finally {
       setLoading(false);
     }
-  }, [selectedDate]);
+  }, [selectedDate, t]);
 
   const loadHistory = useCallback(async () => {
     try {
@@ -52,7 +54,8 @@ export default function DailySummary({ isAdmin = false }) {
 
   const formatDate = (dateStr) => {
     const date = new Date(dateStr);
-    return date.toLocaleDateString('id-ID', { 
+    const locale = language === 'id' ? 'id-ID' : 'en-US';
+    return date.toLocaleDateString(locale, { 
       weekday: 'long',
       day: 'numeric', 
       month: 'long',
@@ -62,7 +65,8 @@ export default function DailySummary({ isAdmin = false }) {
 
   const formatShortDate = (dateStr) => {
     const date = new Date(dateStr);
-    return date.toLocaleDateString('id-ID', { 
+    const locale = language === 'id' ? 'id-ID' : 'en-US';
+    return date.toLocaleDateString(locale, { 
       day: 'numeric', 
       month: 'short'
     });
