@@ -627,7 +627,8 @@ async def get_omset_ndp_rdp(
     customer_first_date = {}
     
     for record in sorted(all_records, key=lambda x: x['record_date']):
-        cid = record['customer_id']
+        # Use normalized customer_id for comparison (handle old records without normalized field)
+        cid = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
         if cid not in customer_first_date:
             customer_first_date[cid] = record['record_date']
     
@@ -639,7 +640,8 @@ async def get_omset_ndp_rdp(
     rdp_total = 0
     
     for record in date_records:
-        cid = record['customer_id']
+        # Use normalized customer_id for comparison
+        cid = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
         first_date = customer_first_date.get(cid)
         
         if first_date == record_date:
@@ -676,7 +678,8 @@ async def get_omset_record_types(
     
     customer_first_date = {}
     for record in sorted(all_records, key=lambda x: x['record_date']):
-        cid = record['customer_id']
+        # Use normalized customer_id for comparison
+        cid = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
         if cid not in customer_first_date:
             customer_first_date[cid] = record['record_date']
     
