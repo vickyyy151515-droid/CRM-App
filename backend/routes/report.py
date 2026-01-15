@@ -44,11 +44,18 @@ async def get_report_crm_data(
         all_time_query['product_id'] = product_id
     all_time_records = await db.omset_records.find(all_time_query, {'_id': 0}).to_list(500000)
     
+    # Helper function to normalize customer ID for consistent NDP/RDP comparison
+    def normalize_customer_id(customer_id: str) -> str:
+        if not customer_id:
+            return ""
+        return customer_id.strip().lower()
+    
+    # Rebuild customer_first_date with normalized IDs
     customer_first_date = {}
     for record in sorted(all_time_records, key=lambda x: x['record_date']):
-        cid = record['customer_id']
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
         pid = record['product_id']
-        key = (cid, pid)
+        key = (cid_normalized, pid)
         if key not in customer_first_date:
             customer_first_date[key] = record['record_date']
     
@@ -62,13 +69,25 @@ async def get_report_crm_data(
         total_form = len(month_records)
         nominal = 0
         
+        # Track unique NDP/RDP customers per month
+        month_ndp_customers = set()
+        month_rdp_customers = set()
+        
         for record in month_records:
-            key = (record['customer_id'], record['product_id'])
+            cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+            key = (cid_normalized, record['product_id'])
             first_date = customer_first_date.get(key)
+            
             if first_date and first_date.startswith(month_str) and first_date == record['record_date']:
-                new_id += 1
+                # NDP - count unique customers
+                if cid_normalized not in month_ndp_customers:
+                    month_ndp_customers.add(cid_normalized)
+                    new_id += 1
             elif first_date and first_date < record['record_date']:
-                rdp += 1
+                # RDP - count unique customers per month (NEW LOGIC)
+                if cid_normalized not in month_rdp_customers:
+                    month_rdp_customers.add(cid_normalized)
+                    rdp += 1
             nominal += record.get('depo_total', 0) or record.get('nominal', 0) or 0
         
         yearly_data.append({
