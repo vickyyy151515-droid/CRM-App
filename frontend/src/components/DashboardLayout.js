@@ -406,6 +406,32 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
             </div>
           )}
 
+          {/* Account Settings Button */}
+          <button
+            onClick={() => setShowProfileSettings(true)}
+            data-testid="account-settings-btn"
+            title={collapsed ? 'Account Settings' : ''}
+            className={`
+              w-full flex items-center gap-2 py-2 mb-1 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors
+              ${collapsed ? 'lg:justify-center lg:px-2 px-4' : 'px-4'}
+              group relative
+            `}
+          >
+            <UserCog size={18} />
+            <span className={`${collapsed ? 'lg:hidden' : ''}`}>Account Settings</span>
+            
+            {collapsed && (
+              <div className="
+                hidden lg:group-hover:flex absolute left-full ml-2 px-3 py-2 
+                bg-slate-900 text-white text-sm rounded-lg whitespace-nowrap z-50
+                pointer-events-none shadow-lg
+              ">
+                Account Settings
+                <div className="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
+              </div>
+            )}
+          </button>
+
           {/* Logout */}
           <button
             onClick={onLogout}
