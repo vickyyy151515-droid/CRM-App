@@ -165,7 +165,7 @@ export default function AdminDashboard({ user, onLogout }) {
       case 'users':
         return <CreateUser />;
       case 'manage-users':
-        return <ManageUsers />;
+        return <ManageUsers currentUser={user} />;
       case 'products':
         return <ProductManagement />;
       case 'assignments':
