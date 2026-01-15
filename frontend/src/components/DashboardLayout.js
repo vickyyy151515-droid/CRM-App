@@ -102,7 +102,7 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
     // Find new menu items that are not in the saved config
     const newItems = menuItems.filter(item => !configItemIds.has(item.id));
 
-    // Build the menu from saved config
+    // Build the menu from saved config - ALWAYS use labels from menuItems (translated)
     const configuredMenu = sidebarConfig.items.map(configItem => {
       if (configItem.type === 'folder') {
         return {
@@ -110,6 +110,7 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
           items: configItem.items.map(itemId => menuMap[itemId]).filter(Boolean)
         };
       }
+      // Use menuMap item which has translated label, ignore stored label
       return menuMap[configItem.id] ? { ...menuMap[configItem.id], type: 'item' } : null;
     }).filter(Boolean);
 
