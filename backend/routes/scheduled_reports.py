@@ -228,6 +228,180 @@ async def generate_daily_report(target_date: datetime = None) -> str:
     return "\n".join(report_lines)
 
 
+async def generate_atrisk_alert(inactive_days: int = 14) -> str:
+    """Generate at-risk customer alert for customers inactive for N+ days"""
+    db = get_db()
+    
+    jakarta_now = datetime.now(JAKARTA_TZ)
+    cutoff_date = (jakarta_now - timedelta(days=inactive_days)).strftime('%Y-%m-%d')
+    
+    # Get all OMSET records
+    all_records = await db.omset_records.find({}, {'_id': 0}).to_list(100000)
+    
+    if not all_records:
+        return f"⚠️ <b>At-Risk Customer Alert</b>\n\n<i>No customer data found.</i>"
+    
+    # Get products for grouping
+    products = await db.products.find({}, {'_id': 0}).to_list(100)
+    product_map = {p['id']: p['name'] for p in products}
+    
+    # Get staff for grouping
+    staff_list = await db.users.find({'role': 'staff'}, {'_id': 0}).to_list(100)
+    staff_map = {s['id']: s['name'] for s in staff_list}
+    
+    # Track customer last deposit dates - use normalized IDs
+    customer_data = {}  # {normalized_customer_id: {last_date, last_nominal, product_id, staff_id, customer_name}}
+    
+    for record in all_records:
+        cid_normalized = record.get('customer_id_normalized') or record.get('customer_id', '').strip().upper()
+        record_date = record.get('record_date', '')
+        
+        if cid_normalized not in customer_data:
+            customer_data[cid_normalized] = {
+                'last_date': record_date,
+                'total_deposits': 1,
+                'total_nominal': record.get('depo_total', 0) or record.get('nominal', 0) or 0,
+                'product_id': record.get('product_id', ''),
+                'staff_id': record.get('staff_id', ''),
+                'customer_name': record.get('customer_id', cid_normalized),
+                'staff_name': record.get('staff_name', 'Unknown')
+            }
+        else:
+            # Update if this record is more recent
+            if record_date > customer_data[cid_normalized]['last_date']:
+                customer_data[cid_normalized]['last_date'] = record_date
+                customer_data[cid_normalized]['product_id'] = record.get('product_id', '')
+                customer_data[cid_normalized]['staff_id'] = record.get('staff_id', '')
+                customer_data[cid_normalized]['staff_name'] = record.get('staff_name', 'Unknown')
+            customer_data[cid_normalized]['total_deposits'] += 1
+            customer_data[cid_normalized]['total_nominal'] += record.get('depo_total', 0) or record.get('nominal', 0) or 0
+    
+    # Find at-risk customers (last deposit before cutoff date AND has deposited at least twice)
+    at_risk_customers = []
+    for cid, data in customer_data.items():
+        if data['last_date'] < cutoff_date and data['total_deposits'] >= 2:
+            days_since = (jakarta_now - datetime.strptime(data['last_date'], '%Y-%m-%d').replace(tzinfo=JAKARTA_TZ)).days
+            at_risk_customers.append({
+                'customer_id': cid,
+                'customer_name': data['customer_name'],
+                'last_date': data['last_date'],
+                'days_since': days_since,
+                'total_deposits': data['total_deposits'],
+                'total_nominal': data['total_nominal'],
+                'product_id': data['product_id'],
+                'product_name': product_map.get(data['product_id'], data['product_id']),
+                'staff_id': data['staff_id'],
+                'staff_name': data['staff_name']
+            })
+    
+    # Sort by days since last deposit (most urgent first)
+    at_risk_customers.sort(key=lambda x: x['days_since'], reverse=True)
+    
+    # Format the alert
+    def format_rupiah(amount):
+        return f"Rp {amount:,.0f}".replace(',', '.')
+    
+    alert_lines = [
+        f"🚨 <b>AT-RISK CUSTOMER ALERT</b>",
+        f"📅 <b>Date:</b> {jakarta_now.strftime('%Y-%m-%d')}",
+        f"⚠️ <b>Threshold:</b> {inactive_days}+ days inactive",
+        f"👥 <b>Total At-Risk:</b> {len(at_risk_customers)} customers",
+        ""
+    ]
+    
+    if not at_risk_customers:
+        alert_lines.append("✅ <i>No at-risk customers found! Great job!</i>")
+        return "\n".join(alert_lines)
+    
+    # Group by staff for better actionability
+    staff_groups = {}
+    for customer in at_risk_customers:
+        staff_id = customer['staff_id']
+        if staff_id not in staff_groups:
+            staff_groups[staff_id] = {
+                'staff_name': customer['staff_name'],
+                'customers': []
+            }
+        staff_groups[staff_id]['customers'].append(customer)
+    
+    # Limit to top 30 most urgent customers to avoid message being too long
+    shown_count = 0
+    max_show = 30
+    
+    for staff_id, staff_data in sorted(staff_groups.items(), key=lambda x: len(x[1]['customers']), reverse=True):
+        if shown_count >= max_show:
+            break
+            
+        alert_lines.append(f"━━━━━━━━━━━━━━━━━━━━")
+        alert_lines.append(f"👤 <b>{staff_data['staff_name']}</b> ({len(staff_data['customers'])} at-risk)")
+        alert_lines.append("")
+        
+        for customer in staff_data['customers'][:10]:  # Max 10 per staff
+            if shown_count >= max_show:
+                break
+            
+            urgency = "🔴" if customer['days_since'] >= 30 else "🟠" if customer['days_since'] >= 21 else "🟡"
+            alert_lines.append(
+                f"{urgency} <b>{customer['customer_name']}</b>\n"
+                f"   📦 {customer['product_name']}\n"
+                f"   ⏰ {customer['days_since']} days ago (Last: {customer['last_date']})\n"
+                f"   💰 Total: {format_rupiah(customer['total_nominal'])} ({customer['total_deposits']} deposits)"
+            )
+            alert_lines.append("")
+            shown_count += 1
+        
+        if len(staff_data['customers']) > 10:
+            alert_lines.append(f"   <i>...and {len(staff_data['customers']) - 10} more</i>")
+            alert_lines.append("")
+    
+    if len(at_risk_customers) > max_show:
+        alert_lines.append(f"━━━━━━━━━━━━━━━━━━━━")
+        alert_lines.append(f"<i>Showing {max_show} of {len(at_risk_customers)} at-risk customers</i>")
+    
+    alert_lines.append("")
+    alert_lines.append("💡 <b>Action Required:</b> Follow up with these customers to re-engage!")
+    
+    return "\n".join(alert_lines)
+
+
+async def send_atrisk_alert():
+    """Task that runs daily to send at-risk customer alerts to group"""
+    db = get_db()
+    
+    # Get config
+    config = await db.scheduled_report_config.find_one({'id': 'scheduled_report_config'}, {'_id': 0})
+    
+    if not config or not config.get('atrisk_enabled'):
+        print("At-risk alerts are disabled")
+        return
+    
+    bot_token = config.get('telegram_bot_token')
+    group_chat_id = config.get('atrisk_group_chat_id')
+    inactive_days = config.get('atrisk_inactive_days', 14)
+    
+    if not bot_token or not group_chat_id:
+        print("Telegram bot token or group chat ID not configured for at-risk alerts")
+        return
+    
+    try:
+        # Generate and send alert
+        alert = await generate_atrisk_alert(inactive_days)
+        success = await send_telegram_message(bot_token, group_chat_id, alert)
+        
+        if success:
+            # Update last_sent timestamp
+            await db.scheduled_report_config.update_one(
+                {'id': 'scheduled_report_config'},
+                {'$set': {'atrisk_last_sent': datetime.now(JAKARTA_TZ).isoformat()}}
+            )
+            print(f"At-risk alert sent successfully at {datetime.now(JAKARTA_TZ)}")
+        else:
+            print("Failed to send at-risk alert")
+            
+    except Exception as e:
+        print(f"Error sending at-risk alert: {e}")
+
+
 async def send_scheduled_report():
     """Task that runs daily to send the report"""
     db = get_db()
