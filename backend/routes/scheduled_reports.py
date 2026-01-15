@@ -9,7 +9,7 @@ import pytz
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
-from db import get_db
+from routes.deps import get_db
 from models.user import User
 from routes.auth import get_admin_user
 
