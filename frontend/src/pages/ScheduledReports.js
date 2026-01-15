@@ -453,6 +453,261 @@ export default function ScheduledReports() {
           </div>
         </div>
       )}
+
+      {/* At-Risk Preview Modal */}
+      {atriskPreview && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setAtriskPreview(null)}>
+          <div 
+            className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+              <h3 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                <AlertTriangle size={20} className="text-amber-500" />
+                At-Risk Alert Preview
+              </h3>
+              <button
+                onClick={() => setAtriskPreview(null)}
+                className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+              >
+                <XCircle size={20} />
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto max-h-[60vh]">
+              <div className="bg-slate-900 text-slate-100 rounded-lg p-4 font-mono text-sm whitespace-pre-wrap">
+                {atriskPreview.replace(/<[^>]*>/g, '')}
+              </div>
+            </div>
+            <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3">
+              <button
+                onClick={() => setAtriskPreview(null)}
+                className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => { setAtriskPreview(null); handleAtriskSendNow(); }}
+                className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 flex items-center gap-2"
+              >
+                <Send size={16} />
+                Send This Alert
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* At-Risk Customer Alerts Section */}
+      <div className="mt-8 border-t border-slate-200 dark:border-slate-700 pt-8">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <AlertTriangle size={24} className="text-amber-500" />
+              At-Risk Customer Alerts
+            </h2>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
+              Send alerts for customers who haven't deposited recently to a Telegram group
+            </p>
+          </div>
+          <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+            config?.atrisk_enabled 
+              ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-400' 
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+          }`}>
+            {config?.atrisk_enabled ? '🟡 Active' : '⚫ Inactive'}
+          </div>
+        </div>
+
+        {/* At-Risk Status Card */}
+        {config?.atrisk_enabled && (
+          <div className="bg-gradient-to-r from-amber-500 to-orange-600 rounded-xl p-6 text-white shadow-lg mb-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Users size={24} />
+              <span className="text-lg font-semibold">At-Risk Alert Schedule</span>
+            </div>
+            <p className="text-2xl font-bold mb-2">
+              Daily at {String(atriskHour).padStart(2, '0')}:{String(atriskMinute).padStart(2, '0')} WIB
+            </p>
+            <p className="text-amber-100 text-sm">
+              Alerts for customers inactive for {atriskInactiveDays}+ days • Sent to group chat
+            </p>
+            {config?.atrisk_last_sent && (
+              <p className="text-amber-200 text-xs mt-4">
+                Last sent: {new Date(config.atrisk_last_sent).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })} WIB
+              </p>
+            )}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* At-Risk Configuration Form */}
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+              <Settings size={20} className="text-amber-600" />
+              Alert Configuration
+            </h3>
+            
+            <form onSubmit={handleAtriskSave} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Group Chat ID
+                </label>
+                <input
+                  type="text"
+                  value={atriskGroupChatId}
+                  onChange={(e) => setAtriskGroupChatId(e.target.value)}
+                  placeholder="e.g., -4779729623"
+                  className="w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                  data-testid="input-atrisk-group-id"
+                />
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Group chat IDs start with a minus sign (-)
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Alert Hour (WIB)
+                  </label>
+                  <select
+                    value={atriskHour}
+                    onChange={(e) => setAtriskHour(Number(e.target.value))}
+                    className="w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                    data-testid="select-atrisk-hour"
+                  >
+                    {[...Array(24)].map((_, i) => (
+                      <option key={i} value={i}>{String(i).padStart(2, '0')}:00</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Minute
+                  </label>
+                  <select
+                    value={atriskMinute}
+                    onChange={(e) => setAtriskMinute(Number(e.target.value))}
+                    className="w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                    data-testid="select-atrisk-minute"
+                  >
+                    {[0, 15, 30, 45].map((m) => (
+                      <option key={m} value={m}>:{String(m).padStart(2, '0')}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Inactive Days Threshold
+                </label>
+                <select
+                  value={atriskInactiveDays}
+                  onChange={(e) => setAtriskInactiveDays(Number(e.target.value))}
+                  className="w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                  data-testid="select-atrisk-days"
+                >
+                  <option value={7}>7+ days</option>
+                  <option value={14}>14+ days</option>
+                  <option value={21}>21+ days</option>
+                  <option value={30}>30+ days</option>
+                </select>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Alert for customers who haven't deposited in this many days
+                </p>
+              </div>
+              
+              <div className="flex items-center gap-3 py-2">
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={atriskEnabled}
+                    onChange={(e) => setAtriskEnabled(e.target.checked)}
+                    className="sr-only peer"
+                    data-testid="toggle-atrisk-enabled"
+                  />
+                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-300 dark:peer-focus:ring-amber-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-amber-600"></div>
+                  <span className="ms-3 text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Enable at-risk alerts
+                  </span>
+                </label>
+              </div>
+              
+              <button
+                type="submit"
+                disabled={atriskSaving}
+                className="w-full px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                data-testid="btn-save-atrisk-config"
+              >
+                {atriskSaving ? <RefreshCw className="animate-spin" size={18} /> : <CheckCircle size={18} />}
+                {atriskSaving ? 'Saving...' : 'Save Alert Configuration'}
+              </button>
+            </form>
+          </div>
+
+          {/* At-Risk Quick Actions */}
+          <div className="space-y-4">
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                <Zap size={20} className="text-amber-500" />
+                Alert Actions
+              </h3>
+              
+              <div className="space-y-3">
+                <button
+                  onClick={handleAtriskTest}
+                  disabled={atriskTesting || !config?.atrisk_group_chat_id}
+                  className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 disabled:opacity-50 transition-colors flex items-center gap-3"
+                  data-testid="btn-test-atrisk"
+                >
+                  {atriskTesting ? <RefreshCw className="animate-spin" size={18} /> : <MessageSquare size={18} />}
+                  <div className="text-left">
+                    <div className="font-medium">Test Group Connection</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">Send a test message to the group</div>
+                  </div>
+                </button>
+                
+                <button
+                  onClick={handleAtriskSendNow}
+                  disabled={atriskSending || !config?.atrisk_group_chat_id}
+                  className="w-full px-4 py-3 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/50 disabled:opacity-50 transition-colors flex items-center gap-3"
+                  data-testid="btn-send-atrisk-now"
+                >
+                  {atriskSending ? <RefreshCw className="animate-spin" size={18} /> : <AlertTriangle size={18} />}
+                  <div className="text-left">
+                    <div className="font-medium">Send Alert Now</div>
+                    <div className="text-xs text-amber-600 dark:text-amber-500">Manually send at-risk customer alert</div>
+                  </div>
+                </button>
+                
+                <button
+                  onClick={handleAtriskPreview}
+                  className="w-full px-4 py-3 bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/50 disabled:opacity-50 transition-colors flex items-center gap-3"
+                  data-testid="btn-preview-atrisk"
+                >
+                  <Eye size={18} />
+                  <div className="text-left">
+                    <div className="font-medium">Preview Alert</div>
+                    <div className="text-xs text-orange-600 dark:text-orange-500">See what the alert looks like</div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Help Section */}
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
+              <h4 className="font-medium text-amber-800 dark:text-amber-400 mb-2">How to get Group Chat ID:</h4>
+              <ol className="text-sm text-amber-700 dark:text-amber-500 space-y-1 list-decimal list-inside">
+                <li>Add your bot to the Telegram group</li>
+                <li>Send a message in the group</li>
+                <li>Add @RawDataBot to the group temporarily</li>
+                <li>It will show the group ID (starts with -)</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
