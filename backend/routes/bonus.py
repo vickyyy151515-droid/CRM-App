@@ -195,7 +195,9 @@ async def get_bonus_calculation_data(
         if date not in staff_data[sid]['daily_stats']:
             staff_data[sid]['daily_stats'][date] = {'ndp': 0, 'rdp': 0}
         
-        key = (record['customer_id'], record['product_id'])
+        # Use normalized customer_id for comparison
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (cid_normalized, record['product_id'])
         first_date = customer_first_date.get(key)
         if first_date == date:
             staff_data[sid]['daily_stats'][date]['ndp'] += 1
