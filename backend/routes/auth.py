@@ -19,6 +19,14 @@ class UserUpdate(BaseModel):
 class PageAccessUpdate(BaseModel):
     blocked_pages: List[str] = []
 
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+class UpdateProfileRequest(BaseModel):
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+
 # ==================== AUTH ENDPOINTS ====================
 
 @router.post("/auth/register", response_model=User)
