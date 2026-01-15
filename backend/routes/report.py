@@ -324,13 +324,24 @@ async def get_report_crm_data(
         rdp = 0
         nominal = 0
         
+        # Track unique customers per day (NEW LOGIC)
+        day_ndp_customers = set()
+        day_rdp_customers = set()
+        
         for record in records:
-            key = (record['customer_id'], record['product_id'])
+            cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+            key = (cid_normalized, record['product_id'])
             first_date = customer_first_date.get(key)
             if first_date == date:
-                new_id += 1
+                # Count unique NDP customers per day
+                if cid_normalized not in day_ndp_customers:
+                    day_ndp_customers.add(cid_normalized)
+                    new_id += 1
             else:
-                rdp += 1
+                # Count unique RDP customers per day (NEW LOGIC)
+                if cid_normalized not in day_rdp_customers:
+                    day_rdp_customers.add(cid_normalized)
+                    rdp += 1
             nominal += record.get('depo_total', 0) or record.get('nominal', 0) or 0
         
         daily_data.append({
