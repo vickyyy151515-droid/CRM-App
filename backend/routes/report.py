@@ -353,6 +353,10 @@ async def get_report_crm_data(
         })
     
     staff_groups = {}
+    # Track unique NDP and RDP customers per staff for the year
+    staff_ndp_customers = {}  # {staff_id: set of customer_ids}
+    staff_rdp_customers = {}  # {staff_id: set of customer_ids}
+    
     for record in all_records:
         sid = record['staff_id']
         if sid not in staff_groups:
@@ -364,13 +368,22 @@ async def get_report_crm_data(
                 'total_form': 0,
                 'nominal': 0
             }
+            staff_ndp_customers[sid] = set()
+            staff_rdp_customers[sid] = set()
         
-        key = (record['customer_id'], record['product_id'])
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (cid_normalized, record['product_id'])
         first_date = customer_first_date.get(key)
         if first_date == record['record_date']:
-            staff_groups[sid]['new_id'] += 1
+            # Count unique NDP customers per staff for the year
+            if cid_normalized not in staff_ndp_customers[sid]:
+                staff_ndp_customers[sid].add(cid_normalized)
+                staff_groups[sid]['new_id'] += 1
         else:
-            staff_groups[sid]['rdp'] += 1
+            # Count unique RDP customers per staff for the year (NEW LOGIC)
+            if cid_normalized not in staff_rdp_customers[sid]:
+                staff_rdp_customers[sid].add(cid_normalized)
+                staff_groups[sid]['rdp'] += 1
         staff_groups[sid]['total_form'] += 1
         staff_groups[sid]['nominal'] += record.get('depo_total', 0) or record.get('nominal', 0) or 0
     
