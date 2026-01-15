@@ -111,7 +111,7 @@ export default function StaffDashboard({ user, onLogout }) {
     }
   };
 
-  const menuItems = [
+  const menuItems = useMemo(() => [
     { id: 'databases', label: t('nav.browseDatabases'), icon: FileSpreadsheet },
     { id: 'leaderboard', label: t('nav.leaderboard'), icon: Trophy },
     { id: 'daily-summary', label: t('nav.dailySummary'), icon: CalendarDays },
@@ -126,7 +126,7 @@ export default function StaffDashboard({ user, onLogout }) {
     { id: 'memberwd', label: t('nav.memberWDCRM'), icon: CreditCard },
     { id: 'leave', label: t('nav.offDaySakit'), icon: CalendarOff },
     { id: 'izin', label: t('nav.izin'), icon: Timer }
-  ];
+  ], [t]);
 
   return (
     <DashboardLayout
