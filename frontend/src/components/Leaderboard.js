@@ -2,8 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
 import { Trophy, Medal, Target, TrendingUp, Users, DollarSign, UserPlus, RefreshCcw, Settings, Save, RotateCcw } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function Leaderboard({ isAdmin = false }) {
+  const { t } = useLanguage();
   const [leaderboard, setLeaderboard] = useState([]);
   const [targets, setTargets] = useState({ monthly_omset: 0, daily_ndp: 0, daily_rdp: 0 });
   const [period, setPeriod] = useState('month');
@@ -25,11 +27,11 @@ export default function Leaderboard({ isAdmin = false }) {
         today: response.data.today
       });
     } catch (error) {
-      toast.error('Failed to load leaderboard');
+      toast.error(t('messages.somethingWrong'));
     } finally {
       setLoading(false);
     }
-  }, [period]);
+  }, [period, t]);
 
   useEffect(() => {
     loadLeaderboard();
@@ -38,24 +40,24 @@ export default function Leaderboard({ isAdmin = false }) {
   const handleSaveTargets = async () => {
     try {
       await api.put('/leaderboard/targets', editTargets);
-      toast.success('Targets updated successfully');
+      toast.success(t('common.success'));
       setTargets(editTargets);
       setShowTargetEditor(false);
     } catch (error) {
-      toast.error('Failed to update targets');
+      toast.error(t('messages.somethingWrong'));
     }
   };
 
   const handleResetTargets = async () => {
-    if (!window.confirm('Reset targets to default values?')) return;
+    if (!window.confirm(t('bonus.resetDefaults') + '?')) return;
     try {
       const response = await api.post('/leaderboard/targets/reset');
-      toast.success('Targets reset to defaults');
+      toast.success(t('common.success'));
       setTargets(response.data.targets);
       setEditTargets(response.data.targets);
       setShowTargetEditor(false);
     } catch (error) {
-      toast.error('Failed to reset targets');
+      toast.error(t('messages.somethingWrong'));
     }
   };
 
