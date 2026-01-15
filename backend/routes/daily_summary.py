@@ -394,7 +394,6 @@ async def generate_summary_range(
     user: User = Depends(get_admin_user)
 ):
     """Generate daily summaries for a date range (Admin only)"""
-    from datetime import datetime
     
     start = datetime.strptime(start_date, '%Y-%m-%d')
     end = datetime.strptime(end_date, '%Y-%m-%d')
