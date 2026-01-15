@@ -92,7 +92,7 @@ export default function AdminDashboard({ user, onLogout }) {
       case 'overview':
         return (
           <div>
-            <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white mb-6">Dashboard Overview</h2>
+            <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white mb-6">{t('dashboard.title')}</h2>
             {/* Quick Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
               {/* Pending DB Requests */}
@@ -105,7 +105,7 @@ export default function AdminDashboard({ user, onLogout }) {
                   <Clock className="text-amber-600 dark:text-amber-400" size={24} />
                   <span className="text-2xl font-bold text-slate-900 dark:text-white">{stats.pendingRequests}</span>
                 </div>
-                <p className="text-sm text-slate-600 dark:text-slate-400">Pending DB Requests</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">{t('dashboard.pendingRequests')}</p>
               </div>
               
               {/* Pending Reservations */}
@@ -118,7 +118,7 @@ export default function AdminDashboard({ user, onLogout }) {
                   <UserCheck className="text-amber-600 dark:text-amber-400" size={24} />
                   <span className="text-2xl font-bold text-slate-900 dark:text-white">{stats.pendingReservations}</span>
                 </div>
-                <p className="text-sm text-slate-600 dark:text-slate-400">Pending Reservations</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">{t('dashboard.pendingReservations')}</p>
               </div>
               
               {/* Monthly ATH Card */}
@@ -128,11 +128,11 @@ export default function AdminDashboard({ user, onLogout }) {
                     <BarChart className="text-amber-600 dark:text-amber-400" size={20} />
                   </div>
                   <span className="text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/50 px-2 py-1 rounded-full">
-                    {stats.monthlyAth.date ? formatAthDate(stats.monthlyAth.date) : 'No data'}
+                    {stats.monthlyAth.date ? formatAthDate(stats.monthlyAth.date) : t('common.noData')}
                   </span>
                 </div>
                 <p className="text-xl font-bold text-slate-900 dark:text-white mt-2">{formatCurrency(stats.monthlyAth.amount)}</p>
-                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Monthly ATH</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{t('dashboard.monthlyATH')}</p>
               </div>
               
               {/* OMSET Year Card */}
@@ -145,7 +145,7 @@ export default function AdminDashboard({ user, onLogout }) {
                   <DollarSign className="text-emerald-600 dark:text-emerald-400" size={24} />
                 </div>
                 <p className="text-xl font-bold text-slate-900 dark:text-white">{formatCurrency(stats.totalOmsetYear)}</p>
-                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">OMSET {stats.omsetYear}</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{t('dashboard.omsetYear')} {stats.omsetYear}</p>
               </div>
             </div>
             {/* Real-time Database Overview with Record Stats */}
