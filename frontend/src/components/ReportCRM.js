@@ -467,60 +467,60 @@ export default function ReportCRM() {
             const isExpanded = expandedMonths[month];
             
             return (
-              <div key={month} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+              <div key={month} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <button
                   onClick={() => toggleMonth(month)}
-                  className="w-full px-4 py-3 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors"
+                  className="w-full px-4 py-3 flex items-center justify-between bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                 >
                   <div className="flex items-center gap-4">
-                    <span className="font-semibold text-slate-800">{MONTH_NAMES[idx]} {selectedYear}</span>
+                    <span className="font-semibold text-slate-800 dark:text-white">{MONTH_NAMES[idx]} {selectedYear}</span>
                     <div className="flex gap-4 text-sm">
-                      <span className="text-blue-600">NDP: {formatNumber(monthTotals.new_id)}</span>
-                      <span className="text-green-600">RDP: {formatNumber(monthTotals.rdp)}</span>
-                      <span className="text-amber-600">{formatRupiah(monthTotals.nominal)}</span>
+                      <span className="text-blue-600 dark:text-blue-400">NDP: {formatNumber(monthTotals.new_id)}</span>
+                      <span className="text-green-600 dark:text-green-400">RDP: {formatNumber(monthTotals.rdp)}</span>
+                      <span className="text-amber-600 dark:text-amber-400">{formatRupiah(monthTotals.nominal)}</span>
                       <span className={`px-2 py-0.5 rounded text-xs font-bold ${
-                        monthTotals.crm_efficiency >= 100 ? 'bg-green-100 text-green-700' :
-                        monthTotals.crm_efficiency >= 50 ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-red-100 text-red-700'
+                        monthTotals.crm_efficiency >= 100 ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-400' :
+                        monthTotals.crm_efficiency >= 50 ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-400' :
+                        'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-400'
                       }`}>
                         CRM: {monthTotals.crm_efficiency?.toFixed(1) || 0}%
                       </span>
                     </div>
                   </div>
-                  {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                  {isExpanded ? <ChevronUp size={20} className="text-slate-500 dark:text-slate-400" /> : <ChevronDown size={20} className="text-slate-500 dark:text-slate-400" />}
                 </button>
                 
                 {isExpanded && (
-                  <div className="p-4 space-y-3 bg-slate-50">
+                  <div className="p-4 space-y-3 bg-slate-50 dark:bg-slate-900">
                     {monthStaffData.staff.length === 0 ? (
-                      <div className="text-center py-8 text-slate-500">No data for this month</div>
+                      <div className="text-center py-8 text-slate-500 dark:text-slate-400">No data for this month</div>
                     ) : (
                       monthStaffData.staff.map((staff) => {
                         const staffMonthKey = `${month}-${staff.staff_id}`;
                         const isStaffExpanded = expandedMonthlyStaff[staffMonthKey];
                         
                         return (
-                          <div key={staff.staff_id} className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                          <div key={staff.staff_id} className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                             <button
                               onClick={() => toggleMonthlyStaff(staffMonthKey)}
-                              className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 transition-colors"
+                              className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                             >
                               <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm">
                                   {staff.staff_name.charAt(0).toUpperCase()}
                                 </div>
-                                <span className="font-medium text-slate-800">{staff.staff_name}</span>
+                                <span className="font-medium text-slate-800 dark:text-white">{staff.staff_name}</span>
                               </div>
                               <div className="flex items-center gap-4">
                                 <div className="flex gap-3 text-sm">
-                                  <span className="text-blue-600">NDP: {formatNumber(staff.new_id)}</span>
-                                  <span className="text-green-600">RDP: {formatNumber(staff.rdp)}</span>
-                                  <span className="text-purple-600">Form: {formatNumber(staff.total_form)}</span>
-                                  <span className="text-amber-600 font-semibold">{formatRupiah(staff.nominal)}</span>
+                                  <span className="text-blue-600 dark:text-blue-400">NDP: {formatNumber(staff.new_id)}</span>
+                                  <span className="text-green-600 dark:text-green-400">RDP: {formatNumber(staff.rdp)}</span>
+                                  <span className="text-purple-600 dark:text-purple-400">Form: {formatNumber(staff.total_form)}</span>
+                                  <span className="text-amber-600 dark:text-amber-400 font-semibold">{formatRupiah(staff.nominal)}</span>
                                   <span className={`px-2 py-0.5 rounded text-xs font-bold ${
-                                    staff.crm_efficiency >= 100 ? 'bg-green-100 text-green-700' :
-                                    staff.crm_efficiency >= 50 ? 'bg-yellow-100 text-yellow-700' :
-                                    'bg-red-100 text-red-700'
+                                    staff.crm_efficiency >= 100 ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-400' :
+                                    staff.crm_efficiency >= 50 ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-400' :
+                                    'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-400'
                                   }`}>
                                     {staff.crm_efficiency?.toFixed(1) || 0}%
                                   </span>
@@ -530,39 +530,39 @@ export default function ReportCRM() {
                             </button>
                             
                             {isStaffExpanded && (
-                              <div className="border-t border-slate-200 p-4 bg-slate-50">
+                              <div className="border-t border-slate-200 dark:border-slate-700 p-4 bg-slate-50 dark:bg-slate-900">
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                  <div className="bg-white rounded-lg p-3 border border-slate-200">
-                                    <div className="text-xs text-slate-500 mb-1">NDP (New ID)</div>
-                                    <div className="text-xl font-bold text-blue-600">{formatNumber(staff.new_id)}</div>
+                                  <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+                                    <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">NDP (New ID)</div>
+                                    <div className="text-xl font-bold text-blue-600 dark:text-blue-400">{formatNumber(staff.new_id)}</div>
                                   </div>
-                                  <div className="bg-white rounded-lg p-3 border border-slate-200">
-                                    <div className="text-xs text-slate-500 mb-1">RDP</div>
-                                    <div className="text-xl font-bold text-green-600">{formatNumber(staff.rdp)}</div>
+                                  <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+                                    <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">RDP</div>
+                                    <div className="text-xl font-bold text-green-600 dark:text-green-400">{formatNumber(staff.rdp)}</div>
                                   </div>
-                                  <div className="bg-white rounded-lg p-3 border border-slate-200">
-                                    <div className="text-xs text-slate-500 mb-1">Total Form</div>
-                                    <div className="text-xl font-bold text-purple-600">{formatNumber(staff.total_form)}</div>
+                                  <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+                                    <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Total Form</div>
+                                    <div className="text-xl font-bold text-purple-600 dark:text-purple-400">{formatNumber(staff.total_form)}</div>
                                   </div>
-                                  <div className="bg-white rounded-lg p-3 border border-slate-200">
-                                    <div className="text-xs text-slate-500 mb-1">Total Nominal</div>
-                                    <div className="text-xl font-bold text-amber-600">{formatRupiah(staff.nominal)}</div>
+                                  <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+                                    <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Total Nominal</div>
+                                    <div className="text-xl font-bold text-amber-600 dark:text-amber-400">{formatRupiah(staff.nominal)}</div>
                                   </div>
                                 </div>
                                 
                                 {/* CRM Efficiency Progress Bar */}
-                                <div className="mt-4 bg-white rounded-lg p-4 border border-slate-200">
+                                <div className="mt-4 bg-white dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
                                   <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm font-medium text-slate-700">CRM Efficiency</span>
+                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">CRM Efficiency</span>
                                     <span className={`text-lg font-bold ${
-                                      staff.crm_efficiency >= 100 ? 'text-green-600' :
-                                      staff.crm_efficiency >= 50 ? 'text-yellow-600' :
-                                      'text-red-600'
+                                      staff.crm_efficiency >= 100 ? 'text-green-600 dark:text-green-400' :
+                                      staff.crm_efficiency >= 50 ? 'text-yellow-600 dark:text-yellow-400' :
+                                      'text-red-600 dark:text-red-400'
                                     }`}>
                                       {staff.crm_efficiency?.toFixed(2) || 0}%
                                     </span>
                                   </div>
-                                  <div className="h-4 bg-slate-200 rounded-full overflow-hidden">
+                                  <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                                     <div 
                                       className={`h-full transition-all duration-500 ${
                                         staff.crm_efficiency >= 100 ? 'bg-green-500' :
@@ -572,7 +572,7 @@ export default function ReportCRM() {
                                       style={{ width: `${Math.min(staff.crm_efficiency || 0, 100)}%` }}
                                     />
                                   </div>
-                                  <div className="flex justify-between mt-1 text-xs text-slate-500">
+                                  <div className="flex justify-between mt-1 text-xs text-slate-500 dark:text-slate-400">
                                     <span>Rp 0</span>
                                     <span>Target: {formatRupiah(CRM_EFFICIENCY_TARGET)}</span>
                                   </div>
