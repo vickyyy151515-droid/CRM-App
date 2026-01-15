@@ -128,10 +128,60 @@ logger = logging.getLogger(__name__)
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize scheduler on startup"""
+    """Initialize scheduler and seed data on startup"""
     logger.info("Starting up CRM Pro API...")
+    
+    # Seed default users if database is empty
+    await seed_default_users()
+    
     await init_scheduler()
     logger.info("Scheduler initialized")
+
+async def seed_default_users():
+    """Create default users if none exist in the database"""
+    from routes.deps import hash_password
+    import uuid
+    
+    users_count = await db.users.count_documents({})
+    if users_count == 0:
+        logger.info("No users found in database. Creating default users...")
+        
+        default_users = [
+            {
+                'id': str(uuid.uuid4()),
+                'email': 'vicky@crm.com',
+                'name': 'Vicky',
+                'password_hash': hash_password('vicky123'),
+                'role': 'master_admin',
+                'created_at': get_jakarta_now().isoformat(),
+                'blocked_pages': []
+            },
+            {
+                'id': str(uuid.uuid4()),
+                'email': 'admin@crm.com',
+                'name': 'Admin User',
+                'password_hash': hash_password('admin123'),
+                'role': 'admin',
+                'created_at': get_jakarta_now().isoformat(),
+                'blocked_pages': []
+            },
+            {
+                'id': str(uuid.uuid4()),
+                'email': 'staff@crm.com',
+                'name': 'Staff User',
+                'password_hash': hash_password('staff123'),
+                'role': 'staff',
+                'created_at': get_jakarta_now().isoformat(),
+                'blocked_pages': []
+            }
+        ]
+        
+        await db.users.insert_many(default_users)
+        logger.info(f"Created {len(default_users)} default users:")
+        for user in default_users:
+            logger.info(f"  - {user['email']} ({user['role']})")
+    else:
+        logger.info(f"Database already has {users_count} users. Skipping seed.")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
