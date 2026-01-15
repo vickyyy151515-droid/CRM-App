@@ -2,10 +2,10 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, List
 from .deps import (
-    User, UserCreate, UserLogin, get_db, get_current_user, get_admin_user,
-    hash_password, verify_password, create_token, get_jakarta_now
+    User, UserCreate, UserLogin, get_db, get_current_user, get_admin_user, get_master_admin_user,
+    hash_password, verify_password, create_token, get_jakarta_now, can_manage_user, ROLE_HIERARCHY
 )
 
 router = APIRouter(tags=["Authentication"])
@@ -15,6 +15,9 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     password: Optional[str] = None
     role: Optional[str] = None
+
+class PageAccessUpdate(BaseModel):
+    blocked_pages: List[str] = []
 
 # ==================== AUTH ENDPOINTS ====================
 
