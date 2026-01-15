@@ -173,6 +173,16 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
     const Icon = item.icon;
     const isActive = activeTab === item.id;
 
+    // Role-based active state styling
+    const getActiveClass = () => {
+      if (user.role === 'master_admin') {
+        return 'bg-gradient-to-r from-amber-500 to-yellow-500 text-white shadow-lg shadow-amber-500/25';
+      } else if (user.role === 'admin') {
+        return 'bg-slate-900 dark:bg-indigo-600 text-white';
+      }
+      return 'bg-blue-600 text-white';
+    };
+
     return (
       <button
         key={item.id}
@@ -184,7 +194,7 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
           ${collapsed && !isInFolder ? 'lg:justify-center lg:px-2 px-4' : 'px-4'} 
           ${isInFolder ? 'py-2 pl-8' : 'py-2.5'}
           ${isActive
-            ? 'bg-slate-900 dark:bg-indigo-600 text-white'
+            ? getActiveClass()
             : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
           }
           group relative
