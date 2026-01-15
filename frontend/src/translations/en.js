@@ -475,6 +475,12 @@ const en = {
     requestedCount: 'Requested',
     uploadSuccess: 'Database uploaded successfully',
     deleteConfirm: 'Are you sure you want to delete this database?',
+    overview: 'Database Overview',
+    noDatabases: 'No databases found',
+    availableDatabases: 'Available Databases',
+    myDownloads: 'My Downloads',
+    searchDatabases: 'Search databases...',
+    allProducts: 'All Products',
   },
 };
 
