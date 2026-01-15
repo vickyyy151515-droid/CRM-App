@@ -163,7 +163,7 @@ export default function AdminDashboard({ user, onLogout }) {
       case 'history':
         return <DownloadHistory />;
       case 'users':
-        return <CreateUser />;
+        return <CreateUser currentUser={user} />;
       case 'manage-users':
         return <ManageUsers currentUser={user} />;
       case 'products':
