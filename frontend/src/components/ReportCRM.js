@@ -416,40 +416,40 @@ export default function ReportCRM() {
           </div>
 
           {/* Yearly Table */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
-              <h3 className="font-semibold text-slate-800">Yearly Report {selectedYear}</h3>
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="px-4 py-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+              <h3 className="font-semibold text-slate-800 dark:text-white">Yearly Report {selectedYear}</h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-slate-50">
+                <thead className="bg-slate-50 dark:bg-slate-900">
                   <tr>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600">BULAN</th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600">NEW ID (NDP)</th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600">ID RDP</th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600">TOTAL FORM</th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600">NOMINAL (OMSET)</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 dark:text-slate-300">BULAN</th>
+                    <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 dark:text-slate-300">NEW ID (NDP)</th>
+                    <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 dark:text-slate-300">ID RDP</th>
+                    <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 dark:text-slate-300">TOTAL FORM</th>
+                    <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 dark:text-slate-300">NOMINAL (OMSET)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                   {MONTHS.map((month, idx) => {
                     const data = yearlyData.find(d => d.month === idx + 1) || { new_id: 0, rdp: 0, total_form: 0, nominal: 0 };
                     return (
-                      <tr key={month} className="hover:bg-slate-50">
-                        <td className="px-4 py-3 text-sm font-medium text-slate-900">{month}</td>
-                        <td className="px-4 py-3 text-sm text-right text-blue-600 font-medium">{formatNumber(data.new_id)}</td>
-                        <td className="px-4 py-3 text-sm text-right text-green-600 font-medium">{formatNumber(data.rdp)}</td>
-                        <td className="px-4 py-3 text-sm text-right text-purple-600 font-medium">{formatNumber(data.total_form)}</td>
-                        <td className="px-4 py-3 text-sm text-right text-amber-600 font-medium">{formatRupiah(data.nominal)}</td>
+                      <tr key={month} className="hover:bg-slate-50 dark:hover:bg-slate-700">
+                        <td className="px-4 py-3 text-sm font-medium text-slate-900 dark:text-white">{month}</td>
+                        <td className="px-4 py-3 text-sm text-right text-blue-600 dark:text-blue-400 font-medium">{formatNumber(data.new_id)}</td>
+                        <td className="px-4 py-3 text-sm text-right text-green-600 dark:text-green-400 font-medium">{formatNumber(data.rdp)}</td>
+                        <td className="px-4 py-3 text-sm text-right text-purple-600 dark:text-purple-400 font-medium">{formatNumber(data.total_form)}</td>
+                        <td className="px-4 py-3 text-sm text-right text-amber-600 dark:text-amber-400 font-medium">{formatRupiah(data.nominal)}</td>
                       </tr>
                     );
                   })}
-                  <tr className="bg-slate-100 font-bold">
-                    <td className="px-4 py-3 text-sm text-slate-900">TOTAL</td>
-                    <td className="px-4 py-3 text-sm text-right text-blue-700">{formatNumber(yearlyTotals.new_id)}</td>
-                    <td className="px-4 py-3 text-sm text-right text-green-700">{formatNumber(yearlyTotals.rdp)}</td>
-                    <td className="px-4 py-3 text-sm text-right text-purple-700">{formatNumber(yearlyTotals.total_form)}</td>
-                    <td className="px-4 py-3 text-sm text-right text-amber-700">{formatRupiah(yearlyTotals.nominal)}</td>
+                  <tr className="bg-slate-100 dark:bg-slate-900 font-bold">
+                    <td className="px-4 py-3 text-sm text-slate-900 dark:text-white">TOTAL</td>
+                    <td className="px-4 py-3 text-sm text-right text-blue-700 dark:text-blue-400">{formatNumber(yearlyTotals.new_id)}</td>
+                    <td className="px-4 py-3 text-sm text-right text-green-700 dark:text-green-400">{formatNumber(yearlyTotals.rdp)}</td>
+                    <td className="px-4 py-3 text-sm text-right text-purple-700 dark:text-purple-400">{formatNumber(yearlyTotals.total_form)}</td>
+                    <td className="px-4 py-3 text-sm text-right text-amber-700 dark:text-amber-400">{formatRupiah(yearlyTotals.nominal)}</td>
                   </tr>
                 </tbody>
               </table>
