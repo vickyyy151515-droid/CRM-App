@@ -65,24 +65,25 @@ function App() {
 
   return (
     <ThemeProvider>
-      <div className="App min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors">
-        <Toaster position="top-right" richColors />
-        <BrowserRouter>
-          <Routes>
-            <Route
-              path="/login"
-              element={!user ? <Login onLogin={handleLogin} /> : <Navigate to="/" />}
-            />
-            <Route
-              path="/"
-              element={
-                user ? (
-                  user.role === 'admin' ? (
-                    <AdminDashboard user={user} onLogout={handleLogout} />
+      <LanguageProvider>
+        <div className="App min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors">
+          <Toaster position="top-right" richColors />
+          <BrowserRouter>
+            <Routes>
+              <Route
+                path="/login"
+                element={!user ? <Login onLogin={handleLogin} /> : <Navigate to="/" />}
+              />
+              <Route
+                path="/"
+                element={
+                  user ? (
+                    user.role === 'admin' ? (
+                      <AdminDashboard user={user} onLogout={handleLogout} />
+                    ) : (
+                      <StaffDashboard user={user} onLogout={handleLogout} />
+                    )
                   ) : (
-                    <StaffDashboard user={user} onLogout={handleLogout} />
-                  )
-                ) : (
                   <Navigate to="/login" />
                 )
               }
