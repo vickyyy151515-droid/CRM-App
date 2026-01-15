@@ -659,7 +659,7 @@ async def get_customer_alerts(
             avg_days_between = round(days_active / max(1, unique_days - 1), 1) if unique_days > 1 else 0
             
             alerts.append({
-                'customer_id': customer['customer_id'],
+                'customer_id': customer.get('customer_id_display', customer['customer_id']),  # Use display ID
                 'customer_name': customer['customer_name'],
                 'product_id': customer['product_id'],
                 'product_name': customer['product_name'],
