@@ -161,27 +161,15 @@ async def ensure_master_admin_exists():
         await db.users.insert_one(master_admin)
         logger.info("✅ Created master admin: vicky@crm.com (password: vicky123)")
     else:
-        # Ensure vicky has master_admin role and correct password
-        update_needed = False
-        updates = {}
-        
+        # Only update role if needed, don't reset password
         if vicky.get('role') != 'master_admin':
-            updates['role'] = 'master_admin'
-            update_needed = True
-            logger.info("Updating vicky@crm.com role to master_admin")
-        
-        # Always reset password to ensure it works
-        updates['password_hash'] = hash_password('vicky123')
-        update_needed = True
-        
-        if update_needed:
             await db.users.update_one(
                 {'email': 'vicky@crm.com'},
-                {'$set': updates}
+                {'$set': {'role': 'master_admin'}}
             )
-            logger.info("✅ Updated vicky@crm.com - password reset to: vicky123")
+            logger.info("Updated vicky@crm.com role to master_admin")
         else:
-            logger.info("Master admin vicky@crm.com already exists with correct role")
+            logger.info("Master admin vicky@crm.com already exists")
     
     # Also ensure basic admin and staff exist for testing
     users_count = await db.users.count_documents({})
