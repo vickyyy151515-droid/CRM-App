@@ -475,6 +475,12 @@ const id = {
     requestedCount: 'Diminta',
     uploadSuccess: 'Database berhasil diunggah',
     deleteConfirm: 'Yakin ingin menghapus database ini?',
+    overview: 'Ringkasan Database',
+    noDatabases: 'Tidak ada database',
+    availableDatabases: 'Database Tersedia',
+    myDownloads: 'Unduhan Saya',
+    searchDatabases: 'Cari database...',
+    allProducts: 'Semua Produk',
   },
 };
 
