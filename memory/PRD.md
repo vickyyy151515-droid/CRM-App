@@ -499,6 +499,27 @@ Build a Customer Relationship Management (CRM) application where:
 ### P1: Next Priority Tasks
 - None - All P1 tasks completed!
 
+### ✅ COMPLETED: User Activity Monitor (Jan 15, 2026)
+- **New Page**: "User Activity" showing real-time user status
+- **Status Types**:
+  - 🟢 **Online** - Active within last 5 minutes
+  - 🟡 **Idle** - No activity for 5-30 minutes (shows idle duration)
+  - ⚫ **Offline** - Inactive > 30 minutes or logged out
+- **Backend Endpoints**:
+  - `POST /api/auth/logout` - Marks user as offline
+  - `POST /api/auth/heartbeat` - Updates last_activity timestamp
+  - `GET /api/users/activity` - Returns all users with status (Admin only)
+- **Frontend Features**:
+  - Summary cards (Total, Online, Idle, Offline counts)
+  - User list with avatars, role badges, status indicators
+  - Login, Activity, Logout timestamps
+  - Auto-refresh every 30 seconds
+  - Activity tracking on mouse/keyboard/click events
+- **Files Created/Modified**:
+  - `backend/routes/auth.py` - Added logout, heartbeat, activity endpoints
+  - `frontend/src/pages/UserActivity.js` - New monitoring page
+  - `frontend/src/App.js` - Added heartbeat logic and proper logout
+
 ### ✅ COMPLETED: Database Request Duplicate Check (Jan 15, 2026)
 - **Feature**: When staff requests database records, system automatically filters out records where `username` matches Reserved Members' `customer_name`
 - **Logic**:
