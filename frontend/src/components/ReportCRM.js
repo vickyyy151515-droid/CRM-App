@@ -317,9 +317,9 @@ export default function ReportCRM() {
           </div>
 
           {/* NDP, RDP, Form Progress Chart */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-            <h3 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
-              <TrendingUp size={18} className="text-blue-600" />
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+            <h3 className="font-semibold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+              <TrendingUp size={18} className="text-blue-600 dark:text-blue-400" />
               Monthly Progress - NDP, RDP & Total Form
             </h3>
             <div className="h-80">
