@@ -557,6 +557,14 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
         menuItems={menuItems}
         onConfigChange={handleConfigChange}
       />
+
+      {/* Profile Settings Modal */}
+      <ProfileSettings
+        user={user}
+        isOpen={showProfileSettings}
+        onClose={() => setShowProfileSettings(false)}
+        onProfileUpdate={onUserUpdate}
+      />
     </div>
   );
 }
