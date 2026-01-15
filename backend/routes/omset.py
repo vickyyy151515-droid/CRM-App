@@ -122,14 +122,17 @@ async def create_omset_record(record_data: OmsetRecordCreate, user: User = Depen
     
     depo_total = record_data.nominal * record_data.depo_kelipatan
     
+    # Normalize customer_id for consistent NDP/RDP comparison
+    normalized_cid = normalize_customer_id(record_data.customer_id)
+    
     record = OmsetRecord(
         product_id=record_data.product_id,
         product_name=product['name'],
         staff_id=user.id,
         staff_name=user.name,
         record_date=record_data.record_date,
-        customer_name=record_data.customer_name,
-        customer_id=record_data.customer_id,
+        customer_name=record_data.customer_name.strip(),  # Trim whitespace from name
+        customer_id=record_data.customer_id.strip(),  # Trim whitespace from original ID
         nominal=record_data.nominal,
         depo_kelipatan=record_data.depo_kelipatan,
         depo_total=depo_total,
@@ -138,6 +141,7 @@ async def create_omset_record(record_data: OmsetRecordCreate, user: User = Depen
     
     doc = record.model_dump()
     doc['created_at'] = doc['created_at'].isoformat()
+    doc['customer_id_normalized'] = normalized_cid  # Store normalized version for comparison
     
     await db.omset_records.insert_one(doc)
     return record
