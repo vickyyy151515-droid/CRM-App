@@ -36,6 +36,12 @@ class AtRiskAlertConfig(BaseModel):
     alert_minute: int = 0
     inactive_days_threshold: int = 14  # Alert for customers inactive 14+ days
 
+class StaffOfflineAlertConfig(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    enabled: bool = True
+    alert_hour: int = 11  # Default 11 AM
+    alert_minute: int = 0
+
 class ScheduledReportConfig(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = "scheduled_report_config"
@@ -52,6 +58,11 @@ class ScheduledReportConfig(BaseModel):
     atrisk_minute: int = 0
     atrisk_inactive_days: int = 14
     atrisk_last_sent: Optional[str] = None
+    # Staff offline alert settings
+    staff_offline_enabled: bool = False
+    staff_offline_hour: int = 11
+    staff_offline_minute: int = 0
+    staff_offline_last_sent: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
