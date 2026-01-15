@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { UserPlus, Check, X, Trash2, ArrowRight, Search, Users, Clock, CheckCircle, Package } from 'lucide-react';
+import { UserPlus, Check, X, Trash2, ArrowRight, Search, Users, Clock, CheckCircle, Package, Upload, FileText } from 'lucide-react';
 
 export default function AdminReservedMembers({ onUpdate }) {
   const [members, setMembers] = useState([]);
@@ -17,6 +17,14 @@ export default function AdminReservedMembers({ onUpdate }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [moveModal, setMoveModal] = useState({ open: false, member: null });
   const [newStaffId, setNewStaffId] = useState('');
+  
+  // Bulk add state
+  const [showBulkAdd, setShowBulkAdd] = useState(false);
+  const [bulkCustomerNames, setBulkCustomerNames] = useState('');
+  const [bulkStaff, setBulkStaff] = useState('');
+  const [bulkProduct, setBulkProduct] = useState('');
+  const [bulkSubmitting, setBulkSubmitting] = useState(false);
+  const [bulkResult, setBulkResult] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -63,6 +71,56 @@ export default function AdminReservedMembers({ onUpdate }) {
       toast.error(error.response?.data?.detail || 'Failed to add reserved member');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleBulkAdd = async (e) => {
+    e.preventDefault();
+    if (!bulkCustomerNames.trim() || !bulkStaff || !bulkProduct) {
+      toast.error('Please fill all fields');
+      return;
+    }
+
+    // Parse customer names (one per line)
+    const names = bulkCustomerNames
+      .split('\n')
+      .map(name => name.trim())
+      .filter(name => name.length > 0);
+
+    if (names.length === 0) {
+      toast.error('Please enter at least one customer name');
+      return;
+    }
+
+    setBulkSubmitting(true);
+    setBulkResult(null);
+    try {
+      const response = await api.post('/reserved-members/bulk', {
+        customer_names: names,
+        staff_id: bulkStaff,
+        product_id: bulkProduct
+      });
+      
+      setBulkResult(response.data);
+      
+      if (response.data.added_count > 0) {
+        toast.success(`Successfully added ${response.data.added_count} reservations`);
+        loadData();
+        onUpdate?.();
+      }
+      
+      if (response.data.skipped_count > 0) {
+        toast.warning(`${response.data.skipped_count} names were skipped (duplicates)`);
+      }
+      
+      // Clear the form on success
+      if (response.data.added_count > 0) {
+        setBulkCustomerNames('');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to bulk add members');
+    } finally {
+      setBulkSubmitting(false);
     }
   };
 
