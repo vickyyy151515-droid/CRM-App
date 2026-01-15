@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
 import Login from './pages/Login';
@@ -28,6 +28,19 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Heartbeat function to track user activity
+  const sendHeartbeat = useCallback(async () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        await api.post('/auth/heartbeat');
+      } catch (error) {
+        // Silently fail - don't disrupt user experience
+        console.debug('Heartbeat failed:', error.message);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -45,12 +58,47 @@ function App() {
     }
   }, []);
 
+  // Send heartbeat every 2 minutes when user is logged in
+  useEffect(() => {
+    if (user) {
+      // Send initial heartbeat
+      sendHeartbeat();
+      
+      // Set up interval for periodic heartbeats
+      const heartbeatInterval = setInterval(sendHeartbeat, 2 * 60 * 1000); // 2 minutes
+      
+      // Also send heartbeat on user activity (mouse move, key press, click)
+      let activityTimeout;
+      const handleActivity = () => {
+        if (activityTimeout) clearTimeout(activityTimeout);
+        activityTimeout = setTimeout(sendHeartbeat, 1000); // Debounce to 1 second
+      };
+      
+      window.addEventListener('mousemove', handleActivity);
+      window.addEventListener('keypress', handleActivity);
+      window.addEventListener('click', handleActivity);
+      
+      return () => {
+        clearInterval(heartbeatInterval);
+        if (activityTimeout) clearTimeout(activityTimeout);
+        window.removeEventListener('mousemove', handleActivity);
+        window.removeEventListener('keypress', handleActivity);
+        window.removeEventListener('click', handleActivity);
+      };
+    }
+  }, [user, sendHeartbeat]);
+
   const handleLogin = (userData, token) => {
     localStorage.setItem('token', token);
     setUser(userData);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (error) {
+      console.debug('Logout API call failed:', error.message);
+    }
     localStorage.removeItem('token');
     setUser(null);
   };
