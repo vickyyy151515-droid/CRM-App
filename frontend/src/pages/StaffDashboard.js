@@ -15,9 +15,11 @@ import StaffFollowups from '../components/StaffFollowups';
 import DailySummary from '../components/DailySummary';
 import ConversionFunnel from '../components/ConversionFunnel';
 import CustomerRetention from '../components/CustomerRetention';
+import { useLanguage } from '../contexts/LanguageContext';
 import { LayoutDashboard, FileSpreadsheet, Clock, User, UserCheck, DollarSign, Gift, CreditCard, CalendarOff, Timer, Trophy, Bell, CalendarDays, Filter, Heart } from 'lucide-react';
 
 export default function StaffDashboard({ user, onLogout }) {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('databases');
   const [stats, setStats] = useState({
     totalDatabases: 0,
