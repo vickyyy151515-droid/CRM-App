@@ -231,7 +231,7 @@ export default function AdminDashboard({ user, onLogout }) {
     { id: 'products', label: t('nav.productManagement'), icon: Package, badge: 0 },
     { id: 'manage-users', label: t('nav.userManagement'), icon: UserCog, badge: 0 },
     { id: 'users', label: t('nav.createUser'), icon: Users, badge: 0 }
-  ], [t, stats.pendingReservations, stats.pendingRequests]);
+  ], [t, language, stats.pendingReservations, stats.pendingRequests]);
 
   return (
     <DashboardLayout
