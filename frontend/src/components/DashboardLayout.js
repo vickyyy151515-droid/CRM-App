@@ -1,8 +1,9 @@
-import { LogOut, Menu, X, ChevronLeft, ChevronRight, Settings, ChevronDown, ChevronUp, Folder, FolderOpen, Sun, Moon, Globe, Crown, Shield, User } from 'lucide-react';
+import { LogOut, Menu, X, ChevronLeft, ChevronRight, Settings, ChevronDown, ChevronUp, Folder, FolderOpen, Sun, Moon, Globe, Crown, Shield, User, UserCog } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import NotificationBell from './NotificationBell';
 import SidebarConfigurator from './SidebarConfigurator';
 import GlobalSearch from './GlobalSearch';
+import ProfileSettings from './ProfileSettings';
 import { useTheme, ROLE_THEMES } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { api } from '../App';
