@@ -69,7 +69,8 @@ async def login(credentials: UserLogin):
             'id': user['id'],
             'email': user['email'],
             'name': user['name'],
-            'role': user['role']
+            'role': user['role'],
+            'blocked_pages': user.get('blocked_pages', [])
         }
     }
 
