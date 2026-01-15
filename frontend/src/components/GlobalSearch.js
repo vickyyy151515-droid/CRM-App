@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '../App';
 import { Search, X, User, Users, Package, Database, FileText, DollarSign, Loader2 } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function GlobalSearch({ onNavigate, isAdmin = false }) {
+  const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState(null);
