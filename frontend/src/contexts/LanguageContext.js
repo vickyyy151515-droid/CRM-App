@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { t as translate } from '../translations';
 
 const LanguageContext = createContext();
 
@@ -30,8 +31,13 @@ export function LanguageProvider({ children }) {
     }
   };
 
+  // Translation function that uses current language
+  const t = useCallback((path, params) => {
+    return translate(language, path, params);
+  }, [language]);
+
   return (
-    <LanguageContext.Provider value={{ language, toggleLanguage, switchLanguage, isIndonesian: language === LANGUAGES.ID }}>
+    <LanguageContext.Provider value={{ language, toggleLanguage, switchLanguage, isIndonesian: language === LANGUAGES.ID, t }}>
       {children}
     </LanguageContext.Provider>
   );
