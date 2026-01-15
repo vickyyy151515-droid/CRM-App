@@ -10,6 +10,8 @@ Initial requirements evolved significantly to include:
 -   **UI/UX Enhancements**: A collapsible, fully customizable admin sidebar, a global search feature, and a dark mode theme.
 -   **Sales & Performance**: Staff Leaderboard with configurable targets, customer follow-up reminders, daily performance summary reports, a sales conversion funnel, customer retention tracking, and at-risk customer alerts.
 -   **Internationalization**: The ability to switch the UI language between English and Indonesian.
+-   **Deployment Readiness**: Add a  endpoint for Kubernetes health probes.
+-   **Logic Correction**: The logic for calculating RDP (Returning Depositor) should be updated. A unique customer should only be counted as one RDP per day, regardless of how many deposits they make. This logic needs to be applied globally across all reports, calculations, and dashboards.
 
 **User's preferred language**: English
 
@@ -18,18 +20,20 @@ A sophisticated, full-stack CRM application with a modular FastAPI backend and a
 
 Key features implemented include:
 -   Modular backend with 17 route modules.
--   **Sales Analytics**: Daily Summary (with product breakdown), Conversion Funnel, Customer Retention Tracking, and At-Risk Customer Alerts.
--   **Performance**: Staff Leaderboard & Targets.
--   **UI/UX**: Comprehensive Dark Mode, Global Search (), and a customizable sidebar for both Admin and Staff roles.
--   **Data Integrity**: Normalization of customer names to ensure accurate NDP/RDP (New/Returning Depositor) tracking.
--   **Real-time Notifications**: A WebSocket system with a polling fallback has been implemented.
--   **Deployment Readiness**: Backend performance issues (N+1 and unbounded queries) have been fixed.
+-   Comprehensive sales and performance analytics.
+-   UI/UX enhancements like Dark Mode, Global Search (), and a customizable sidebar.
+-   **Internationalization (i18n)**: The UI can be switched between English and Indonesian.
+-   **Deployment Readiness**: A  endpoint has been added for Kubernetes.
+-   **Corrected RDP Logic**: The logic for counting Returning Depositors (RDP) has been updated across most of the application to count unique customers per day, rather than total records.
 
 **Last working item**:
--   **Last item agent was working**: Implementing an internationalization (i18n) feature to allow users to switch between English and Indonesian. The agent has set up the context, created translation files (, ), and added a language switcher toggle to the main . The next step is to replace hardcoded text with translation keys across all components.
+-   **Last item agent was working**: The agent was working on a batch of three user-reported issues:
+    1.  The RDP count in the Report CRM (Daily and Staff Performance tabs) was still incorrect.
+    2.  The Report CRM page had hardcoded colors and was not dark-mode friendly.
+    3.  The at-risk customer alert in the Customer Retention feature was showing incorrect days since last deposit because it wasn't normalizing customer IDs.
 -   **Status**: IN PROGRESS
 -   **Agent Testing Done**: N
--   **Which testing method agent to use?**: screenshot tool. The agent needs to take screenshots of various pages after implementing translations to verify that the text changes correctly when the language is switched.
+-   **Which testing method agent to use?**: screenshot tool. The agent was attempting to verify the dark mode fix for  but was unable to find the correct  for the dark mode toggle. The next agent should find the toggle, take a screenshot in dark mode, and then verify the logic fixes in the UI.
 -   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
@@ -46,12 +50,12 @@ Key features implemented include:
       -   **Blocked on other issue**: Environment/Infrastructure
 
 **In progress Task List**:
--   **Task 1**: Implement Indonesian Language Support (Priority: P0)
+-   **Task 1**: Verify and finalize fixes for user-reported issues (Priority: P0)
 
  Task Detail:
   -   **Task 1**:
-     -   **Where to resume**: The agent has already created , translation files (), and added the language toggle to . The next step is to go through each frontend component ( files in  and ), replace hardcoded strings with the translation hook (e.g., ), and populate the  and  files with the corresponding key-value pairs.
-     -   **What will be achieved with this?**: The entire application UI will be translatable between English and Indonesian, fulfilling the user's request.
+     -   **Where to resume**: The agent has already implemented code changes to fix the three reported issues. The immediate next step is to verify the dark mode fix in . The agent was stuck trying to take a screenshot because it couldn't find the dark mode toggle. The next agent needs to locate the toggle's , switch to dark mode, navigate to the Report CRM page, and take a screenshot to confirm the UI is fixed. After that, verify the RDP counts and at-risk customer logic are correct in the UI.
+     -   **What will be achieved with this?**: All three user-reported bugs will be resolved, ensuring consistent RDP logic, a functional UI in dark mode, and accurate customer retention alerts.
      -   **Status**: IN PROGRESS
      -   **Should Test frontend/backend/both after fix?**: Frontend
      -   **Blocked on something**: None
@@ -69,87 +73,79 @@ Key features implemented include:
     -   **Convert to PWA (P3)**: Convert the app to a Progressive Web App for a native-like mobile experience.
 
 **Completed work in this session**
--   **Dark Mode Fixes**: Comprehensively fixed dark mode styling across all application pages, including , , , , , , , , , and .
--   **Real-Time Notifications**: Implemented a WebSocket-based notification system with a polling fallback mechanism.
--   **Deployment Health Check & Optimization**:
-    -   Fixed  to correctly handle environment files.
-    -   Resolved multiple backend performance issues, including N+1 query problems and unbounded queries in  and  by switching to efficient aggregation pipelines.
--   **NDP/RDP Logic Fix**:
-    -   Corrected a critical bug where customer name casing and spacing affected NDP/RDP logic.
-    -   Added a  field to .
-    -   Updated all relevant backend endpoints (, , ) to use the normalized ID for comparisons.
-    -   Created a data migration endpoint () and successfully migrated existing records.
--   **Internationalization (i18n) Setup**: Began work on language switching by creating the , translation files, and UI toggle.
+-   **Internationalization (i18n) Feature**: Successfully implemented and tested a language switcher to toggle the UI between English and Indonesian. This included creating the , translation files, and integrating the translation function across dozens of components.
+-   **Kubernetes Deployment Fix**: Added a  endpoint to  to resolve a deployment failure caused by failing Kubernetes health probes.
+-   **Global RDP Logic Correction**: Updated the logic for counting Returning Depositors (RDP) to count unique customers per day. This was a complex change that required modifying multiple backend files:
+    -   
+    -   
+    -   
+    -   
+    -   
+    -   
+-   **Customer Retention Logic Fix**: Updated  to use normalized customer IDs, fixing a bug where at-risk alerts were not correctly identifying customers with varied name casings.
+-   **Report CRM Dark Mode Fix**: Updated  with appropriate TailwindCSS classes to make the UI compatible with dark mode.
 
 **Earlier issues found/mentioned but not fixed**
--   None. The WebSocket issue is documented in the Pending Issues section as blocked.
+-   None.
 
 **Known issue recurrence from previous fork**
--   None. The recurring dark mode issue has been comprehensively addressed.
+-   None.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Frontend**: React, , , TailwindCSS, , React Context API (for theme and language management).
--   **Backend**: FastAPI, PyMongo, Pydantic, JWT, WebSockets.
+-   **Frontend**: React, , , TailwindCSS, React Context API.
+-   **Backend**: FastAPI, PyMongo, Pydantic, JWT.
 -   **Database**: MongoDB.
--   **State Management**: React hooks (, , ), .
--   **Internationalization (i18n)**: Using React Context and JSON files for translations.
+-   **Internationalization (i18n)**: React Context and JSON files for translations.
+-   **Dynamic Calculation**: RDP counts are calculated at query-time using MongoDB aggregation pipelines or Python logic, not stored in the database, allowing for flexibility.
 
 **key DB schema**
--   **omset_records**:
-    -   : (string, new) Lowercased and trimmed version of .
-    -   : (string, new) Stores 'NDP' or 'RDP' for the record.
+-   No schema changes were made in this session. The logic was changed at the application layer.
 
 **changes in tech stack**
 -   None.
 
 **All files of reference**
--   **/app/backend/routes/websocket.py**: New file for WebSocket connection management.
--   **/app/backend/routes/omset.py**: Heavily modified to add normalized customer IDs, set customer type on creation, and add a data migration endpoint.
--   **/app/backend/routes/analytics.py**: Refactored to use aggregation pipelines for performance.
--   **/app/backend/routes/leaderboard.py**: Refactored to use aggregation pipelines for performance.
--   **/app/backend/routes/daily_summary.py**: Updated to use normalized customer IDs.
--   **/app/backend/routes/bonus.py**: Updated to use normalized customer IDs.
--   **/app/frontend/src/contexts/LanguageContext.js**: New file for i18n.
--   **/app/frontend/src/translations/**: New directory with , , .
--   **/app/frontend/src/App.js**: Updated to include .
--   **/app/frontend/src/components/NotificationBell.js**: Rewritten to use WebSockets with a polling fallback.
--   **/app/frontend/src/components/*.js**: All major components were updated to fix dark mode styling.
--   **/app/.gitignore**: Updated to fix environment file exclusion rules.
+-   **/app/backend/server.py**: Updated to add the  endpoint.
+-   **/app/backend/routes/{omset, bonus, daily_summary, report, leaderboard, analytics, retention}.py**: All were updated to implement the new unique-customer-per-day RDP logic.
+-   **/app/frontend/src/contexts/LanguageContext.js**: Updated to provide a more convenient translation function.
+-   **/app/frontend/src/translations/{en.js, id.js}**: Populated with translations for most of the application UI.
+-   **/app/frontend/src/components/ReportCRM.js**: Updated to fix hardcoded colors and support dark mode.
+-   Numerous files in  and  were updated to replace hardcoded text with translation keys.
 
 **Areas that need refactoring**:
--   None.
+-   None identified.
 
 **key api endpoints**
--   : New WebSocket endpoint for real-time notifications.
--   : New admin-only endpoint to migrate existing data and fix NDP/RDP classifications.
+-   : New backend endpoint for Kubernetes health checks.
+-   All analytics and reporting endpoints (e.g., , , , ) now return data based on the new RDP logic.
 
 **Critical Info for New Agent**
--   Your immediate and highest priority task is to complete the internationalization (i18n) feature.
--   You need to go through all the React components in  and , identify all hardcoded English strings, and replace them with the  function from the  hook.
--   You must populate  and  with the corresponding English and Indonesian (casual form) translations for each key.
--   The WebSocket connection will fail in the preview environment. This is expected. Do not try to fix it. The polling fallback is in place and works.
--   After completing the translation task, verify your work by taking screenshots of several key pages with the language toggled to Indonesian.
+-   Your immediate priority is to finish verifying the batch of three fixes that are currently in progress.
+-   The previous agent was stuck trying to verify the dark mode UI fix for the Report CRM page. You need to find the correct  for the dark mode toggle button, use it to switch the theme, and then take a screenshot of the Report CRM page to confirm the styling is correct.
+-   After verifying the UI, double-check that the RDP counts in the Report CRM and the alerts in the Customer Retention page are now behaving as the user expects.
+-   The change in RDP logic was complex and touched many files. Be aware that the core principle is to count *unique normalized customer IDs per day* for any RDP metric.
 
 **documents and test reports created in this job**
--    (updated).
+-   
+-    (updated)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User**: Asks how to download/deploy the app. (Agent provided instructions for deployment and mobile options).
-2.  **User**: Asks to run a deployment health check. (Agent ran check, found issues).
-3.  **Agent**: After fixing backend performance issues, declared the app ready for deployment.
-4.  **User**: Asks to preview the app. (Agent provided the preview link).
-5.  **User**: Wants to make a few more adjustments.
-6.  **User**: Reports a critical bug where customer name capitalization and spacing breaks NDP/RDP logic.
-7.  **Agent**: Implemented a fix by normalizing customer names on the backend and migrated existing data.
-8.  **User**: Approves the fix and requests a new feature: the ability to switch the app's language to Indonesian.
-9.  **Agent**: Asks clarifying questions about the implementation (toggle vs. auto-detect, formal vs. casual translation).
-10. **User**: Provides answers, preferring a manual toggle, saving the choice, and using casual Indonesian translations. The agent has started this implementation.
+1.  **User**: Confirms the explanation about deployments and asks to deploy the i18n feature.
+2.  **User**: Reports that the deployment is failing and provides logs.
+3.  **Agent**: Identifies the missing  endpoint from the logs.
+4.  **Agent**: Implements the  endpoint and confirms the app is ready for deployment.
+5.  **User**: Reports that the RDP logic is still wrong, as multiple deposits from the same customer on the same day are being counted as multiple RDPs. Asks for a fix that also updates reports and bonus calculations.
+6.  **Agent**: Implements fixes across , , and .
+7.  **User**: Provides a screenshot showing the RDP count is still wrong on the Staff OMSET CRM page.
+8.  **Agent**: Realizes the fix was incomplete and updates  to fix the summary stats endpoint.
+9.  **User**: Confirms the previous RDP fix works on deployment but states that existing records also need to reflect the new logic.
+10. **User**: Reports three new issues: RDP count is still wrong in Report CRM, the Report CRM daily report has bad colors in dark mode, and the at-risk customer feature shows an incorrect 14 days since last deposit alert.
 
 **Project Health Check:**
--   **Broken**: WebSocket connection in the preview environment (known infrastructure limitation).
+-   **Broken**: WebSocket connection in the preview environment (known infrastructure limitation, work is blocked).
 -   **Mocked**: None.
 
 **3rd Party Integrations**
@@ -159,10 +155,10 @@ Key features implemented include:
 -   **pytz**: Used for backend timezone handling.
 
 **Testing status**
--   **Testing agent used after significant changes**: NO. The last major change was the NDP/RDP logic fix, which the agent tested manually via  and a temporary test script.
+-   **Testing agent used after significant changes**: YES. The testing agent was used to verify the internationalization (i18n) feature, and all tests passed.
 -   **Troubleshoot agent used after agent stuck in loop**: NO
 -   **Test files created**: None.
--   **Known regressions**: None.
+-   **Known regressions**: The RDP logic was found to be inconsistently implemented, but the agent has since performed a more thorough fix across all relevant backend modules.
 
 **Credentials to test flow:**
 -   **Admin**:
@@ -173,4 +169,4 @@ Key features implemented include:
     -   Password: 
 
 **What agent forgot to execute**
--   Nothing was forgotten. The agent correctly identified the WebSocket connection issue as an environmental constraint and implemented a fallback. The current task (i18n) is in progress as expected.</analysis>
+-   Initially, the agent's fix for the RDP logic was incomplete. It fixed some endpoints but missed others (, , , ). The agent later identified this oversight and applied the fix more comprehensively. This highlights the interconnectedness of the reporting features.</analysis>
