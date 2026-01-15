@@ -152,6 +152,9 @@ async def get_report_crm_data(
         month_records = [r for r in all_records if r['record_date'].startswith(month_str)]
         
         staff_month_data = {}
+        staff_ndp_customers = {}  # Track unique NDP customers per staff
+        staff_rdp_customers = {}  # Track unique RDP customers per staff
+        
         for record in month_records:
             sid = record['staff_id']
             sname = record['staff_name']
@@ -165,13 +168,23 @@ async def get_report_crm_data(
                     'total_form': 0,
                     'nominal': 0
                 }
+                staff_ndp_customers[sid] = set()
+                staff_rdp_customers[sid] = set()
             
-            key = (record['customer_id'], record['product_id'])
+            cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+            key = (cid_normalized, record['product_id'])
             first_date = customer_first_date.get(key)
+            
             if first_date and first_date.startswith(month_str) and first_date == record['record_date']:
-                staff_month_data[sid]['new_id'] += 1
+                # NDP - count unique customers per staff
+                if cid_normalized not in staff_ndp_customers[sid]:
+                    staff_ndp_customers[sid].add(cid_normalized)
+                    staff_month_data[sid]['new_id'] += 1
             elif first_date and first_date < record['record_date']:
-                staff_month_data[sid]['rdp'] += 1
+                # RDP - count unique customers per staff per month (NEW LOGIC)
+                if cid_normalized not in staff_rdp_customers[sid]:
+                    staff_rdp_customers[sid].add(cid_normalized)
+                    staff_month_data[sid]['rdp'] += 1
             
             staff_month_data[sid]['total_form'] += 1
             staff_month_data[sid]['nominal'] += record.get('depo_total', 0) or record.get('nominal', 0) or 0
