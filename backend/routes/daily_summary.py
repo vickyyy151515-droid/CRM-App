@@ -38,10 +38,12 @@ async def generate_daily_summary(date_str: str = None):
     # Get all records for NDP/RDP calculation
     all_records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
     
-    # Build customer first deposit date map
+    # Build customer first deposit date map (using normalized customer_id)
     customer_first_date = {}
     for record in sorted(all_records, key=lambda x: x['record_date']):
-        key = (record['customer_id'], record['product_id'])
+        # Use normalized customer_id for comparison
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (cid_normalized, record['product_id'])
         if key not in customer_first_date:
             customer_first_date[key] = record['record_date']
     
@@ -64,8 +66,9 @@ async def generate_daily_summary(date_str: str = None):
         product_name = record.get('product_name', 'Unknown Product')
         depo_total = record.get('depo_total', 0) or 0
         
-        # Check if NDP or RDP
-        key = (record['customer_id'], record['product_id'])
+        # Check if NDP or RDP (using normalized customer_id)
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (cid_normalized, record['product_id'])
         first_date = customer_first_date.get(key)
         is_ndp = first_date == date_str
         
