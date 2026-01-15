@@ -50,19 +50,27 @@ async def get_retention_overview(
             'top_loyal_customers': []
         }
     
+    # Helper function to normalize customer ID
+    def normalize_customer_id(customer_id: str) -> str:
+        if not customer_id:
+            return ""
+        return customer_id.strip().lower()
+    
     # Get ALL omset records to determine first deposit dates
     all_records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
     
-    # Build customer first deposit map
+    # Build customer first deposit map - USE NORMALIZED CUSTOMER ID
     customer_first_date = {}
     for record in sorted(all_records, key=lambda x: x['record_date']):
-        key = (record['customer_id'], record.get('product_id'))
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (cid_normalized, record.get('product_id'))
         if key not in customer_first_date:
             customer_first_date[key] = record['record_date']
     
-    # Analyze customers in date range
+    # Analyze customers in date range - USE NORMALIZED CUSTOMER ID
     customer_stats = defaultdict(lambda: {
         'customer_id': '',
+        'customer_id_display': '',  # Original for display
         'customer_name': '',
         'product_id': '',
         'product_name': '',
@@ -75,11 +83,16 @@ async def get_retention_overview(
     })
     
     for record in records:
-        key = (record['customer_id'], record.get('product_id'))
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (cid_normalized, record.get('product_id'))
         customer = customer_stats[key]
         
-        customer['customer_id'] = record['customer_id']
-        customer['customer_name'] = record.get('customer_name', record['customer_id'])
+        customer['customer_id'] = cid_normalized
+        # Store original customer_id for display (use most recent)
+        if customer['last_deposit'] is None or record['record_date'] > customer['last_deposit']:
+            customer['customer_id_display'] = record['customer_id']
+            customer['customer_name'] = record.get('customer_name', record['customer_id'])
+        
         customer['product_id'] = record.get('product_id')
         customer['product_name'] = record.get('product_name', 'Unknown')
         customer['total_deposits'] += 1
@@ -113,7 +126,7 @@ async def get_retention_overview(
     top_loyal = []
     for c in top_customers:
         top_loyal.append({
-            'customer_id': c['customer_id'],
+            'customer_id': c.get('customer_id_display', c['customer_id']),  # Use display ID
             'customer_name': c['customer_name'],
             'product_name': c['product_name'],
             'total_deposits': c['total_deposits'],
