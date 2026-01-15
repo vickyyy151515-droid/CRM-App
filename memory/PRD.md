@@ -471,6 +471,31 @@ Build a Customer Relationship Management (CRM) application where:
   - `backend/routes/search.py`
   - `frontend/src/components/GlobalSearch.js`
 
+### ✅ COMPLETED: Internationalization (i18n) - English/Indonesian (Jan 15, 2026)
+- **Language Toggle**: Globe icon in header to switch between English and Indonesian
+- **Language Options**: English (EN) and Indonesian (ID) - using casual Indonesian translations
+- **Persistence**: Language preference saved to localStorage under 'language' key
+- **HTML Lang Attribute**: Updates document.documentElement.lang when language changes
+- **Coverage** - Translated elements:
+  - Sidebar menu items (Overview→Ringkasan, Leaderboard→Papan Peringkat, etc.)
+  - Dashboard titles and stat card labels
+  - Form labels and buttons
+  - Login page elements
+  - Database overview section
+  - Common UI elements (Search, Filter, Save, Cancel, etc.)
+- **New Files**:
+  - `frontend/src/contexts/LanguageContext.js` - Context provider with toggleLanguage function
+  - `frontend/src/translations/en.js` - English translations (~400 keys)
+  - `frontend/src/translations/id.js` - Indonesian translations (~400 keys)
+  - `frontend/src/translations/index.js` - Translation function and utilities
+- **Modified Files**:
+  - `frontend/src/App.js` - Wrapped with LanguageProvider
+  - `frontend/src/components/DashboardLayout.js` - Added language toggle button
+  - `frontend/src/pages/AdminDashboard.js` - Menu items use translations
+  - `frontend/src/pages/StaffDashboard.js` - Menu items use translations
+  - `frontend/src/pages/Login.js` - Form labels use translations
+  - Multiple components updated to use useLanguage() hook
+
 ### P1: Next Priority Tasks
 - None - All P1 tasks completed!
 
