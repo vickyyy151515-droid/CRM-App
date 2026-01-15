@@ -6,10 +6,9 @@ import asyncio
 from datetime import datetime
 import jwt
 import os
+from .deps import JWT_SECRET  # Import from deps.py for consistency
 
 router = APIRouter(tags=["WebSocket"])
-
-JWT_SECRET = os.environ.get('JWT_SECRET', 'crm-jwt-secret-key-2024')
 
 # Connection manager to handle multiple WebSocket connections
 class ConnectionManager:
