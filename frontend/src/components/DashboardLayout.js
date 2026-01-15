@@ -49,15 +49,6 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
       default: return 'Staff Panel';
     }
   };
-  
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(() => {
-    const saved = localStorage.getItem('sidebar-collapsed');
-    return saved === 'true';
-  });
-  const [showConfigurator, setShowConfigurator] = useState(false);
-  const [sidebarConfig, setSidebarConfig] = useState(null);
-  const [openFolders, setOpenFolders] = useState({});
 
   // Load sidebar configuration on mount
   useEffect(() => {
