@@ -8,7 +8,7 @@ import { useTheme, ROLE_THEMES } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { api } from '../App';
 
-export default function DashboardLayout({ user, onLogout, activeTab, setActiveTab, menuItems, children }) {
+export default function DashboardLayout({ user, onLogout, activeTab, setActiveTab, menuItems, children, onUserUpdate }) {
   const { darkMode, toggleTheme, setUserRole } = useTheme();
   const { language, toggleLanguage, t } = useLanguage();
   
@@ -28,6 +28,7 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
     return saved === 'true';
   });
   const [showConfigurator, setShowConfigurator] = useState(false);
+  const [showProfileSettings, setShowProfileSettings] = useState(false);
   const [sidebarConfig, setSidebarConfig] = useState(null);
   const [openFolders, setOpenFolders] = useState({});
 
