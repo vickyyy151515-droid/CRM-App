@@ -143,7 +143,7 @@ function DatabaseCard({ database, t }) {
       <div className="grid grid-cols-4 gap-3">
         {/* Total Records */}
         <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 border border-slate-100 dark:border-slate-700">
-          <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Total Records</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{t('database.totalRecords')}</p>
           <p className="text-xl font-bold text-slate-900 dark:text-white" data-testid="stat-total">
             {db.total_records}
           </p>
@@ -151,7 +151,7 @@ function DatabaseCard({ database, t }) {
 
         {/* Available - Green */}
         <div className="bg-emerald-50 dark:bg-emerald-900/30 rounded-lg p-3 border border-emerald-100 dark:border-emerald-800">
-          <p className="text-xs text-emerald-600 dark:text-emerald-400 mb-1">Available</p>
+          <p className="text-xs text-emerald-600 dark:text-emerald-400 mb-1">{t('database.availableCount')}</p>
           <p className="text-xl font-bold text-emerald-700 dark:text-emerald-400" data-testid="stat-available">
             {db.available_count}
           </p>
@@ -159,7 +159,7 @@ function DatabaseCard({ database, t }) {
 
         {/* Requested - Yellow/Orange */}
         <div className="bg-amber-50 dark:bg-amber-900/30 rounded-lg p-3 border border-amber-100 dark:border-amber-800">
-          <p className="text-xs text-amber-600 dark:text-amber-400 mb-1">Requested</p>
+          <p className="text-xs text-amber-600 dark:text-amber-400 mb-1">{t('database.requestedCount')}</p>
           <p className="text-xl font-bold text-amber-700 dark:text-amber-400" data-testid="stat-requested">
             {db.requested_count}
           </p>
@@ -167,7 +167,7 @@ function DatabaseCard({ database, t }) {
 
         {/* Assigned - Purple */}
         <div className="bg-violet-50 dark:bg-violet-900/30 rounded-lg p-3 border border-violet-100 dark:border-violet-800">
-          <p className="text-xs text-violet-600 dark:text-violet-400 mb-1">Assigned</p>
+          <p className="text-xs text-violet-600 dark:text-violet-400 mb-1">{t('database.assignedCount')}</p>
           <p className="text-xl font-bold text-violet-700 dark:text-violet-400" data-testid="stat-assigned">
             {db.assigned_count}
           </p>
