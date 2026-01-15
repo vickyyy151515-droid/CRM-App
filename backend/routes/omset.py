@@ -292,9 +292,17 @@ async def get_omset_summary(
     
     all_records_for_ndp = await db.omset_records.find(all_query, {'_id': 0}).to_list(100000)
     
+    # Helper function to normalize customer ID
+    def normalize_customer_id(customer_id: str) -> str:
+        if not customer_id:
+            return ""
+        return customer_id.strip().lower()
+    
+    # Build customer_first_date with normalized IDs
     customer_first_date = {}
     for record in sorted(all_records_for_ndp, key=lambda x: x['record_date']):
-        key = (record['customer_id'], record['product_id'])
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (cid_normalized, record['product_id'])
         if key not in customer_first_date:
             customer_first_date[key] = record['record_date']
     
@@ -307,6 +315,12 @@ async def get_omset_summary(
     total_ndp = 0
     total_rdp = 0
     
+    # Tracking sets for staff and product unique customers
+    staff_ndp_customers = {}
+    staff_rdp_customers = {}
+    product_ndp_customers = {}
+    product_rdp_customers = {}
+    
     for record in records:
         date = record['record_date']
         staff_name = record['staff_name']
@@ -316,21 +330,24 @@ async def get_omset_summary(
         nominal = record.get('nominal', 0) or 0
         depo_total = record.get('depo_total', 0) or 0
         
-        key = (record['customer_id'], product_id_rec)
+        # Use normalized customer_id
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (cid_normalized, product_id_rec)
         first_date = customer_first_date.get(key)
         is_ndp = first_date == date
         
         total_nominal += nominal
         total_depo += depo_total
         
+        # Initialize daily summary with tracking sets
         if date not in daily_summary:
             daily_summary[date] = {
                 'date': date, 
                 'total_nominal': 0, 
                 'total_depo': 0, 
                 'count': 0,
-                'ndp_customers': set(),
-                'rdp_count': 0,
+                'ndp_customers': set(),  # Track unique NDP customers
+                'rdp_customers': set(),  # Track unique RDP customers (NEW)
                 'ndp_total': 0,
                 'rdp_total': 0
             }
@@ -339,12 +356,14 @@ async def get_omset_summary(
         daily_summary[date]['count'] += 1
         
         if is_ndp:
-            daily_summary[date]['ndp_customers'].add(record['customer_id'])
+            daily_summary[date]['ndp_customers'].add(cid_normalized)
             daily_summary[date]['ndp_total'] += depo_total
         else:
-            daily_summary[date]['rdp_count'] += 1
+            # RDP - only count unique customers per day (NEW LOGIC)
+            daily_summary[date]['rdp_customers'].add(cid_normalized)
             daily_summary[date]['rdp_total'] += depo_total
         
+        # Initialize staff summary with tracking sets
         if staff_id_rec not in staff_summary:
             staff_summary[staff_id_rec] = {
                 'staff_id': staff_id_rec, 
@@ -355,14 +374,24 @@ async def get_omset_summary(
                 'ndp_count': 0,
                 'rdp_count': 0
             }
+            staff_ndp_customers[staff_id_rec] = set()
+            staff_rdp_customers[staff_id_rec] = set()
+        
         staff_summary[staff_id_rec]['total_nominal'] += nominal
         staff_summary[staff_id_rec]['total_depo'] += depo_total
         staff_summary[staff_id_rec]['count'] += 1
-        if is_ndp:
-            staff_summary[staff_id_rec]['ndp_count'] += 1
-        else:
-            staff_summary[staff_id_rec]['rdp_count'] += 1
         
+        if is_ndp:
+            if cid_normalized not in staff_ndp_customers[staff_id_rec]:
+                staff_ndp_customers[staff_id_rec].add(cid_normalized)
+                staff_summary[staff_id_rec]['ndp_count'] += 1
+        else:
+            # RDP - count unique customers per staff (NEW LOGIC)
+            if cid_normalized not in staff_rdp_customers[staff_id_rec]:
+                staff_rdp_customers[staff_id_rec].add(cid_normalized)
+                staff_summary[staff_id_rec]['rdp_count'] += 1
+        
+        # Initialize product summary with tracking sets
         if product_id_rec not in product_summary:
             product_summary[product_id_rec] = {
                 'product_id': product_id_rec, 
@@ -373,13 +402,22 @@ async def get_omset_summary(
                 'ndp_count': 0,
                 'rdp_count': 0
             }
+            product_ndp_customers[product_id_rec] = set()
+            product_rdp_customers[product_id_rec] = set()
+        
         product_summary[product_id_rec]['total_nominal'] += nominal
         product_summary[product_id_rec]['total_depo'] += depo_total
         product_summary[product_id_rec]['count'] += 1
+        
         if is_ndp:
-            product_summary[product_id_rec]['ndp_count'] += 1
+            if cid_normalized not in product_ndp_customers[product_id_rec]:
+                product_ndp_customers[product_id_rec].add(cid_normalized)
+                product_summary[product_id_rec]['ndp_count'] += 1
         else:
-            product_summary[product_id_rec]['rdp_count'] += 1
+            # RDP - count unique customers per product (NEW LOGIC)
+            if cid_normalized not in product_rdp_customers[product_id_rec]:
+                product_rdp_customers[product_id_rec].add(cid_normalized)
+                product_summary[product_id_rec]['rdp_count'] += 1
     
     daily_list = []
     for date, data in daily_summary.items():
@@ -389,12 +427,12 @@ async def get_omset_summary(
             'total_depo': data['total_depo'],
             'count': data['count'],
             'ndp_count': len(data['ndp_customers']),
-            'rdp_count': data['rdp_count'],
+            'rdp_count': len(data['rdp_customers']),  # Count unique RDP customers
             'ndp_total': data['ndp_total'],
             'rdp_total': data['rdp_total']
         })
         total_ndp += len(data['ndp_customers'])
-        total_rdp += data['rdp_count']
+        total_rdp += len(data['rdp_customers'])  # Sum unique RDP customers
     
     return {
         'total': {
