@@ -700,12 +700,18 @@ async def get_alerts_by_staff(
     jakarta_now = get_jakarta_now()
     today = jakarta_now.strftime('%Y-%m-%d')
     
+    # Helper function to normalize customer ID
+    def normalize_customer_id(customer_id: str) -> str:
+        if not customer_id:
+            return ""
+        return customer_id.strip().lower()
+    
     records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
     
     if not records:
         return {'staff': []}
     
-    # Build customer data
+    # Build customer data - USE NORMALIZED CUSTOMER ID
     customer_data = defaultdict(lambda: {
         'staff_id': '',
         'staff_name': '',
@@ -714,11 +720,16 @@ async def get_alerts_by_staff(
     })
     
     for record in records:
-        key = (record['customer_id'], record.get('product_id'))
+        # Use normalized customer_id for grouping
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (cid_normalized, record.get('product_id'))
         customer = customer_data[key]
         
-        customer['staff_id'] = record.get('staff_id')
-        customer['staff_name'] = record.get('staff_name', 'Unknown')
+        # Update staff info based on most recent deposit
+        if customer['last_deposit_date'] is None or record['record_date'] > customer['last_deposit_date']:
+            customer['staff_id'] = record.get('staff_id')
+            customer['staff_name'] = record.get('staff_name', 'Unknown')
+        
         customer['total_deposits'] += 1
         
         if customer['last_deposit_date'] is None or record['record_date'] > customer['last_deposit_date']:
