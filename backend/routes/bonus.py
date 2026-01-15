@@ -187,6 +187,8 @@ async def get_bonus_calculation_data(
                 'staff_name': sname,
                 'total_nominal': 0,
                 'daily_stats': {},
+                'daily_rdp_customers': {},  # Track unique RDP customers per day
+                'daily_ndp_customers': {},  # Track unique NDP customers per day
             }
         
         nominal = record.get('depo_total', 0) or record.get('nominal', 0) or 0
@@ -194,10 +196,24 @@ async def get_bonus_calculation_data(
         
         if date not in staff_data[sid]['daily_stats']:
             staff_data[sid]['daily_stats'][date] = {'ndp': 0, 'rdp': 0}
+            staff_data[sid]['daily_rdp_customers'][date] = set()
+            staff_data[sid]['daily_ndp_customers'][date] = set()
         
         # Use normalized customer_id for comparison
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
         key = (cid_normalized, record['product_id'])
+        first_date = customer_first_date.get(key)
+        
+        if first_date == date:
+            # NDP - only count unique customers per day
+            if cid_normalized not in staff_data[sid]['daily_ndp_customers'][date]:
+                staff_data[sid]['daily_ndp_customers'][date].add(cid_normalized)
+                staff_data[sid]['daily_stats'][date]['ndp'] += 1
+        else:
+            # RDP - only count unique customers per day (NEW LOGIC)
+            if cid_normalized not in staff_data[sid]['daily_rdp_customers'][date]:
+                staff_data[sid]['daily_rdp_customers'][date].add(cid_normalized)
+                staff_data[sid]['daily_stats'][date]['rdp'] += 1
         first_date = customer_first_date.get(key)
         if first_date == date:
             staff_data[sid]['daily_stats'][date]['ndp'] += 1
