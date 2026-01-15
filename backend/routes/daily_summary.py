@@ -53,11 +53,19 @@ async def generate_daily_summary(date_str: str = None):
     total_rdp = 0
     total_forms = len(records)
     
+    # Track unique customers per day for NDP/RDP (NEW LOGIC)
+    daily_ndp_customers = set()  # Track unique NDP customers for the day
+    daily_rdp_customers = set()  # Track unique RDP customers for the day
+    
     # Staff breakdown
     staff_stats = {}
+    staff_ndp_customers = {}  # Track unique NDP customers per staff
+    staff_rdp_customers = {}  # Track unique RDP customers per staff
     
     # Product breakdown
     product_stats = {}
+    product_ndp_customers = {}  # Track unique NDP customers per product
+    product_rdp_customers = {}  # Track unique RDP customers per product
     
     for record in records:
         staff_id = record['staff_id']
@@ -73,12 +81,19 @@ async def generate_daily_summary(date_str: str = None):
         is_ndp = first_date == date_str
         
         total_omset += depo_total
-        if is_ndp:
-            total_ndp += 1
-        else:
-            total_rdp += 1
         
-        # Staff stats
+        # Count unique customers for overall totals
+        if is_ndp:
+            if cid_normalized not in daily_ndp_customers:
+                daily_ndp_customers.add(cid_normalized)
+                total_ndp += 1
+        else:
+            # RDP - only count unique customers per day (NEW LOGIC)
+            if cid_normalized not in daily_rdp_customers:
+                daily_rdp_customers.add(cid_normalized)
+                total_rdp += 1
+        
+        # Staff stats - initialize if needed
         if staff_id not in staff_stats:
             staff_stats[staff_id] = {
                 'staff_id': staff_id,
@@ -89,15 +104,24 @@ async def generate_daily_summary(date_str: str = None):
                 'form_count': 0,
                 'product_breakdown': {}
             }
+            staff_ndp_customers[staff_id] = set()
+            staff_rdp_customers[staff_id] = set()
         
         staff_stats[staff_id]['total_omset'] += depo_total
         staff_stats[staff_id]['form_count'] += 1
-        if is_ndp:
-            staff_stats[staff_id]['ndp_count'] += 1
-        else:
-            staff_stats[staff_id]['rdp_count'] += 1
         
-        # Staff's product breakdown
+        # Count unique customers per staff
+        if is_ndp:
+            if cid_normalized not in staff_ndp_customers[staff_id]:
+                staff_ndp_customers[staff_id].add(cid_normalized)
+                staff_stats[staff_id]['ndp_count'] += 1
+        else:
+            # RDP - only count unique customers per day per staff (NEW LOGIC)
+            if cid_normalized not in staff_rdp_customers[staff_id]:
+                staff_rdp_customers[staff_id].add(cid_normalized)
+                staff_stats[staff_id]['rdp_count'] += 1
+        
+        # Staff's product breakdown - initialize if needed
         if product_id not in staff_stats[staff_id]['product_breakdown']:
             staff_stats[staff_id]['product_breakdown'][product_id] = {
                 'product_id': product_id,
@@ -105,16 +129,24 @@ async def generate_daily_summary(date_str: str = None):
                 'total_omset': 0,
                 'ndp_count': 0,
                 'rdp_count': 0,
-                'form_count': 0
+                'form_count': 0,
+                '_ndp_customers': set(),
+                '_rdp_customers': set()
             }
-        staff_stats[staff_id]['product_breakdown'][product_id]['total_omset'] += depo_total
-        staff_stats[staff_id]['product_breakdown'][product_id]['form_count'] += 1
-        if is_ndp:
-            staff_stats[staff_id]['product_breakdown'][product_id]['ndp_count'] += 1
-        else:
-            staff_stats[staff_id]['product_breakdown'][product_id]['rdp_count'] += 1
         
-        # Overall product stats
+        pb = staff_stats[staff_id]['product_breakdown'][product_id]
+        pb['total_omset'] += depo_total
+        pb['form_count'] += 1
+        if is_ndp:
+            if cid_normalized not in pb['_ndp_customers']:
+                pb['_ndp_customers'].add(cid_normalized)
+                pb['ndp_count'] += 1
+        else:
+            if cid_normalized not in pb['_rdp_customers']:
+                pb['_rdp_customers'].add(cid_normalized)
+                pb['rdp_count'] += 1
+        
+        # Overall product stats - initialize if needed
         if product_id not in product_stats:
             product_stats[product_id] = {
                 'product_id': product_id,
@@ -124,15 +156,29 @@ async def generate_daily_summary(date_str: str = None):
                 'rdp_count': 0,
                 'form_count': 0
             }
+            product_ndp_customers[product_id] = set()
+            product_rdp_customers[product_id] = set()
+        
         product_stats[product_id]['total_omset'] += depo_total
         product_stats[product_id]['form_count'] += 1
+        
+        # Count unique customers per product
         if is_ndp:
-            product_stats[product_id]['ndp_count'] += 1
+            if cid_normalized not in product_ndp_customers[product_id]:
+                product_ndp_customers[product_id].add(cid_normalized)
+                product_stats[product_id]['ndp_count'] += 1
         else:
-            product_stats[product_id]['rdp_count'] += 1
+            if cid_normalized not in product_rdp_customers[product_id]:
+                product_rdp_customers[product_id].add(cid_normalized)
+                product_stats[product_id]['rdp_count'] += 1
     
     # Convert staff stats to list and sort by OMSET
+    # Also clean up the internal tracking sets from product breakdown
     for staff_id in staff_stats:
+        for product_id in staff_stats[staff_id]['product_breakdown']:
+            pb = staff_stats[staff_id]['product_breakdown'][product_id]
+            del pb['_ndp_customers']
+            del pb['_rdp_customers']
         staff_stats[staff_id]['product_breakdown'] = sorted(
             staff_stats[staff_id]['product_breakdown'].values(),
             key=lambda x: x['total_omset'],
