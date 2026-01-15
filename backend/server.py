@@ -131,32 +131,67 @@ async def startup_event():
     """Initialize scheduler and seed data on startup"""
     logger.info("Starting up CRM Pro API...")
     
-    # Seed default users if database is empty
-    await seed_default_users()
+    # Ensure master admin user exists
+    await ensure_master_admin_exists()
     
     await init_scheduler()
     logger.info("Scheduler initialized")
 
-async def seed_default_users():
-    """Create default users if none exist in the database"""
+async def ensure_master_admin_exists():
+    """Ensure the master admin user vicky@crm.com exists"""
     from routes.deps import hash_password
     import uuid
     
-    users_count = await db.users.count_documents({})
-    if users_count == 0:
-        logger.info("No users found in database. Creating default users...")
+    # Check if vicky@crm.com exists
+    vicky = await db.users.find_one({'email': 'vicky@crm.com'})
+    
+    if not vicky:
+        logger.info("Master admin vicky@crm.com not found. Creating...")
         
-        default_users = [
-            {
-                'id': str(uuid.uuid4()),
-                'email': 'vicky@crm.com',
-                'name': 'Vicky',
-                'password_hash': hash_password('vicky123'),
-                'role': 'master_admin',
-                'created_at': get_jakarta_now().isoformat(),
-                'blocked_pages': []
-            },
-            {
+        master_admin = {
+            'id': str(uuid.uuid4()),
+            'email': 'vicky@crm.com',
+            'name': 'Vicky',
+            'password_hash': hash_password('vicky123'),
+            'role': 'master_admin',
+            'created_at': get_jakarta_now().isoformat(),
+            'blocked_pages': []
+        }
+        
+        await db.users.insert_one(master_admin)
+        logger.info("✅ Created master admin: vicky@crm.com (password: vicky123)")
+    else:
+        # Ensure vicky has master_admin role and correct password
+        update_needed = False
+        updates = {}
+        
+        if vicky.get('role') != 'master_admin':
+            updates['role'] = 'master_admin'
+            update_needed = True
+            logger.info("Updating vicky@crm.com role to master_admin")
+        
+        # Always reset password to ensure it works
+        updates['password_hash'] = hash_password('vicky123')
+        update_needed = True
+        
+        if update_needed:
+            await db.users.update_one(
+                {'email': 'vicky@crm.com'},
+                {'$set': updates}
+            )
+            logger.info("✅ Updated vicky@crm.com - password reset to: vicky123")
+        else:
+            logger.info("Master admin vicky@crm.com already exists with correct role")
+    
+    # Also ensure basic admin and staff exist for testing
+    users_count = await db.users.count_documents({})
+    if users_count <= 1:
+        logger.info("Creating additional default users...")
+        
+        additional_users = []
+        
+        if not await db.users.find_one({'email': 'admin@crm.com'}):
+            additional_users.append({
                 'id': str(uuid.uuid4()),
                 'email': 'admin@crm.com',
                 'name': 'Admin User',
@@ -164,8 +199,10 @@ async def seed_default_users():
                 'role': 'admin',
                 'created_at': get_jakarta_now().isoformat(),
                 'blocked_pages': []
-            },
-            {
+            })
+        
+        if not await db.users.find_one({'email': 'staff@crm.com'}):
+            additional_users.append({
                 'id': str(uuid.uuid4()),
                 'email': 'staff@crm.com',
                 'name': 'Staff User',
@@ -173,15 +210,12 @@ async def seed_default_users():
                 'role': 'staff',
                 'created_at': get_jakarta_now().isoformat(),
                 'blocked_pages': []
-            }
-        ]
+            })
         
-        await db.users.insert_many(default_users)
-        logger.info(f"Created {len(default_users)} default users:")
-        for user in default_users:
-            logger.info(f"  - {user['email']} ({user['role']})")
-    else:
-        logger.info(f"Database already has {users_count} users. Skipping seed.")
+        if additional_users:
+            await db.users.insert_many(additional_users)
+            for user in additional_users:
+                logger.info(f"  Created: {user['email']} ({user['role']})")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
