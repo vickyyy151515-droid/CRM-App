@@ -55,6 +55,7 @@ from routes.funnel import router as funnel_router
 from routes.retention import router as retention_router
 from routes.search import router as search_router
 from routes.websocket import router as websocket_router
+from routes.scheduled_reports import router as scheduled_reports_router, init_scheduler
 
 # Initialize database connection for all route modules
 set_database(db)
