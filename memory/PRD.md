@@ -681,16 +681,35 @@ Build a Customer Relationship Management (CRM) application where:
 - **Purpose**: Provide complete customer data in at-risk alerts for easier follow-up
 - **Backend Enhancement** (`/api/retention/alerts`):
   - Added `phone_number` field to alert response
-  - Lookups customer phone from `customer_records.row_data` by matching username
-  - Handles various phone field names (telpon, phone, hp, no_hp, etc.)
+  - Lookups customer phone from **3 collections**: `customer_records`, `bonanza_records`, `memberwd_records`
+  - Handles various phone field names (telpon, phone, hp, no_hp, telephone, etc.)
 - **Frontend Enhancement** (CustomerRetention.js At-Risk section):
-  - Displays username with `@` prefix (e.g., `@aa1`)
-  - Shows phone number with phone icon when available
-  - Added data-testids for testing: `alert-username-{index}`, `alert-phone-{index}`
+  - Displays **customer name** prominently
+  - Shows **username** with `@` prefix (e.g., `@aa1`)
+  - Shows **phone number** with phone icon and **copy button** (copies WhatsApp link)
+  - Added data-testids for testing: `alert-name-{index}`, `alert-username-{index}`, `alert-phone-{index}`, `copy-phone-{index}`
 - **Files Modified**:
-  - `backend/routes/retention.py` - Enhanced get_customer_alerts to fetch phone numbers
-  - `frontend/src/components/CustomerRetention.js` - Updated alert card UI
-- **Note**: Phone number displays only when a matching customer record exists in the database
+  - `backend/routes/retention.py` - Enhanced get_customer_alerts to fetch phone numbers from 3 collections
+  - `frontend/src/components/CustomerRetention.js` - Updated alert card UI with copy button
+- **Note**: Phone number displays only when a matching customer record exists in any of the 3 databases
+
+### ✅ COMPLETED: Reserved Member Phone Number Field (Jan 16, 2026)
+- **Purpose**: Allow staff to include customer phone number when requesting reservations
+- **Backend Enhancement** (`/api/reserved-members`):
+  - Added `phone_number` field to `ReservedMember` and `ReservedMemberCreate` models
+  - Phone stored with reservation and displayed in all views
+- **Staff View** (StaffReservedMembers.js):
+  - **Phone Number is required** when requesting a reservation
+  - Form fields: Customer Name, Phone Number, Product (all required)
+  - Phone column in table with copy button for WhatsApp link
+- **Admin View** (AdminReservedMembers.js):
+  - **Phone Number is optional** when adding reservations
+  - Phone column in table with copy button
+- **Files Modified**:
+  - `backend/routes/records.py` - Updated ReservedMember model to include phone_number
+  - `frontend/src/components/StaffReservedMembers.js` - Added phone input field (required) and table column
+  - `frontend/src/components/AdminReservedMembers.js` - Added phone input field (optional) and table column
+- **Test Coverage**: Created `/app/tests/test_phone_number_features.py` with 12 passing tests
 
 ### ✅ COMPLETED: Toggleable Status Buttons Fix (Jan 16, 2026)
 - **Purpose**: Allow staff to undo accidental status clicks by clicking the same button again
