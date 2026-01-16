@@ -196,14 +196,14 @@ export default function StaffReservedMembers() {
             placeholder="Search by customer, staff or product..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full pl-10 pr-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
             data-testid="search-reservations"
           />
         </div>
         <select
           value={productFilter}
           onChange={(e) => setProductFilter(e.target.value)}
-          className="px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+          className="px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
           data-testid="filter-product"
         >
           <option value="">All Products</option>
@@ -217,7 +217,7 @@ export default function StaffReservedMembers() {
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               filter === 'all' 
                 ? 'bg-indigo-600 text-white' 
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
             }`}
             data-testid="filter-all"
           >
@@ -228,7 +228,7 @@ export default function StaffReservedMembers() {
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               filter === 'my-requests' 
                 ? 'bg-indigo-600 text-white' 
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
             }`}
             data-testid="filter-my-requests"
           >
