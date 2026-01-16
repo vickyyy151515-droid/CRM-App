@@ -229,27 +229,35 @@ export default function AdminReservedMembers({ onUpdate }) {
       </div>
 
       {/* Add New Reservation Form */}
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm mb-6">
-        <h3 className="text-lg font-medium text-slate-900 mb-4 flex items-center gap-2">
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm mb-6">
+        <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-4 flex items-center gap-2">
           <UserPlus size={20} className="text-indigo-600" />
           Add New Reservation
         </h3>
-        <form onSubmit={handleAddMember} className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <form onSubmit={handleAddMember} className="grid grid-cols-1 md:grid-cols-6 gap-4">
           <input
             type="text"
-            placeholder="Customer Name"
+            placeholder="Customer Name *"
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
-            className="px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
             data-testid="input-customer-name"
+          />
+          <input
+            type="text"
+            placeholder="Phone Number"
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            className="px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+            data-testid="input-phone-number"
           />
           <select
             value={selectedProduct}
             onChange={(e) => setSelectedProduct(e.target.value)}
-            className="px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+            className="px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
             data-testid="select-product"
           >
-            <option value="">Select Product</option>
+            <option value="">Select Product *</option>
             {products.map(product => (
               <option key={product.id} value={product.id}>{product.name}</option>
             ))}
@@ -257,10 +265,10 @@ export default function AdminReservedMembers({ onUpdate }) {
           <select
             value={selectedStaff}
             onChange={(e) => setSelectedStaff(e.target.value)}
-            className="px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+            className="px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
             data-testid="select-staff"
           >
-            <option value="">Select Staff</option>
+            <option value="">Select Staff *</option>
             {staffList.map(staff => (
               <option key={staff.id} value={staff.id}>{staff.name}</option>
             ))}
