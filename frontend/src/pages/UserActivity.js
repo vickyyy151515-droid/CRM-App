@@ -34,10 +34,10 @@ export default function UserActivity() {
   useEffect(() => {
     loadActivity();
     
-    // Auto-refresh every 30 seconds if enabled
+    // Auto-refresh every 15 seconds if enabled (more real-time feel)
     let interval;
     if (autoRefresh) {
-      interval = setInterval(loadActivity, 30000);
+      interval = setInterval(loadActivity, 15000);
     }
     
     return () => {
