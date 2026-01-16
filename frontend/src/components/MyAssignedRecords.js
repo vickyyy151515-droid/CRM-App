@@ -80,10 +80,14 @@ export default function MyAssignedRecords() {
 
   const handleWhatsAppStatusChange = async (recordId, status) => {
     try {
+      // Find current record to check if we're toggling off
+      const currentRecord = records.find(r => r.id === recordId);
+      const newStatus = currentRecord?.whatsapp_status === status ? null : status;
+      
       await api.patch(`/customer-records/${recordId}/whatsapp-status`, {
-        whatsapp_status: status
+        whatsapp_status: newStatus
       });
-      toast.success('WhatsApp status updated');
+      toast.success(newStatus ? 'WhatsApp status updated' : 'WhatsApp status cleared');
       if (selectedBatch) {
         loadBatchRecords(selectedBatch.id);
       }
@@ -94,10 +98,14 @@ export default function MyAssignedRecords() {
 
   const handleRespondStatusChange = async (recordId, status) => {
     try {
+      // Find current record to check if we're toggling off
+      const currentRecord = records.find(r => r.id === recordId);
+      const newStatus = currentRecord?.respond_status === status ? null : status;
+      
       await api.patch(`/customer-records/${recordId}/respond-status`, {
-        respond_status: status
+        respond_status: newStatus
       });
-      toast.success('Respond status updated');
+      toast.success(newStatus ? 'Respond status updated' : 'Respond status cleared');
       if (selectedBatch) {
         loadBatchRecords(selectedBatch.id);
       }
