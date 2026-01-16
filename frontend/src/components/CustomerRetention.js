@@ -717,7 +717,7 @@ export default function CustomerRetention({ isAdmin = false }) {
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <p className="font-semibold text-slate-900 dark:text-white">{alert.customer_name}</p>
+                              <p className="font-semibold text-slate-900 dark:text-white" data-testid={`alert-name-${index}`}>{alert.customer_name}</p>
                               <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
                                 alert.risk_level === 'critical' ? 'bg-red-100 text-red-700' :
                                 alert.risk_level === 'high' ? 'bg-orange-100 text-orange-700' :
@@ -726,17 +726,53 @@ export default function CustomerRetention({ isAdmin = false }) {
                                 {alert.risk_level.toUpperCase()}
                               </span>
                             </div>
-                            <div className="flex items-center gap-3 mt-1 text-sm">
+                            <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-1.5 text-sm">
                               <span className="text-indigo-600 dark:text-indigo-400 font-medium" data-testid={`alert-username-${index}`}>
                                 @{alert.customer_id}
                               </span>
                               {alert.phone_number && (
-                                <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
-                                  </svg>
-                                  <span data-testid={`alert-phone-${index}`}>{alert.phone_number}</span>
-                                </span>
+                                <div className="flex items-center gap-1.5">
+                                  <Phone className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                                  <span className="text-emerald-600 dark:text-emerald-400 font-medium" data-testid={`alert-phone-${index}`}>
+                                    {alert.phone_number}
+                                  </span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      // Extract phone number from wa.me link if present
+                                      let phoneNum = alert.phone_number;
+                                      if (phoneNum.includes('wa.me/')) {
+                                        phoneNum = phoneNum.split('wa.me/')[1].split('?')[0];
+                                      }
+                                      phoneNum = phoneNum.replace(/[^\d+]/g, '');
+                                      const whatsappUrl = `https://wa.me/${phoneNum}`;
+                                      
+                                      navigator.clipboard.writeText(whatsappUrl).then(() => {
+                                        toast.success('WhatsApp link copied!');
+                                      }).catch(() => {
+                                        // Fallback for older browsers
+                                        const textarea = document.createElement('textarea');
+                                        textarea.value = whatsappUrl;
+                                        textarea.style.position = 'fixed';
+                                        textarea.style.opacity = '0';
+                                        document.body.appendChild(textarea);
+                                        textarea.select();
+                                        try {
+                                          document.execCommand('copy');
+                                          toast.success('WhatsApp link copied!');
+                                        } catch (err) {
+                                          toast.error('Failed to copy');
+                                        }
+                                        document.body.removeChild(textarea);
+                                      });
+                                    }}
+                                    className="p-1 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 rounded transition-colors"
+                                    title="Copy WhatsApp link"
+                                    data-testid={`copy-phone-${index}`}
+                                  >
+                                    <Copy size={14} />
+                                  </button>
+                                </div>
                               )}
                             </div>
                             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{alert.product_name} • {alert.staff_name}</p>
