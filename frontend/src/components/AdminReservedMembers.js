@@ -59,11 +59,13 @@ export default function AdminReservedMembers({ onUpdate }) {
     try {
       await api.post('/reserved-members', {
         customer_name: customerName.trim(),
+        phone_number: phoneNumber.trim() || null,
         staff_id: selectedStaff,
         product_id: selectedProduct
       });
       toast.success('Customer reserved successfully');
       setCustomerName('');
+      setPhoneNumber('');
       setSelectedStaff('');
       setSelectedProduct('');
       loadData();
