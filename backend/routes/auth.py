@@ -284,6 +284,43 @@ async def get_all_users(admin: User = Depends(get_admin_user)):
     users = await db.users.find({}, {'_id': 0, 'password_hash': 0}).to_list(1000)
     return users
 
+# PAGE ACCESS ROUTES - Must be before /users/{user_id} to avoid route conflict
+@router.get("/users/{user_id}/page-access")
+async def get_user_page_access(user_id: str, admin: User = Depends(get_admin_user)):
+    """Get blocked pages for a user"""
+    db = get_db()
+    user = await db.users.find_one({'id': user_id}, {'_id': 0, 'blocked_pages': 1})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return {'blocked_pages': user.get('blocked_pages', [])}
+
+@router.put("/users/{user_id}/page-access")
+async def update_user_page_access(
+    user_id: str, 
+    access_data: PageAccessUpdate, 
+    master_admin: User = Depends(get_master_admin_user)
+):
+    """Update blocked pages for an admin user (Master Admin only)"""
+    db = get_db()
+    user = await db.users.find_one({'id': user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Can only set page access for admin users
+    if user.get('role') != 'admin':
+        raise HTTPException(
+            status_code=400, 
+            detail="Page access control is only available for admin users"
+        )
+    
+    await db.users.update_one(
+        {'id': user_id},
+        {'$set': {'blocked_pages': access_data.blocked_pages}}
+    )
+    
+    return {'message': 'Page access updated successfully', 'blocked_pages': access_data.blocked_pages}
+
 @router.get("/users/{user_id}")
 async def get_user(user_id: str, admin: User = Depends(get_admin_user)):
     """Get a specific user (Admin only)"""
