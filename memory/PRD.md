@@ -677,6 +677,34 @@ Build a Customer Relationship Management (CRM) application where:
   - `frontend/src/contexts/ThemeContext.js` - Added ROLE_THEMES config with full color mappings
   - `frontend/src/components/DashboardLayout.js` - Applied role-based styling throughout
 
+### ✅ COMPLETED: At-Risk Customer Data Enhancement (Jan 16, 2026)
+- **Purpose**: Provide complete customer data in at-risk alerts for easier follow-up
+- **Backend Enhancement** (`/api/retention/alerts`):
+  - Added `phone_number` field to alert response
+  - Lookups customer phone from `customer_records.row_data` by matching username
+  - Handles various phone field names (telpon, phone, hp, no_hp, etc.)
+- **Frontend Enhancement** (CustomerRetention.js At-Risk section):
+  - Displays username with `@` prefix (e.g., `@aa1`)
+  - Shows phone number with phone icon when available
+  - Added data-testids for testing: `alert-username-{index}`, `alert-phone-{index}`
+- **Files Modified**:
+  - `backend/routes/retention.py` - Enhanced get_customer_alerts to fetch phone numbers
+  - `frontend/src/components/CustomerRetention.js` - Updated alert card UI
+- **Note**: Phone number displays only when a matching customer record exists in the database
+
+### ✅ COMPLETED: Toggleable Status Buttons Fix (Jan 16, 2026)
+- **Purpose**: Allow staff to undo accidental status clicks by clicking the same button again
+- **Backend Fix** (`backend/routes/records.py`):
+  - Changed `WhatsAppStatusUpdate.whatsapp_status` from `str` to `Optional[str]`
+  - Changed `RespondStatusUpdate.respond_status` from `str` to `Optional[str]`
+  - Now accepts `null` to clear status (toggle OFF)
+- **Frontend Behavior** (MyAssignedRecords.js):
+  - Clicking an already-selected button sends `null` to API (toggle OFF)
+  - Button styling updates to reflect cleared state
+- **Files Modified**:
+  - `backend/routes/records.py` - Updated Pydantic models for nullable status
+- **Test Coverage**: Created `/app/tests/test_at_risk_and_toggle.py` with 9 passing tests
+
 ### P2: Future Enhancements
 - Email notifications for important updates
 - Scheduled automated reports from Export Center
