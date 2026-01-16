@@ -58,25 +58,27 @@ function App() {
     }
   }, []);
 
-  // Send heartbeat every 2 minutes when user is logged in
+  // Send heartbeat every 1 minute when user is logged in
   useEffect(() => {
     if (user) {
       // Send initial heartbeat
       sendHeartbeat();
       
-      // Set up interval for periodic heartbeats
-      const heartbeatInterval = setInterval(sendHeartbeat, 2 * 60 * 1000); // 2 minutes
+      // Set up interval for periodic heartbeats (every 1 minute)
+      const heartbeatInterval = setInterval(sendHeartbeat, 60 * 1000); // 1 minute
       
-      // Also send heartbeat on user activity (mouse move, key press, click)
+      // Also send heartbeat on user activity (mouse move, key press, click, scroll)
       let activityTimeout;
       const handleActivity = () => {
         if (activityTimeout) clearTimeout(activityTimeout);
-        activityTimeout = setTimeout(sendHeartbeat, 1000); // Debounce to 1 second
+        activityTimeout = setTimeout(sendHeartbeat, 500); // Debounce to 500ms
       };
       
       window.addEventListener('mousemove', handleActivity);
       window.addEventListener('keypress', handleActivity);
       window.addEventListener('click', handleActivity);
+      window.addEventListener('scroll', handleActivity);
+      window.addEventListener('touchstart', handleActivity);
       
       return () => {
         clearInterval(heartbeatInterval);
@@ -84,6 +86,8 @@ function App() {
         window.removeEventListener('mousemove', handleActivity);
         window.removeEventListener('keypress', handleActivity);
         window.removeEventListener('click', handleActivity);
+        window.removeEventListener('scroll', handleActivity);
+        window.removeEventListener('touchstart', handleActivity);
       };
     }
   }, [user, sendHeartbeat]);
