@@ -839,7 +839,7 @@ async def create_reserved_member(member_data: ReservedMemberCreate, user: User =
             detail=f"Customer '{member_data.customer_name}' is already reserved by {owner_name} in {product['name']}"
         )
     
-    if user.role == 'admin':
+    if user.role == 'admin' or user.role == 'master_admin':
         if not member_data.staff_id:
             raise HTTPException(status_code=400, detail="Staff ID is required for admin")
         
@@ -849,6 +849,7 @@ async def create_reserved_member(member_data: ReservedMemberCreate, user: User =
         
         member = ReservedMember(
             customer_name=member_data.customer_name,
+            phone_number=member_data.phone_number,
             product_id=member_data.product_id,
             product_name=product['name'],
             staff_id=member_data.staff_id,
@@ -863,6 +864,7 @@ async def create_reserved_member(member_data: ReservedMemberCreate, user: User =
     else:
         member = ReservedMember(
             customer_name=member_data.customer_name,
+            phone_number=member_data.phone_number,
             product_id=member_data.product_id,
             product_name=product['name'],
             staff_id=user.id,
