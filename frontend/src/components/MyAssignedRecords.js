@@ -478,64 +478,68 @@ export default function MyAssignedRecords() {
                         {formatDate(record.assigned_at)}
                       </td>
                       <td className="px-4 py-3 text-sm">
-                        <div className="flex items-center gap-3">
-                          <label className="flex items-center gap-1.5 cursor-pointer">
-                            <input
-                              type="radio"
-                              name={`whatsapp-${record.id}`}
-                              checked={record.whatsapp_status === 'ada'}
-                              onChange={() => handleWhatsAppStatusChange(record.id, 'ada')}
-                              data-testid={`whatsapp-ada-${record.id}`}
-                              className="w-4 h-4 text-emerald-600 focus:ring-emerald-500"
-                            />
-                            <span className="text-sm text-slate-700">Ada</span>
-                          </label>
-                          <label className="flex items-center gap-1.5 cursor-pointer">
-                            <input
-                              type="radio"
-                              name={`whatsapp-${record.id}`}
-                              checked={record.whatsapp_status === 'ceklis1'}
-                              onChange={() => handleWhatsAppStatusChange(record.id, 'ceklis1')}
-                              data-testid={`whatsapp-ceklis1-${record.id}`}
-                              className="w-4 h-4 text-amber-600 focus:ring-amber-500"
-                            />
-                            <span className="text-sm text-slate-700">Ceklis 1</span>
-                          </label>
-                          <label className="flex items-center gap-1.5 cursor-pointer">
-                            <input
-                              type="radio"
-                              name={`whatsapp-${record.id}`}
-                              checked={record.whatsapp_status === 'tidak'}
-                              onChange={() => handleWhatsAppStatusChange(record.id, 'tidak')}
-                              data-testid={`whatsapp-tidak-${record.id}`}
-                              className="w-4 h-4 text-rose-600 focus:ring-rose-500"
-                            />
-                            <span className="text-sm text-slate-700">Tidak</span>
-                          </label>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleWhatsAppStatusChange(record.id, 'ada')}
+                            data-testid={`whatsapp-ada-${record.id}`}
+                            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                              record.whatsapp_status === 'ada'
+                                ? 'bg-emerald-500 text-white ring-2 ring-emerald-300'
+                                : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 hover:text-emerald-700 dark:hover:text-emerald-400'
+                            }`}
+                          >
+                            Ada
+                          </button>
+                          <button
+                            onClick={() => handleWhatsAppStatusChange(record.id, 'ceklis1')}
+                            data-testid={`whatsapp-ceklis1-${record.id}`}
+                            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                              record.whatsapp_status === 'ceklis1'
+                                ? 'bg-amber-500 text-white ring-2 ring-amber-300'
+                                : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 hover:text-amber-700 dark:hover:text-amber-400'
+                            }`}
+                          >
+                            Ceklis 1
+                          </button>
+                          <button
+                            onClick={() => handleWhatsAppStatusChange(record.id, 'tidak')}
+                            data-testid={`whatsapp-tidak-${record.id}`}
+                            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                              record.whatsapp_status === 'tidak'
+                                ? 'bg-rose-500 text-white ring-2 ring-rose-300'
+                                : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-rose-100 dark:hover:bg-rose-900/30 hover:text-rose-700 dark:hover:text-rose-400'
+                            }`}
+                          >
+                            Tidak
+                          </button>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-sm">
-                        <div className="flex items-center gap-3">
-                          <label className="flex items-center gap-1.5 cursor-pointer">
-                            <input
-                              type="radio"
-                              name={`respond-${record.id}`}
-                              checked={record.respond_status === 'ya'}
-                              onChange={() => handleRespondStatusChange(record.id, 'ya')}
-                              data-testid={`respond-ya-${record.id}`}
-                              className="w-4 h-4 text-emerald-600 focus:ring-emerald-500"
-                            />
-                            <span className="text-sm text-slate-700">Ya</span>
-                          </label>
-                          <label className="flex items-center gap-1.5 cursor-pointer">
-                            <input
-                              type="radio"
-                              name={`respond-${record.id}`}
-                              checked={record.respond_status === 'tidak'}
-                              onChange={() => handleRespondStatusChange(record.id, 'tidak')}
-                              data-testid={`respond-tidak-${record.id}`}
-                              className="w-4 h-4 text-rose-600 focus:ring-rose-500"
-                            />
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleRespondStatusChange(record.id, 'ya')}
+                            data-testid={`respond-ya-${record.id}`}
+                            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                              record.respond_status === 'ya'
+                                ? 'bg-emerald-500 text-white ring-2 ring-emerald-300'
+                                : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 hover:text-emerald-700 dark:hover:text-emerald-400'
+                            }`}
+                          >
+                            Ya
+                          </button>
+                          <button
+                            onClick={() => handleRespondStatusChange(record.id, 'tidak')}
+                            data-testid={`respond-tidak-${record.id}`}
+                            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                              record.respond_status === 'tidak'
+                                ? 'bg-rose-500 text-white ring-2 ring-rose-300'
+                                : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-rose-100 dark:hover:bg-rose-900/30 hover:text-rose-700 dark:hover:text-rose-400'
+                            }`}
+                          >
+                            Tidak
+                          </button>
+                        </div>
+                      </td>
                             <span className="text-sm text-slate-700">Tidak</span>
                           </label>
                         </div>
