@@ -13,6 +13,7 @@ export default function MyAssignedRecords() {
   const [loadingRecords, setLoadingRecords] = useState(false);
   const [editingBatchId, setEditingBatchId] = useState(null);
   const [editTitle, setEditTitle] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     loadProducts();
