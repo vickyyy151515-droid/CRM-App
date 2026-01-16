@@ -471,48 +471,79 @@ export default function AdminReservedMembers({ onUpdate }) {
       </div>
 
       {/* Reservations Table */}
-      <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
         <table className="w-full" data-testid="reservations-table">
-          <thead className="bg-slate-50 border-b border-slate-200">
+          <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
             <tr>
-              <th className="text-left px-6 py-4 text-sm font-medium text-slate-600">Customer Name</th>
-              <th className="text-left px-6 py-4 text-sm font-medium text-slate-600">Product</th>
-              <th className="text-left px-6 py-4 text-sm font-medium text-slate-600">Staff</th>
-              <th className="text-left px-6 py-4 text-sm font-medium text-slate-600">Status</th>
-              <th className="text-left px-6 py-4 text-sm font-medium text-slate-600">Requested By</th>
-              <th className="text-left px-6 py-4 text-sm font-medium text-slate-600">Date</th>
-              <th className="text-right px-6 py-4 text-sm font-medium text-slate-600">Actions</th>
+              <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">Customer Name</th>
+              <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">Phone</th>
+              <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">Product</th>
+              <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">Staff</th>
+              <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">Status</th>
+              <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">Requested By</th>
+              <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">Date</th>
+              <th className="text-right px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {filteredMembers.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
+                <td colSpan={8} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
                   No reservations found
                 </td>
               </tr>
             ) : (
               filteredMembers.map(member => (
-                <tr key={member.id} className="hover:bg-slate-50" data-testid={`reservation-row-${member.id}`}>
-                  <td className="px-6 py-4 font-medium text-slate-900">{member.customer_name}</td>
+                <tr key={member.id} className="hover:bg-slate-50 dark:hover:bg-slate-700" data-testid={`reservation-row-${member.id}`}>
+                  <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">{member.customer_name}</td>
                   <td className="px-6 py-4">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                    {member.phone_number ? (
+                      <div className="flex items-center gap-2">
+                        <Phone size={14} className="text-emerald-600" />
+                        <span className="text-emerald-600 dark:text-emerald-400 font-medium text-sm">{member.phone_number}</span>
+                        <button
+                          onClick={() => {
+                            let phoneNum = member.phone_number;
+                            if (phoneNum.includes('wa.me/')) {
+                              phoneNum = phoneNum.split('wa.me/')[1].split('?')[0];
+                            }
+                            phoneNum = phoneNum.replace(/[^\d+]/g, '');
+                            const whatsappUrl = `https://wa.me/${phoneNum}`;
+                            navigator.clipboard.writeText(whatsappUrl).then(() => {
+                              toast.success('WhatsApp link copied!');
+                            }).catch(() => {
+                              toast.error('Failed to copy');
+                            });
+                          }}
+                          className="p-1 text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 rounded transition-colors"
+                          title="Copy WhatsApp link"
+                          data-testid={`copy-phone-${member.id}`}
+                        >
+                          <Copy size={14} />
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-slate-400 text-sm">-</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 dark:bg-indigo-900/50 text-indigo-800 dark:text-indigo-300">
                       <Package size={12} className="mr-1" />
                       {member.product_name || 'Unknown'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-slate-600">{member.staff_name}</td>
+                  <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{member.staff_name}</td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                       member.status === 'approved' 
-                        ? 'bg-emerald-100 text-emerald-800' 
-                        : 'bg-amber-100 text-amber-800'
+                        ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300' 
+                        : 'bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300'
                     }`}>
                       {member.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-slate-600">{member.created_by_name}</td>
-                  <td className="px-6 py-4 text-slate-500 text-sm">
+                  <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{member.created_by_name}</td>
+                  <td className="px-6 py-4 text-slate-500 dark:text-slate-400 text-sm">
                     {new Date(member.created_at).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4">
@@ -521,7 +552,7 @@ export default function AdminReservedMembers({ onUpdate }) {
                         <>
                           <button
                             onClick={() => handleApprove(member.id)}
-                            className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                            className="p-2 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"
                             title="Approve"
                             data-testid={`btn-approve-${member.id}`}
                           >
@@ -529,7 +560,7 @@ export default function AdminReservedMembers({ onUpdate }) {
                           </button>
                           <button
                             onClick={() => handleReject(member.id)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                             title="Reject"
                             data-testid={`btn-reject-${member.id}`}
                           >
@@ -540,7 +571,7 @@ export default function AdminReservedMembers({ onUpdate }) {
                       {member.status === 'approved' && (
                         <button
                           onClick={() => setMoveModal({ open: true, member })}
-                          className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                          className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
                           title="Move to another staff"
                           data-testid={`btn-move-${member.id}`}
                         >
@@ -549,7 +580,7 @@ export default function AdminReservedMembers({ onUpdate }) {
                       )}
                       <button
                         onClick={() => handleDelete(member.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                         title="Delete"
                         data-testid={`btn-delete-${member.id}`}
                       >
