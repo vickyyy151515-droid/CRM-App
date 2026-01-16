@@ -117,6 +117,20 @@ export default function MyAssignedRecords() {
     });
   };
 
+  // Filter records based on search term
+  const filteredRecords = useMemo(() => {
+    if (!searchTerm.trim()) return records;
+    
+    const search = searchTerm.toLowerCase().trim();
+    return records.filter(record => {
+      // Search in all row_data fields
+      const rowDataValues = Object.values(record.row_data || {});
+      return rowDataValues.some(value => 
+        value && String(value).toLowerCase().includes(search)
+      );
+    });
+  }, [records, searchTerm]);
+
   // Filter batches by product
   const filteredBatches = selectedProduct 
     ? batches.filter(b => b.product_name === products.find(p => p.id === selectedProduct)?.name)
