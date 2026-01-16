@@ -90,7 +90,7 @@ export default function StaffReservedMembers() {
 
   return (
     <div data-testid="staff-reserved-members">
-      <h2 className="text-3xl font-semibold tracking-tight text-slate-900 mb-6">Reserved Member CRM</h2>
+      <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white mb-6">Reserved Member CRM</h2>
       
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
