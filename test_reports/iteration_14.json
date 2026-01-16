@@ -1,0 +1,76 @@
+{
+  "summary": "Tested At-Risk Customer Enhancement (phone_number field) and Toggle Button functionality. All features working correctly after a minor backend fix.",
+  
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "PATCH /api/customer-records/{id}/whatsapp-status",
+        "issue": "Pydantic model didn't accept null for toggle OFF - FIXED by changing WhatsAppStatusUpdate.whatsapp_status to Optional[str]",
+        "status": "FIXED"
+      },
+      {
+        "endpoint": "PATCH /api/customer-records/{id}/respond-status", 
+        "issue": "Pydantic model didn't accept null for toggle OFF - FIXED by changing RespondStatusUpdate.respond_status to Optional[str]",
+        "status": "FIXED"
+      }
+    ]
+  },
+  
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  
+  "passed_tests": [
+    "Backend: GET /api/retention/alerts returns phone_number field in response",
+    "Backend: GET /api/retention/alerts returns correct summary structure (critical, high, medium, total)",
+    "Backend: PATCH /api/customer-records/{id}/whatsapp-status - toggle ON (set to 'ada')",
+    "Backend: PATCH /api/customer-records/{id}/whatsapp-status - toggle OFF (set to null)",
+    "Backend: PATCH /api/customer-records/{id}/whatsapp-status - set to 'ceklis1'",
+    "Backend: PATCH /api/customer-records/{id}/whatsapp-status - set to 'tidak'",
+    "Backend: PATCH /api/customer-records/{id}/respond-status - toggle ON (set to 'ya')",
+    "Backend: PATCH /api/customer-records/{id}/respond-status - toggle OFF (set to null)",
+    "Backend: PATCH /api/customer-records/{id}/respond-status - set to 'tidak'",
+    "Frontend: At-Risk section displays username with @ prefix (@aa1, @tes1, @aaa1)",
+    "Frontend: At-Risk section has data-testid='alert-username-{index}' for username display",
+    "Frontend: At-Risk section has data-testid='alert-phone-{index}' for phone display (conditional)",
+    "Frontend: WhatsApp Ada button toggles ON/OFF correctly",
+    "Frontend: WhatsApp status update shows success toast",
+    "Frontend: Respond Ya button toggles ON/OFF correctly"
+  ],
+  
+  "test_report_links": [
+    "/app/tests/test_at_risk_and_toggle.py",
+    "/app/test_reports/pytest/at_risk_toggle_results.xml"
+  ],
+  
+  "action_items": [],
+  
+  "critical_code_review_comments": [
+    "phone_number field in /retention/alerts is empty because at-risk customers (aa1, tes1, aaa1) don't have matching records in customer_records collection with phone data - this is expected behavior",
+    "Toggle functionality now works correctly after fixing Pydantic models to accept Optional[str] instead of str"
+  ],
+  
+  "updated_files": [
+    "/app/backend/routes/records.py - Changed WhatsAppStatusUpdate and RespondStatusUpdate models to accept Optional[str]"
+  ],
+  
+  "success_rate": {
+    "backend": "100% (9/9 tests passed)",
+    "frontend": "100% (all UI elements and interactions working)"
+  },
+  
+  "test_credentials": {
+    "admin": {"email": "admin@crm.com", "password": "admin123"},
+    "staff": {"email": "staff@crm.com", "password": "staff123"}
+  },
+  
+  "seed_data_creation": "No new seed data created - used existing at-risk customers and assigned records",
+  
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  
+  "context_for_next_testing_agent": "At-Risk Customer Enhancement: Backend returns phone_number field (empty if no matching customer_records). Frontend displays username with @ prefix and phone number (if available). Toggle buttons: WhatsApp (Ada/Ceklis1/Tidak) and Respond (Ya/Tidak) now support toggle OFF by sending null to API. Fixed Pydantic models in /app/backend/routes/records.py to accept Optional[str]."
+}
