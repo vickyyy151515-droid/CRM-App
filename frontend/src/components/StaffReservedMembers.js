@@ -318,8 +318,8 @@ export default function StaffReservedMembers() {
       </div>
 
       {/* Info Box */}
-      <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
-        <p className="text-blue-800 text-sm">
+      <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+        <p className="text-blue-800 dark:text-blue-300 text-sm">
           <strong>Note:</strong> All approved reserved customers are visible to all staff members. 
           If you try to request a customer that's already reserved by another staff in the same product, 
           the system will notify you.
