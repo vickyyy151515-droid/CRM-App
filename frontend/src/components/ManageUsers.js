@@ -144,23 +144,27 @@ export default function ManageUsers({ currentUser }) {
       return;
     }
     try {
-      const response = await api.get(`/users/${user.id}/page-access`);
+      // Use query parameter endpoint to avoid route conflicts
+      const response = await api.get(`/page-access?user_id=${user.id}`);
       setBlockedPages(response.data.blocked_pages || []);
       setPageAccessUser(user);
     } catch (error) {
-      toast.error('Failed to load page access settings');
+      console.error('Page access error:', error.response?.data || error.message);
+      toast.error(error.response?.data?.detail || 'Failed to load page access settings');
     }
   };
 
   const handleSavePageAccess = async () => {
     try {
-      await api.put(`/users/${pageAccessUser.id}/page-access`, {
+      // Use query parameter endpoint to avoid route conflicts
+      await api.put(`/page-access?user_id=${pageAccessUser.id}`, {
         blocked_pages: blockedPages
       });
       toast.success('Page access updated successfully');
       setPageAccessUser(null);
       loadUsers();
     } catch (error) {
+      console.error('Save page access error:', error.response?.data || error.message);
       toast.error(error.response?.data?.detail || 'Failed to update page access');
     }
   };
