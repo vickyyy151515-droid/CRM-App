@@ -3,64 +3,62 @@
 The application has evolved to include:
 -   **Core CRM**: Product Categorization, Record-Level Assignment, Reserved Member system, and Customer Status Tracking.
 -   **Sales Workflows**: OMSET CRM for daily deposits, DB Bonanza & Member WD for database management.
--   **Admin Tooling**: Dashboards, user management, bulk operations, and a notification system.
+-   **Admin Tooling**: Dashboards, user management (including a Master Admin role with hierarchical permissions), bulk operations, and a notification system.
 -   **Reporting & Analytics**: A complex Report CRM page, CRM Bonus Calculation, a staff leaderboard, and an advanced analytics dashboard.
 -   **HR Features**: Leave (Off Day/Sakit) and Short Break (Izin) tracking.
--   **UI/UX**: A customizable dark-mode-ready sidebar, global search, and internationalization (EN/ID).
+-   **UI/UX**: A customizable dark-mode-ready sidebar with role-based themes, global search, and internationalization (EN/ID).
 -   **Performance Tracking**: Sales funnels, customer retention/at-risk alerts, and daily performance summaries.
--   **Deployment**: A  endpoint for Kubernetes readiness.
--   **Business Logic**: Corrected RDP (Returning Depositor) logic to count unique customers per day.
--   **Bulk Operations**: A feature to bulk-add reserved members.
+-   **Deployment**: A  endpoint for Kubernetes readiness and database seeding on startup.
 -   **Real-time Monitoring**: A user activity page to track online, idle, and offline users.
--   **Automated Notifications**:
-    -   Scheduled daily summary reports sent to a Telegram chat.
-    -   Scheduled daily at-risk customer alerts sent to a Telegram group.
-    -   Scheduled daily alerts for staff members who are not online.
--   **Data Integrity**: A feature to check for and skip duplicate customer records (based on ) in the Reserved Members list when staff request new databases.
+-   **Automated Notifications**: Scheduled daily summary reports, at-risk customer alerts, and offline staff alerts sent to Telegram.
+-   **Data Integrity**: A feature to check for and skip duplicate customer records in the Reserved Members list.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A sophisticated, full-stack CRM application with a modular FastAPI backend and a React frontend. The application features role-based access, a wide range of CRM functionalities, advanced analytics, and a highly customized UI with dark mode and internationalization.
+A sophisticated, full-stack CRM application with a modular FastAPI backend and a React frontend. The application features a three-tiered role system (Master Admin, Admin, Staff) with granular permissions, a wide range of CRM functionalities, advanced analytics, and a highly customized UI.
 
 Recent additions include:
-- A user activity monitoring page showing real-time status (Online, Idle, Offline).
-- A comprehensive scheduled reporting system integrated with Telegram for:
-    - Daily summary reports.
-    - At-risk customer alerts.
-- A feature to bulk-add reserved members via the admin panel.
-- A data integrity check to prevent assignment of reserved customers to staff.
+- A Master Admin role with the ability to manage other admins and control their page access.
+- Role-based dashboard themes (Gold for Master Admin, Indigo for Admin, Blue for Staff).
+- A My Profile feature for users to change their own password and name.
+- A search bar and toggleable status buttons in the Staff panel for better usability.
+- Numerous production-critical bug fixes, including a persistent issue with page access control and unreliable user activity tracking.
+- A database seeding mechanism to ensure default users are present in new environments.
 
 **Last working item**:
--   **Last item agent was working**: Implementing a scheduled Telegram notification to alert admins about staff members who are not logged in/online by a specific time each day. The agent has successfully implemented all the necessary backend logic for this feature.
--   **Status**: IN PROGRESS
+-   **Last item agent was working**: The user requested to add complete customer data (username, customer name, phone number) to the at-risk section on the customer retention page to make the data more actionable for staff.
+-   **Status**: NOT STARTED
 -   **Agent Testing Done**: N
--   **Which testing method agent to use?**: both. The backend logic is complete and needs testing via . The frontend UI for configuring this new alert needs to be created in  and verified with the screenshot tool.
+-   **Which testing method agent to use?**: both. The backend logic in  needs updating to fetch the additional customer details. The frontend component  will need to be modified to display this new data.
 -   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
--   **Issue 1**: WebSocket connection fails in the preview environment. (Priority: P2)
+-   **Issue 1**: Enhance the at-risk customer section with more data. (Priority: P0)
+-   **Issue 2**: WebSocket connection fails in the preview environment. (Priority: P2)
 
   **Issues Detail**:
-  -   **Issue 1**: WebSocket Connection Fails with 1006 Error
-      -   **Attempted fixes**: The agent correctly implemented the WebSocket backend and frontend logic. Testing confirmed the backend endpoint is reachable, but the connection from the frontend fails.
-      -   **Next debug checklist**: This is an environmental issue with the preview deployment's ingress configuration, which doesn't support WebSocket upgrades. The implementation is correct, and the polling fallback for notifications works as intended. No immediate action is required.
-      -   **Why fix this issue and what will be achieved with the fix?**: Resolving this would enable true real-time notifications.
+  -   **Issue 1**: Add complete customer data to the at-risk section
+     -   **Attempted fixes**: None. The agent identified the relevant files () but did not proceed with implementation, getting sidetracked by a deployment conversation.
+     -   **Next debug checklist**:
+         1.  **Backend**: Modify the  function in . The function currently returns a list of names. It needs to be updated to query the main customer/records database to find the corresponding , , and  for each at-risk customer.
+         2.  **Frontend**: Update the UI in  to render the newly provided fields (username, name, phone) in the At-Risk Customers list.
+     -   **Why fix this issue and what will be achieved with the fix?**: This will provide staff with all the necessary information to follow up with at-risk customers directly from the retention page, improving workflow efficiency.
+     -   **Status**: NOT STARTED
+     -   **Is recurring issue?**: N
+     -   **Should Test frontend/backend/both after fix?**: Both
+     -   **Blocked on other issue**: None
+  -   **Issue 2**: WebSocket Connection Fails with 1006 Error
+      -   **Attempted fixes**: The agent correctly implemented WebSocket logic, but the connection fails in the preview environment.
+      -   **Next debug checklist**: This is a known environmental issue with the preview deployment's ingress configuration. The code implementation is correct. The application's polling fallback works as intended. No immediate action is required.
+      -   **Why fix this issue and what will be achieved with the fix?**: Resolving this would enable true real-time notifications instead of polling.
       -   **Status**: BLOCKED
-      -   **Is recurring issue?**: N
+      -   **Is recurring issue?**: Y
       -   **Should Test frontend/backend/both after fix?**: Both
       -   **Blocked on other issue**: Environment/Infrastructure
 
 **In progress Task List**:
--   **Task 1**: Complete Offline Staff Alert Notification Feature (Priority: P0)
-
- Task Detail:
-  -   **Task 1**:
-     -   **Where to resume**: The backend logic is complete in , including the scheduler job and API endpoints. The next step is to update the frontend page at  to add a new UI section for configuring this alert (setting the time, enabling/disabling it). This will be similar to the At-Risk Customer Alerts section already on that page.
-     -   **What will be achieved with this?**: Admins will be able to configure and receive daily Telegram notifications about staff members who have not logged in by 11:00 AM, improving team accountability.
-     -   **Status**: IN PROGRESS
-     -   **Should Test frontend/backend/both after fix?**: Both
-     -   **Blocked on something**: None
+-   None.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks**:
@@ -72,27 +70,29 @@ Recent additions include:
     -   **Financial ROI Tracking (P2)**: Enhance the Report CRM to include cost inputs to calculate financial metrics.
     -   **Izin Analytics (P2)**: Add reports for the Izin feature showing staff break patterns.
     -   **AI-Powered Suggestions (P3)**: Implement agent-suggested enhancements like AI-generated follow-up messages.
-    -   **Sidebar Search (P3)**: Add a search/filter bar to the admin sidebar.
-    -   **Convert to PWA (P3)**: Convert the app to a Progressive Web App.
     -   **User Activity History (P3)**: Add a historical view of user login/logout patterns.
 
 **Completed work in this session**
-- **User Activity Monitor**: Created a new page () and corresponding backend endpoints (, ) to track and display real-time user status (Online, Idle, Offline).
-- **Deployment Readiness & JWT Fix**: Ran a health check, identified hardcoded JWT secret fallbacks in  and , and removed them to ensure the application fails fast if the environment variable is not set.
-- **Database Request Duplicate Check (Fixed)**: Implemented and then corrected a feature in  that prevents staff from being assigned database records where the customer  is already in the Reserved Members list.
-- **Scheduled Telegram At-Risk Alerts**: Implemented a scheduled job to send daily alerts about at-risk customers to a specified Telegram group chat, complete with a configuration UI on the frontend.
-- **Scheduled Telegram Daily Reports**: Implemented a feature for admins to receive a daily performance summary report via Telegram, with a full configuration UI.
-- **Bulk Add Reserved Members**: Added a new feature to the Reserved Members admin page allowing for the bulk creation of reserved members from a list of names.
-- **Bug Fixes (RDP, Dark Mode, Retention)**:
-    - Comprehensively fixed dark mode styling in .
-    - Corrected the RDP (Returning Depositor) counting logic in multiple sections of  to count unique customers per day.
-    - Verified the fix for at-risk customer alerts in  which now uses normalized customer IDs.
+-   **Master Admin Role & Page Access Control**: Implemented a Master Admin role with permissions to manage other admins and control their access to sidebar pages.
+-   **Page Access Bug (Fixed)**: Resolved a recurring bug where the page access modal failed to load. The fix involved changing the API endpoint from a path parameter () to a query parameter () to prevent routing conflicts.
+-   **User Profile Management**: Created a My Profile feature allowing all users to update their name and change their own password.
+-   **Role-Based Dashboard Themes**: Implemented distinct UI themes for each role (Master Admin: Gold, Admin: Indigo, Staff: Blue) for better visual identification.
+-   **User Activity Tracking (Fixed)**: Improved the reliability of the user activity page by triggering status updates on more events and increasing the frontend polling rate.
+-   **Staff Panel UI Enhancements**:
+    -   Added a search bar to assigned customer batch cards.
+    -   Converted status selection from radio inputs to toggleable buttons, allowing staff to undo accidental clicks.
+-   **Deployment & Production Fixes**:
+    -   Added a database seeding function on backend startup to create default admin accounts in empty databases.
+    -   Modified the seeding logic to ensure the  master admin account always exists, resolving a production login issue.
+    -   Removed the automatic password reset on startup for security, as requested by the user.
 
 **Earlier issues found/mentioned but not fixed**
 -   None.
 
 **Known issue recurrence from previous fork**
--   None.
+-   **Issue**: Failed to load page access setting error for Master Admins.
+-   **Recurrence count**: 3 times in this session.
+-   **Status**: RESOLVED. The final fix was to change the FastAPI endpoint from using a path parameter () to a query parameter (). This resolved the route matching conflict that was likely causing the issue in the production environment. This change should not be reverted.
 
 **Code Architecture**
 
@@ -101,60 +101,55 @@ Recent additions include:
 -   **Frontend**: React, , , TailwindCSS, React Context API.
 -   **Backend**: FastAPI, PyMongo, Pydantic, JWT.
 -   **Database**: MongoDB.
--   **Scheduling**:  for running background jobs (Telegram notifications).
--   **Real-time (Polling)**: A frontend heartbeat polls a backend endpoint to update user activity status.
+-   **Scheduling**:  for background jobs.
+-   **Deployment**: Database seeding on application startup.
 
 **key DB schema**
--   **users** collection: Added  (datetime) and  (datetime) fields.
--   **user_activity** collection: (Implicitly used) No, activity status is calculated from the  collection.
--   **settings** collection: A document with  stores all Telegram scheduling configurations, including bot tokens, chat IDs, schedules, and feature toggles.
+-   **users**: Updated to include  ('master_admin'),  (Array of strings),  (boolean),  (string).
 
 **changes in tech stack**
--   : Added for backend job scheduling.
--   : Added for Telegram integration.
--: Added for Telegram integration.
+-   None.
 
 **All files of reference**
--   **/app/backend/routes/scheduled_reports.py**: New file containing all logic for scheduled Telegram reports and alerts.
--   **/app/frontend/src/pages/ScheduledReports.js**: New page for configuring all scheduled Telegram features.
--   **/app/frontend/src/pages/UserActivity.js**: New page for monitoring user online/offline status.
--   **/app/backend/routes/auth.py**: Modified to track user login and activity.
--   **/app/frontend/src/App.js**: Modified to send a periodic heartbeat to track user activity.
--   **/app/backend/routes/records.py**: Modified to implement the duplicate username check against reserved members.
--   **/app/backend/routes/report.py**: Modified to fix RDP calculation logic.
--   **/app/frontend/src/components/ReportCRM.js**: Modified to fix dark mode UI.
+-   **/app/backend/routes/retention.py**: Target file for the next task (adding customer details to at-risk list).
+-   **/app/backend/routes/auth.py**: Contains the new role hierarchy, page access logic (with the query parameter fix), and user profile endpoints.
+-   **/app/frontend/src/components/ManageUsers.js**: Contains the frontend logic for the page access modal, which now calls the corrected API endpoint.
+-   **/app/backend/server.py**: Contains the database seeding logic that runs on application startup.
+-   **/app/frontend/src/components/ProfileSettings.js**: New component for the My Profile feature.
+-   **/app/frontend/src/components/MyAssignedRecords.js**: Contains the new search bar and toggleable buttons for the staff panel.
 
 **Areas that need refactoring**:
 -   None identified.
 
 **key api endpoints**
--   : Updates the  timestamp for the current user.
--   : Returns a list of all users with their calculated activity status (Online, Idle, Offline).
--   : (New) Endpoint to handle user logout.
--   : Retrieves the current Telegram scheduler configuration.
--   : Saves the configuration for the daily summary report.
--   : Saves the configuration for the at-risk customer alerts.
--   : Saves configuration for offline staff alerts.
--   : Manually triggers the daily summary report.
--   : Manually triggers the at-risk customer alert.
--   : Bulk adds a list of names to the reserved members list.
+-   : Fetches blocked pages for a specific admin. **This is the corrected endpoint.**
+-   : Updates blocked pages for a specific admin. **This is the corrected endpoint.**
+-   : Allows the currently logged-in user to change their own password.
+-   : Allows the currently logged-in user to update their profile information (e.g., name).
+-   : Now returns a  array for admin users.
+-   : Now updates the user's  timestamp on every call.
 
 **Critical Info for New Agent**
--   Your immediate priority is to complete the Offline Staff Alert feature. The backend work is already done in . You need to build the UI for it in .
--   The pattern for adding new scheduled alerts is established: add fields to the  model, create a generation function, add a job to the scheduler, update the API endpoints, and finally add a UI configuration section to the  page.
--   The agent encountered a visual discrepancy with the screenshot tool where dark mode appeared light, but the underlying computed CSS styles were correct. Trust the computed styles from the browser () over the visual output of the screenshot if you encounter similar issues.
+-   Your immediate and highest priority (P0) is to implement the user's last request: **add complete customer data (username, name, phone number) to the at-risk section**. This task is currently NOT STARTED. The relevant files are  and .
+-   The Page Access Control feature was a recurring bug that frustrated the user. The final, working solution uses a new API endpoint with a query parameter () instead of a path parameter. **Do not change this implementation**, as it was confirmed to solve the problem.
+-   The backend seeds the database on startup () to ensure essential users exist. This logic was added to solve production deployment login failures.
 
 **documents and test reports created in this job**
+-   
 -   
 -    (updated multiple times)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User**: Asks for a page to show user activity (online, idle, logged out). (Implemented)
-2.  **Agent**: Implements the user activity monitor and finishes.
-3.  **User**: Asks for a notification if a staff member is not online by 11:00 AM. (In Progress)
-4.  **Agent**: Implements the backend logic for the offline staff alert.
-5.  **User**: (Pending) The next user interaction will likely be to approve the plan to finish the offline staff alert UI.
-*(The history is very long, this is a summary of the most recent requests)*
+1.  **User**: Reports failed to load page access setting for the 3rd time. **Status**: Fixed by changing the API endpoint.
+2.  **User**: Reports user activity page shows all staff as offline. **Status**: Fixed by improving heartbeat and polling logic.
+3.  **User**: Requests a search bar for staff to find customers in their assigned batches. **Status**: Completed.
+4.  **User**: Requests to make the WhatsApp/Respond status buttons toggleable (undo on second click). **Status**: Completed.
+5.  **User**: Requests to add complete customer data (username, name, phone) to the at-risk customers list. **Status**: **PENDING (NOT STARTED)**. This is the highest priority next action.
+6.  **User**: Asks to deploy the updates to the existing app. **Status**: Acknowledged.
+7.  **User**: Reports production login failed for . **Status**: Fixed by modifying the server startup seed script.
+8.  **User**: Reports new issues: cannot change own password, page access still fails, and password reset on startup is insecure. **Status**: All three issues were fixed.
+9.  **User**: Confirms password change works but page access is still broken. **Status**: Finally fixed with the new query-parameter-based API endpoint.
+10. **User**: Reports user activity is not real-time. **Status**: Fixed.
 
 **Project Health Check:**
 -   **Broken**: WebSocket connection in the preview environment (known infrastructure limitation, work is blocked).
@@ -166,26 +161,25 @@ Recent additions include:
 -   **recharts**: Used for frontend charting.
 -   **pytz**: Used for backend timezone handling.
 -   **python-telegram-bot**: Used for sending messages via the Telegram Bot API.
--   **APScheduler**: Used for scheduling backend jobs (e.g., sending daily reports).
+-   **APScheduler**: Used for scheduling backend jobs.
 -   **emergentintegrations**: Used as a helper for Telegram integration.
 
 **Testing status**
--   **Testing agent used after significant changes**: YES. It was used to verify the initial batch of bug fixes (RDP, dark mode, retention).
+-   **Testing agent used after significant changes**: YES
 -   **Troubleshoot agent used after agent stuck in loop**: NO
--   **Test files created**: A test case was added to  by the testing agent.
+-   **Test files created**: Yes, the testing agent added/modified tests.
 -   **Known regressions**: None.
 
 **Credentials to test flow:**
+-   **Master Admin**:
+    -   Email: 
+    -   Password: 
 -   **Admin**:
     -   Email: 
     -   Password: 
 -   **Staff**:
     -   Email: 
     -   Password: 
--   **Telegram Credentials**:
-    -   Bot Token:  (Provided by user)
-    -   Admin Chat ID:  (Provided by user)
-    -   Group Chat ID:  (Provided by user)
 
 **What agent forgot to execute**
--   Initially, the agent made an incorrect assumption about the column to check for the database duplicate feature ( instead of ), but this was quickly corrected by the user and fixed by the agent.</analysis>
+-   The agent did not implement the user's final request to add more customer details (username, name, phone) to the at-risk customer list. The agent acknowledged the request but got sidetracked into a deployment conversation and never completed the work. This is the top priority for the next session.</analysis>
