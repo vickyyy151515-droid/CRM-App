@@ -57,10 +57,10 @@ class CustomerRecord(BaseModel):
     created_at: datetime = Field(default_factory=lambda: get_jakarta_now())
 
 class WhatsAppStatusUpdate(BaseModel):
-    whatsapp_status: str
+    whatsapp_status: Optional[str] = None
 
 class RespondStatusUpdate(BaseModel):
-    respond_status: str
+    respond_status: Optional[str] = None
 
 class ReservedMember(BaseModel):
     model_config = ConfigDict(extra="ignore")
