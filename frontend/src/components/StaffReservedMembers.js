@@ -94,28 +94,28 @@ export default function StaffReservedMembers() {
       
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <Users className="text-indigo-600" size={20} />
-            <span className="text-2xl font-bold text-slate-900">{approvedMembers.length}</span>
+            <span className="text-2xl font-bold text-slate-900 dark:text-white">{approvedMembers.length}</span>
           </div>
-          <p className="text-sm text-slate-600 mt-1">Total Reserved Customers</p>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Total Reserved Customers</p>
         </div>
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <Clock className="text-amber-600" size={20} />
-            <span className="text-2xl font-bold text-slate-900">{pendingMembers.length}</span>
+            <span className="text-2xl font-bold text-slate-900 dark:text-white">{pendingMembers.length}</span>
           </div>
-          <p className="text-sm text-slate-600 mt-1">My Pending Requests</p>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">My Pending Requests</p>
         </div>
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <CheckCircle className="text-emerald-600" size={20} />
-            <span className="text-2xl font-bold text-slate-900">
+            <span className="text-2xl font-bold text-slate-900 dark:text-white">
               {approvedMembers.filter(m => m.created_by_name === m.staff_name).length}
             </span>
           </div>
-          <p className="text-sm text-slate-600 mt-1">Self-Requested Approved</p>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Self-Requested Approved</p>
         </div>
       </div>
 
