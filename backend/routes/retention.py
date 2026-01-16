@@ -692,6 +692,51 @@ async def get_customer_alerts(
     risk_order = {'critical': 0, 'high': 1, 'medium': 2}
     alerts.sort(key=lambda x: (risk_order[x['risk_level']], -x['days_since_deposit']))
     
+    # Enrich alerts with phone numbers from customer_records
+    if alerts:
+        # Get all customer IDs from alerts to look up
+        customer_ids_to_lookup = set()
+        for alert in alerts:
+            customer_ids_to_lookup.add(alert['customer_id'].lower().strip())
+            customer_ids_to_lookup.add(alert['customer_id'].upper().strip())
+            customer_ids_to_lookup.add(alert['customer_id'].strip())
+        
+        # Query customer_records for phone numbers
+        # Phone is typically in row_data under "Telpon" or similar field names
+        customer_records = await db.customer_records.find(
+            {},
+            {'_id': 0, 'row_data': 1}
+        ).to_list(100000)
+        
+        # Build phone lookup map (username -> phone)
+        phone_lookup = {}
+        for record in customer_records:
+            row_data = record.get('row_data', {})
+            # Try to find username in row_data
+            username = None
+            phone = None
+            
+            for key, value in row_data.items():
+                key_lower = key.lower()
+                # Find username field
+                if key_lower in ['username', 'user_name', 'user', 'id', 'userid', 'user_id']:
+                    username = str(value).strip() if value else None
+                # Find phone field
+                if key_lower in ['telpon', 'phone', 'no_hp', 'nomor', 'hp', 'no hp', 'phone_number', 'telp']:
+                    phone = str(value).strip() if value else None
+            
+            if username and phone:
+                # Store with both original and lowercase for matching
+                phone_lookup[username.lower()] = phone
+                phone_lookup[username] = phone
+        
+        # Enrich alerts with phone numbers
+        for alert in alerts:
+            customer_id = alert['customer_id']
+            # Try to find phone number
+            phone = phone_lookup.get(customer_id.lower()) or phone_lookup.get(customer_id) or phone_lookup.get(customer_id.upper())
+            alert['phone_number'] = phone or ''
+    
     return {
         'summary': {
             'critical': critical_count,
