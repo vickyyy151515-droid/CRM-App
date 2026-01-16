@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { UserPlus, Search, Clock, CheckCircle, Users, Package } from 'lucide-react';
+import { UserPlus, Search, Clock, CheckCircle, Users, Package, Phone, Copy } from 'lucide-react';
 
 export default function StaffReservedMembers() {
   const [members, setMembers] = useState([]);
