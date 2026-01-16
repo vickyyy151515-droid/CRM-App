@@ -86,6 +86,17 @@ async def login(credentials: UserLogin):
 async def get_me(user: User = Depends(get_current_user)):
     """Get current user info including blocked_pages"""
     db = get_db()
+    
+    # Update last_activity on every /me call to ensure activity is tracked
+    now = get_jakarta_now()
+    await db.users.update_one(
+        {'id': user.id},
+        {'$set': {
+            'last_activity': now.isoformat(),
+            'is_online': True
+        }}
+    )
+    
     user_data = await db.users.find_one({'id': user.id}, {'_id': 0, 'password_hash': 0})
     return {
         'id': user_data['id'],
