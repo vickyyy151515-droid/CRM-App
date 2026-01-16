@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Users, UserPlus, RefreshCcw, Heart, TrendingUp, DollarSign, Calendar, Award, ChevronDown, ChevronUp, Star, Package, BarChart3, AlertTriangle, Clock, X, Bell } from 'lucide-react';
+import { Users, UserPlus, RefreshCcw, Heart, TrendingUp, DollarSign, Calendar, Award, ChevronDown, ChevronUp, Star, Package, BarChart3, AlertTriangle, Clock, X, Bell, Copy, Phone } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, AreaChart, Area } from 'recharts';
 
 export default function CustomerRetention({ isAdmin = false }) {
