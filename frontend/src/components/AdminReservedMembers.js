@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { UserPlus, Check, X, Trash2, ArrowRight, Search, Users, Clock, CheckCircle, Package, Upload, FileText } from 'lucide-react';
+import { UserPlus, Check, X, Trash2, ArrowRight, Search, Users, Clock, CheckCircle, Package, Upload, FileText, Phone, Copy } from 'lucide-react';
 
 export default function AdminReservedMembers({ onUpdate }) {
   const [members, setMembers] = useState([]);
@@ -9,6 +9,7 @@ export default function AdminReservedMembers({ onUpdate }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [customerName, setCustomerName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [selectedStaff, setSelectedStaff] = useState('');
   const [selectedProduct, setSelectedProduct] = useState('');
   const [submitting, setSubmitting] = useState(false);
