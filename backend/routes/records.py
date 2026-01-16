@@ -66,6 +66,7 @@ class ReservedMember(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     customer_name: str
+    phone_number: Optional[str] = None
     product_id: str
     product_name: str
     staff_id: str
@@ -80,6 +81,7 @@ class ReservedMember(BaseModel):
 
 class ReservedMemberCreate(BaseModel):
     customer_name: str
+    phone_number: Optional[str] = None
     product_id: str
     staff_id: Optional[str] = None
 
