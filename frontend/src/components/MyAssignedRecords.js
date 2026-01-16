@@ -316,20 +316,6 @@ export default function MyAssignedRecords() {
   const renderRecordsView = () => {
     const columns = records.length > 0 ? Object.keys(records[0].row_data) : [];
     
-    // Filter records based on search term (search in name, username, and all row_data fields)
-    const filteredRecords = useMemo(() => {
-      if (!searchTerm.trim()) return records;
-      
-      const search = searchTerm.toLowerCase().trim();
-      return records.filter(record => {
-        // Search in all row_data fields
-        const rowDataValues = Object.values(record.row_data || {});
-        return rowDataValues.some(value => 
-          value && String(value).toLowerCase().includes(search)
-        );
-      });
-    }, [records, searchTerm]);
-    
     return (
       <div>
         <div className="mb-6">
@@ -371,7 +357,7 @@ export default function MyAssignedRecords() {
                 placeholder="Search name, username..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-10 pl-10 pr-4 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder:text-slate-400"
+                className="w-full h-10 pl-10 pr-10 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder:text-slate-400"
                 data-testid="search-records-input"
               />
               {searchTerm && (
