@@ -540,10 +540,6 @@ export default function MyAssignedRecords() {
                           </button>
                         </div>
                       </td>
-                            <span className="text-sm text-slate-700">Tidak</span>
-                          </label>
-                        </div>
-                      </td>
                     </tr>
                   ))}
                 </tbody>
