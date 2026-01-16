@@ -120,43 +120,70 @@ export default function StaffReservedMembers() {
       </div>
 
       {/* Request New Reservation Form */}
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm mb-6">
-        <h3 className="text-lg font-medium text-slate-900 mb-4 flex items-center gap-2">
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm mb-6">
+        <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-4 flex items-center gap-2">
           <UserPlus size={20} className="text-indigo-600" />
           Request New Reservation
         </h3>
-        <p className="text-slate-600 text-sm mb-4">
-          Enter the customer name and select the product. Your request will be sent to admin for approval.
+        <p className="text-slate-600 dark:text-slate-400 text-sm mb-4">
+          Enter the customer details below. Your request will be sent to admin for approval.
         </p>
-        <form onSubmit={handleRequestReservation} className="flex flex-col md:flex-row gap-4">
-          <input
-            type="text"
-            placeholder="Customer Name"
-            value={customerName}
-            onChange={(e) => setCustomerName(e.target.value)}
-            className="flex-1 px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            data-testid="input-customer-name"
-          />
-          <select
-            value={selectedProduct}
-            onChange={(e) => setSelectedProduct(e.target.value)}
-            className="px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white min-w-[200px]"
-            data-testid="select-product"
-          >
-            <option value="">Select Product</option>
-            {products.map(product => (
-              <option key={product.id} value={product.id}>{product.name}</option>
-            ))}
-          </select>
-          <button
-            type="submit"
-            disabled={submitting}
-            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors flex items-center gap-2"
-            data-testid="btn-request-reservation"
-          >
-            <UserPlus size={18} />
-            {submitting ? 'Submitting...' : 'Request Reservation'}
-          </button>
+        <form onSubmit={handleRequestReservation} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Customer Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                placeholder="Enter customer name"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                className="w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                data-testid="input-customer-name"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Phone Number <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                placeholder="e.g., 081234567890"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                className="w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                data-testid="input-phone-number"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Product <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={selectedProduct}
+                onChange={(e) => setSelectedProduct(e.target.value)}
+                className="w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                data-testid="select-product"
+              >
+                <option value="">Select Product</option>
+                {products.map(product => (
+                  <option key={product.id} value={product.id}>{product.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-end">
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                data-testid="btn-request-reservation"
+              >
+                <UserPlus size={18} />
+                {submitting ? 'Submitting...' : 'Request'}
+              </button>
+            </div>
+          </div>
         </form>
       </div>
 
