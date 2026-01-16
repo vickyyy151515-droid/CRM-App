@@ -302,6 +302,20 @@ export default function MyAssignedRecords() {
   const renderRecordsView = () => {
     const columns = records.length > 0 ? Object.keys(records[0].row_data) : [];
     
+    // Filter records based on search term (search in name, username, and all row_data fields)
+    const filteredRecords = useMemo(() => {
+      if (!searchTerm.trim()) return records;
+      
+      const search = searchTerm.toLowerCase().trim();
+      return records.filter(record => {
+        // Search in all row_data fields
+        const rowDataValues = Object.values(record.row_data || {});
+        return rowDataValues.some(value => 
+          value && String(value).toLowerCase().includes(search)
+        );
+      });
+    }, [records, searchTerm]);
+    
     return (
       <div>
         <div className="mb-6">
@@ -309,6 +323,7 @@ export default function MyAssignedRecords() {
             onClick={() => {
               setSelectedBatch(null);
               setRecords([]);
+              setSearchTerm('');
             }}
             className="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
             data-testid="back-to-batches"
@@ -318,42 +333,78 @@ export default function MyAssignedRecords() {
           </button>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
             <div>
-              <h3 className="text-xl font-semibold text-slate-900 flex items-center gap-2">
-                <Package className="text-indigo-600" size={20} />
-                {selectedBatch.database_name}
+              <h3 className="text-xl font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                <Package className="text-indigo-600 dark:text-indigo-400" size={20} />
+                {selectedBatch.custom_title || selectedBatch.database_name}
               </h3>
-              <p className="text-sm text-slate-600 mt-1">
-                {records.length} customer{records.length !== 1 ? 's' : ''} assigned
+              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                {filteredRecords.length === records.length 
+                  ? `${records.length} customer${records.length !== 1 ? 's' : ''} assigned`
+                  : `Showing ${filteredRecords.length} of ${records.length} customers`
+                }
                 {` • ${selectedBatch.product_name}`}
               </p>
+            </div>
+            
+            {/* Search Bar */}
+            <div className="relative w-full sm:w-72">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input
+                type="text"
+                placeholder="Search name, username..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full h-10 pl-10 pr-4 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder:text-slate-400"
+                data-testid="search-records-input"
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                  data-testid="clear-search"
+                >
+                  <X size={16} />
+                </button>
+              )}
             </div>
           </div>
 
           {loadingRecords ? (
-            <div className="text-center py-12 text-slate-600">Loading records...</div>
+            <div className="text-center py-12 text-slate-600 dark:text-slate-400">Loading records...</div>
           ) : records.length === 0 ? (
-            <div className="text-center py-12 text-slate-500">No records found in this batch</div>
+            <div className="text-center py-12 text-slate-500 dark:text-slate-400">No records found in this batch</div>
+          ) : filteredRecords.length === 0 ? (
+            <div className="text-center py-12 text-slate-500 dark:text-slate-400">
+              <Search className="mx-auto text-slate-300 dark:text-slate-600 mb-3" size={48} />
+              <p>No customers matching "{searchTerm}"</p>
+              <button 
+                onClick={() => setSearchTerm('')}
+                className="mt-2 text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+              >
+                Clear search
+              </button>
+            </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full border border-slate-200 rounded-lg">
-                <thead className="bg-slate-50">
+              <table className="min-w-full border border-slate-200 dark:border-slate-700 rounded-lg">
+                <thead className="bg-slate-50 dark:bg-slate-900">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">#</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300">#</th>
                     {columns.map((col, idx) => (
-                      <th key={idx} className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
+                      <th key={idx} className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300">
                         {col}
                       </th>
                     ))}
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">Assigned Date</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">WhatsApp Ada/Tidak</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">Respond Ya/Tidak</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300">Assigned Date</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300">WhatsApp Ada/Tidak</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300">Respond Ya/Tidak</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {records.map((record) => (
+                  {filteredRecords.map((record) => (
                     <tr key={record.id} className="border-b border-slate-100 hover:bg-slate-50">
                       <td className="px-4 py-3 text-sm text-slate-900 font-medium">{record.row_number}</td>
                       {columns.map((col, idx) => {
