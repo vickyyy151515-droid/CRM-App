@@ -44,15 +44,21 @@ export default function StaffReservedMembers() {
       toast.error('Please select a product');
       return;
     }
+    if (!phoneNumber.trim()) {
+      toast.error('Please enter customer phone number');
+      return;
+    }
 
     setSubmitting(true);
     try {
       await api.post('/reserved-members', {
         customer_name: customerName.trim(),
+        phone_number: phoneNumber.trim(),
         product_id: selectedProduct
       });
       toast.success('Reservation request submitted! Waiting for admin approval.');
       setCustomerName('');
+      setPhoneNumber('');
       setSelectedProduct('');
       loadData();
     } catch (error) {
