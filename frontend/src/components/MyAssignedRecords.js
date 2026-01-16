@@ -139,14 +139,14 @@ export default function MyAssignedRecords() {
   // Render batch list view
   const renderBatchList = () => (
     <div>
-      <h2 className="text-3xl font-semibold tracking-tight text-slate-900 mb-6">My Assigned Customers</h2>
+      <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white mb-6">My Assigned Customers</h2>
 
       <div className="mb-6">
         <select
           value={selectedProduct}
           onChange={(e) => setSelectedProduct(e.target.value)}
           data-testid="filter-assigned-product"
-          className="flex h-10 w-64 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
+          className="flex h-10 w-64 rounded-md border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-3 py-2 text-sm ring-offset-white dark:ring-offset-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
         >
           <option value="">All Products</option>
           {products.map((product) => (
@@ -158,12 +158,12 @@ export default function MyAssignedRecords() {
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-slate-600">Loading your data batches...</div>
+        <div className="text-center py-12 text-slate-600 dark:text-slate-400">Loading your data batches...</div>
       ) : filteredBatches.length === 0 ? (
         <div className="text-center py-12">
-          <User className="mx-auto text-slate-300 mb-4" size={64} />
-          <p className="text-slate-600">No assigned customers yet</p>
-          <p className="text-sm text-slate-500 mt-2">Request customer records from the Browse Databases page</p>
+          <User className="mx-auto text-slate-300 dark:text-slate-600 mb-4" size={64} />
+          <p className="text-slate-600 dark:text-slate-400">No assigned customers yet</p>
+          <p className="text-sm text-slate-500 dark:text-slate-500 mt-2">Request customer records from the Browse Databases page</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="batch-list">
@@ -171,10 +171,10 @@ export default function MyAssignedRecords() {
             <div
               key={batch.id}
               onClick={() => loadBatchRecords(batch.id)}
-              className={`bg-white border rounded-xl p-5 shadow-sm hover:shadow-md cursor-pointer transition-all group ${
+              className={`bg-white dark:bg-slate-800 border rounded-xl p-5 shadow-sm hover:shadow-md cursor-pointer transition-all group ${
                 batch.is_legacy 
-                  ? 'border-amber-200 hover:border-amber-400' 
-                  : 'border-slate-200 hover:border-indigo-300'
+                  ? 'border-amber-200 dark:border-amber-800 hover:border-amber-400 dark:hover:border-amber-600' 
+                  : 'border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-600'
               }`}
               data-testid={`batch-card-${batch.id}`}
             >
