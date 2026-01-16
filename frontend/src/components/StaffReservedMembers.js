@@ -8,6 +8,7 @@ export default function StaffReservedMembers() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [customerName, setCustomerName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [selectedProduct, setSelectedProduct] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [filter, setFilter] = useState('all');
