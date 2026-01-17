@@ -108,9 +108,9 @@ export default function StaffFollowups() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-3xl font-semibold tracking-tight text-slate-900">Follow-up Reminders</h2>
+          <h2 className="text-3xl font-semibold tracking-tight text-slate-900">{t('followups.title')}</h2>
           <p className="text-sm text-slate-500 mt-1">
-            Customers who responded "Ya" but haven't deposited yet
+            {t('followups.subtitle')}
           </p>
         </div>
         <button
@@ -119,7 +119,7 @@ export default function StaffFollowups() {
           className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
         >
           <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-          Refresh
+          {t('followups.refresh')}
         </button>
       </div>
 
@@ -130,21 +130,21 @@ export default function StaffFollowups() {
           onClick={() => setFilter('all')}
         >
           <p className="text-2xl font-bold text-slate-900">{summary.total}</p>
-          <p className="text-sm text-slate-600">Total Pending</p>
+          <p className="text-sm text-slate-600">{t('followups.totalPending')}</p>
         </div>
         <div 
           className={`bg-red-50 border rounded-xl p-4 cursor-pointer transition-all ${filter === 'critical' ? 'ring-2 ring-red-500 border-red-300' : 'border-red-200 hover:border-red-300'}`}
           onClick={() => setFilter('critical')}
         >
           <p className="text-2xl font-bold text-red-700">{summary.critical}</p>
-          <p className="text-sm text-red-600">Critical (7+ days)</p>
+          <p className="text-sm text-red-600">{t('followups.critical')}</p>
         </div>
         <div 
           className={`bg-orange-50 border rounded-xl p-4 cursor-pointer transition-all ${filter === 'high' ? 'ring-2 ring-orange-500 border-orange-300' : 'border-orange-200 hover:border-orange-300'}`}
           onClick={() => setFilter('high')}
         >
           <p className="text-2xl font-bold text-orange-700">{summary.high}</p>
-          <p className="text-sm text-orange-600">High (3+ days)</p>
+          <p className="text-sm text-orange-600">{t('followups.high')}</p>
         </div>
         <div 
           className={`bg-yellow-50 border rounded-xl p-4 cursor-pointer transition-all ${filter === 'medium' ? 'ring-2 ring-yellow-500 border-yellow-300' : 'border-yellow-200 hover:border-yellow-300'}`}
