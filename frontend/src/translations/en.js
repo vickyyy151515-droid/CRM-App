@@ -646,6 +646,25 @@ const en = {
     selectTime: 'Please select start and end time for sick leave',
     adminNote: 'Admin note:',
   },
+
+  // Leaderboard
+  leaderboard: {
+    title: 'Staff Leaderboard',
+    rankings: 'Rankings',
+    monthlyOmsetTarget: 'Monthly OMSET Target',
+    dailyNdpTarget: 'Daily NDP Target',
+    dailyRdpTarget: 'Daily RDP Target',
+    thisMonth: 'This Month',
+    allTime: 'All Time',
+    daysWorked: 'days worked',
+    todayNdpRdp: 'Today NDP/RDP',
+    avgDailyNdp: 'Avg Daily NDP',
+    avgDailyRdp: 'Avg Daily RDP',
+    monthlyOmset: 'Monthly OMSET',
+    editTargets: 'Edit Targets',
+    loadingLeaderboard: 'Loading leaderboard...',
+    noDataAvailable: 'No data available',
+  },
 };
 
 export default en;
