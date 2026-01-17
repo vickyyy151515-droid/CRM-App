@@ -212,13 +212,32 @@ export default function MyAssignedRecords() {
                     )}
                   </div>
                 </div>
-                {editingBatchId !== batch.id && (
-                  <ChevronLeft className={`rotate-180 transition-colors ${
-                    batch.is_legacy 
-                      ? 'text-amber-400 group-hover:text-amber-600' 
-                      : 'text-slate-400 group-hover:text-indigo-600'
-                  }`} size={20} />
-                )}
+                <div className="flex items-center gap-1">
+                  {editingBatchId !== batch.id && (
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(`/batch/${batch.id}`, '_blank');
+                        }}
+                        className={`p-1.5 rounded transition-colors opacity-0 group-hover:opacity-100 ${
+                          batch.is_legacy 
+                            ? 'text-amber-400 hover:text-amber-600 hover:bg-amber-50' 
+                            : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'
+                        }`}
+                        title={t('myRecords.openInNewTab')}
+                        data-testid={`open-new-tab-${batch.id}`}
+                      >
+                        <ExternalLink size={16} />
+                      </button>
+                      <ChevronLeft className={`rotate-180 transition-colors ${
+                        batch.is_legacy 
+                          ? 'text-amber-400 group-hover:text-amber-600' 
+                          : 'text-slate-400 group-hover:text-indigo-600'
+                      }`} size={20} />
+                    </>
+                  )}
+                </div>
               </div>
               
               {/* Editable Title */}
