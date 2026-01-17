@@ -139,13 +139,26 @@ export default function ReportCRM() {
 
   const exportToExcel = async () => {
     try {
+      const token = localStorage.getItem('token');
       const params = new URLSearchParams();
       if (selectedProduct) params.append('product_id', selectedProduct);
       if (selectedStaff) params.append('staff_id', selectedStaff);
       params.append('year', selectedYear);
+      params.append('token', token);
       
-      window.open(`${api.defaults.baseURL}/report-crm/export?${params.toString()}`, '_blank');
-      toast.success('Export started');
+      // Use iframe for download to handle auth properly
+      const url = `${process.env.REACT_APP_BACKEND_URL}/api/report-crm/export?${params.toString()}`;
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = url;
+      document.body.appendChild(iframe);
+      
+      // Clean up iframe after download starts
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+      }, 5000);
+      
+      toast.success('Download starting...');
     } catch (error) {
       toast.error('Failed to export');
     }
