@@ -897,6 +897,25 @@ const id = {
     selectTime: 'Silakan pilih waktu mulai dan selesai untuk sakit',
     adminNote: 'Catatan admin:',
   },
+
+  // Leaderboard
+  leaderboard: {
+    title: 'Papan Peringkat Staf',
+    rankings: 'Peringkat',
+    monthlyOmsetTarget: 'Target OMSET Bulanan',
+    dailyNdpTarget: 'Target NDP Harian',
+    dailyRdpTarget: 'Target RDP Harian',
+    thisMonth: 'Bulan Ini',
+    allTime: 'Sepanjang Waktu',
+    daysWorked: 'hari kerja',
+    todayNdpRdp: 'NDP/RDP Hari Ini',
+    avgDailyNdp: 'Rata-rata NDP Harian',
+    avgDailyRdp: 'Rata-rata RDP Harian',
+    monthlyOmset: 'OMSET Bulanan',
+    editTargets: 'Ubah Target',
+    loadingLeaderboard: 'Memuat papan peringkat...',
+    noDataAvailable: 'Belum ada data',
+  },
 };
 
 export default id;
