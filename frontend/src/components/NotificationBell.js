@@ -322,18 +322,37 @@ export default function NotificationBell({ userRole }) {
       {isOpen && (
         <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 z-50 max-h-[70vh] overflow-hidden flex flex-col">
           {/* Header */}
-          <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50 dark:bg-slate-900">
-            <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-slate-900 dark:text-white">Notifications</h3>
-              {getWsStatusIndicator()}
+          <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-slate-900 dark:text-white">Notifications</h3>
+                {getWsStatusIndicator()}
+              </div>
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                {notifications.length} total{unreadCount > 0 && `, ${unreadCount} unread`}
+              </span>
             </div>
-            {unreadCount > 0 && (
-              <button
-                onClick={markAllAsRead}
-                className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium"
-              >
-                Mark all as read
-              </button>
+            {notifications.length > 0 && (
+              <div className="flex items-center gap-3">
+                {unreadCount > 0 && (
+                  <button
+                    onClick={markAllAsRead}
+                    className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium flex items-center gap-1"
+                    data-testid="mark-all-read-btn"
+                  >
+                    <CheckCheck size={12} />
+                    Mark all as read
+                  </button>
+                )}
+                <button
+                  onClick={deleteAllNotifications}
+                  className="text-xs text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium flex items-center gap-1"
+                  data-testid="delete-all-btn"
+                >
+                  <Trash2 size={12} />
+                  Delete all
+                </button>
+              </div>
             )}
           </div>
 
@@ -357,7 +376,12 @@ export default function NotificationBell({ userRole }) {
 
           {/* Notifications List */}
           <div className="overflow-y-auto flex-1">
-            {notifications.length === 0 ? (
+            {loading ? (
+              <div className="p-8 text-center text-slate-500 dark:text-slate-400">
+                <Loader2 className="mx-auto mb-2 text-indigo-500 animate-spin" size={32} />
+                <p>Loading notifications...</p>
+              </div>
+            ) : notifications.length === 0 ? (
               <div className="p-8 text-center text-slate-500 dark:text-slate-400">
                 <Bell className="mx-auto mb-2 text-slate-300 dark:text-slate-600" size={32} />
                 <p>No notifications yet</p>
@@ -368,6 +392,7 @@ export default function NotificationBell({ userRole }) {
                   <div
                     key={notification.id}
                     className={`p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${!notification.read ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : ''}`}
+                    data-testid={`notification-${notification.id}`}
                   >
                     <div className="flex gap-3">
                       {getNotificationIcon(notification.type)}
@@ -383,20 +408,23 @@ export default function NotificationBell({ userRole }) {
                         <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">
                           {notification.message}
                         </p>
-                        <div className="flex items-center gap-2 mt-2">
+                        <div className="flex items-center gap-3 mt-2">
                           {!notification.read && (
                             <button
                               onClick={() => markAsRead(notification.id)}
-                              className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium"
+                              className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium flex items-center gap-1"
                             >
+                              <Check size={12} />
                               Mark as read
                             </button>
                           )}
                           <button
                             onClick={() => deleteNotification(notification.id)}
-                            className="text-xs text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400"
+                            className="text-xs text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 flex items-center gap-1"
+                            data-testid={`delete-notification-${notification.id}`}
                           >
                             <Trash2 size={12} />
+                            Delete
                           </button>
                         </div>
                       </div>
