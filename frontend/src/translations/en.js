@@ -264,25 +264,6 @@ const en = {
     myReservations: 'My Reservations',
   },
 
-  // Leaderboard & Progress
-  leaderboard: {
-    title: 'Staff Progress & Database Quality',
-    rank: 'Rank',
-    staffName: 'Staff Name',
-    totalOMSET: 'Total OMSET',
-    totalNDP: 'Total NDP',
-    totalRDP: 'Total RDP',
-    todayNDPRDP: 'Today NDP/RDP',
-    monthlyTarget: 'Monthly Target',
-    progress: 'Progress',
-    topPerformer: 'Top Performer',
-    targets: 'Targets',
-    setTargets: 'Set Targets',
-    monthlyOMSET: 'Monthly OMSET',
-    dailyNDP: 'Daily NDP',
-    dailyRDP: 'Daily RDP',
-  },
-
   // Daily Summary
   dailySummary: {
     title: 'Daily Summary',
