@@ -39,7 +39,10 @@ export default function AdminMemberWDCRM() {
   const loadReservedNames = async () => {
     try {
       const response = await api.get('/reserved-members');
-      const names = response.data.map(m => m.customer_name?.toLowerCase().trim()).filter(Boolean);
+      const names = response.data.map(m => {
+        const name = m.customer_name;
+        return name ? String(name).toLowerCase().trim() : null;
+      }).filter(Boolean);
       setReservedNames(names);
     } catch (error) {
       console.error('Failed to load reserved names');
