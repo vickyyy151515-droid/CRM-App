@@ -125,7 +125,7 @@ export default function BatchRecordsView() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6 transition-colors duration-200">
       {/* Top Bar with Theme & Language Toggle */}
       <div className="max-w-7xl mx-auto mb-4">
         <div className="flex items-center justify-between">
@@ -150,7 +150,11 @@ export default function BatchRecordsView() {
             
             {/* Dark Mode Toggle */}
             <button
-              onClick={toggleTheme}
+              onClick={() => {
+                toggleTheme();
+                // Force a re-render by updating state
+                setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
+              }}
               className="p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
               data-testid="theme-toggle-batch"
               title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
