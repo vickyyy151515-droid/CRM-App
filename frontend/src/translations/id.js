@@ -790,6 +790,7 @@ const id = {
     respondStatusCleared: 'Status respond dihapus',
     copyWhatsappLink: 'Salin link WhatsApp',
     linkCopied: 'Link WhatsApp tersalin! Paste di address bar browser',
+    openInNewTab: 'Buka di tab baru',
   },
 
   // Staff Progress
