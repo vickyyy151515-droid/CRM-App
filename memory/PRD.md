@@ -111,6 +111,8 @@ All staff-facing components now fully translated to casual Indonesian.
 - `POST /reserved-members` - Requires phone_number field
 - `GET /my-request-batches` - Get user's batch list
 - `GET /my-assigned-records-by-batch` - Get records for a specific batch
+- `GET /followups/filters` - Get unique products/databases for staff's follow-up filtering
+- `GET /followups` - Supports product_id, database_id, and urgency query params
 
 ## New Route
 - `/batch/:batchId` - Standalone batch view page (opens in new tab)
