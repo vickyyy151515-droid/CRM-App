@@ -1,13 +1,18 @@
 # Report CRM Routes
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse
 from typing import Optional
 import io
 import pandas as pd
+import jwt
+import os
 
-from .deps import get_db, get_admin_user, get_jakarta_now, User
+from .deps import get_db, get_admin_user, get_current_user, get_jakarta_now, User
 
 router = APIRouter(tags=["Report CRM"])
+
+JWT_SECRET = os.environ.get("JWT_SECRET", "your-secret-key")
+JWT_ALGORITHM = "HS256"
 
 # ==================== REPORT CRM ENDPOINTS ====================
 
