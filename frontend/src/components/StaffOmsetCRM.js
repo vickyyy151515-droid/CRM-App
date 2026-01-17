@@ -235,16 +235,16 @@ export default function StaffOmsetCRM() {
 
   return (
     <div data-testid="staff-omset-crm">
-      <h2 className="text-3xl font-semibold tracking-tight text-slate-900 mb-6">OMSET CRM</h2>
+      <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white mb-6">OMSET CRM</h2>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-4 mb-6">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Product</label>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('omset.product')}</label>
           <select
             value={selectedProduct}
             onChange={(e) => setSelectedProduct(e.target.value)}
-            className="h-10 px-3 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
             data-testid="select-product"
           >
             {products.map(p => (
@@ -253,12 +253,12 @@ export default function StaffOmsetCRM() {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('common.date')}</label>
           <input
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="h-10 px-3 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
             data-testid="select-date"
           />
         </div>
@@ -269,7 +269,7 @@ export default function StaffOmsetCRM() {
             data-testid="btn-add-record"
           >
             <Plus size={18} />
-            Add Record
+            {t('omset.addRecord')}
           </button>
           <button
             onClick={handleExport}
@@ -277,7 +277,7 @@ export default function StaffOmsetCRM() {
             data-testid="btn-export"
           >
             <Download size={18} />
-            Export CSV
+            {t('common.export')} CSV
           </button>
         </div>
       </div>
@@ -285,7 +285,7 @@ export default function StaffOmsetCRM() {
       {/* Existing Dates Quick Select */}
       {existingDates.length > 0 && (
         <div className="mb-6">
-          <p className="text-sm text-slate-600 mb-2">Quick select previous dates:</p>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">Pilih tanggal sebelumnya:</p>
           <div className="flex flex-wrap gap-2">
             {existingDates.slice(0, 10).map(date => (
               <button
@@ -294,7 +294,7 @@ export default function StaffOmsetCRM() {
                 className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                   date === selectedDate 
                     ? 'bg-indigo-600 text-white' 
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
                 }`}
               >
                 {new Date(date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
@@ -307,23 +307,23 @@ export default function StaffOmsetCRM() {
       {/* Daily Summary with NDP/RDP */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         {/* Total Unique Customers */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <Package className="text-purple-600" size={18} />
-            <span className="text-xl font-bold text-purple-700">
+            <span className="text-xl font-bold text-purple-700 dark:text-purple-400">
               {(ndpRdpStats?.ndp_count || 0) + (ndpRdpStats?.rdp_count || 0)}
             </span>
           </div>
-          <p className="text-xs text-slate-600">Total Customers</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400">Total Pelanggan</p>
         </div>
 
         {/* Total Form */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <Calendar className="text-indigo-600" size={18} />
-            <span className="text-xl font-bold text-slate-900">{totalForm}</span>
+            <span className="text-xl font-bold text-slate-900 dark:text-white">{totalForm}</span>
           </div>
-          <p className="text-xs text-slate-600">Total Form</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400">Total Form</p>
         </div>
 
         {/* NDP Stats */}
@@ -332,7 +332,7 @@ export default function StaffOmsetCRM() {
             <UserPlus className="opacity-80" size={18} />
             <span className="text-xl font-bold">{ndpRdpStats?.ndp_count || 0}</span>
           </div>
-          <p className="text-xs text-green-100">NDP (New Depo)</p>
+          <p className="text-xs text-green-100">NDP (Depo Baru)</p>
           <p className="text-sm font-semibold mt-1">Rp {formatCurrency(ndpRdpStats?.ndp_total || 0)}</p>
         </div>
         
