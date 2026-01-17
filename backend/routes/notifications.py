@@ -54,6 +54,13 @@ async def delete_notification(notification_id: str, user: User = Depends(get_cur
         raise HTTPException(status_code=404, detail="Notification not found")
     return {'message': 'Notification deleted'}
 
+@router.delete("/notifications")
+async def delete_all_notifications(user: User = Depends(get_current_user)):
+    """Delete all notifications for current user"""
+    db = get_db()
+    result = await db.notifications.delete_many({'user_id': user.id})
+    return {'message': f'{result.deleted_count} notifications deleted', 'deleted_count': result.deleted_count}
+
 # Helper function to create notification (can be imported by other modules)
 async def create_notification(user_id: str, type: str, title: str, message: str, data: dict = None):
     """Create a notification for a user and send it via WebSocket"""
