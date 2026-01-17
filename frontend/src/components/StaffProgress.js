@@ -239,35 +239,35 @@ export default function StaffProgress() {
 
   const getDateRangeLabel = () => {
     switch(dateRange) {
-      case 'today': return 'Today';
-      case 'yesterday': return 'Yesterday';
-      case 'last7days': return 'Last 7 Days';
-      case 'last30days': return 'Last 30 Days';
-      case 'custom': return 'Custom Range';
-      default: return 'All Time';
+      case 'today': return t('staffProgress.today');
+      case 'yesterday': return t('staffProgress.yesterday');
+      case 'last7days': return t('staffProgress.last7Days');
+      case 'last30days': return t('staffProgress.last30Days');
+      case 'custom': return t('staffProgress.customRange');
+      default: return t('staffProgress.allTime');
     }
   };
 
   if (loading) {
-    return <div className="text-center py-12 text-slate-600 dark:text-slate-400">Loading statistics...</div>;
+    return <div className="text-center py-12 text-slate-600 dark:text-slate-400">{t('staffProgress.loadingStats')}</div>;
   }
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">Staff Progress & Database Quality</h2>
+        <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">{t('staffProgress.title')}</h2>
         <div className="flex gap-3">
           <select
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
             className="flex h-10 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
           >
-            <option value="all">All Time</option>
-            <option value="today">Today</option>
-            <option value="yesterday">Yesterday</option>
-            <option value="last7days">Last 7 Days</option>
-            <option value="last30days">Last 30 Days</option>
-            <option value="custom">Custom Range</option>
+            <option value="all">{t('staffProgress.allTime')}</option>
+            <option value="today">{t('staffProgress.today')}</option>
+            <option value="yesterday">{t('staffProgress.yesterday')}</option>
+            <option value="last7days">{t('staffProgress.last7Days')}</option>
+            <option value="last30days">{t('staffProgress.last30Days')}</option>
+            <option value="custom">{t('staffProgress.customRange')}</option>
           </select>
           {dateRange === 'custom' && (
             <>
@@ -290,7 +290,7 @@ export default function StaffProgress() {
             onChange={(e) => setSelectedProduct(e.target.value)}
             className="flex h-10 w-64 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
           >
-            <option value="">All Products</option>
+            <option value="">{t('myRecords.allProducts')}</option>
             {products.map((product) => (
               <option key={product.id} value={product.id}>
                 {product.name}
