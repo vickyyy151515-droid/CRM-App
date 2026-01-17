@@ -159,7 +159,7 @@ async def assign_random_memberwd_records(assignment: RandomMemberWDAssignment, u
         raise HTTPException(status_code=404, detail="Staff not found")
     
     reserved_members = await db.reserved_members.find({}, {'_id': 0, 'customer_name': 1}).to_list(100000)
-    reserved_names = set(m['customer_name'].lower().strip() for m in reserved_members if m.get('customer_name'))
+    reserved_names = set(str(m['customer_name']).lower().strip() for m in reserved_members if m.get('customer_name'))
     
     available_records = await db.memberwd_records.find(
         {'database_id': assignment.database_id, 'status': 'available'},
