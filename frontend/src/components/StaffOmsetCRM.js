@@ -120,7 +120,7 @@ export default function StaffOmsetCRM() {
     e.preventDefault();
     
     if (!formData.customer_id || !formData.nominal) {
-      toast.error('Please fill required fields');
+      toast.error(t('messages.validationError'));
       return;
     }
 
@@ -136,7 +136,7 @@ export default function StaffOmsetCRM() {
           depo_kelipatan: parseFloat(formData.depo_kelipatan) || 1,
           keterangan: formData.keterangan
         });
-        toast.success('Record updated');
+        toast.success(t('omset.recordUpdated'));
       } else {
         await api.post('/omset', {
           product_id: selectedProduct,
@@ -147,7 +147,7 @@ export default function StaffOmsetCRM() {
           depo_kelipatan: parseFloat(formData.depo_kelipatan) || 1,
           keterangan: formData.keterangan
         });
-        toast.success('Record added');
+        toast.success(t('omset.recordAdded'));
       }
       
       resetForm();
@@ -155,7 +155,7 @@ export default function StaffOmsetCRM() {
       loadExistingDates();
       loadNdpRdpStats();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Failed to save record');
+      toast.error(error.response?.data?.detail || t('messages.saveFailed'));
     }
   };
 
@@ -171,16 +171,16 @@ export default function StaffOmsetCRM() {
   };
 
   const handleDelete = async (recordId) => {
-    if (!window.confirm('Are you sure you want to delete this record?')) return;
+    if (!window.confirm(t('omset.confirmDelete'))) return;
     
     try {
       await api.delete(`/omset/${recordId}`);
-      toast.success('Record deleted');
+      toast.success(t('omset.recordDeleted'));
       loadRecords();
       loadExistingDates();
       loadNdpRdpStats();
     } catch (error) {
-      toast.error('Failed to delete record');
+      toast.error(t('messages.deleteFailed'));
     }
   };
 
@@ -235,7 +235,7 @@ export default function StaffOmsetCRM() {
 
   return (
     <div data-testid="staff-omset-crm">
-      <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white mb-6">OMSET CRM</h2>
+      <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white mb-6">{t('omset.title')}</h2>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-4 mb-6">
@@ -285,7 +285,7 @@ export default function StaffOmsetCRM() {
       {/* Existing Dates Quick Select */}
       {existingDates.length > 0 && (
         <div className="mb-6">
-          <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">Pilih tanggal sebelumnya:</p>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">{t('omset.selectPreviousDate')}:</p>
           <div className="flex flex-wrap gap-2">
             {existingDates.slice(0, 10).map(date => (
               <button
@@ -314,7 +314,7 @@ export default function StaffOmsetCRM() {
               {(ndpRdpStats?.ndp_count || 0) + (ndpRdpStats?.rdp_count || 0)}
             </span>
           </div>
-          <p className="text-xs text-slate-600 dark:text-slate-400">Total Pelanggan</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400">{t('omset.totalCustomers')}</p>
         </div>
 
         {/* Total Form */}
@@ -323,7 +323,7 @@ export default function StaffOmsetCRM() {
             <Calendar className="text-indigo-600" size={18} />
             <span className="text-xl font-bold text-slate-900 dark:text-white">{totalForm}</span>
           </div>
-          <p className="text-xs text-slate-600 dark:text-slate-400">Total Form</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400">{t('omset.totalForm')}</p>
         </div>
 
         {/* NDP Stats */}
@@ -332,7 +332,7 @@ export default function StaffOmsetCRM() {
             <UserPlus className="opacity-80" size={18} />
             <span className="text-xl font-bold">{ndpRdpStats?.ndp_count || 0}</span>
           </div>
-          <p className="text-xs text-green-100">NDP (Depo Baru)</p>
+          <p className="text-xs text-green-100">{t('omset.ndpLabel')}</p>
           <p className="text-sm font-semibold mt-1">Rp {formatCurrency(ndpRdpStats?.ndp_total || 0)}</p>
         </div>
         
@@ -342,7 +342,7 @@ export default function StaffOmsetCRM() {
             <RefreshCw className="opacity-80" size={18} />
             <span className="text-xl font-bold">{ndpRdpStats?.rdp_count || 0}</span>
           </div>
-          <p className="text-xs text-orange-100">RDP (Redepo)</p>
+          <p className="text-xs text-orange-100">{t('omset.rdpLabel')}</p>
           <p className="text-sm font-semibold mt-1">Rp {formatCurrency(ndpRdpStats?.rdp_total || 0)}</p>
         </div>
 
@@ -352,7 +352,7 @@ export default function StaffOmsetCRM() {
             <TrendingUp className="opacity-90" size={18} />
             <span className="text-lg font-bold">{formatCurrency(dailyTotal)}</span>
           </div>
-          <p className="text-xs text-amber-100">Total OMSET</p>
+          <p className="text-xs text-amber-100">{t('omset.totalOMSET')}</p>
         </div>
       </div>
 
@@ -371,20 +371,20 @@ export default function StaffOmsetCRM() {
             
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">ID Pelanggan *</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('omset.customerId')} *</label>
                 <input
                   type="text"
                   value={formData.customer_id}
                   onChange={(e) => setFormData({...formData, customer_id: e.target.value})}
                   className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="Masukkan ID pelanggan"
+                  placeholder={t('omset.enterCustomerId')}
                   data-testid="input-customer-id"
                 />
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nominal (dalam ribuan) *</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('omset.nominalInThousands')} *</label>
                   <div className="relative">
                     <input
                       type="number"
@@ -395,10 +395,10 @@ export default function StaffOmsetCRM() {
                       data-testid="input-nominal"
                     />
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Contoh: 100 = Rp 100.000</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{t('omset.nominalExample')}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Kelipatan</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('omset.depoKelipatan')}</label>
                   <input
                     type="number"
                     step="0.1"
@@ -414,21 +414,21 @@ export default function StaffOmsetCRM() {
               {formData.nominal && (
                 <div className="bg-indigo-50 dark:bg-indigo-900/30 rounded-lg p-3">
                   <p className="text-sm text-indigo-700 dark:text-indigo-300">
-                    Nominal: <span className="font-bold">Rp {formatCurrency((parseFloat(formData.nominal) || 0) * 1000)}</span>
+                    {t('omset.nominal')}: <span className="font-bold">Rp {formatCurrency((parseFloat(formData.nominal) || 0) * 1000)}</span>
                   </p>
                   <p className="text-sm text-indigo-700 dark:text-indigo-300">
-                    Depo Total: <span className="font-bold">Rp {formatCurrency((parseFloat(formData.nominal) || 0) * 1000 * (parseFloat(formData.depo_kelipatan) || 1))}</span>
+                    {t('omset.depoTotal')}: <span className="font-bold">Rp {formatCurrency((parseFloat(formData.nominal) || 0) * 1000 * (parseFloat(formData.depo_kelipatan) || 1))}</span>
                   </p>
                 </div>
               )}
               
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Keterangan</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t('omset.keterangan')}</label>
                 <textarea
                   value={formData.keterangan}
                   onChange={(e) => setFormData({...formData, keterangan: e.target.value})}
                   className="w-full h-20 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
-                  placeholder="Catatan (opsional)"
+                  placeholder={t('omset.notesOptional')}
                   data-testid="input-keterangan"
                 />
               </div>
@@ -447,7 +447,7 @@ export default function StaffOmsetCRM() {
                   data-testid="btn-save-record"
                 >
                   <Save size={18} />
-                  {editingRecord ? 'Ubah' : t('common.save')}
+                  {editingRecord ? t('common.edit') : t('common.save')}
                 </button>
               </div>
             </form>
@@ -469,12 +469,12 @@ export default function StaffOmsetCRM() {
             <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300">No</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300">Tipe</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300">ID Pelanggan</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 dark:text-slate-300">Nominal</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 dark:text-slate-300">Kelipatan</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 dark:text-slate-300">Depo Total</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300">Keterangan</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300">{t('omset.type')}</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300">{t('omset.customerId')}</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 dark:text-slate-300">{t('omset.nominal')}</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 dark:text-slate-300">{t('omset.depoKelipatan')}</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 dark:text-slate-300">{t('omset.depoTotal')}</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300">{t('omset.keterangan')}</th>
                 <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 dark:text-slate-300">{t('common.actions')}</th>
               </tr>
             </thead>
@@ -482,7 +482,7 @@ export default function StaffOmsetCRM() {
               {records.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
-                    Belum ada data untuk tanggal ini. Klik &quot;{t('omset.addRecord')}&quot; untuk membuat data baru.
+                    {t('omset.noRecordsForDate')}
                   </td>
                 </tr>
               ) : (
@@ -544,11 +544,11 @@ export default function StaffOmsetCRM() {
       <div className="mt-4 flex gap-4 text-sm text-slate-600">
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-green-100 text-green-800">NDP</span>
-          <span>= New Depo (Customer baru)</span>
+          <span>= {t('omset.ndpLegend')}</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-orange-100 text-orange-800">RDP</span>
-          <span>= Redepo (Customer lama)</span>
+          <span>= {t('omset.rdpLegend')}</span>
         </div>
       </div>
     </div>
