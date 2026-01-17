@@ -37,7 +37,7 @@ export default function ManageUsers({ currentUser }) {
     { id: 'export', label: 'Export Center' },
     { id: 'scheduled-reports', label: 'Scheduled Reports' },
     { id: 'user-activity', label: 'User Activity' },
-    { id: 'report', label: 'Report CRM' },
+    { id: 'report', label: 'CRM Report' },
     { id: 'bonus', label: 'Bonus Calculation' },
     { id: 'leave', label: 'Leave Requests' },
     { id: 'leave-calendar', label: 'Leave Calendar' },
