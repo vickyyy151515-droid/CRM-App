@@ -725,57 +725,121 @@ export default function CustomerRetention({ isAdmin = false }) {
                               }`}>
                                 {alert.risk_level.toUpperCase()}
                               </span>
+                              {alert.matched_source && (
+                                <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300">
+                                  ✓ {alert.matched_source}
+                                </span>
+                              )}
                             </div>
+                            
+                            {/* Username from OMSET */}
                             <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-1.5 text-sm">
                               <span className="text-indigo-600 dark:text-indigo-400 font-medium" data-testid={`alert-username-${index}`}>
                                 @{alert.customer_id}
                               </span>
-                              {alert.phone_number && (
-                                <div className="flex items-center gap-1.5">
-                                  <Phone className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                                  <span className="text-emerald-600 dark:text-emerald-400 font-medium" data-testid={`alert-phone-${index}`}>
-                                    {alert.phone_number}
-                                  </span>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      // Extract phone number from wa.me link if present
-                                      let phoneNum = alert.phone_number;
-                                      if (phoneNum.includes('wa.me/')) {
-                                        phoneNum = phoneNum.split('wa.me/')[1].split('?')[0];
-                                      }
-                                      phoneNum = phoneNum.replace(/[^\d+]/g, '');
-                                      const whatsappUrl = `https://wa.me/${phoneNum}`;
-                                      
-                                      navigator.clipboard.writeText(whatsappUrl).then(() => {
-                                        toast.success('WhatsApp link copied!');
-                                      }).catch(() => {
-                                        // Fallback for older browsers
-                                        const textarea = document.createElement('textarea');
-                                        textarea.value = whatsappUrl;
-                                        textarea.style.position = 'fixed';
-                                        textarea.style.opacity = '0';
-                                        document.body.appendChild(textarea);
-                                        textarea.select();
-                                        try {
-                                          document.execCommand('copy');
-                                          toast.success('WhatsApp link copied!');
-                                        } catch (err) {
-                                          toast.error('Failed to copy');
-                                        }
-                                        document.body.removeChild(textarea);
-                                      });
-                                    }}
-                                    className="p-1 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 rounded transition-colors"
-                                    title="Copy WhatsApp link"
-                                    data-testid={`copy-phone-${index}`}
-                                  >
-                                    <Copy size={14} />
-                                  </button>
-                                </div>
-                              )}
                             </div>
-                            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{alert.product_name} • {alert.staff_name}</p>
+                            
+                            {/* Matched Customer Info from Database */}
+                            {(alert.matched_name || alert.matched_username || alert.phone_number) && (
+                              <div className="mt-2 p-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
+                                <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 mb-1">
+                                  📋 Data from {alert.matched_source || 'Database'}:
+                                </p>
+                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                                  {alert.matched_username && (
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-slate-500 dark:text-slate-400 text-xs">Username:</span>
+                                      <span className="font-medium text-slate-800 dark:text-slate-200" data-testid={`matched-username-${index}`}>
+                                        {alert.matched_username}
+                                      </span>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          navigator.clipboard.writeText(alert.matched_username).then(() => {
+                                            toast.success('Username copied!');
+                                          }).catch(() => toast.error('Failed to copy'));
+                                        }}
+                                        className="p-0.5 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded"
+                                        title="Copy username"
+                                      >
+                                        <Copy size={12} />
+                                      </button>
+                                    </div>
+                                  )}
+                                  {alert.matched_name && (
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-slate-500 dark:text-slate-400 text-xs">Name:</span>
+                                      <span className="font-medium text-slate-800 dark:text-slate-200" data-testid={`matched-name-${index}`}>
+                                        {alert.matched_name}
+                                      </span>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          navigator.clipboard.writeText(alert.matched_name).then(() => {
+                                            toast.success('Name copied!');
+                                          }).catch(() => toast.error('Failed to copy'));
+                                        }}
+                                        className="p-0.5 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded"
+                                        title="Copy name"
+                                      >
+                                        <Copy size={12} />
+                                      </button>
+                                    </div>
+                                  )}
+                                  {alert.phone_number && (
+                                    <div className="flex items-center gap-1">
+                                      <Phone className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                                      <span className="font-medium text-emerald-700 dark:text-emerald-400" data-testid={`alert-phone-${index}`}>
+                                        {alert.phone_number}
+                                      </span>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          // Extract phone number and create wa.me link
+                                          let phoneNum = alert.phone_number;
+                                          if (phoneNum.includes('wa.me/')) {
+                                            phoneNum = phoneNum.split('wa.me/')[1].split('?')[0];
+                                          }
+                                          phoneNum = phoneNum.replace(/[^\d+]/g, '');
+                                          // Format for Indonesian numbers
+                                          if (phoneNum.startsWith('0')) {
+                                            phoneNum = '62' + phoneNum.substring(1);
+                                          }
+                                          navigator.clipboard.writeText(phoneNum).then(() => {
+                                            toast.success('Phone number copied!');
+                                          }).catch(() => toast.error('Failed to copy'));
+                                        }}
+                                        className="p-0.5 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 rounded"
+                                        title="Copy phone number"
+                                        data-testid={`copy-phone-${index}`}
+                                      >
+                                        <Copy size={12} />
+                                      </button>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          let phoneNum = alert.phone_number;
+                                          if (phoneNum.includes('wa.me/')) {
+                                            phoneNum = phoneNum.split('wa.me/')[1].split('?')[0];
+                                          }
+                                          phoneNum = phoneNum.replace(/[^\d+]/g, '');
+                                          if (phoneNum.startsWith('0')) {
+                                            phoneNum = '62' + phoneNum.substring(1);
+                                          }
+                                          window.open(`https://wa.me/${phoneNum}`, '_blank');
+                                        }}
+                                        className="px-1.5 py-0.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded"
+                                        title="Open WhatsApp"
+                                      >
+                                        WA
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                            
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">{alert.product_name} • {alert.staff_name}</p>
                             <div className="flex items-center gap-4 mt-2 text-sm">
                               <span className="text-slate-600 dark:text-slate-400">
                                 <strong>{alert.days_since_deposit}</strong> days since last deposit
@@ -801,7 +865,7 @@ export default function CustomerRetention({ isAdmin = false }) {
                         </div>
                       </div>
                       {alert.avg_days_between_deposits > 0 && (
-                        <div className="mt-3 ml-14 p-2 bg-slate-50 rounded-lg text-xs text-slate-600 dark:text-slate-400">
+                        <div className="mt-3 ml-14 p-2 bg-slate-50 dark:bg-slate-700 rounded-lg text-xs text-slate-600 dark:text-slate-400">
                           <span className="font-medium">Pattern:</span> This customer typically deposits every {alert.avg_days_between_deposits} days
                           {alert.days_since_deposit > alert.avg_days_between_deposits * 2 && (
                             <span className="text-red-500 ml-2">• Overdue by {Math.round(alert.days_since_deposit - alert.avg_days_between_deposits)} days</span>
