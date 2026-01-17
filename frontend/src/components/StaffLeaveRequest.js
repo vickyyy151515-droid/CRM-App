@@ -81,7 +81,7 @@ export default function StaffLeaveRequest() {
     const availableHours = (balance?.remaining_hours || 0) - pendingHours;
     
     if (hoursNeeded > availableHours) {
-      toast.error(`Insufficient leave balance. Available: ${availableHours} hours`);
+      toast.error(`${t('staffLeave.insufficientBalance')} ${availableHours} ${t('staffLeave.hours')}`);
       return;
     }
     
@@ -94,38 +94,38 @@ export default function StaffLeaveRequest() {
         end_time: formData.leave_type === 'sakit' ? formData.end_time : null,
         reason: formData.reason || null
       });
-      toast.success('Leave request submitted!');
+      toast.success(t('staffLeave.requestSubmitted'));
       setShowForm(false);
       setFormData({ leave_type: 'off_day', date: '', start_time: '', end_time: '', reason: '' });
       loadData();
     } catch (error) {
       console.error('Failed to submit request:', error);
-      toast.error(error.response?.data?.detail || 'Failed to submit request');
+      toast.error(error.response?.data?.detail || t('messages.saveFailed'));
     } finally {
       setSubmitting(false);
     }
   };
 
   const cancelRequest = async (requestId) => {
-    if (!window.confirm('Cancel this leave request?')) return;
+    if (!window.confirm(t('staffLeave.cancelRequest'))) return;
     
     try {
       await api.delete(`/leave/request/${requestId}`);
-      toast.success('Request cancelled');
+      toast.success(t('staffLeave.requestCancelled'));
       loadData();
     } catch (error) {
-      toast.error('Failed to cancel request');
+      toast.error(t('messages.deleteFailed'));
     }
   };
 
   const getStatusBadge = (status) => {
     switch (status) {
       case 'approved':
-        return <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium flex items-center gap-1"><CheckCircle size={12} /> Approved</span>;
+        return <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium flex items-center gap-1"><CheckCircle size={12} /> {t('staffLeave.approved')}</span>;
       case 'rejected':
-        return <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium flex items-center gap-1"><XCircle size={12} /> Rejected</span>;
+        return <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium flex items-center gap-1"><XCircle size={12} /> Ditolak</span>;
       default:
-        return <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium flex items-center gap-1"><Clock size={12} /> Pending</span>;
+        return <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium flex items-center gap-1"><Clock size={12} /> {t('staffProgress.pending')}</span>;
     }
   };
 
