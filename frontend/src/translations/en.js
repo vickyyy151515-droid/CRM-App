@@ -539,6 +539,7 @@ const en = {
     respondStatusCleared: 'Respond status cleared',
     copyWhatsappLink: 'Copy WhatsApp link',
     linkCopied: 'WhatsApp link copied! Paste in browser address bar',
+    openInNewTab: 'Open in new tab',
   },
 
   // Staff Progress
