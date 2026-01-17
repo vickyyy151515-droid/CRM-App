@@ -170,7 +170,9 @@ async def assign_random_memberwd_records(assignment: RandomMemberWDAssignment, u
     skipped_count = 0
     for record in available_records:
         username = record.get('row_data', {}).get(assignment.username_field, '')
-        if username and username.lower().strip() in reserved_names:
+        # Convert to string in case the value is a number
+        username_str = str(username).lower().strip() if username else ''
+        if username_str and username_str in reserved_names:
             skipped_count += 1
             continue
         eligible_records.append(record)
