@@ -351,7 +351,7 @@ export default function Leaderboard({ isAdmin = false }) {
                   {/* RDP Progress */}
                   <div>
                     <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="text-slate-600 dark:text-slate-400">Avg Daily RDP</span>
+                      <span className="text-slate-600 dark:text-slate-400">{t('leaderboard.avgDailyRdp')}</span>
                       <span className="font-medium text-slate-700 dark:text-slate-300">{staff.avg_daily_rdp.toFixed(1)} / {targets.daily_rdp}</span>
                     </div>
                     <div className="h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
@@ -379,7 +379,7 @@ export default function Leaderboard({ isAdmin = false }) {
                   </div>
                   <div>
                     <p className="text-sm font-bold text-slate-700">{staff.today_ndp}/{staff.today_rdp}</p>
-                    <p className="text-xs text-slate-500">Today</p>
+                    <p className="text-xs text-slate-500">{t('staffProgress.today')}</p>
                   </div>
                 </div>
               </div>
@@ -392,12 +392,12 @@ export default function Leaderboard({ isAdmin = false }) {
       {showTargetEditor && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-            <h3 className="text-xl font-semibold text-slate-900 mb-4">Edit Targets</h3>
+            <h3 className="text-xl font-semibold text-slate-900 mb-4">{t('leaderboard.editTargets')}</h3>
             
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Monthly OMSET Target (Rp)
+                  {t('leaderboard.monthlyOmsetTarget')} (Rp)
                 </label>
                 <input
                   type="number"
