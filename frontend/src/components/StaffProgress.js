@@ -305,38 +305,38 @@ export default function StaffProgress() {
         <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl p-6 mb-6 text-white shadow-lg">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-2xl font-bold">{getDateRangeLabel()} Performance</h3>
-              <p className="text-indigo-100 text-sm">Real-time progress tracking</p>
+              <h3 className="text-2xl font-bold">{t('staffProgress.performance')} {getDateRangeLabel()}</h3>
+              <p className="text-indigo-100 text-sm">Tracking progres real-time</p>
             </div>
             <Clock className="text-white opacity-50" size={48} />
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
             <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-              <p className="text-indigo-100 text-xs mb-1">Total Checked</p>
+              <p className="text-indigo-100 text-xs mb-1">{t('staffProgress.totalChecked')}</p>
               <p className="text-2xl font-bold">{checkedInPeriod}</p>
             </div>
             <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-              <p className="text-indigo-100 text-xs mb-1">WA Ada</p>
+              <p className="text-indigo-100 text-xs mb-1">{t('staffProgress.waAda')}</p>
               <p className="text-2xl font-bold">{adaInPeriod}</p>
             </div>
             <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-              <p className="text-indigo-100 text-xs mb-1">WA Tidak</p>
+              <p className="text-indigo-100 text-xs mb-1">{t('staffProgress.waTidak')}</p>
               <p className="text-2xl font-bold">{tidakInPeriod}</p>
             </div>
             <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-              <p className="text-indigo-100 text-xs mb-1">WA Quality</p>
+              <p className="text-indigo-100 text-xs mb-1">{t('staffProgress.waQuality')}</p>
               <p className="text-2xl font-bold">{periodQuality}%</p>
             </div>
             <div className="bg-white/10 backdrop-blur rounded-lg p-4 border-l-2 border-white/30">
-              <p className="text-indigo-100 text-xs mb-1">Respond Ya</p>
+              <p className="text-indigo-100 text-xs mb-1">{t('staffProgress.respondYa')}</p>
               <p className="text-2xl font-bold">{respondYaInPeriod}</p>
             </div>
             <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-              <p className="text-indigo-100 text-xs mb-1">Respond Tidak</p>
+              <p className="text-indigo-100 text-xs mb-1">{t('staffProgress.respondTidak')}</p>
               <p className="text-2xl font-bold">{respondTidakInPeriod}</p>
             </div>
             <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-              <p className="text-indigo-100 text-xs mb-1">Respond Rate</p>
+              <p className="text-indigo-100 text-xs mb-1">{t('staffProgress.respondRate')}</p>
               <p className="text-2xl font-bold">{periodRespondRate}%</p>
             </div>
           </div>
@@ -350,7 +350,7 @@ export default function StaffProgress() {
             <Users className="text-indigo-600" size={20} />
             <span className="text-2xl font-bold text-slate-900 dark:text-white">{totalAssigned}</span>
           </div>
-          <p className="text-xs text-slate-600 dark:text-slate-400">Total Assigned</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400">{t('staffProgress.totalAssigned')}</p>
         </div>
 
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
@@ -358,7 +358,7 @@ export default function StaffProgress() {
             <CheckCircle className="text-emerald-600" size={20} />
             <span className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{totalAda}</span>
           </div>
-          <p className="text-xs text-slate-600 dark:text-slate-400">WhatsApp Ada</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400">{t('staffProgress.waAda')}</p>
         </div>
 
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
@@ -366,7 +366,7 @@ export default function StaffProgress() {
             <XCircle className="text-rose-600" size={20} />
             <span className="text-2xl font-bold text-rose-700 dark:text-rose-400">{totalTidak}</span>
           </div>
-          <p className="text-xs text-slate-600 dark:text-slate-400">WhatsApp Tidak</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400">{t('staffProgress.waTidak')}</p>
         </div>
 
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
@@ -374,7 +374,7 @@ export default function StaffProgress() {
             <MessageCircle className="text-blue-600" size={20} />
             <span className="text-2xl font-bold text-blue-700 dark:text-blue-400">{totalRespondYa}</span>
           </div>
-          <p className="text-xs text-slate-600 dark:text-slate-400">Respond Ya</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400">{t('staffProgress.respondYa')}</p>
         </div>
 
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
@@ -382,7 +382,7 @@ export default function StaffProgress() {
             <MessageCircle className="text-orange-600" size={20} />
             <span className="text-2xl font-bold text-orange-700 dark:text-orange-400">{totalRespondTidak}</span>
           </div>
-          <p className="text-xs text-slate-600 dark:text-slate-400">Respond Tidak</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400">{t('staffProgress.respondTidak')}</p>
         </div>
 
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
@@ -390,7 +390,7 @@ export default function StaffProgress() {
             <TrendingUp className="text-indigo-600" size={20} />
             <span className="text-2xl font-bold text-indigo-700 dark:text-indigo-400">{overallRespondRate}%</span>
           </div>
-          <p className="text-xs text-slate-600 dark:text-slate-400">Response Rate</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400">{t('staffProgress.responseRate')}</p>
           <div className="mt-2 w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5">
             <div 
               className="bg-indigo-600 h-1.5 rounded-full transition-all" 
@@ -404,7 +404,7 @@ export default function StaffProgress() {
       <div className="mb-8">
         <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
           <Users className="text-indigo-600" size={20} />
-          Staff Performance
+          {t('staffProgress.staffPerformance')}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {Object.values(staffStats).map((staff, idx) => {
@@ -426,7 +426,7 @@ export default function StaffProgress() {
                   </div>
                   <div>
                     <h4 className="font-semibold text-slate-900 dark:text-white">{staff.name}</h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{staff.total} customers assigned</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{staff.total} {t('staffProgress.customersAssigned')}</p>
                   </div>
                 </div>
 
@@ -437,15 +437,15 @@ export default function StaffProgress() {
                     <div className="grid grid-cols-5 gap-1 text-center">
                       <div>
                         <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{dailyStats.checkedToday}</p>
-                        <p className="text-[10px] text-indigo-600 dark:text-indigo-400">Checked</p>
+                        <p className="text-[10px] text-indigo-600 dark:text-indigo-400">Dicek</p>
                       </div>
                       <div>
                         <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{dailyStats.adaToday}</p>
-                        <p className="text-[10px] text-emerald-600 dark:text-emerald-400">WA Ada</p>
+                        <p className="text-[10px] text-emerald-600 dark:text-emerald-400">{t('staffProgress.waAda')}</p>
                       </div>
                       <div>
                         <p className="text-sm font-bold text-rose-600 dark:text-rose-400">{dailyStats.tidakToday}</p>
-                        <p className="text-[10px] text-rose-600 dark:text-rose-400">WA Tidak</p>
+                        <p className="text-[10px] text-rose-600 dark:text-rose-400">{t('staffProgress.waTidak')}</p>
                       </div>
                       <div>
                         <p className="text-sm font-bold text-blue-600 dark:text-blue-400">{dailyStats.respondYaToday}</p>
