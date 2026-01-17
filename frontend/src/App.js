@@ -27,18 +27,36 @@ api.interceptors.request.use((config) => {
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-
+  const [lastActivityTime, setLastActivityTime] = useState(Date.now());
+  
+  // Auto-logout after 1 hour (60 minutes) of inactivity
+  const AUTO_LOGOUT_MS = 60 * 60 * 1000; // 1 hour in milliseconds
+  const WARNING_BEFORE_LOGOUT_MS = 5 * 60 * 1000; // Show warning 5 minutes before logout
+  
   // Heartbeat function to track user activity
   const sendHeartbeat = useCallback(async () => {
     const token = localStorage.getItem('token');
     if (token) {
       try {
         await api.post('/auth/heartbeat');
+        setLastActivityTime(Date.now());
       } catch (error) {
         // Silently fail - don't disrupt user experience
         console.debug('Heartbeat failed:', error.message);
       }
     }
+  }, []);
+  
+  // Force logout function
+  const forceLogout = useCallback(async (reason = 'Session expired') => {
+    try {
+      await api.post('/auth/logout');
+    } catch (error) {
+      console.debug('Logout API call failed:', error.message);
+    }
+    localStorage.removeItem('token');
+    setUser(null);
+    toast.error(`${reason}. Please login again.`);
   }, []);
 
   useEffect(() => {
@@ -48,6 +66,7 @@ function App() {
         .then(res => {
           setUser(res.data);
           setLoading(false);
+          setLastActivityTime(Date.now());
         })
         .catch(() => {
           localStorage.removeItem('token');
@@ -57,6 +76,37 @@ function App() {
       setLoading(false);
     }
   }, []);
+  
+  // Auto-logout check - runs every minute
+  useEffect(() => {
+    if (!user) return;
+    
+    const checkInactivity = () => {
+      const timeSinceActivity = Date.now() - lastActivityTime;
+      
+      // Check if session should be expired
+      if (timeSinceActivity >= AUTO_LOGOUT_MS) {
+        forceLogout('Session expired due to 1 hour of inactivity');
+        return;
+      }
+      
+      // Show warning 5 minutes before auto-logout
+      const timeRemaining = AUTO_LOGOUT_MS - timeSinceActivity;
+      if (timeRemaining <= WARNING_BEFORE_LOGOUT_MS && timeRemaining > WARNING_BEFORE_LOGOUT_MS - 60000) {
+        const minutesRemaining = Math.ceil(timeRemaining / 60000);
+        toast.warning(`Your session will expire in ${minutesRemaining} minutes due to inactivity. Move your mouse or click to stay logged in.`, {
+          duration: 10000,
+          id: 'session-warning' // Prevent duplicate toasts
+        });
+      }
+    };
+    
+    // Check immediately and then every minute
+    checkInactivity();
+    const inactivityInterval = setInterval(checkInactivity, 60 * 1000);
+    
+    return () => clearInterval(inactivityInterval);
+  }, [user, lastActivityTime, forceLogout, AUTO_LOGOUT_MS, WARNING_BEFORE_LOGOUT_MS]);
 
   // Send heartbeat every 1 minute when user is logged in
   useEffect(() => {
@@ -70,6 +120,7 @@ function App() {
       // Also send heartbeat on user activity (mouse move, key press, click, scroll)
       let activityTimeout;
       const handleActivity = () => {
+        setLastActivityTime(Date.now()); // Update local activity time immediately
         if (activityTimeout) clearTimeout(activityTimeout);
         activityTimeout = setTimeout(sendHeartbeat, 500); // Debounce to 500ms
       };
