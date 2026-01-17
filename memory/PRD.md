@@ -711,6 +711,28 @@ Build a Customer Relationship Management (CRM) application where:
   - `frontend/src/components/AdminReservedMembers.js` - Added phone input field (optional) and table column
 - **Test Coverage**: Created `/app/tests/test_phone_number_features.py` with 12 passing tests
 
+### ✅ COMPLETED: Auto-Logout & User Activity Fix (Jan 17, 2026)
+- **Issue Fixed**: All staff showed as "online" even when they hadn't started working yet
+- **Root Cause**: The `is_online` flag was unreliable - it wasn't cleared when users closed their browser without logging out
+- **Backend Fix** (`/api/users/activity`):
+  - Status now determined **purely by last_activity timestamp**, not the is_online flag
+  - **Online**: Activity within 5 minutes
+  - **Idle**: Activity between 5-15 minutes ago
+  - **Offline**: No activity for 15+ minutes
+  - Checks if user explicitly logged out (last_logout > last_activity)
+- **New API Endpoint** (`GET /auth/session-status`):
+  - Returns session validity and `minutes_remaining` until auto-logout
+  - Used by frontend to track session expiration
+- **Auto-Logout Feature** (Frontend App.js):
+  - **1 hour inactivity timeout** - user auto-logged out after 60 minutes of no activity
+  - **5-minute warning toast** before auto-logout
+  - Activity tracked: mouse move, keyboard, click, scroll, touch
+  - Local activity time updated + heartbeat sent to backend
+- **Files Modified**:
+  - `backend/routes/auth.py` - Fixed activity logic, added session-status endpoint
+  - `frontend/src/App.js` - Added auto-logout timer with warning
+- **Test Coverage**: Created `/app/tests/test_user_activity_session.py` with 16 passing tests
+
 ### ✅ COMPLETED: Toggleable Status Buttons Fix (Jan 16, 2026)
 - **Purpose**: Allow staff to undo accidental status clicks by clicking the same button again
 - **Backend Fix** (`backend/routes/records.py`):
