@@ -59,6 +59,16 @@ Build a sophisticated CRM (Customer Relationship Management) application for man
 
 ## What's Implemented (Latest Session - Jan 2026)
 
+### Follow-up Reminders Filtering - COMPLETED (Jan 17, 2026)
+- Added product and database filtering to Follow-up Reminders page
+- Backend: New `/api/followups/filters` endpoint returns unique products/databases for staff
+- Backend: `/api/followups` now accepts `database_id` parameter in addition to `product_id`
+- Frontend: Collapsible filter panel with Product and Database dropdowns
+- Frontend: Filter badge shows active filter count
+- Frontend: Clear Filter button to reset selections
+- Frontend: Database dropdown filters based on selected product
+- All filter UI translated to Indonesian
+
 ### Indonesian Translation - COMPLETED
 All staff-facing components now fully translated to casual Indonesian.
 
