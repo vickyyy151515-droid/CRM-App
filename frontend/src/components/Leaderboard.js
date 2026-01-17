@@ -411,7 +411,7 @@ export default function Leaderboard({ isAdmin = false }) {
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Daily NDP Target
+                  {t('leaderboard.dailyNdpTarget')}
                 </label>
                 <input
                   type="number"
@@ -424,7 +424,7 @@ export default function Leaderboard({ isAdmin = false }) {
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Daily RDP Target
+                  {t('leaderboard.dailyRdpTarget')}
                 </label>
                 <input
                   type="number"
