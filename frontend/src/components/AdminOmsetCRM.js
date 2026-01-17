@@ -156,28 +156,50 @@ export default function AdminOmsetCRM() {
     toast.success('Download starting...');
   };
 
-  const handleExportSummary = () => {
-    const dateParams = getDateParams();
-    const token = localStorage.getItem('token');
-    const params = new URLSearchParams({
-      ...dateParams,
-      ...(selectedProduct && { product_id: selectedProduct }),
-      token: token
-    });
-    
-    // Use hidden iframe to trigger download (bypasses sandbox restrictions)
-    const url = `${process.env.REACT_APP_BACKEND_URL}/api/omset/export-summary?${params}`;
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    iframe.src = url;
-    document.body.appendChild(iframe);
-    
-    // Clean up iframe after download starts
-    setTimeout(() => {
-      document.body.removeChild(iframe);
-    }, 5000);
-    
-    toast.success('Download starting...');
+  const handleExportSummary = async () => {
+    try {
+      const dateParams = getDateParams();
+      const token = localStorage.getItem('token');
+      const params = new URLSearchParams({
+        ...dateParams,
+        ...(selectedProduct && { product_id: selectedProduct }),
+        token: token
+      });
+      
+      toast.success('Preparing download...');
+      
+      // Use fetch to download the file
+      const url = `${process.env.REACT_APP_BACKEND_URL}/api/omset/export-summary?${params}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error('Export failed');
+      }
+      
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      
+      // Get filename from Content-Disposition header or use default
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = 'omset_summary.csv';
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename=(.+)/);
+        if (match) filename = match[1];
+      }
+      
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(downloadUrl);
+      
+      toast.success('Download complete!');
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export summary');
+    }
   };
 
   const toggleDateExpand = (date) => {
