@@ -240,11 +240,20 @@ async def generate_daily_report(target_date: datetime = None) -> str:
 
 
 async def generate_atrisk_alert(inactive_days: int = 14) -> str:
-    """Generate at-risk customer alert for customers inactive for N+ days"""
+    """Generate at-risk customer alert for customers inactive for N+ days.
+    Rotates customers so the same customer only appears again after 3 days."""
     db = get_db()
     
     jakarta_now = datetime.now(JAKARTA_TZ)
     cutoff_date = (jakarta_now - timedelta(days=inactive_days)).strftime('%Y-%m-%d')
+    
+    # Get customers that were alerted in the last 3 days (to exclude them)
+    three_days_ago = (jakarta_now - timedelta(days=3)).isoformat()
+    recently_alerted = await db.atrisk_alert_history.find(
+        {'alerted_at': {'$gte': three_days_ago}},
+        {'_id': 0, 'customer_id': 1}
+    ).to_list(10000)
+    recently_alerted_ids = set(r['customer_id'] for r in recently_alerted)
     
     # Get all OMSET records
     all_records = await db.omset_records.find({}, {'_id': 0}).to_list(100000)
@@ -288,9 +297,14 @@ async def generate_atrisk_alert(inactive_days: int = 14) -> str:
             customer_data[cid_normalized]['total_nominal'] += record.get('depo_total', 0) or record.get('nominal', 0) or 0
     
     # Find at-risk customers (last deposit before cutoff date AND has deposited at least twice)
+    # EXCLUDE customers that were alerted in the last 3 days
     at_risk_customers = []
     for cid, data in customer_data.items():
         if data['last_date'] < cutoff_date and data['total_deposits'] >= 2:
+            # Skip if this customer was alerted in the last 3 days
+            if cid in recently_alerted_ids:
+                continue
+                
             days_since = (jakarta_now - datetime.strptime(data['last_date'], '%Y-%m-%d').replace(tzinfo=JAKARTA_TZ)).days
             at_risk_customers.append({
                 'customer_id': cid,
@@ -312,16 +326,24 @@ async def generate_atrisk_alert(inactive_days: int = 14) -> str:
     def format_rupiah(amount):
         return f"Rp {amount:,.0f}".replace(',', '.')
     
+    # Count total at-risk (including those not shown today)
+    total_at_risk_count = len(at_risk_customers) + len(recently_alerted_ids)
+    
     alert_lines = [
         f"🚨 <b>AT-RISK CUSTOMER ALERT</b>",
         f"📅 <b>Date:</b> {jakarta_now.strftime('%Y-%m-%d')}",
         f"⚠️ <b>Threshold:</b> {inactive_days}+ days inactive",
-        f"👥 <b>Total At-Risk:</b> {len(at_risk_customers)} customers",
+        f"👥 <b>Today's At-Risk:</b> {len(at_risk_customers)} customers",
+        f"📊 <b>Total Pool:</b> {total_at_risk_count} customers (rotating every 3 days)",
         ""
     ]
     
     if not at_risk_customers:
-        alert_lines.append("✅ <i>No at-risk customers found! Great job!</i>")
+        if recently_alerted_ids:
+            alert_lines.append("✅ <i>All at-risk customers were shown recently.</i>")
+            alert_lines.append(f"<i>Next rotation in 1-3 days ({len(recently_alerted_ids)} customers in cooldown)</i>")
+        else:
+            alert_lines.append("✅ <i>No at-risk customers found! Great job!</i>")
         return "\n".join(alert_lines)
     
     # Group by staff for better actionability
@@ -338,6 +360,7 @@ async def generate_atrisk_alert(inactive_days: int = 14) -> str:
     # Limit to top 30 most urgent customers to avoid message being too long
     shown_count = 0
     max_show = 30
+    customers_to_mark = []  # Track which customers we're showing today
     
     for staff_id, staff_data in sorted(staff_groups.items(), key=lambda x: len(x[1]['customers']), reverse=True):
         if shown_count >= max_show:
@@ -360,6 +383,7 @@ async def generate_atrisk_alert(inactive_days: int = 14) -> str:
             )
             alert_lines.append("")
             shown_count += 1
+            customers_to_mark.append(customer['customer_id'])
         
         if len(staff_data['customers']) > 10:
             alert_lines.append(f"   <i>...and {len(staff_data['customers']) - 10} more</i>")
@@ -367,10 +391,26 @@ async def generate_atrisk_alert(inactive_days: int = 14) -> str:
     
     if len(at_risk_customers) > max_show:
         alert_lines.append(f"━━━━━━━━━━━━━━━━━━━━")
-        alert_lines.append(f"<i>Showing {max_show} of {len(at_risk_customers)} at-risk customers</i>")
+        alert_lines.append(f"<i>Showing {max_show} of {len(at_risk_customers)} at-risk customers today</i>")
     
     alert_lines.append("")
     alert_lines.append("💡 <b>Action Required:</b> Follow up with these customers to re-engage!")
+    alert_lines.append(f"🔄 <i>These customers will rotate out for 3 days</i>")
+    
+    # Store which customers were shown today (for 3-day rotation)
+    if customers_to_mark:
+        alert_history_records = [
+            {
+                'customer_id': cid,
+                'alerted_at': jakarta_now.isoformat()
+            }
+            for cid in customers_to_mark
+        ]
+        await db.atrisk_alert_history.insert_many(alert_history_records)
+        
+        # Clean up old records (older than 7 days to save space)
+        seven_days_ago = (jakarta_now - timedelta(days=7)).isoformat()
+        await db.atrisk_alert_history.delete_many({'alerted_at': {'$lt': seven_days_ago}})
     
     return "\n".join(alert_lines)
 
