@@ -25,9 +25,63 @@ def get_reminder_level(days_since_response: int) -> dict:
 
 # ==================== FOLLOW-UP ENDPOINTS ====================
 
+@router.get("/followups/filters")
+async def get_followup_filters(user: User = Depends(get_current_user)):
+    """Get unique products and databases from staff's assigned records for filtering"""
+    db = get_db()
+    
+    if user.role != 'staff':
+        raise HTTPException(status_code=403, detail="Only staff can view follow-ups")
+    
+    # Get unique products and databases from assigned records with respond_status='ya'
+    pipeline = [
+        {
+            '$match': {
+                'assigned_to': user.id,
+                'status': 'assigned',
+                'respond_status': 'ya'
+            }
+        },
+        {
+            '$group': {
+                '_id': {
+                    'product_id': '$product_id',
+                    'product_name': '$product_name',
+                    'database_id': '$database_id',
+                    'database_name': '$database_name'
+                }
+            }
+        }
+    ]
+    
+    results = await db.customer_records.aggregate(pipeline).to_list(1000)
+    
+    products = {}
+    databases = {}
+    
+    for r in results:
+        data = r['_id']
+        pid = data.get('product_id')
+        pname = data.get('product_name', 'Unknown')
+        did = data.get('database_id')
+        dname = data.get('database_name', 'Unknown')
+        
+        if pid and pid not in products:
+            products[pid] = {'id': pid, 'name': pname}
+        
+        if did and did not in databases:
+            databases[did] = {'id': did, 'name': dname, 'product_id': pid}
+    
+    return {
+        'products': sorted(list(products.values()), key=lambda x: x['name']),
+        'databases': sorted(list(databases.values()), key=lambda x: x['name'])
+    }
+
+
 @router.get("/followups")
 async def get_followups(
     product_id: Optional[str] = None,
+    database_id: Optional[str] = None,
     urgency: Optional[str] = None,  # 'critical', 'high', 'medium', 'all'
     user: User = Depends(get_current_user)
 ):
@@ -50,6 +104,9 @@ async def get_followups(
     
     if product_id:
         query['product_id'] = product_id
+    
+    if database_id:
+        query['database_id'] = database_id
     
     responded_records = await db.customer_records.find(query, {'_id': 0}).to_list(10000)
     
