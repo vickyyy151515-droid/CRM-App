@@ -609,6 +609,12 @@ const en = {
     waAda: 'WA Ada',
     ceklis1: 'Ceklis 1',
     tidakAda: 'Tidak Ada',
+    filterByProduct: 'Filter by Product',
+    filterByDatabase: 'Filter by Database',
+    allProducts: 'All Products',
+    allDatabases: 'All Databases',
+    selectProduct: 'Select product first',
+    noFiltersAvailable: 'No filters available',
   },
 
   // Staff Leave
