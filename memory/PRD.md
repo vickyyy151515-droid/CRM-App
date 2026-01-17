@@ -87,6 +87,10 @@ All staff-facing components now fully translated to casual Indonesian.
 ## Known Issues
 - WebSocket connection fails in preview environment (infrastructure limitation)
 
+## Upcoming Tasks (P1)
+- Pin Batches - Allow staff to pin important batches to top of list
+- Default Language for Staff - Auto-set Indonesian for staff role
+
 ## Upcoming Tasks (P2)
 - WhatsApp Quick Actions button
 - Email Notifications
