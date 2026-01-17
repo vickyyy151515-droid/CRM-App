@@ -2,8 +2,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
 import { User, Package, ChevronLeft, FileSpreadsheet, Edit2, Check, X, Search } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function MyAssignedRecords() {
+  const { t } = useLanguage();
   const [batches, setBatches] = useState([]);
   const [selectedBatch, setSelectedBatch] = useState(null);
   const [records, setRecords] = useState([]);
