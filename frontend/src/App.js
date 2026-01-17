@@ -179,6 +179,10 @@ function App() {
                 element={!user ? <Login onLogin={handleLogin} /> : <Navigate to="/" />}
               />
               <Route
+                path="/batch/:batchId"
+                element={user ? <BatchRecordsView /> : <Navigate to="/login" />}
+              />
+              <Route
                 path="/"
                 element={
                   user ? (
