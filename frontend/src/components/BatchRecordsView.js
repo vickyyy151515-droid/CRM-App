@@ -7,7 +7,8 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 
 export default function BatchRecordsView() {
-  const { t } = useLanguage();
+  const { t, language, toggleLanguage } = useLanguage();
+  const { darkMode, toggleTheme } = useTheme();
   const { batchId } = useParams();
   const [searchParams] = useSearchParams();
   const [batch, setBatch] = useState(null);
