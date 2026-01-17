@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { AlertCircle, Clock, CheckCircle2, Phone, RefreshCw, Filter, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
+import { AlertCircle, Clock, CheckCircle2, Phone, RefreshCw, Filter, ChevronDown, ChevronUp, Package, Database } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 export default function StaffFollowups() {
@@ -18,6 +18,31 @@ export default function StaffFollowups() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [expandedRecords, setExpandedRecords] = useState({});
+  
+  // Product and Database filters
+  const [products, setProducts] = useState([]);
+  const [databases, setDatabases] = useState([]);
+  const [selectedProduct, setSelectedProduct] = useState('all');
+  const [selectedDatabase, setSelectedDatabase] = useState('all');
+  const [filtersLoading, setFiltersLoading] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Load filter options on mount
+  useEffect(() => {
+    const loadFilters = async () => {
+      try {
+        setFiltersLoading(true);
+        const response = await api.get('/followups/filters');
+        setProducts(response.data.products || []);
+        setDatabases(response.data.databases || []);
+      } catch (error) {
+        console.error('Failed to load filters:', error);
+      } finally {
+        setFiltersLoading(false);
+      }
+    };
+    loadFilters();
+  }, []);
 
   const loadFollowups = useCallback(async () => {
     try {
@@ -25,6 +50,12 @@ export default function StaffFollowups() {
       const params = {};
       if (filter !== 'all') {
         params.urgency = filter;
+      }
+      if (selectedProduct !== 'all') {
+        params.product_id = selectedProduct;
+      }
+      if (selectedDatabase !== 'all') {
+        params.database_id = selectedDatabase;
       }
       const response = await api.get('/followups', { params });
       setFollowups(response.data.followups || []);
@@ -36,7 +67,7 @@ export default function StaffFollowups() {
     } finally {
       setLoading(false);
     }
-  }, [filter, t]);
+  }, [filter, selectedProduct, selectedDatabase, t]);
 
   useEffect(() => {
     loadFollowups();
@@ -45,12 +76,22 @@ export default function StaffFollowups() {
     return () => clearInterval(interval);
   }, [loadFollowups]);
 
+  // Reset database filter when product changes
+  useEffect(() => {
+    setSelectedDatabase('all');
+  }, [selectedProduct]);
+
   const toggleExpand = (recordId) => {
     setExpandedRecords(prev => ({
       ...prev,
       [recordId]: !prev[recordId]
     }));
   };
+
+  // Get filtered databases based on selected product
+  const filteredDatabases = selectedProduct === 'all' 
+    ? databases 
+    : databases.filter(db => db.product_id === selectedProduct);
 
   const getUrgencyBadge = (urgency) => {
     switch (urgency) {
@@ -104,6 +145,8 @@ export default function StaffFollowups() {
     });
   };
 
+  const activeFiltersCount = (selectedProduct !== 'all' ? 1 : 0) + (selectedDatabase !== 'all' ? 1 : 0);
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -113,21 +156,112 @@ export default function StaffFollowups() {
             {t('followups.subtitle')}
           </p>
         </div>
-        <button
-          onClick={loadFollowups}
-          disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
-        >
-          <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-          {t('followups.refresh')}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+              showFilters || activeFiltersCount > 0
+                ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            }`}
+            data-testid="toggle-filters-btn"
+          >
+            <Filter size={16} />
+            {t('common.filter')}
+            {activeFiltersCount > 0 && (
+              <span className="bg-indigo-600 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[20px]">
+                {activeFiltersCount}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={loadFollowups}
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
+            data-testid="refresh-btn"
+          >
+            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+            {t('followups.refresh')}
+          </button>
+        </div>
       </div>
+
+      {/* Product & Database Filters Panel */}
+      {showFilters && (
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6" data-testid="filters-panel">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Product Filter */}
+            <div>
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
+                <Package size={14} />
+                {t('followups.filterByProduct')}
+              </label>
+              <select
+                value={selectedProduct}
+                onChange={(e) => setSelectedProduct(e.target.value)}
+                disabled={filtersLoading}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white disabled:bg-slate-100"
+                data-testid="product-filter"
+              >
+                <option value="all">{t('followups.allProducts')}</option>
+                {products.map(product => (
+                  <option key={product.id} value={product.id}>
+                    {product.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Database Filter */}
+            <div>
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
+                <Database size={14} />
+                {t('followups.filterByDatabase')}
+              </label>
+              <select
+                value={selectedDatabase}
+                onChange={(e) => setSelectedDatabase(e.target.value)}
+                disabled={filtersLoading || filteredDatabases.length === 0}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white disabled:bg-slate-100"
+                data-testid="database-filter"
+              >
+                <option value="all">{t('followups.allDatabases')}</option>
+                {filteredDatabases.map(db => (
+                  <option key={db.id} value={db.id}>
+                    {db.name}
+                  </option>
+                ))}
+              </select>
+              {selectedProduct !== 'all' && filteredDatabases.length === 0 && (
+                <p className="text-xs text-slate-500 mt-1">{t('followups.noFiltersAvailable')}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Clear Filters */}
+          {activeFiltersCount > 0 && (
+            <div className="mt-3 pt-3 border-t border-slate-200">
+              <button
+                onClick={() => {
+                  setSelectedProduct('all');
+                  setSelectedDatabase('all');
+                }}
+                className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+                data-testid="clear-filters-btn"
+              >
+                {t('common.clear')} {t('common.filter')}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         <div 
           className={`bg-white border rounded-xl p-4 cursor-pointer transition-all ${filter === 'all' ? 'ring-2 ring-indigo-500 border-indigo-300' : 'border-slate-200 hover:border-slate-300'}`}
           onClick={() => setFilter('all')}
+          data-testid="filter-all"
         >
           <p className="text-2xl font-bold text-slate-900">{summary.total}</p>
           <p className="text-sm text-slate-600">{t('followups.totalPending')}</p>
@@ -135,6 +269,7 @@ export default function StaffFollowups() {
         <div 
           className={`bg-red-50 border rounded-xl p-4 cursor-pointer transition-all ${filter === 'critical' ? 'ring-2 ring-red-500 border-red-300' : 'border-red-200 hover:border-red-300'}`}
           onClick={() => setFilter('critical')}
+          data-testid="filter-critical"
         >
           <p className="text-2xl font-bold text-red-700">{summary.critical}</p>
           <p className="text-sm text-red-600">{t('followups.critical')}</p>
@@ -142,6 +277,7 @@ export default function StaffFollowups() {
         <div 
           className={`bg-orange-50 border rounded-xl p-4 cursor-pointer transition-all ${filter === 'high' ? 'ring-2 ring-orange-500 border-orange-300' : 'border-orange-200 hover:border-orange-300'}`}
           onClick={() => setFilter('high')}
+          data-testid="filter-high"
         >
           <p className="text-2xl font-bold text-orange-700">{summary.high}</p>
           <p className="text-sm text-orange-600">{t('followups.high')}</p>
@@ -149,11 +285,12 @@ export default function StaffFollowups() {
         <div 
           className={`bg-yellow-50 border rounded-xl p-4 cursor-pointer transition-all ${filter === 'medium' ? 'ring-2 ring-yellow-500 border-yellow-300' : 'border-yellow-200 hover:border-yellow-300'}`}
           onClick={() => setFilter('medium')}
+          data-testid="filter-medium"
         >
           <p className="text-2xl font-bold text-yellow-700">{summary.medium}</p>
           <p className="text-sm text-yellow-600">{t('followups.medium')}</p>
         </div>
-        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4" data-testid="filter-deposited">
           <p className="text-2xl font-bold text-emerald-700">{summary.deposited}</p>
           <p className="text-sm text-emerald-600">{t('followups.deposited')} ✓</p>
         </div>
@@ -228,6 +365,7 @@ export default function StaffFollowups() {
                     <button
                       onClick={() => toggleExpand(followup.record_id)}
                       className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                      data-testid={`expand-${followup.record_id}`}
                     >
                       {expandedRecords[followup.record_id] ? (
                         <ChevronUp size={20} />
@@ -250,7 +388,7 @@ export default function StaffFollowups() {
               {expandedRecords[followup.record_id] && (
                 <div className="px-4 pb-4 border-t border-slate-100 bg-slate-50">
                   <div className="pt-3">
-                    <h4 className="text-sm font-medium text-slate-700 mb-2">Customer Details</h4>
+                    <h4 className="text-sm font-medium text-slate-700 mb-2">{t('followups.customerDetails')}</h4>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {Object.entries(followup.row_data || {}).slice(0, 6).map(([key, value]) => (
                         <div key={key} className="bg-white rounded-lg p-2 border border-slate-200">
@@ -263,7 +401,7 @@ export default function StaffFollowups() {
                     {/* Action Hint */}
                     <div className="mt-3 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
                       <p className="text-sm text-indigo-700">
-                        <strong>Tip:</strong> Contact this customer and record their deposit in <strong>OMSET CRM</strong> when they deposit.
+                        <strong>Tip:</strong> {t('followups.tip')}
                       </p>
                     </div>
                   </div>
