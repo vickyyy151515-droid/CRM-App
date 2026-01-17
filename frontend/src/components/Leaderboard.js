@@ -153,21 +153,21 @@ export default function Leaderboard({ isAdmin = false }) {
         <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
             <Target className="text-emerald-600 dark:text-emerald-400" size={18} />
-            <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">Monthly OMSET Target</span>
+            <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">{t('leaderboard.monthlyOmsetTarget')}</span>
           </div>
           <p className="text-2xl font-bold text-slate-900 dark:text-white">{formatCurrency(targets.monthly_omset)}</p>
         </div>
         <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
             <UserPlus className="text-blue-600 dark:text-blue-400" size={18} />
-            <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Daily NDP Target</span>
+            <span className="text-sm font-medium text-blue-700 dark:text-blue-300">{t('leaderboard.dailyNdpTarget')}</span>
           </div>
           <p className="text-2xl font-bold text-slate-900 dark:text-white">{targets.daily_ndp} NDP/day</p>
         </div>
         <div className="bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-900/30 dark:to-purple-900/30 border border-violet-200 dark:border-violet-800 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
             <RefreshCcw className="text-violet-600 dark:text-violet-400" size={18} />
-            <span className="text-sm font-medium text-violet-700 dark:text-violet-300">Daily RDP Target</span>
+            <span className="text-sm font-medium text-violet-700 dark:text-violet-300">{t('leaderboard.dailyRdpTarget')}</span>
           </div>
           <p className="text-2xl font-bold text-slate-900 dark:text-white">{targets.daily_rdp} RDP/day</p>
         </div>
