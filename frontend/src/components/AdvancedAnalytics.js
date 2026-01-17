@@ -341,70 +341,94 @@ export default function AdvancedAnalytics() {
         );
 
       case 'productOmset':
-        return businessData?.product_omset?.length > 0 && (
-          <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+        const hasProductOmsetData = businessData?.product_omset?.some(p => p.total_omset > 0);
+        return (
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 sm:p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
               <Package size={20} className="text-purple-600" />
               OMSET by Product
             </h3>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={businessData.product_omset.slice(0, 6)}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="product_name" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip formatter={(value) => formatNumber(value)} />
-                  <Bar dataKey="total_omset" name="Total OMSET" fill="#8b5cf6">
-                    {businessData.product_omset.slice(0, 6).map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            {hasProductOmsetData ? (
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={businessData.product_omset.filter(p => p.total_omset > 0).slice(0, 6)}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis dataKey="product_name" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip formatter={(value) => formatNumber(value)} />
+                    <Bar dataKey="total_omset" name="Total OMSET" fill="#8b5cf6">
+                      {businessData.product_omset.filter(p => p.total_omset > 0).slice(0, 6).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="h-64 flex items-center justify-center text-slate-500 dark:text-slate-400">
+                <div className="text-center">
+                  <Package size={48} className="mx-auto mb-2 opacity-30" />
+                  <p>No OMSET data available for this period</p>
+                  <p className="text-sm mt-1">Add OMSET records from the "OMSET CRM" page</p>
+                </div>
+              </div>
+            )}
           </div>
         );
 
       case 'ndpRdp':
+        const hasNdpRdpData = (businessData?.summary?.ndp_count || 0) + (businessData?.summary?.rdp_count || 0) > 0;
         return (
-          <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 sm:p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
               <PieChart size={20} className="text-purple-600" />
               NDP vs RDP Analysis
             </h3>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <RechartsPie>
-                  <Pie
-                    data={[
-                      { name: 'NDP (New)', value: businessData?.summary?.ndp_count || 0 },
-                      { name: 'RDP (Return)', value: businessData?.summary?.rdp_count || 0 }
-                    ]}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    dataKey="value"
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  >
-                    <Cell fill="#6366f1" />
-                    <Cell fill="#22c55e" />
-                  </Pie>
-                  <Tooltip />
-                </RechartsPie>
-              </ResponsiveContainer>
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-4 text-center">
-              <div>
-                <p className="text-sm text-slate-600">NDP OMSET</p>
-                <p className="text-lg font-bold text-indigo-600">{formatNumber(businessData?.summary?.ndp_omset)}</p>
+            {hasNdpRdpData ? (
+              <>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RechartsPie>
+                      <Pie
+                        data={[
+                          { name: 'NDP (New)', value: businessData?.summary?.ndp_count || 0 },
+                          { name: 'RDP (Return)', value: businessData?.summary?.rdp_count || 0 }
+                        ]}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={100}
+                        paddingAngle={5}
+                        dataKey="value"
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      >
+                        <Cell fill="#6366f1" />
+                        <Cell fill="#22c55e" />
+                      </Pie>
+                      <Tooltip />
+                    </RechartsPie>
+                  </ResponsiveContainer>
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-4 text-center">
+                  <div>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">NDP OMSET</p>
+                    <p className="text-lg font-bold text-indigo-600">{formatNumber(businessData?.summary?.ndp_omset)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">RDP OMSET</p>
+                    <p className="text-lg font-bold text-emerald-600">{formatNumber(businessData?.summary?.rdp_omset)}</p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="h-64 flex items-center justify-center text-slate-500 dark:text-slate-400">
+                <div className="text-center">
+                  <PieChart size={48} className="mx-auto mb-2 opacity-30" />
+                  <p>No NDP/RDP data available</p>
+                  <p className="text-sm mt-1">NDP (New Deposit) and RDP (Return Deposit) data will appear after OMSET records are added</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-slate-600">RDP OMSET</p>
-                <p className="text-lg font-bold text-emerald-600">{formatNumber(businessData?.summary?.rdp_omset)}</p>
-              </div>
-            </div>
+            )}
           </div>
         );
 
