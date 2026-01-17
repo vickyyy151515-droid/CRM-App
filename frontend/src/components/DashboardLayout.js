@@ -52,16 +52,6 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
     }
   };
 
-  // Load sidebar configuration on mount
-  useEffect(() => {
-    loadSidebarConfig();
-  }, []);
-
-  // Save collapsed state to localStorage
-  useEffect(() => {
-    localStorage.setItem('sidebar-collapsed', collapsed.toString());
-  }, [collapsed]);
-
   const loadSidebarConfig = async () => {
     try {
       const response = await api.get('/user/preferences/sidebar-config');
@@ -80,6 +70,16 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
       console.error('Failed to load sidebar config:', error);
     }
   };
+
+  // Load sidebar configuration on mount
+  useEffect(() => {
+    loadSidebarConfig();
+  }, []);
+
+  // Save collapsed state to localStorage
+  useEffect(() => {
+    localStorage.setItem('sidebar-collapsed', collapsed.toString());
+  }, [collapsed]);
 
   const handleNavClick = (tabId) => {
     setActiveTab(tabId);
