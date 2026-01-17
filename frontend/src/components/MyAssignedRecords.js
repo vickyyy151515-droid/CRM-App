@@ -52,11 +52,11 @@ export default function MyAssignedRecords() {
     e.stopPropagation();
     try {
       await api.patch(`/my-request-batches/${batchId}/title`, { title: editTitle });
-      toast.success('Title updated');
+      toast.success(t('myRecords.titleUpdated'));
       setEditingBatchId(null);
       loadBatches();
     } catch (error) {
-      toast.error('Failed to update title');
+      toast.error(t('messages.saveFailed'));
     }
   };
 
