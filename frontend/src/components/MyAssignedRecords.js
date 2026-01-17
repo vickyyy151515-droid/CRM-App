@@ -389,7 +389,7 @@ export default function MyAssignedRecords() {
           ) : filteredRecords.length === 0 ? (
             <div className="text-center py-12 text-slate-500 dark:text-slate-400">
               <Search className="mx-auto text-slate-300 dark:text-slate-600 mb-3" size={48} />
-              <p>{t('myRecords.noCustomersMatch')} "{searchTerm}"</p>
+              <p>{t('myRecords.noCustomersMatch')} &quot;{searchTerm}&quot;</p>
               <button 
                 onClick={() => setSearchTerm('')}
                 className="mt-2 text-indigo-600 hover:text-indigo-800 text-sm font-medium"
