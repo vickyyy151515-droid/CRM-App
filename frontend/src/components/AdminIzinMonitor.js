@@ -5,8 +5,10 @@ import {
   Timer, Clock, Users, AlertTriangle, 
   CheckCircle, RefreshCw, Calendar, ChevronDown, ChevronUp, History, Filter
 } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function AdminIzinMonitor() {
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [todayData, setTodayData] = useState(null);
   const [historyData, setHistoryData] = useState(null);
