@@ -37,7 +37,7 @@ export default function StaffProgress() {
       const combinedRecords = recordsResponses.flatMap(res => res.data);
       setAllRecords(combinedRecords);
     } catch (error) {
-      toast.error('Failed to load data');
+      toast.error(t('messages.loadFailed'));
     } finally {
       setLoading(false);
     }

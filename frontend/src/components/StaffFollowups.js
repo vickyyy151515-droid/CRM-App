@@ -32,11 +32,11 @@ export default function StaffFollowups() {
         total: 0, critical: 0, high: 0, medium: 0, low: 0, deposited: 0
       });
     } catch (error) {
-      toast.error('Failed to load follow-ups');
+      toast.error(t('messages.loadFailed'));
     } finally {
       setLoading(false);
     }
-  }, [filter]);
+  }, [filter, t]);
 
   useEffect(() => {
     loadFollowups();
