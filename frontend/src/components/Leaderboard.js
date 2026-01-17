@@ -118,11 +118,11 @@ export default function Leaderboard({ isAdmin = false }) {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">Staff Leaderboard</h2>
+          <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">{t('leaderboard.title')}</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             {period === 'month' 
               ? `${getMonthName(periodInfo.month)} ${periodInfo.year}` 
-              : 'All Time'} Rankings
+              : t('leaderboard.allTime')} {t('leaderboard.rankings')}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -142,7 +142,7 @@ export default function Leaderboard({ isAdmin = false }) {
               data-testid="edit-targets-btn"
             >
               <Settings size={16} />
-              Edit Targets
+              {t('leaderboard.editTargets')}
             </button>
           )}
         </div>
