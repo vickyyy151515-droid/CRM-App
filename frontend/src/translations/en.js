@@ -104,7 +104,7 @@ const en = {
     staffProgress: 'Staff Progress & Quality',
     leaderboard: 'Leaderboard',
     dailySummary: 'Daily Summary',
-    reportCRM: 'Report CRM',
+    reportCRM: 'CRM Report',
     bonusCalculation: 'CRM Bonus Calculation',
     conversionFunnel: 'Conversion Funnel',
     customerRetention: 'Customer Retention',
