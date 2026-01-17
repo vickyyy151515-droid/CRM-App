@@ -288,7 +288,7 @@ export default function StaffLeaveRequest() {
               {formData.leave_type === 'sakit' && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Start Time</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('staffLeave.startTime')}</label>
                     <input
                       type="time"
                       value={formData.start_time}
@@ -298,7 +298,7 @@ export default function StaffLeaveRequest() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">End Time</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('staffLeave.endTime')}</label>
                     <input
                       type="time"
                       value={formData.end_time}
@@ -312,27 +312,27 @@ export default function StaffLeaveRequest() {
 
               {/* Reason */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Reason (Optional)</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">{t('staffLeave.reason')}</label>
                 <textarea
                   value={formData.reason}
                   onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   rows={2}
-                  placeholder="Brief reason for leave..."
+                  placeholder={t('staffLeave.reasonOptional')}
                 />
               </div>
 
               {/* Hours Summary */}
               <div className="p-3 bg-slate-100 rounded-lg">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-600">Hours to be deducted:</span>
-                  <span className="text-lg font-bold text-slate-800">{hoursToDeduct} hours</span>
+                  <span className="text-sm text-slate-600">{t('staffLeave.hoursToDeduct')}</span>
+                  <span className="text-lg font-bold text-slate-800">{hoursToDeduct} {t('staffLeave.hours')}</span>
                 </div>
                 {balance && (
                   <div className="flex justify-between items-center mt-1 text-xs text-slate-500">
-                    <span>Remaining after this request:</span>
+                    <span>{t('staffLeave.remainingAfter')}</span>
                     <span className={balance.remaining_hours - hoursToDeduct < 0 ? 'text-red-600' : ''}>
-                      {Math.max(0, balance.remaining_hours - hoursToDeduct)} hours
+                      {Math.max(0, balance.remaining_hours - hoursToDeduct)} {t('staffLeave.hours')}
                     </span>
                   </div>
                 )}
@@ -345,14 +345,14 @@ export default function StaffLeaveRequest() {
                   onClick={() => setShowForm(false)}
                   className="flex-1 px-4 py-2 text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
                 >
-                  Cancel
+                  {t('staffLeave.cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                 >
-                  {submitting ? 'Submitting...' : 'Submit Request'}
+                  {submitting ? t('staffLeave.submitting') : t('staffLeave.submitRequest')}
                 </button>
               </div>
             </form>
@@ -363,13 +363,13 @@ export default function StaffLeaveRequest() {
       {/* Requests List */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
-          <h3 className="font-semibold text-slate-800">My Leave Requests</h3>
+          <h3 className="font-semibold text-slate-800">{t('staffLeave.myLeaveRequests')}</h3>
         </div>
         
         {requests.length === 0 ? (
           <div className="p-12 text-center text-slate-500">
             <Calendar size={48} className="mx-auto mb-3 opacity-30" />
-            <p>No leave requests for this month</p>
+            <p>{t('staffLeave.noRequestsMonth')}</p>
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
