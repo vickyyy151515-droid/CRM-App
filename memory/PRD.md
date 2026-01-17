@@ -137,6 +137,11 @@ All staff-facing components now fully translated to casual Indonesian.
 - `GET /my-assigned-records-by-batch` - Get records for a specific batch
 - `GET /followups/filters` - Get unique products/databases for staff's follow-up filtering
 - `GET /followups` - Supports product_id, database_id, and urgency query params
+- `GET /retention/alerts` - At-risk customers with matched_name, matched_username, matched_source, phone_number
+- `GET /scheduled-reports/atrisk-rotation-status` - Check at-risk alert rotation status
+- `DELETE /scheduled-reports/atrisk-rotation-reset` - Reset at-risk alert rotation history
+- `GET /report-crm/export` - Export CRM Report (supports token query param)
+- `GET /omset/export-summary` - Export OMSET summary (supports token query param)
 
 ## New Route
 - `/batch/:batchId` - Standalone batch view page (opens in new tab)
