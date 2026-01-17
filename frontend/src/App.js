@@ -78,9 +78,10 @@ function App() {
     }
   }, []);
   
-  // Auto-logout check - runs every minute
+  // Auto-logout check - runs every minute (only for staff users)
   useEffect(() => {
-    if (!user) return;
+    // Only apply auto-logout to staff users
+    if (!user || user.role !== 'staff') return;
     
     const checkInactivity = () => {
       const timeSinceActivity = Date.now() - lastActivityTime;
