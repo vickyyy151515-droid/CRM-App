@@ -45,6 +45,7 @@ Build a sophisticated CRM (Customer Relationship Management) application for man
 - Role-based themes
 - Global search
 - **FULLY TRANSLATED to Indonesian** for staff panel
+- **NEW: Open batch in new tab** for efficient multi-tasking
 
 ### 7. Performance Tracking
 - Sales funnels
@@ -59,22 +60,14 @@ Build a sophisticated CRM (Customer Relationship Management) application for man
 ## What's Implemented (Latest Session - Jan 2026)
 
 ### Indonesian Translation - COMPLETED
-All staff-facing components now fully translated to casual Indonesian:
-- `StaffOmsetCRM.js` ✅
-- `MyAssignedRecords.js` ✅
-- `StaffDBBonanza.js` ✅
-- `StaffMemberWDCRM.js` ✅
-- `StaffProgress.js` ✅
-- `StaffFollowups.js` ✅
-- `StaffLeaveRequest.js` ✅
-- `Leaderboard.js` ✅
-- Sidebar navigation ✅
+All staff-facing components now fully translated to casual Indonesian.
 
-Translation files updated:
-- `/app/frontend/src/translations/id.js` - Indonesian translations
-- `/app/frontend/src/translations/en.js` - English translations
-
-Language toggle available via button in top bar (data-testid="language-toggle")
+### Open Batch in New Tab Feature - COMPLETED
+- Added "Open in New Tab" button to batch cards in "My Assigned Customers"
+- Created standalone `/batch/:batchId` route
+- New `BatchRecordsView.js` component with full functionality
+- Staff can now work on multiple batches simultaneously in different tabs
+- Stats summary, search, WhatsApp/Respond status buttons all functional
 
 ## Test Credentials
 - **Master Admin**: vicky@crm.com / vicky123
@@ -102,6 +95,11 @@ Language toggle available via button in top bar (data-testid="language-toggle")
 - `DELETE /notifications` - Bulk delete notifications
 - `GET /users/activity` - User activity status (timestamp-based)
 - `POST /reserved-members` - Requires phone_number field
+- `GET /my-request-batches` - Get user's batch list
+- `GET /my-assigned-records-by-batch` - Get records for a specific batch
+
+## New Route
+- `/batch/:batchId` - Standalone batch view page (opens in new tab)
 
 ## Database Collections
 - `users` - User accounts with role-based permissions
@@ -123,3 +121,4 @@ Language toggle available via button in top bar (data-testid="language-toggle")
 - python-telegram-bot - Telegram notifications
 - APScheduler - Background jobs
 - emergentintegrations - Telegram helper
+
