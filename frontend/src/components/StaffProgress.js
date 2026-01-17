@@ -477,10 +477,14 @@ export default function StaffProgress() {
                         style={{width: `${waProgressRate}%`}}
                       ></div>
                     </div>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-4 gap-2">
                       <div className="text-center">
                         <p className="text-sm font-bold text-emerald-600">{staff.ada}</p>
                         <p className="text-[10px] text-slate-600 dark:text-slate-400">Ada</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm font-bold text-amber-600">{staff.ceklis1}</p>
+                        <p className="text-[10px] text-slate-600 dark:text-slate-400">Ceklis 1</p>
                       </div>
                       <div className="text-center">
                         <p className="text-sm font-bold text-rose-600">{staff.tidak}</p>
