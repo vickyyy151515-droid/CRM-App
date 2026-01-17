@@ -329,19 +329,19 @@ async def get_followup_notifications(user: User = Depends(get_current_user)):
             'count': critical
         })
     
-    if high_count > 0:
+    if high > 0:
         notifications.append({
             'type': 'followup_high',
             'title': 'High Priority Follow-ups',
-            'message': f'You have {high_count} customer(s) waiting 3+ days for follow-up',
+            'message': f'You have {high} customer(s) waiting 3+ days for follow-up',
             'urgency': 'high',
-            'count': high_count
+            'count': high
         })
     
     return {
         'notifications': notifications,
-        'count': critical_count + high_count,
-        'summary': followups_data['summary']
+        'count': critical + high,
+        'summary': {'critical': critical, 'high': high, 'medium': medium, 'total': critical + high + medium}
     }
 
 @router.get("/followups/check-deposited/{record_id}")
