@@ -318,25 +318,36 @@ export default function AdvancedAnalytics() {
         );
 
       case 'omsetTrends':
-        return businessData?.omset_chart?.length > 0 && (
-          <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+        const hasOmsetData = businessData?.omset_chart?.length > 0;
+        return (
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 sm:p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
               <TrendingUp size={20} className="text-purple-600" />
               OMSET Trends
             </h3>
-            <div className="h-64 sm:h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={businessData.omset_chart}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip formatter={(value) => formatNumber(value)} />
-                  <Legend />
-                  <Line type="monotone" dataKey="total" name="Total OMSET" stroke="#8b5cf6" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="count" name="Records" stroke="#06b6d4" strokeWidth={2} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            {hasOmsetData ? (
+              <div className="h-64 sm:h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={businessData.omset_chart}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip formatter={(value) => formatNumber(value)} />
+                    <Legend />
+                    <Line type="monotone" dataKey="total" name="Total OMSET" stroke="#8b5cf6" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="count" name="Records" stroke="#06b6d4" strokeWidth={2} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="h-64 sm:h-80 flex items-center justify-center text-slate-500 dark:text-slate-400">
+                <div className="text-center">
+                  <TrendingUp size={48} className="mx-auto mb-2 opacity-30" />
+                  <p>No OMSET trends data available</p>
+                  <p className="text-sm mt-1">OMSET trends will appear after daily records are added</p>
+                </div>
+              </div>
+            )}
           </div>
         );
 
