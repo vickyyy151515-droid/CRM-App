@@ -259,8 +259,8 @@ async def get_user_activity(admin: User = Depends(get_admin_user)):
     
     # Consider user idle if no activity for 5 minutes
     IDLE_THRESHOLD_MINUTES = 5
-    # Consider user offline if no activity for 15 minutes (more realistic)
-    OFFLINE_THRESHOLD_MINUTES = 15
+    # Consider user offline if no activity for 30 minutes
+    OFFLINE_THRESHOLD_MINUTES = 30
     
     users = await db.users.find({}, {'_id': 0, 'password_hash': 0}).to_list(1000)
     
