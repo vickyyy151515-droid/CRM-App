@@ -230,8 +230,29 @@ export default function NotificationBell({ userRole }) {
       if (notification && !notification.read) {
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
+      toast.success('Notification deleted');
     } catch (error) {
       toast.error('Failed to delete notification');
+    }
+  };
+
+  const deleteAllNotifications = async () => {
+    if (!window.confirm('Are you sure you want to delete all notifications?')) {
+      return;
+    }
+    try {
+      // Delete all notifications one by one (or we could add a bulk delete endpoint)
+      const deletePromises = notifications.map(n => 
+        api.delete(`/notifications/${n.id}`).catch(() => null)
+      );
+      await Promise.all(deletePromises);
+      setNotifications([]);
+      setUnreadCount(0);
+      toast.success('All notifications deleted');
+    } catch (error) {
+      toast.error('Failed to delete all notifications');
+      // Reload to get accurate state
+      loadNotifications();
     }
   };
 
