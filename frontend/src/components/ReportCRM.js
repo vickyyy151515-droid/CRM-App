@@ -146,20 +146,29 @@ export default function ReportCRM() {
       params.append('year', selectedYear);
       params.append('token', token);
       
-      // Use iframe for download to handle auth properly
+      toast.success('Preparing download...');
+      
+      // Use fetch to download the file
       const url = `${process.env.REACT_APP_BACKEND_URL}/api/report-crm/export?${params.toString()}`;
-      const iframe = document.createElement('iframe');
-      iframe.style.display = 'none';
-      iframe.src = url;
-      document.body.appendChild(iframe);
+      const response = await fetch(url);
       
-      // Clean up iframe after download starts
-      setTimeout(() => {
-        document.body.removeChild(iframe);
-      }, 5000);
+      if (!response.ok) {
+        throw new Error('Export failed');
+      }
       
-      toast.success('Download starting...');
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = `report_crm_${selectedYear}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(downloadUrl);
+      
+      toast.success('Download complete!');
     } catch (error) {
+      console.error('Export error:', error);
       toast.error('Failed to export');
     }
   };
