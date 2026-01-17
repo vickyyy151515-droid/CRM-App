@@ -539,7 +539,7 @@ export default function StaffProgress() {
           })}
         </div>
         {Object.keys(staffStats).length === 0 && (
-          <div className="text-center py-8 text-slate-600 dark:text-slate-400">No staff assignments yet</div>
+          <div className="text-center py-8 text-slate-600 dark:text-slate-400">{t('staffProgress.noStaffAssignments')}</div>
         )}
       </div>
 
@@ -547,22 +547,22 @@ export default function StaffProgress() {
       <div>
         <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
           <Package className="text-indigo-600" size={20} />
-          Database Quality Report
+          {t('staffProgress.databaseQualityReport')}
         </h3>
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">Database</th>
-                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">Product</th>
-                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">Assigned</th>
-                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">WA Ada</th>
-                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">WA Tidak</th>
-                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">WA Quality</th>
-                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">Resp Ya</th>
-                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">Resp Tidak</th>
-                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">Resp Rate</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">{t('staffProgress.database')}</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">{t('staffProgress.product')}</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">{t('staffProgress.assigned')}</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">{t('staffProgress.waAda')}</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">{t('staffProgress.waTidak')}</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">{t('staffProgress.waQualityRate')}</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">{t('staffProgress.respondYa')}</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">{t('staffProgress.respondTidak')}</th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">{t('staffProgress.respondRate')}</th>
                 </tr>
               </thead>
               <tbody>
