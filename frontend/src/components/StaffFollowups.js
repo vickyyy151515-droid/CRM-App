@@ -58,28 +58,28 @@ export default function StaffFollowups() {
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border border-red-200">
             <AlertCircle size={12} />
-            7+ days
+            7+ {t('followups.daysAgo')}
           </span>
         );
       case 'high':
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 border border-orange-200">
             <Clock size={12} />
-            3+ days
+            3+ {t('followups.daysAgo')}
           </span>
         );
       case 'medium':
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border border-yellow-200">
             <Clock size={12} />
-            1+ day
+            1+ {t('followups.dayAgo')}
           </span>
         );
       default:
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-200">
             <CheckCircle2 size={12} />
-            Today
+            {t('staffProgress.today')}
           </span>
         );
     }
