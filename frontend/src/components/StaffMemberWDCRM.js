@@ -35,7 +35,7 @@ export default function StaffMemberWDCRM() {
       const response = await api.get(`/memberwd/staff/records${params}`);
       setRecords(response.data);
     } catch (error) {
-      toast.error('Failed to load records');
+      toast.error(t('messages.loadFailed'));
     } finally {
       setLoading(false);
     }
