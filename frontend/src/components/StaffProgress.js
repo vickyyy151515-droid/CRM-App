@@ -344,7 +344,7 @@ export default function StaffProgress() {
       )}
 
       {/* Overall Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <Users className="text-indigo-600" size={20} />
@@ -359,6 +359,14 @@ export default function StaffProgress() {
             <span className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{totalAda}</span>
           </div>
           <p className="text-xs text-slate-600 dark:text-slate-400">{t('staffProgress.waAda')}</p>
+        </div>
+
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <CheckCircle className="text-amber-600" size={20} />
+            <span className="text-2xl font-bold text-amber-700 dark:text-amber-400">{totalCeklis1}</span>
+          </div>
+          <p className="text-xs text-slate-600 dark:text-slate-400">Ceklis 1</p>
         </div>
 
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
