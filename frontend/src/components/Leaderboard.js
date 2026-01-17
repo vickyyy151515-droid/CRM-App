@@ -279,7 +279,7 @@ export default function Leaderboard({ isAdmin = false }) {
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{staff.days_worked} days worked</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{staff.days_worked} {t('leaderboard.daysWorked')}</p>
                   </div>
 
                   {/* Stats */}
@@ -313,7 +313,7 @@ export default function Leaderboard({ isAdmin = false }) {
                       <p className="text-sm font-medium text-slate-900 dark:text-white">
                         {staff.today_ndp}/{staff.today_rdp}
                       </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">Today NDP/RDP</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{t('leaderboard.todayNdpRdp')}</p>
                     </div>
                   </div>
                 </div>
@@ -323,7 +323,7 @@ export default function Leaderboard({ isAdmin = false }) {
                   {/* OMSET Progress */}
                   <div>
                     <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="text-slate-600 dark:text-slate-400">Monthly OMSET</span>
+                      <span className="text-slate-600 dark:text-slate-400">{t('leaderboard.monthlyOmset')}</span>
                       <span className="font-medium text-slate-700 dark:text-slate-300">{omsetProgress.toFixed(0)}%</span>
                     </div>
                     <div className="h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
@@ -337,7 +337,7 @@ export default function Leaderboard({ isAdmin = false }) {
                   {/* NDP Progress */}
                   <div>
                     <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="text-slate-600 dark:text-slate-400">Avg Daily NDP</span>
+                      <span className="text-slate-600 dark:text-slate-400">{t('leaderboard.avgDailyNdp')}</span>
                       <span className="font-medium text-slate-700 dark:text-slate-300">{staff.avg_daily_ndp.toFixed(1)} / {targets.daily_ndp}</span>
                     </div>
                     <div className="h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
