@@ -146,8 +146,8 @@ export default function StaffLeaveRequest() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Off Day / Sakit</h1>
-          <p className="text-slate-500 text-sm mt-1">Request time off or sick leave</p>
+          <h1 className="text-2xl font-bold text-slate-900">{t('staffLeave.title')}</h1>
+          <p className="text-slate-500 text-sm mt-1">{t('staffLeave.subtitle')}</p>
         </div>
         <button
           onClick={() => setShowForm(true)}
@@ -155,7 +155,7 @@ export default function StaffLeaveRequest() {
           data-testid="new-request-btn"
         >
           <Plus size={18} />
-          New Request
+          {t('staffLeave.newRequest')}
         </button>
       </div>
 
@@ -163,7 +163,7 @@ export default function StaffLeaveRequest() {
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
         <div className="flex flex-wrap gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-600 mb-1">Year</label>
+            <label className="block text-sm font-medium text-slate-600 mb-1">{t('staffLeave.year')}</label>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
@@ -175,7 +175,7 @@ export default function StaffLeaveRequest() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-600 mb-1">Month</label>
+            <label className="block text-sm font-medium text-slate-600 mb-1">{t('staffLeave.month')}</label>
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
