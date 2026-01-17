@@ -89,12 +89,12 @@ export default function MyAssignedRecords() {
       await api.patch(`/customer-records/${recordId}/whatsapp-status`, {
         whatsapp_status: newStatus
       });
-      toast.success(newStatus ? 'WhatsApp status updated' : 'WhatsApp status cleared');
+      toast.success(newStatus ? t('myRecords.whatsappStatusUpdated') : t('myRecords.whatsappStatusCleared'));
       if (selectedBatch) {
         loadBatchRecords(selectedBatch.id);
       }
     } catch (error) {
-      toast.error('Failed to update status');
+      toast.error(t('messages.saveFailed'));
     }
   };
 
@@ -107,12 +107,12 @@ export default function MyAssignedRecords() {
       await api.patch(`/customer-records/${recordId}/respond-status`, {
         respond_status: newStatus
       });
-      toast.success(newStatus ? 'Respond status updated' : 'Respond status cleared');
+      toast.success(newStatus ? t('myRecords.respondStatusUpdated') : t('myRecords.respondStatusCleared'));
       if (selectedBatch) {
         loadBatchRecords(selectedBatch.id);
       }
     } catch (error) {
-      toast.error('Failed to update status');
+      toast.error(t('messages.saveFailed'));
     }
   };
 
