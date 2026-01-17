@@ -46,6 +46,7 @@ Build a sophisticated CRM (Customer Relationship Management) application for man
 - Global search
 - **FULLY TRANSLATED to Indonesian** for staff panel
 - **NEW: Open batch in new tab** for efficient multi-tasking
+- Fixed Monitor Izin admin translations (Jan 17, 2026)
 
 ### 7. Performance Tracking
 - Sales funnels
