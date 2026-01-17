@@ -408,7 +408,7 @@ export default function StaffProgress() {
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {Object.values(staffStats).map((staff, idx) => {
-            const waCheckedCount = staff.ada + staff.tidak;
+            const waCheckedCount = staff.ada + staff.ceklis1 + staff.tidak;
             const waProgressRate = ((waCheckedCount / staff.total) * 100).toFixed(1);
             const waQualityRate = waCheckedCount > 0 ? ((staff.ada / waCheckedCount) * 100).toFixed(1) : 0;
             
