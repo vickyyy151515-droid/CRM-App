@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
 import { Plus, Edit2, Trash2, Calendar, Package, TrendingUp, Save, X, UserPlus, RefreshCw, Download } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // Helper function to get local date in YYYY-MM-DD format (fallback only)
 const getLocalDateString = (date = new Date()) => {
@@ -12,6 +13,7 @@ const getLocalDateString = (date = new Date()) => {
 };
 
 export default function StaffOmsetCRM() {
+  const { t } = useLanguage();
   const [products, setProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState('');
   const [selectedDate, setSelectedDate] = useState(''); // Will be set from server time
