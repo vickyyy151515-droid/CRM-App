@@ -363,30 +363,6 @@ const id = {
     infoNote: 'Catatan: Semua reservasi yang disetujui dapat dilihat oleh semua staf.',
   },
 
-  // Leaderboard & Progress
-  leaderboard: {
-    title: 'Progres & Kualitas Database Staf',
-    rank: 'Peringkat',
-    staffName: 'Nama Staf',
-    totalOMSET: 'Total OMSET',
-    totalNDP: 'Total NDP',
-    totalRDP: 'Total RDP',
-    todayNDPRDP: 'NDP/RDP Hari Ini',
-    monthlyTarget: 'Target Bulanan',
-    progress: 'Progres',
-    topPerformer: 'Performa Terbaik',
-    targets: 'Target',
-    setTargets: 'Atur Target',
-    monthlyOMSET: 'OMSET Bulanan',
-    dailyNDP: 'NDP Harian',
-    dailyRDP: 'RDP Harian',
-    qualityScore: 'Skor Kualitas',
-    databaseQuality: 'Kualitas Database',
-    responseRate: 'Tingkat Respon',
-    whatsappRate: 'Tingkat WA Ada',
-    overallScore: 'Skor Keseluruhan',
-  },
-
   // Daily Summary
   dailySummary: {
     title: 'Ringkasan Harian',
