@@ -1,0 +1,71 @@
+{
+  "summary": "Tested Indonesian translations for staff-facing components. Language toggle works correctly (EN/ID). Most staff pages show proper Indonesian translations. Found one component (Leaderboard.js) with incomplete translations - hardcoded English text not using t() function.",
+  
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Leaderboard.js",
+        "issue": "Hardcoded English text not using translation system - 'Staff Leaderboard', 'Rankings', 'Monthly OMSET Target', 'Daily NDP Target', 'Daily RDP Target', 'This Month', 'All Time', 'days worked', 'Today NDP/RDP', 'Avg Daily NDP', 'Avg Daily RDP', 'Edit Targets', 'Loading leaderboard...', 'No data available'",
+        "selector": "Papan Peringkat page",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  
+  "passed_tests": [
+    "Frontend: Login page loads correctly",
+    "Frontend: Staff login works with staff@crm.com / staff123",
+    "Frontend: Language toggle button (data-testid='language-toggle') works correctly",
+    "Frontend: Language toggle switches between EN and ID",
+    "Frontend: Sidebar navigation items translated to Indonesian when language is ID",
+    "Frontend: OMSET CRM page displays Indonesian translations (Tambah Data, Ekspor CSV, Produk, Tanggal, Total Pelanggan, NDP, RDP, etc.)",
+    "Frontend: Pelanggan Saya (My Assigned Customers) page displays Indonesian translations (Pelanggan yang Ditugaskan, Semua Produk, Ada, Ceklis 1, Tidak, Respond Ya, Respond Tidak)",
+    "Frontend: DB Bonanza page displays Indonesian translations (Cari data, Semua Produk, data ditugaskan, Ditugaskan)",
+    "Frontend: Member WD CRM page displays Indonesian translations (Cari data, Semua Produk, data ditugaskan, Ditugaskan)",
+    "Frontend: Off Day / Sakit page displays Indonesian translations (Ajukan cuti atau sakit, Permintaan Baru, Tahun, Bulan, Saldo Cuti, jam, Jam Terpakai, Disetujui, Permintaan Cuti Saya)",
+    "Frontend: Pengingat Follow-up page displays Indonesian translations (Pelanggan yang respond Ya tapi belum depo, Total Tertunda, Kritis, Tinggi, Sedang, Sudah Depo, hari lalu, Merespon, WA Ada, Tidak Ada)",
+    "Frontend: StaffProgress.js component uses translation system correctly",
+    "Frontend: StaffOmsetCRM.js component uses translation system correctly",
+    "Frontend: MyAssignedRecords.js component uses translation system correctly",
+    "Frontend: StaffDBBonanza.js component uses translation system correctly",
+    "Frontend: StaffMemberWDCRM.js component uses translation system correctly",
+    "Frontend: StaffLeaveRequest.js component uses translation system correctly",
+    "Frontend: StaffFollowups.js component uses translation system correctly"
+  ],
+  
+  "test_report_links": [],
+  
+  "action_items": [
+    "Update Leaderboard.js to use t() function for all hardcoded English strings - replace 'Staff Leaderboard' with t('leaderboard.title'), 'This Month' with t('common.thisMonth'), 'All Time' with t('common.allTime'), 'days worked' with t('staff.daysWorked'), etc."
+  ],
+  
+  "critical_code_review_comments": [
+    "Leaderboard.js imports useLanguage but has many hardcoded English strings not using t() function",
+    "All other staff components (StaffOmsetCRM, MyAssignedRecords, StaffDBBonanza, StaffMemberWDCRM, StaffLeaveRequest, StaffProgress, StaffFollowups) correctly use the translation system"
+  ],
+  
+  "updated_files": [],
+  
+  "success_rate": {
+    "backend": "N/A - frontend only testing",
+    "frontend": "95% - all pages translated except Leaderboard.js"
+  },
+  
+  "test_credentials": {
+    "staff": {"email": "staff@crm.com", "password": "staff123"}
+  },
+  
+  "seed_data_creation": "None",
+  
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  
+  "context_for_next_testing_agent": "Indonesian translations tested for staff panel. Language toggle (data-testid='language-toggle') works correctly. Most staff pages properly translated. Leaderboard.js component needs translation updates - it has hardcoded English text. The translation files (id.js and en.js) are comprehensive and include all necessary keys."
+}
