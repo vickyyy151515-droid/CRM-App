@@ -241,11 +241,7 @@ export default function NotificationBell({ userRole }) {
       return;
     }
     try {
-      // Delete all notifications one by one (or we could add a bulk delete endpoint)
-      const deletePromises = notifications.map(n => 
-        api.delete(`/notifications/${n.id}`).catch(() => null)
-      );
-      await Promise.all(deletePromises);
+      await api.delete('/notifications');
       setNotifications([]);
       setUnreadCount(0);
       toast.success('All notifications deleted');
