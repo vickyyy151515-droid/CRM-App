@@ -5,10 +5,12 @@ import {
   Calendar, Clock, AlertCircle, CheckCircle, XCircle, 
   Plus, Trash2, Timer, CalendarOff, Thermometer
 } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const MONTH_NAMES = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
 export default function StaffLeaveRequest() {
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [balance, setBalance] = useState(null);
   const [requests, setRequests] = useState([]);
