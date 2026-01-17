@@ -194,22 +194,22 @@ export default function StaffLeaveRequest() {
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl shadow-lg p-6 text-white">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
-              <h3 className="text-lg font-semibold opacity-90">Leave Balance - {MONTH_NAMES[selectedMonth - 1]} {selectedYear}</h3>
+              <h3 className="text-lg font-semibold opacity-90">{t('staffLeave.leaveBalance')} - {MONTH_NAMES[selectedMonth - 1]} {selectedYear}</h3>
               <div className="flex items-baseline gap-2 mt-2">
                 <span className="text-4xl font-bold">{balance.remaining_hours}</span>
-                <span className="text-xl opacity-80">/ {balance.total_hours} hours</span>
+                <span className="text-xl opacity-80">/ {balance.total_hours} {t('staffLeave.hours')}</span>
               </div>
             </div>
             <div className="flex gap-6">
               <div className="text-center">
                 <Timer size={24} className="mx-auto mb-1 opacity-70" />
                 <div className="text-2xl font-bold">{balance.used_hours}</div>
-                <div className="text-xs opacity-70">Hours Used</div>
+                <div className="text-xs opacity-70">{t('staffLeave.hoursUsed')}</div>
               </div>
               <div className="text-center">
                 <CheckCircle size={24} className="mx-auto mb-1 opacity-70" />
                 <div className="text-2xl font-bold">{balance.approved_requests}</div>
-                <div className="text-xs opacity-70">Approved</div>
+                <div className="text-xs opacity-70">{t('staffLeave.approved')}</div>
               </div>
             </div>
           </div>
@@ -223,8 +223,8 @@ export default function StaffLeaveRequest() {
               />
             </div>
             <div className="flex justify-between mt-1 text-xs opacity-70">
-              <span>0 hours</span>
-              <span>{balance.total_hours} hours</span>
+              <span>0 {t('staffLeave.hours')}</span>
+              <span>{balance.total_hours} {t('staffLeave.hours')}</span>
             </div>
           </div>
         </div>
@@ -235,13 +235,13 @@ export default function StaffLeaveRequest() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
             <div className="px-6 py-4 border-b border-slate-200">
-              <h2 className="text-xl font-bold text-slate-800">New Leave Request</h2>
+              <h2 className="text-xl font-bold text-slate-800">{t('staffLeave.newRequest')}</h2>
             </div>
             
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               {/* Leave Type */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Leave Type</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">{t('staffLeave.leaveType')}</label>
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
@@ -253,8 +253,8 @@ export default function StaffLeaveRequest() {
                     }`}
                   >
                     <CalendarOff size={24} className={`mx-auto mb-2 ${formData.leave_type === 'off_day' ? 'text-blue-600' : 'text-slate-400'}`} />
-                    <div className={`font-medium ${formData.leave_type === 'off_day' ? 'text-blue-700' : 'text-slate-600'}`}>Off Day</div>
-                    <div className="text-xs text-slate-500 mt-1">12 hours deducted</div>
+                    <div className={`font-medium ${formData.leave_type === 'off_day' ? 'text-blue-700' : 'text-slate-600'}`}>{t('staffLeave.offDay')}</div>
+                    <div className="text-xs text-slate-500 mt-1">{t('staffLeave.hoursDeducted')}</div>
                   </button>
                   <button
                     type="button"
@@ -266,15 +266,15 @@ export default function StaffLeaveRequest() {
                     }`}
                   >
                     <Thermometer size={24} className={`mx-auto mb-2 ${formData.leave_type === 'sakit' ? 'text-red-600' : 'text-slate-400'}`} />
-                    <div className={`font-medium ${formData.leave_type === 'sakit' ? 'text-red-700' : 'text-slate-600'}`}>Sakit</div>
-                    <div className="text-xs text-slate-500 mt-1">Hours by time range</div>
+                    <div className={`font-medium ${formData.leave_type === 'sakit' ? 'text-red-700' : 'text-slate-600'}`}>{t('staffLeave.sakit')}</div>
+                    <div className="text-xs text-slate-500 mt-1">{t('staffLeave.hoursByRange')}</div>
                   </button>
                 </div>
               </div>
 
               {/* Date */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">{t('staffLeave.date')}</label>
                 <input
                   type="date"
                   value={formData.date}
