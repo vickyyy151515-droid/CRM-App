@@ -74,6 +74,8 @@ const en = {
     sortBy: 'Sort by',
     ascending: 'Ascending',
     descending: 'Descending',
+    daily: 'Day',
+    staff: 'Staff',
   },
 
   // Auth
