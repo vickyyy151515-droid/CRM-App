@@ -434,7 +434,7 @@ export default function StaffProgress() {
                 {dateRange !== 'all' && dailyStats && (
                   <div className="mb-4 p-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg border border-indigo-100 dark:border-indigo-800">
                     <p className="text-xs font-semibold text-indigo-900 dark:text-indigo-300 mb-2">{getDateRangeLabel()}</p>
-                    <div className="grid grid-cols-5 gap-1 text-center">
+                    <div className="grid grid-cols-6 gap-1 text-center">
                       <div>
                         <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{dailyStats.checkedToday}</p>
                         <p className="text-[10px] text-indigo-600 dark:text-indigo-400">Dicek</p>
@@ -442,6 +442,10 @@ export default function StaffProgress() {
                       <div>
                         <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">{dailyStats.adaToday}</p>
                         <p className="text-[10px] text-emerald-600 dark:text-emerald-400">{t('staffProgress.waAda')}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-amber-600 dark:text-amber-400">{dailyStats.ceklis1Today}</p>
+                        <p className="text-[10px] text-amber-600 dark:text-amber-400">Ceklis 1</p>
                       </div>
                       <div>
                         <p className="text-sm font-bold text-rose-600 dark:text-rose-400">{dailyStats.tidakToday}</p>
