@@ -151,25 +151,25 @@ export default function StaffFollowups() {
           onClick={() => setFilter('medium')}
         >
           <p className="text-2xl font-bold text-yellow-700">{summary.medium}</p>
-          <p className="text-sm text-yellow-600">Medium (1+ day)</p>
+          <p className="text-sm text-yellow-600">{t('followups.medium')}</p>
         </div>
         <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
           <p className="text-2xl font-bold text-emerald-700">{summary.deposited}</p>
-          <p className="text-sm text-emerald-600">Deposited ✓</p>
+          <p className="text-sm text-emerald-600">{t('followups.deposited')} ✓</p>
         </div>
       </div>
 
       {/* Follow-ups List */}
       {loading ? (
-        <div className="text-center py-12 text-slate-600">Loading follow-ups...</div>
+        <div className="text-center py-12 text-slate-600">{t('staffProgress.loadingStats')}...</div>
       ) : followups.length === 0 ? (
         <div className="text-center py-12 bg-white border border-slate-200 rounded-xl">
           <CheckCircle2 className="mx-auto text-emerald-400 mb-4" size={64} />
-          <h3 className="text-lg font-semibold text-slate-900 mb-2">All caught up!</h3>
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">{t('followups.allCaughtUp')}</h3>
           <p className="text-slate-600">
             {filter === 'all' 
-              ? 'No customers waiting for follow-up' 
-              : `No ${filter} priority follow-ups`}
+              ? t('followups.noFollowups') 
+              : t('followups.noPriority')}
           </p>
         </div>
       ) : (
@@ -202,10 +202,10 @@ export default function StaffFollowups() {
                     {/* Days Since */}
                     <div className="text-right hidden sm:block">
                       <p className="text-sm font-medium text-slate-900">
-                        {followup.days_since_response} day{followup.days_since_response !== 1 ? 's' : ''} ago
+                        {followup.days_since_response} {t('followups.daysAgo')}
                       </p>
                       <p className="text-xs text-slate-500">
-                        Responded: {formatDate(followup.respond_date)}
+                        {t('followups.responded')}: {formatDate(followup.respond_date)}
                       </p>
                     </div>
                     
@@ -219,8 +219,8 @@ export default function StaffFollowups() {
                           : 'bg-slate-100 text-slate-700'
                       }`}>
                         <Phone size={12} />
-                        {followup.whatsapp_status === 'ada' ? 'WA Ada' : 
-                         followup.whatsapp_status === 'ceklis1' ? 'Ceklis 1' : 'Tidak Ada'}
+                        {followup.whatsapp_status === 'ada' ? t('followups.waAda') : 
+                         followup.whatsapp_status === 'ceklis1' ? t('followups.ceklis1') : t('followups.tidakAda')}
                       </span>
                     )}
                     
@@ -241,7 +241,7 @@ export default function StaffFollowups() {
                 {/* Mobile: Days Since */}
                 <div className="mt-2 sm:hidden">
                   <p className="text-sm text-slate-600">
-                    <span className="font-medium">{followup.days_since_response} day{followup.days_since_response !== 1 ? 's' : ''}</span> since response
+                    <span className="font-medium">{followup.days_since_response} {t('followups.daysAgo')}</span>
                   </p>
                 </div>
               </div>
