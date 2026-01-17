@@ -359,52 +359,52 @@ export default function StaffOmsetCRM() {
       {/* Add/Edit Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" data-testid="record-form-modal">
-          <div className="bg-white rounded-xl p-6 w-full max-w-lg shadow-xl">
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-6 w-full max-w-lg shadow-xl">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-slate-900">
-                {editingRecord ? 'Edit Record' : 'Add New Record'}
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                {editingRecord ? t('omset.editRecord') : t('omset.addRecord')}
               </h3>
-              <button onClick={resetForm} className="text-slate-400 hover:text-slate-600">
+              <button onClick={resetForm} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                 <X size={20} />
               </button>
             </div>
             
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Customer ID *</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">ID Pelanggan *</label>
                 <input
                   type="text"
                   value={formData.customer_id}
                   onChange={(e) => setFormData({...formData, customer_id: e.target.value})}
-                  className="w-full h-10 px-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="Enter customer ID"
+                  className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Masukkan ID pelanggan"
                   data-testid="input-customer-id"
                 />
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Nominal (dalam ribuan) *</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nominal (dalam ribuan) *</label>
                   <div className="relative">
                     <input
                       type="number"
                       value={formData.nominal}
                       onChange={(e) => setFormData({...formData, nominal: e.target.value})}
-                      className="w-full h-10 px-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       placeholder="100 = 100.000"
                       data-testid="input-nominal"
                     />
                   </div>
-                  <p className="text-xs text-slate-500 mt-1">Contoh: 100 = Rp 100.000</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Contoh: 100 = Rp 100.000</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Kelipatan</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Kelipatan</label>
                   <input
                     type="number"
                     step="0.1"
                     value={formData.depo_kelipatan}
                     onChange={(e) => setFormData({...formData, depo_kelipatan: e.target.value})}
-                    className="w-full h-10 px-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     placeholder="1"
                     data-testid="input-kelipatan"
                   />
@@ -412,23 +412,23 @@ export default function StaffOmsetCRM() {
               </div>
 
               {formData.nominal && (
-                <div className="bg-indigo-50 rounded-lg p-3">
-                  <p className="text-sm text-indigo-700">
+                <div className="bg-indigo-50 dark:bg-indigo-900/30 rounded-lg p-3">
+                  <p className="text-sm text-indigo-700 dark:text-indigo-300">
                     Nominal: <span className="font-bold">Rp {formatCurrency((parseFloat(formData.nominal) || 0) * 1000)}</span>
                   </p>
-                  <p className="text-sm text-indigo-700">
+                  <p className="text-sm text-indigo-700 dark:text-indigo-300">
                     Depo Total: <span className="font-bold">Rp {formatCurrency((parseFloat(formData.nominal) || 0) * 1000 * (parseFloat(formData.depo_kelipatan) || 1))}</span>
                   </p>
                 </div>
               )}
               
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Keterangan</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Keterangan</label>
                 <textarea
                   value={formData.keterangan}
                   onChange={(e) => setFormData({...formData, keterangan: e.target.value})}
-                  className="w-full h-20 px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
-                  placeholder="Notes (optional)"
+                  className="w-full h-20 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                  placeholder="Catatan (opsional)"
                   data-testid="input-keterangan"
                 />
               </div>
@@ -437,9 +437,9 @@ export default function StaffOmsetCRM() {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                  className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -447,7 +447,7 @@ export default function StaffOmsetCRM() {
                   data-testid="btn-save-record"
                 >
                   <Save size={18} />
-                  {editingRecord ? 'Update' : 'Save'}
+                  {editingRecord ? 'Ubah' : t('common.save')}
                 </button>
               </div>
             </form>
@@ -456,9 +456,9 @@ export default function StaffOmsetCRM() {
       )}
 
       {/* Records Table */}
-      <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
-          <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+          <h3 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
             <Package className="text-indigo-600" size={18} />
             {products.find(p => p.id === selectedProduct)?.name} - {new Date(selectedDate).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </h3>
@@ -466,34 +466,34 @@ export default function StaffOmsetCRM() {
         
         <div className="overflow-x-auto">
           <table className="w-full" data-testid="omset-records-table">
-            <thead className="bg-slate-50 border-b border-slate-200">
+            <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">No</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">Type</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">Customer ID</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700">Nominal</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700">Kelipatan</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700">Depo Total</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">Keterangan</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700">Actions</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300">No</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300">Tipe</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300">ID Pelanggan</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 dark:text-slate-300">Nominal</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 dark:text-slate-300">Kelipatan</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 dark:text-slate-300">Depo Total</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300">Keterangan</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 dark:text-slate-300">{t('common.actions')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {records.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
-                    No records for this date. Click &quot;Add Record&quot; to create one.
+                  <td colSpan={8} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                    Belum ada data untuk tanggal ini. Klik &quot;{t('omset.addRecord')}&quot; untuk membuat data baru.
                   </td>
                 </tr>
               ) : (
                 records.map((record, idx) => (
-                  <tr key={record.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 text-sm text-slate-900">{idx + 1}</td>
+                  <tr key={record.id} className="hover:bg-slate-50 dark:hover:bg-slate-700">
+                    <td className="px-4 py-3 text-sm text-slate-900 dark:text-white">{idx + 1}</td>
                     <td className="px-4 py-3 text-sm">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${
                         record.record_type === 'NDP' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-orange-100 text-orange-800'
+                          ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300' 
+                          : 'bg-orange-100 dark:bg-orange-900/50 text-orange-800 dark:text-orange-300'
                       }`}>
                         {record.record_type}
                       </span>
