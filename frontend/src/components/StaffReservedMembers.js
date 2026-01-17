@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
 import { UserPlus, Search, Clock, CheckCircle, Users, Package, Phone, Copy } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function StaffReservedMembers() {
+  const { t } = useLanguage();
   const [members, setMembers] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
