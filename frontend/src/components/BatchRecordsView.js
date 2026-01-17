@@ -2,8 +2,9 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Package, Search, X, ArrowLeft, ExternalLink } from 'lucide-react';
+import { Package, Search, X, ArrowLeft, ExternalLink, Moon, Sun, Globe } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function BatchRecordsView() {
   const { t } = useLanguage();
