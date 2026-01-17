@@ -80,13 +80,13 @@ export default function StaffMemberWDCRM() {
 
   return (
     <div data-testid="staff-db-memberwd">
-      <h2 className="text-3xl font-semibold tracking-tight text-slate-900 mb-6">Member WD CRM</h2>
+      <h2 className="text-3xl font-semibold tracking-tight text-slate-900 mb-6">{t('dbRecords.memberWdTitle')}</h2>
 
       {/* Filters */}
       <div className="mb-6 flex flex-col sm:flex-row gap-4">
         <input
           type="text"
-          placeholder="Search records..."
+          placeholder={t('dbRecords.searchRecords')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="flex-1 max-w-md h-10 px-4 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -100,7 +100,7 @@ export default function StaffMemberWDCRM() {
             className="h-10 px-4 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[180px]"
             data-testid="memberwd-filter-product"
           >
-            <option value="">All Products</option>
+            <option value="">{t('dbRecords.allProducts')}</option>
             {products.map(p => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
@@ -109,12 +109,12 @@ export default function StaffMemberWDCRM() {
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-slate-600">Loading your records...</div>
+        <div className="text-center py-12 text-slate-600">{t('dbRecords.loadingRecords')}</div>
       ) : records.length === 0 ? (
         <div className="text-center py-12 bg-white border border-slate-200 rounded-xl">
           <Gift className="mx-auto text-slate-300 mb-4" size={64} />
-          <p className="text-slate-600">No MemberWD records assigned to you yet</p>
-          <p className="text-sm text-slate-500 mt-2">Admin will assign records to you when available</p>
+          <p className="text-slate-600">{t('dbRecords.noMemberWdYet')}</p>
+          <p className="text-sm text-slate-500 mt-2">{t('dbRecords.adminWillAssign')}</p>
         </div>
       ) : (
         <div className="space-y-6">
@@ -129,7 +129,7 @@ export default function StaffMemberWDCRM() {
                     <div>
                       <h3 className="font-semibold text-slate-900">{dbName}</h3>
                       <div className="flex items-center gap-2">
-                        <p className="text-sm text-slate-500">{dbRecords.length} records assigned to you</p>
+                        <p className="text-sm text-slate-500">{dbRecords.length} {t('dbRecords.recordsAssigned')}</p>
                         {dbRecords[0]?.product_name && (
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
                             <Package size={10} className="mr-1" />
@@ -141,7 +141,7 @@ export default function StaffMemberWDCRM() {
                   </div>
                   <div className="flex items-center gap-1 text-sm text-slate-500">
                     <Calendar size={14} />
-                    Assigned: {formatDate(dbRecords[0]?.assigned_at)}
+                    {t('dbRecords.assigned')}: {formatDate(dbRecords[0]?.assigned_at)}
                   </div>
                 </div>
               </div>
