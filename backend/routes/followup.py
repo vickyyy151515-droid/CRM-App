@@ -272,22 +272,61 @@ async def get_followup_notifications(user: User = Depends(get_current_user)):
     if user.role != 'staff':
         return {'notifications': [], 'count': 0}
     
-    # Get followups data
-    followups_data = await get_followups(None, None, user)
+    # Get followups data - call the internal logic directly instead of the route function
+    jakarta_now = get_jakarta_now()
+    today = jakarta_now.strftime('%Y-%m-%d')
+    
+    # Find all assigned records with respond_status = 'ya'
+    query = {
+        'assigned_to': user.id,
+        'status': 'assigned',
+        'respond_status': 'ya'
+    }
+    
+    records = await db.customer_records.find(query, {'_id': 0}).to_list(10000)
+    
+    # Calculate summary counts
+    critical = 0
+    high = 0
+    medium = 0
+    
+    for record in records:
+        respond_date = record.get('respond_date', '')
+        if not respond_date:
+            continue
+            
+        try:
+            respond_dt = datetime.strptime(respond_date, '%Y-%m-%d').replace(tzinfo=JAKARTA_TZ)
+            days_since = (jakarta_now - respond_dt).days
+            
+            # Check if already deposited after respond
+            is_deposited = await db.omset_records.find_one({
+                'customer_id_normalized': record.get('customer_id_normalized') or record.get('customer_id', '').strip().upper(),
+                'record_date': {'$gte': respond_date}
+            })
+            
+            if is_deposited:
+                continue
+            
+            if days_since >= 7:
+                critical += 1
+            elif days_since >= 3:
+                high += 1
+            elif days_since >= 1:
+                medium += 1
+        except:
+            continue
     
     notifications = []
     
     # Generate notifications for critical and high urgency
-    critical_count = followups_data['summary']['critical']
-    high_count = followups_data['summary']['high']
-    
-    if critical_count > 0:
+    if critical > 0:
         notifications.append({
             'type': 'followup_critical',
             'title': 'Critical Follow-ups',
-            'message': f'You have {critical_count} customer(s) waiting 7+ days for follow-up!',
+            'message': f'You have {critical} customer(s) waiting 7+ days for follow-up!',
             'urgency': 'critical',
-            'count': critical_count
+            'count': critical
         })
     
     if high_count > 0:
