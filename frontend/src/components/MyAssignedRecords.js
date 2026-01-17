@@ -149,7 +149,7 @@ export default function MyAssignedRecords() {
   // Render batch list view
   const renderBatchList = () => (
     <div>
-      <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white mb-6">My Assigned Customers</h2>
+      <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white mb-6">{t('myRecords.title')}</h2>
 
       <div className="mb-6">
         <select
@@ -158,7 +158,7 @@ export default function MyAssignedRecords() {
           data-testid="filter-assigned-product"
           className="flex h-10 w-64 rounded-md border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-3 py-2 text-sm ring-offset-white dark:ring-offset-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
         >
-          <option value="">All Products</option>
+          <option value="">{t('myRecords.allProducts')}</option>
           {products.map((product) => (
             <option key={product.id} value={product.id}>
               {product.name}
@@ -168,12 +168,12 @@ export default function MyAssignedRecords() {
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-slate-600 dark:text-slate-400">Loading your data batches...</div>
+        <div className="text-center py-12 text-slate-600 dark:text-slate-400">{t('myRecords.loadingBatches')}</div>
       ) : filteredBatches.length === 0 ? (
         <div className="text-center py-12">
           <User className="mx-auto text-slate-300 dark:text-slate-600 mb-4" size={64} />
-          <p className="text-slate-600 dark:text-slate-400">No assigned customers yet</p>
-          <p className="text-sm text-slate-500 dark:text-slate-500 mt-2">Request customer records from the Browse Databases page</p>
+          <p className="text-slate-600 dark:text-slate-400">{t('myRecords.noAssignedYet')}</p>
+          <p className="text-sm text-slate-500 dark:text-slate-500 mt-2">{t('myRecords.requestFromBrowse')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="batch-list">
@@ -256,7 +256,7 @@ export default function MyAssignedRecords() {
                   <button
                     onClick={(e) => handleEditTitle(e, batch)}
                     className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded opacity-0 group-hover:opacity-100 transition-all"
-                    title="Edit title"
+                    title={t('myRecords.editTitle')}
                     data-testid={`edit-title-${batch.id}`}
                   >
                     <Edit2 size={14} />
@@ -266,29 +266,29 @@ export default function MyAssignedRecords() {
               
               <div className="space-y-1.5 text-sm">
                 <div className="flex items-center justify-between text-slate-600">
-                  <span>Records:</span>
-                  <span className="font-semibold text-slate-900">{batch.record_count} customers</span>
+                  <span>{t('myRecords.records')}:</span>
+                  <span className="font-semibold text-slate-900">{batch.record_count} {t('myRecords.customers')}</span>
                 </div>
                 
                 {/* WhatsApp Status Counts */}
                 <div className="flex items-center justify-between pt-2 border-t border-slate-100 mt-2">
                   <div className="flex items-center gap-1">
                     <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    <span className="text-slate-600">Ada:</span>
+                    <span className="text-slate-600">{t('myRecords.ada')}:</span>
                   </div>
                   <span className="font-semibold text-emerald-600">{batch.ada_count || 0}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1">
                     <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                    <span className="text-slate-600">Ceklis 1:</span>
+                    <span className="text-slate-600">{t('myRecords.ceklis1')}:</span>
                   </div>
                   <span className="font-semibold text-amber-600">{batch.ceklis1_count || 0}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1">
                     <span className="w-2 h-2 rounded-full bg-rose-500"></span>
-                    <span className="text-slate-600">Tidak:</span>
+                    <span className="text-slate-600">{t('myRecords.tidak')}:</span>
                   </div>
                   <span className="font-semibold text-rose-600">{batch.tidak_count || 0}</span>
                 </div>
@@ -297,21 +297,21 @@ export default function MyAssignedRecords() {
                 <div className="flex items-center justify-between pt-2 border-t border-slate-100 mt-2">
                   <div className="flex items-center gap-1">
                     <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                    <span className="text-slate-600">Respond Ya:</span>
+                    <span className="text-slate-600">{t('myRecords.respondYa')}:</span>
                   </div>
                   <span className="font-semibold text-blue-600">{batch.respond_ya_count || 0}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1">
                     <span className="w-2 h-2 rounded-full bg-slate-400"></span>
-                    <span className="text-slate-600">Respond Tidak:</span>
+                    <span className="text-slate-600">{t('myRecords.respondTidak')}:</span>
                   </div>
                   <span className="font-semibold text-slate-500">{batch.respond_tidak_count || 0}</span>
                 </div>
                 
                 {batch.is_legacy && (
                   <div className="text-xs text-amber-600 mt-2 pt-2 border-t border-slate-100">
-                    Assigned before batch tracking
+                    {t('myRecords.assignedBefore')}
                   </div>
                 )}
               </div>
