@@ -477,7 +477,9 @@ export default function AdminMemberWDCRM() {
                     const availableRecords = records.filter(r => r.status === 'available');
                     const eligibleRecords = availableRecords.filter(r => {
                       const username = r.row_data?.[usernameField];
-                      return !username || !reservedNames.includes(username.toLowerCase().trim());
+                      if (!username) return true;
+                      const usernameStr = String(username).toLowerCase().trim();
+                      return !reservedNames.includes(usernameStr);
                     });
                     const reservedInDb = availableRecords.length - eligibleRecords.length;
                     
