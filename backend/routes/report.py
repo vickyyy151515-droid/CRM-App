@@ -423,12 +423,36 @@ async def get_report_crm_data(
 
 @router.get("/report-crm/export")
 async def export_report_crm(
+    request: Request,
     product_id: Optional[str] = None,
     staff_id: Optional[str] = None,
     year: int = None,
-    user: User = Depends(get_admin_user)
+    token: Optional[str] = None
 ):
     """Export Report CRM data to Excel"""
+    db = get_db()
+    
+    # Support token in query params for download links
+    if token:
+        try:
+            payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+            user_data = await db.users.find_one({"id": payload["user_id"]}, {"_id": 0})
+            if not user_data:
+                raise HTTPException(status_code=401, detail="User not found")
+            user = User(**user_data)
+            if user.role not in ['admin', 'master_admin']:
+                raise HTTPException(status_code=403, detail="Admin access required")
+        except jwt.ExpiredSignatureError:
+            raise HTTPException(status_code=401, detail="Token expired")
+        except jwt.InvalidTokenError:
+            raise HTTPException(status_code=401, detail="Invalid token")
+    else:
+        # Fall back to header-based auth
+        from fastapi.security import HTTPBearer
+        security = HTTPBearer()
+        credentials = await security(request)
+        user = await get_admin_user(await get_current_user(credentials))
+    
     if year is None:
         year = get_jakarta_now().year
     
