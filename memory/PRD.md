@@ -59,6 +59,30 @@ Build a sophisticated CRM (Customer Relationship Management) application for man
 
 ## What's Implemented (Latest Session - Jan 2026)
 
+### At-Risk Customer Database Matching - COMPLETED (Jan 17, 2026)
+- At-risk customers now checked against 3 databases: Uploaded Database, DB Bonanza, Member WD CRM
+- When match found, displays: Username, Name, WhatsApp phone number
+- Copy buttons for username, name, and phone number
+- Direct WhatsApp link button
+- Source badge showing which database matched
+
+### At-Risk Alert 3-Day Rotation - COMPLETED (Jan 17, 2026)
+- At-risk customers now rotate on 3-day interval (same customer won't appear for 3 days after being shown)
+- New collection `atrisk_alert_history` tracks alerted customers
+- New endpoints: `/api/scheduled-reports/atrisk-rotation-status` and `/api/scheduled-reports/atrisk-rotation-reset`
+- Auto-cleanup of history records older than 7 days
+
+### Export Bug Fixes - COMPLETED (Jan 17, 2026)
+- Fixed "Export Summary" button in OMSET CRM (changed to fetch+blob approach)
+- Fixed "Export Excel" button in CRM Report (added token auth via query params)
+- Renamed "Report CRM" to "CRM Report" throughout the app
+
+### Staff Progress - Ceklis 1 Count - COMPLETED (Jan 17, 2026)
+- Added "Ceklis 1" count to Overall Statistics cards
+- Added "Ceklis 1" to Period Performance banner
+- Added "Ceklis 1" to Staff Performance cards (4-column grid)
+- Updated WhatsApp check progress calculation to include Ceklis 1
+
 ### Follow-up Reminders Filtering - COMPLETED (Jan 17, 2026)
 - Added product and database filtering to Follow-up Reminders page
 - Backend: New `/api/followups/filters` endpoint returns unique products/databases for staff
