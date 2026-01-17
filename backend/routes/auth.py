@@ -210,8 +210,8 @@ async def get_user_activity(admin: User = Depends(get_admin_user)):
     
     # Consider user idle if no activity for 5 minutes
     IDLE_THRESHOLD_MINUTES = 5
-    # Consider user offline if no activity for 30 minutes
-    OFFLINE_THRESHOLD_MINUTES = 30
+    # Consider user offline if no activity for 15 minutes (more realistic)
+    OFFLINE_THRESHOLD_MINUTES = 15
     
     users = await db.users.find({}, {'_id': 0, 'password_hash': 0}).to_list(1000)
     
@@ -224,11 +224,11 @@ async def get_user_activity(admin: User = Depends(get_admin_user)):
         last_activity_str = user.get('last_activity')
         last_login_str = user.get('last_login')
         last_logout_str = user.get('last_logout')
-        is_online = user.get('is_online', False)
         
         status = 'offline'
         idle_minutes = None
         
+        # Determine status purely based on last_activity timestamp, not is_online flag
         if last_activity_str:
             try:
                 last_activity = datetime.fromisoformat(last_activity_str.replace('Z', '+00:00'))
@@ -237,19 +237,37 @@ async def get_user_activity(admin: User = Depends(get_admin_user)):
                 
                 minutes_since_activity = (now - last_activity).total_seconds() / 60
                 
-                if minutes_since_activity < IDLE_THRESHOLD_MINUTES and is_online:
+                # Check if user has explicitly logged out after their last activity
+                user_explicitly_logged_out = False
+                if last_logout_str:
+                    try:
+                        last_logout = datetime.fromisoformat(last_logout_str.replace('Z', '+00:00'))
+                        if last_logout.tzinfo is None:
+                            last_logout = JAKARTA_TZ.localize(last_logout)
+                        # If logout is more recent than last activity, user is offline
+                        if last_logout > last_activity:
+                            user_explicitly_logged_out = True
+                    except:
+                        pass
+                
+                if user_explicitly_logged_out:
+                    status = 'offline'
+                    offline_count += 1
+                elif minutes_since_activity < IDLE_THRESHOLD_MINUTES:
                     status = 'online'
                     online_count += 1
-                elif minutes_since_activity < OFFLINE_THRESHOLD_MINUTES and is_online:
+                elif minutes_since_activity < OFFLINE_THRESHOLD_MINUTES:
                     status = 'idle'
                     idle_minutes = int(minutes_since_activity)
                     idle_count += 1
                 else:
                     status = 'offline'
                     offline_count += 1
-                    # Auto-update is_online to false if user has been inactive too long
-                    if is_online:
-                        await db.users.update_one({'id': user['id']}, {'$set': {'is_online': False}})
+                
+                # Update is_online flag to match actual status
+                actual_is_online = status in ['online', 'idle']
+                if user.get('is_online', False) != actual_is_online:
+                    await db.users.update_one({'id': user['id']}, {'$set': {'is_online': actual_is_online}})
             except:
                 status = 'offline'
                 offline_count += 1
