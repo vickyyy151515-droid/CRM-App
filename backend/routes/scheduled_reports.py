@@ -1027,6 +1027,43 @@ async def preview_atrisk(user: User = Depends(get_admin_user)):
     return {'alert': alert}
 
 
+@router.get("/scheduled-reports/atrisk-rotation-status")
+async def get_atrisk_rotation_status(user: User = Depends(get_admin_user)):
+    """Get the status of at-risk customer rotation (how many in cooldown)"""
+    db = get_db()
+    
+    jakarta_now = datetime.now(JAKARTA_TZ)
+    three_days_ago = (jakarta_now - timedelta(days=3)).isoformat()
+    
+    # Count customers in cooldown (alerted in last 3 days)
+    cooldown_count = await db.atrisk_alert_history.count_documents(
+        {'alerted_at': {'$gte': three_days_ago}}
+    )
+    
+    # Get total history count
+    total_history = await db.atrisk_alert_history.count_documents({})
+    
+    return {
+        'customers_in_cooldown': cooldown_count,
+        'total_history_records': total_history,
+        'cooldown_period_days': 3,
+        'message': f'{cooldown_count} customers are in 3-day cooldown and will not appear in today\'s alert'
+    }
+
+
+@router.delete("/scheduled-reports/atrisk-rotation-reset")
+async def reset_atrisk_rotation(user: User = Depends(get_admin_user)):
+    """Reset the at-risk alert rotation history (all customers can appear again)"""
+    db = get_db()
+    
+    result = await db.atrisk_alert_history.delete_many({})
+    
+    return {
+        'deleted_count': result.deleted_count,
+        'message': f'Cleared {result.deleted_count} alert history records. All at-risk customers can now appear in the next alert.'
+    }
+
+
 # Initialize scheduler on startup
 async def init_scheduler():
     """Initialize scheduler from saved config"""
