@@ -126,17 +126,43 @@ export default function BatchRecordsView() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6">
-      {/* Header */}
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
+      {/* Top Bar with Theme & Language Toggle */}
+      <div className="max-w-7xl mx-auto mb-4">
+        <div className="flex items-center justify-between">
           <a 
             href="/" 
-            className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-800 font-medium transition-colors mb-4"
+            className="inline-flex items-center gap-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium transition-colors"
           >
             <ArrowLeft size={18} />
             {t('myRecords.backToAll')}
           </a>
+          
+          <div className="flex items-center gap-2">
+            {/* Language Toggle */}
+            <button
+              onClick={toggleLanguage}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              data-testid="language-toggle-batch"
+            >
+              <Globe size={16} />
+              {language === 'id' ? 'ID' : 'EN'}
+            </button>
+            
+            {/* Dark Mode Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              data-testid="theme-toggle-batch"
+              title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+          </div>
         </div>
+      </div>
+
+      {/* Header */}
+      <div className="max-w-7xl mx-auto">
 
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
