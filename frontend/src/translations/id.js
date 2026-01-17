@@ -860,6 +860,12 @@ const id = {
     waAda: 'WA Ada',
     ceklis1: 'Ceklis 1',
     tidakAda: 'Tidak Ada',
+    filterByProduct: 'Filter Produk',
+    filterByDatabase: 'Filter Database',
+    allProducts: 'Semua Produk',
+    allDatabases: 'Semua Database',
+    selectProduct: 'Pilih produk dulu',
+    noFiltersAvailable: 'Tidak ada filter tersedia',
   },
 
   // Staff Leave
