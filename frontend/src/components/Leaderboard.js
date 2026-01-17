@@ -222,7 +222,7 @@ export default function Leaderboard({ isAdmin = false }) {
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            This Month
+            {t('leaderboard.thisMonth')}
           </button>
           <button
             onClick={() => setPeriod('all')}
@@ -232,18 +232,18 @@ export default function Leaderboard({ isAdmin = false }) {
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            All Time
+            {t('leaderboard.allTime')}
           </button>
         </div>
       </div>
 
       {/* Leaderboard List */}
       {loading ? (
-        <div className="text-center py-12 text-slate-600 dark:text-slate-400">Loading leaderboard...</div>
+        <div className="text-center py-12 text-slate-600 dark:text-slate-400">{t('leaderboard.loadingLeaderboard')}</div>
       ) : sortedLeaderboard.length === 0 ? (
         <div className="text-center py-12">
           <Users className="mx-auto text-slate-300 dark:text-slate-600 mb-4" size={64} />
-          <p className="text-slate-600 dark:text-slate-400">No data available</p>
+          <p className="text-slate-600 dark:text-slate-400">{t('leaderboard.noDataAvailable')}</p>
         </div>
       ) : (
         <div className="space-y-3" data-testid="leaderboard-list">
