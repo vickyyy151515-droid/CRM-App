@@ -152,11 +152,12 @@ All staff-facing components now fully translated to casual Indonesian.
 - `customer_records` - Main customer database
 - `omset_records` - Daily OMSET tracking
 - `bonanza_records` - DB Bonanza records
-- `member_wd_records` - Member WD records
+- `memberwd_records` - Member WD records
 - `reserved_members` - Reserved member list (with phone_number)
 - `leave_requests` - Staff leave tracking
 - `izin_records` - Short break tracking
 - `notifications` - In-app notifications
+- `atrisk_alert_history` - Tracks at-risk customers shown in alerts (for 3-day rotation)
 
 ## Third Party Integrations
 - @dnd-kit/core, @dnd-kit/sortable - Sidebar customization
