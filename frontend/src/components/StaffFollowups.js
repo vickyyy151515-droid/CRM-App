@@ -2,8 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
 import { AlertCircle, Clock, CheckCircle2, Phone, RefreshCw, Filter, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function StaffFollowups() {
+  const { t } = useLanguage();
   const [followups, setFollowups] = useState([]);
   const [summary, setSummary] = useState({
     total: 0,

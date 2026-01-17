@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
 import { Users, TrendingUp, CheckCircle, XCircle, Clock, Package, MessageCircle } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function StaffProgress() {
+  const { t } = useLanguage();
   const [databases, setDatabases] = useState([]);
   const [allRecords, setAllRecords] = useState([]);
   const [loading, setLoading] = useState(true);
