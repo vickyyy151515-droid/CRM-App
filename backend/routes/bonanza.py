@@ -159,7 +159,7 @@ async def assign_random_bonanza_records(assignment: RandomBonanzaAssignment, use
         raise HTTPException(status_code=404, detail="Staff not found")
     
     reserved_members = await db.reserved_members.find({}, {'_id': 0, 'customer_name': 1}).to_list(100000)
-    reserved_names = set(m['customer_name'].lower().strip() for m in reserved_members if m.get('customer_name'))
+    reserved_names = set(str(m['customer_name']).lower().strip() for m in reserved_members if m.get('customer_name'))
     
     available_records = await db.bonanza_records.find(
         {'database_id': assignment.database_id, 'status': 'available'},
@@ -170,7 +170,9 @@ async def assign_random_bonanza_records(assignment: RandomBonanzaAssignment, use
     skipped_count = 0
     for record in available_records:
         username = record.get('row_data', {}).get(assignment.username_field, '')
-        if username and username.lower().strip() in reserved_names:
+        # Convert to string in case the value is a number
+        username_str = str(username).lower().strip() if username else ''
+        if username_str and username_str in reserved_names:
             skipped_count += 1
             continue
         eligible_records.append(record)
