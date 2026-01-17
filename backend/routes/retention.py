@@ -692,7 +692,7 @@ async def get_customer_alerts(
     risk_order = {'critical': 0, 'high': 1, 'medium': 2}
     alerts.sort(key=lambda x: (risk_order[x['risk_level']], -x['days_since_deposit']))
     
-    # Enrich alerts with phone numbers from customer_records, bonanza_records, and memberwd_records
+    # Enrich alerts with phone numbers and customer details from customer_records, bonanza_records, and memberwd_records
     if alerts:
         # Get all customer IDs from alerts to look up
         customer_ids_to_lookup = set()
@@ -701,15 +701,16 @@ async def get_customer_alerts(
             customer_ids_to_lookup.add(alert['customer_id'].upper().strip())
             customer_ids_to_lookup.add(alert['customer_id'].strip())
         
-        # Build phone lookup map (username -> phone) from multiple collections
-        phone_lookup = {}
+        # Build lookup maps (username -> {phone, name, source}) from multiple collections
+        customer_info_lookup = {}
         
-        # Helper function to extract phone from row_data
-        def extract_phone_from_records(records):
+        # Helper function to extract customer info from row_data
+        def extract_info_from_records(records, source_name):
             for record in records:
                 row_data = record.get('row_data', {})
                 username = None
                 phone = None
+                name = None
                 
                 for key, value in row_data.items():
                     key_lower = key.lower()
@@ -717,40 +718,64 @@ async def get_customer_alerts(
                     if key_lower in ['username', 'user_name', 'user', 'id', 'userid', 'user_id']:
                         username = str(value).strip() if value else None
                     # Find phone field
-                    if key_lower in ['telpon', 'phone', 'no_hp', 'nomor', 'hp', 'no hp', 'phone_number', 'telp', 'no_telp', 'telephone']:
+                    if key_lower in ['telpon', 'phone', 'no_hp', 'nomor', 'hp', 'no hp', 'phone_number', 'telp', 'no_telp', 'telephone', 'whatsapp', 'wa']:
                         phone = str(value).strip() if value else None
+                    # Find name field
+                    if key_lower in ['name', 'nama', 'full_name', 'fullname', 'customer_name', 'nama_lengkap']:
+                        name = str(value).strip() if value else None
                 
-                if username and phone:
-                    phone_lookup[username.lower()] = phone
-                    phone_lookup[username] = phone
+                if username:
+                    # Store with both lowercase and original case
+                    info = {
+                        'phone': phone,
+                        'name': name,
+                        'username': username,
+                        'source': source_name
+                    }
+                    # Only update if we have more info or it's a new entry
+                    username_lower = username.lower()
+                    if username_lower not in customer_info_lookup or (phone and not customer_info_lookup[username_lower].get('phone')):
+                        customer_info_lookup[username_lower] = info
+                    if username not in customer_info_lookup or (phone and not customer_info_lookup[username].get('phone')):
+                        customer_info_lookup[username] = info
         
-        # Query customer_records for phone numbers
+        # Query customer_records for customer info
         customer_records = await db.customer_records.find(
             {},
             {'_id': 0, 'row_data': 1}
         ).to_list(100000)
-        extract_phone_from_records(customer_records)
+        extract_info_from_records(customer_records, 'Database')
         
-        # Query bonanza_records for phone numbers
+        # Query bonanza_records for customer info
         bonanza_records = await db.bonanza_records.find(
             {},
             {'_id': 0, 'row_data': 1}
         ).to_list(100000)
-        extract_phone_from_records(bonanza_records)
+        extract_info_from_records(bonanza_records, 'DB Bonanza')
         
-        # Query memberwd_records for phone numbers
+        # Query memberwd_records for customer info
         memberwd_records = await db.memberwd_records.find(
             {},
             {'_id': 0, 'row_data': 1}
         ).to_list(100000)
-        extract_phone_from_records(memberwd_records)
+        extract_info_from_records(memberwd_records, 'Member WD')
         
-        # Enrich alerts with phone numbers
+        # Enrich alerts with customer details
         for alert in alerts:
             customer_id = alert['customer_id']
-            # Try to find phone number
-            phone = phone_lookup.get(customer_id.lower()) or phone_lookup.get(customer_id) or phone_lookup.get(customer_id.upper())
-            alert['phone_number'] = phone or ''
+            # Try to find customer info
+            info = customer_info_lookup.get(customer_id.lower()) or customer_info_lookup.get(customer_id) or customer_info_lookup.get(customer_id.upper())
+            
+            if info:
+                alert['phone_number'] = info.get('phone') or ''
+                alert['matched_name'] = info.get('name') or ''
+                alert['matched_username'] = info.get('username') or ''
+                alert['matched_source'] = info.get('source') or ''
+            else:
+                alert['phone_number'] = ''
+                alert['matched_name'] = ''
+                alert['matched_username'] = ''
+                alert['matched_source'] = ''
     
     return {
         'summary': {
