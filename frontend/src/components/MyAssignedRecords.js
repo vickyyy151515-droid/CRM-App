@@ -339,7 +339,7 @@ export default function MyAssignedRecords() {
             data-testid="back-to-batches"
           >
             <ChevronLeft size={20} />
-            Back to All Batches
+            {t('myRecords.backToAll')}
           </button>
         </div>
 
@@ -352,8 +352,8 @@ export default function MyAssignedRecords() {
               </h3>
               <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
                 {filteredRecords.length === records.length 
-                  ? `${records.length} customer${records.length !== 1 ? 's' : ''} assigned`
-                  : `Showing ${filteredRecords.length} of ${records.length} customers`
+                  ? `${records.length} ${t('myRecords.customers')}`
+                  : `${filteredRecords.length} dari ${records.length} ${t('myRecords.customers')}`
                 }
                 {` • ${selectedBatch.product_name}`}
               </p>
@@ -364,7 +364,7 @@ export default function MyAssignedRecords() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input
                 type="text"
-                placeholder="Search name, username..."
+                placeholder={t('myRecords.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full h-10 pl-10 pr-10 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder:text-slate-400"
@@ -383,18 +383,18 @@ export default function MyAssignedRecords() {
           </div>
 
           {loadingRecords ? (
-            <div className="text-center py-12 text-slate-600 dark:text-slate-400">Loading records...</div>
+            <div className="text-center py-12 text-slate-600 dark:text-slate-400">{t('myRecords.loadingRecords')}</div>
           ) : records.length === 0 ? (
-            <div className="text-center py-12 text-slate-500 dark:text-slate-400">No records found in this batch</div>
+            <div className="text-center py-12 text-slate-500 dark:text-slate-400">{t('myRecords.noRecordsFound')}</div>
           ) : filteredRecords.length === 0 ? (
             <div className="text-center py-12 text-slate-500 dark:text-slate-400">
               <Search className="mx-auto text-slate-300 dark:text-slate-600 mb-3" size={48} />
-              <p>No customers matching "{searchTerm}"</p>
+              <p>{t('myRecords.noCustomersMatch')} "{searchTerm}"</p>
               <button 
                 onClick={() => setSearchTerm('')}
                 className="mt-2 text-indigo-600 hover:text-indigo-800 text-sm font-medium"
               >
-                Clear search
+                {t('myRecords.clearSearch')}
               </button>
             </div>
           ) : (
@@ -408,9 +408,9 @@ export default function MyAssignedRecords() {
                         {col}
                       </th>
                     ))}
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300">Assigned Date</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300">WhatsApp Ada/Tidak</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300">Respond Ya/Tidak</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300">{t('myRecords.assignedDate')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300">{t('myRecords.whatsappAdaTidak')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300">{t('myRecords.respondYaTidak')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -443,9 +443,9 @@ export default function MyAssignedRecords() {
                             
                             try {
                               document.execCommand('copy');
-                              toast.success('WhatsApp link copied! Paste in browser address bar');
+                              toast.success(t('myRecords.linkCopied'));
                             } catch (err) {
-                              toast.error('Failed to copy');
+                              toast.error(t('messages.somethingWrong'));
                             } finally {
                               document.body.removeChild(textarea);
                             }
@@ -458,7 +458,7 @@ export default function MyAssignedRecords() {
                                 <button
                                   onClick={handleCopy}
                                   data-testid={`copy-number-${record.id}`}
-                                  title="Copy WhatsApp link"
+                                  title={t('myRecords.copyWhatsappLink')}
                                   className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 p-1.5 rounded transition-colors"
                                 >
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -490,7 +490,7 @@ export default function MyAssignedRecords() {
                                 : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 hover:text-emerald-700 dark:hover:text-emerald-400'
                             }`}
                           >
-                            Ada
+                            {t('myRecords.ada')}
                           </button>
                           <button
                             onClick={() => handleWhatsAppStatusChange(record.id, 'ceklis1')}
@@ -501,7 +501,7 @@ export default function MyAssignedRecords() {
                                 : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 hover:text-amber-700 dark:hover:text-amber-400'
                             }`}
                           >
-                            Ceklis 1
+                            {t('myRecords.ceklis1')}
                           </button>
                           <button
                             onClick={() => handleWhatsAppStatusChange(record.id, 'tidak')}
@@ -512,7 +512,7 @@ export default function MyAssignedRecords() {
                                 : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-rose-100 dark:hover:bg-rose-900/30 hover:text-rose-700 dark:hover:text-rose-400'
                             }`}
                           >
-                            Tidak
+                            {t('myRecords.tidak')}
                           </button>
                         </div>
                       </td>
@@ -538,7 +538,7 @@ export default function MyAssignedRecords() {
                                 : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-rose-100 dark:hover:bg-rose-900/30 hover:text-rose-700 dark:hover:text-rose-400'
                             }`}
                           >
-                            Tidak
+                            {t('myRecords.tidak')}
                           </button>
                         </div>
                       </td>
