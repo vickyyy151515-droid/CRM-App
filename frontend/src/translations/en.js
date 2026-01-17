@@ -652,6 +652,21 @@ const en = {
     editTargets: 'Edit Targets',
     loadingLeaderboard: 'Loading leaderboard...',
     noDataAvailable: 'No data available',
+    // Additional keys from old section
+    rank: 'Rank',
+    staffName: 'Staff Name',
+    totalOMSET: 'Total OMSET',
+    totalNDP: 'Total NDP',
+    totalRDP: 'Total RDP',
+    todayNDPRDP: 'Today NDP/RDP',
+    monthlyTarget: 'Monthly Target',
+    progress: 'Progress',
+    topPerformer: 'Top Performer',
+    targets: 'Targets',
+    setTargets: 'Set Targets',
+    monthlyOMSET: 'Monthly OMSET',
+    dailyNDP: 'Daily NDP',
+    dailyRDP: 'Daily RDP',
   },
 };
 
