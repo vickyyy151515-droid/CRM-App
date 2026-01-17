@@ -584,6 +584,20 @@ async def send_staff_offline_alert():
         print("Staff offline alerts are disabled")
         return
     
+    # Check if we already sent an alert in the last 30 minutes (prevent duplicates)
+    last_sent = config.get('staff_offline_last_sent')
+    if last_sent:
+        try:
+            last_sent_time = datetime.fromisoformat(last_sent.replace('Z', '+00:00'))
+            if last_sent_time.tzinfo is None:
+                last_sent_time = last_sent_time.replace(tzinfo=JAKARTA_TZ)
+            minutes_since_last = (datetime.now(JAKARTA_TZ) - last_sent_time).total_seconds() / 60
+            if minutes_since_last < 30:
+                print(f"Staff offline alert already sent {minutes_since_last:.1f} minutes ago, skipping duplicate")
+                return
+        except Exception as e:
+            print(f"Error parsing staff_offline_last_sent time: {e}")
+    
     bot_token = config.get('telegram_bot_token')
     # Send to admin's personal chat
     chat_id = config.get('telegram_chat_id')
