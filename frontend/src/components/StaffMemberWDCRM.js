@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
 import { Gift, FileSpreadsheet, Calendar, Package } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function StaffMemberWDCRM() {
+  const { t } = useLanguage();
   const [records, setRecords] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
