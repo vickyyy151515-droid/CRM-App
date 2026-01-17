@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../App';
-import { Bell, Check, CheckCheck, Trash2, X, AlertCircle, Clock, Wifi, WifiOff } from 'lucide-react';
+import { Bell, Check, CheckCheck, Trash2, X, AlertCircle, Clock, Wifi, WifiOff, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -19,6 +19,7 @@ export default function NotificationBell({ userRole }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [followupCount, setFollowupCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [wsStatus, setWsStatus] = useState(WS_STATUS.DISCONNECTED);
   const dropdownRef = useRef(null);
   const wsRef = useRef(null);
@@ -38,14 +39,18 @@ export default function NotificationBell({ userRole }) {
     return `${wsUrl}/ws/notifications?token=${token}`;
   };
 
-  // Load initial notifications
+  // Load initial notifications - increased limit to get more history
   const loadNotifications = async () => {
     try {
-      const response = await api.get('/notifications?limit=20');
-      setNotifications(response.data.notifications);
-      setUnreadCount(response.data.unread_count);
+      setLoading(true);
+      const response = await api.get('/notifications?limit=100');
+      setNotifications(response.data.notifications || []);
+      setUnreadCount(response.data.unread_count || 0);
     } catch (error) {
-      console.error('Failed to load notifications');
+      console.error('Failed to load notifications:', error);
+      // Don't clear notifications on error - keep existing ones
+    } finally {
+      setLoading(false);
     }
   };
 
