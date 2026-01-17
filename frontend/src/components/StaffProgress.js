@@ -310,7 +310,7 @@ export default function StaffProgress() {
             </div>
             <Clock className="text-white opacity-50" size={48} />
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-9 gap-4">
             <div className="bg-white/10 backdrop-blur rounded-lg p-4">
               <p className="text-indigo-100 text-xs mb-1">{t('staffProgress.totalChecked')}</p>
               <p className="text-2xl font-bold">{checkedInPeriod}</p>
@@ -318,6 +318,10 @@ export default function StaffProgress() {
             <div className="bg-white/10 backdrop-blur rounded-lg p-4">
               <p className="text-indigo-100 text-xs mb-1">{t('staffProgress.waAda')}</p>
               <p className="text-2xl font-bold">{adaInPeriod}</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur rounded-lg p-4">
+              <p className="text-indigo-100 text-xs mb-1">Ceklis 1</p>
+              <p className="text-2xl font-bold">{ceklis1InPeriod}</p>
             </div>
             <div className="bg-white/10 backdrop-blur rounded-lg p-4">
               <p className="text-indigo-100 text-xs mb-1">{t('staffProgress.waTidak')}</p>
