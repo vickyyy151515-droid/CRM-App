@@ -3,20 +3,37 @@ import { api } from '../App';
 import { toast } from 'sonner';
 import { 
   Timer, Clock, Users, AlertTriangle, 
-  CheckCircle, RefreshCw, Calendar, ChevronDown, ChevronUp
+  CheckCircle, RefreshCw, Calendar, ChevronDown, ChevronUp, History, Filter
 } from 'lucide-react';
 
 export default function AdminIzinMonitor() {
   const [loading, setLoading] = useState(true);
   const [todayData, setTodayData] = useState(null);
+  const [historyData, setHistoryData] = useState(null);
   const [expandedStaff, setExpandedStaff] = useState({});
+  const [expandedHistory, setExpandedHistory] = useState({});
+  const [activeTab, setActiveTab] = useState('today'); // 'today' or 'history'
+  const [staffList, setStaffList] = useState([]);
+  const [selectedStaff, setSelectedStaff] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   useEffect(() => {
     loadData();
+    loadStaffList();
     // Auto refresh every 30 seconds
     const interval = setInterval(loadData, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  const loadStaffList = async () => {
+    try {
+      const response = await api.get('/staff-users');
+      setStaffList(response.data);
+    } catch (error) {
+      console.error('Failed to load staff list');
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -30,6 +47,27 @@ export default function AdminIzinMonitor() {
     }
   };
 
+  const loadHistory = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (selectedStaff) params.append('staff_id', selectedStaff);
+      if (startDate) params.append('start_date', startDate);
+      if (endDate) params.append('end_date', endDate);
+      
+      const response = await api.get(`/izin/admin/history?${params}`);
+      setHistoryData(response.data);
+    } catch (error) {
+      console.error('Failed to load history:', error);
+      toast.error('Gagal memuat riwayat izin');
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'history') {
+      loadHistory();
+    }
+  }, [activeTab, selectedStaff, startDate, endDate]);
+
   const toggleExpand = (staffId) => {
     setExpandedStaff(prev => ({
       ...prev,
@@ -37,9 +75,60 @@ export default function AdminIzinMonitor() {
     }));
   };
 
+  const toggleHistoryExpand = (key) => {
+    setExpandedHistory(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
   const formatTime = (timeStr) => {
     if (!timeStr) return '-';
     return timeStr.slice(0, 5);
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '-';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+  };
+
+  // Group history records by date
+  const getGroupedHistory = () => {
+    if (!historyData?.records) return [];
+    
+    const grouped = {};
+    for (const record of historyData.records) {
+      const date = record.date;
+      if (!grouped[date]) {
+        grouped[date] = {
+          date,
+          records: [],
+          totalMinutes: 0,
+          staffBreakdown: {}
+        };
+      }
+      grouped[date].records.push(record);
+      if (record.duration_minutes) {
+        grouped[date].totalMinutes += record.duration_minutes;
+      }
+      
+      // Track per-staff breakdown
+      const staffId = record.staff_id;
+      if (!grouped[date].staffBreakdown[staffId]) {
+        grouped[date].staffBreakdown[staffId] = {
+          staff_name: record.staff_name,
+          total_minutes: 0,
+          records: []
+        };
+      }
+      grouped[date].staffBreakdown[staffId].records.push(record);
+      if (record.duration_minutes) {
+        grouped[date].staffBreakdown[staffId].total_minutes += record.duration_minutes;
+      }
+    }
+    
+    return Object.values(grouped).sort((a, b) => b.date.localeCompare(a.date));
   };
 
   if (loading) {
@@ -52,6 +141,7 @@ export default function AdminIzinMonitor() {
 
   const onBreakCount = todayData?.staff_summary?.filter(s => s.is_on_break).length || 0;
   const exceededCount = todayData?.staff_summary?.filter(s => s.exceeded_limit).length || 0;
+  const groupedHistory = getGroupedHistory();
 
   return (
     <div className="space-y-6" data-testid="admin-izin-page">
