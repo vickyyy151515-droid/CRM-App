@@ -95,11 +95,3 @@ frontend/node_modules/.cache/default-development/8.pack
 .env.local
 .env.*.local
 frontend/node_modules/.cache/default-development/2.pack_
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
