@@ -504,6 +504,8 @@ const id = {
     requestRejected: 'Permintaan Ditolak',
     recordsAssigned: 'Data Ditugaskan',
     followupReminder: 'Pengingat Follow-up',
+    reservedMemberExpiring: 'Reserved Member Segera Kedaluwarsa',
+    reservedMemberExpired: 'Reserved Member Dihapus',
     loadingNotifications: 'Memuat notifikasi...',
     totalNotifications: 'total',
     unread: 'belum dibaca',
