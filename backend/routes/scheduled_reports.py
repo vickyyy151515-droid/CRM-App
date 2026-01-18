@@ -1243,6 +1243,94 @@ async def reset_atrisk_rotation(user: User = Depends(get_admin_user)):
     }
 
 
+@router.get("/scheduled-reports/reserved-member-cleanup-preview")
+async def preview_reserved_member_cleanup(user: User = Depends(get_admin_user)):
+    """Preview which reserved members will receive warnings or be deleted"""
+    db = get_db()
+    jakarta_now = datetime.now(JAKARTA_TZ)
+    
+    # Get all approved reserved members
+    reserved_members = await db.reserved_members.find(
+        {'status': 'approved'},
+        {'_id': 0}
+    ).to_list(10000)
+    
+    expiring_soon = []  # 7 days or less remaining
+    will_be_deleted = []  # 0 days or less remaining
+    active_members = []  # Has OMSET
+    
+    for member in reserved_members:
+        member_id = member.get('id')
+        customer_name = member.get('customer_name', '')
+        staff_id = member.get('staff_id')
+        staff_name = member.get('staff_name', 'Unknown')
+        product_name = member.get('product_name', 'Unknown')
+        
+        # Get the reservation date
+        reserved_at_str = member.get('approved_at') or member.get('created_at')
+        if not reserved_at_str:
+            continue
+            
+        try:
+            reserved_at = datetime.fromisoformat(reserved_at_str.replace('Z', '+00:00'))
+            if reserved_at.tzinfo is None:
+                reserved_at = JAKARTA_TZ.localize(reserved_at)
+        except Exception:
+            continue
+        
+        days_since_reservation = (jakarta_now - reserved_at).days
+        days_remaining = 30 - days_since_reservation
+        
+        # Check if there's any OMSET from this customer since reservation
+        omset_query = {
+            '$or': [
+                {'customer_id': {'$regex': f'^{customer_name}$', '$options': 'i'}},
+                {'customer_name': {'$regex': f'^{customer_name}$', '$options': 'i'}}
+            ],
+            'staff_id': staff_id,
+            'created_at': {'$gte': reserved_at_str}
+        }
+        
+        has_omset = await db.omset_records.find_one(omset_query, {'_id': 1})
+        
+        member_info = {
+            'id': member_id,
+            'customer_name': customer_name,
+            'staff_name': staff_name,
+            'product_name': product_name,
+            'days_since_reservation': days_since_reservation,
+            'days_remaining': days_remaining,
+            'reserved_at': reserved_at_str
+        }
+        
+        if has_omset:
+            active_members.append(member_info)
+        elif days_remaining <= 0:
+            will_be_deleted.append(member_info)
+        elif days_remaining <= 7:
+            expiring_soon.append(member_info)
+    
+    return {
+        'total_approved_members': len(reserved_members),
+        'active_members_with_omset': len(active_members),
+        'expiring_soon_count': len(expiring_soon),
+        'will_be_deleted_count': len(will_be_deleted),
+        'expiring_soon': expiring_soon,
+        'will_be_deleted': will_be_deleted,
+        'message': f'{len(expiring_soon)} members will receive warning notifications, {len(will_be_deleted)} will be auto-deleted at next cleanup (00:01 WIB)'
+    }
+
+
+@router.post("/scheduled-reports/reserved-member-cleanup-run")
+async def run_reserved_member_cleanup(user: User = Depends(get_admin_user)):
+    """Manually trigger the reserved member cleanup job"""
+    try:
+        await process_reserved_member_cleanup()
+        return {'success': True, 'message': 'Reserved member cleanup completed successfully'}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Cleanup failed: {str(e)}")
+
+
 # Initialize scheduler on startup
 async def init_scheduler():
     """Initialize scheduler from saved config"""
