@@ -716,6 +716,33 @@ async def update_batch_title(batch_id: str, title_update: BatchTitleUpdate, user
     
     return {'message': 'Title updated successfully'}
 
+@router.patch("/my-request-batches/{batch_id}/pin")
+async def toggle_batch_pin(batch_id: str, pin_update: BatchPinUpdate, user: User = Depends(get_current_user)):
+    """Toggle the pinned status for a batch"""
+    db = get_db()
+    
+    if user.role != 'staff':
+        raise HTTPException(status_code=403, detail="Only staff can pin batches")
+    
+    if batch_id.startswith('legacy_'):
+        database_id = batch_id.replace('legacy_', '')
+        await db.batch_titles.update_one(
+            {'batch_id': batch_id, 'user_id': user.id},
+            {'$set': {'is_pinned': pin_update.is_pinned, 'database_id': database_id}},
+            upsert=True
+        )
+    else:
+        request = await db.download_requests.find_one({'id': batch_id, 'requested_by': user.id})
+        if not request:
+            raise HTTPException(status_code=404, detail="Batch not found")
+        
+        await db.download_requests.update_one(
+            {'id': batch_id},
+            {'$set': {'is_pinned': pin_update.is_pinned}}
+        )
+    
+    return {'message': 'Pin status updated successfully', 'is_pinned': pin_update.is_pinned}
+
 @router.get("/my-assigned-records-by-batch")
 async def get_my_assigned_records_by_batch(request_id: str, user: User = Depends(get_current_user)):
     """Get assigned records for a specific request batch"""
