@@ -1276,10 +1276,10 @@ async def send_report_now(user: User = Depends(get_admin_user)):
 
 
 @router.get("/scheduled-reports/preview")
-async def preview_report(user: User = Depends(get_admin_user)):
-    """Preview the daily report without sending"""
-    report = await generate_daily_report()
-    return {'report': report}
+async def preview_report(compact: bool = True, user: User = Depends(get_admin_user)):
+    """Preview the daily report without sending. Use compact=false for detailed version."""
+    report = await generate_daily_report(compact=compact)
+    return {'report': report, 'format': 'compact' if compact else 'detailed', 'length': len(report)}
 
 
 @router.post("/scheduled-reports/atrisk-test")
