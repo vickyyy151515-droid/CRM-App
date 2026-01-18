@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 
 // Sortable Item Component
-function SortableItem({ id, item, isFolder, isInFolder, onToggleFolder, onEditFolder, onDeleteFolder, onRemoveFromFolder, icons }) {
+function SortableItem({ id, item, isFolder, isInFolder, onToggleFolder, onEditFolder, onDeleteFolder, onRemoveFromFolder, onAddToFolder, icons, folders }) {
   const {
     attributes,
     listeners,
@@ -39,6 +39,8 @@ function SortableItem({ id, item, isFolder, isInFolder, onToggleFolder, onEditFo
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
+
+  const [showAddToFolder, setShowAddToFolder] = useState(false);
 
   if (isFolder) {
     return (
@@ -103,6 +105,38 @@ function SortableItem({ id, item, isFolder, isInFolder, onToggleFolder, onEditFo
       </button>
       {Icon && <Icon size={18} className="text-slate-500" />}
       <span className="flex-1 text-slate-700">{item.label}</span>
+      
+      {/* Add to Folder Button - only show if there are folders */}
+      {folders && folders.length > 0 && (
+        <div className="relative">
+          <button 
+            onClick={() => setShowAddToFolder(!showAddToFolder)}
+            className="p-1 hover:bg-blue-100 rounded text-blue-500 hover:text-blue-700"
+            title="Add to folder"
+          >
+            <FolderPlus size={16} />
+          </button>
+          
+          {showAddToFolder && (
+            <div className="absolute right-0 top-8 bg-white border border-slate-200 rounded-lg shadow-lg z-10 py-1 min-w-[150px]">
+              <div className="px-3 py-1 text-xs text-slate-500 border-b border-slate-100">Add to folder:</div>
+              {folders.map(folder => (
+                <button
+                  key={folder.id}
+                  onClick={() => {
+                    onAddToFolder(folder.id, id, item.label);
+                    setShowAddToFolder(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-100 text-left text-sm text-slate-700"
+                >
+                  <Folder size={14} className="text-slate-500" />
+                  {folder.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
