@@ -630,15 +630,33 @@ async def process_reserved_member_cleanup():
     """
     Task that runs daily at 00:01 AM to:
     1. Send notifications to staff whose reserved members will expire in 7 days or less
-    2. Auto-delete reserved members that have been inactive for 30+ days
+    2. Auto-delete reserved members that have been inactive for the configured grace period
     
     A reserved member is considered "active" if there's an OMSET record with matching
     username from that customer since the reservation was created.
+    
+    Grace period is configurable:
+    - Global default (default: 30 days)
+    - Per-product override (optional)
+    - Warning notification period (default: 7 days before expiry)
     """
     db = get_db()
     jakarta_now = datetime.now(JAKARTA_TZ)
     
     print(f"[{jakarta_now}] Starting reserved member cleanup job...")
+    
+    # Get grace period configuration
+    config = await db.reserved_member_config.find_one({'id': 'reserved_member_config'}, {'_id': 0})
+    global_grace_days = 30  # Default
+    warning_days = 7  # Default - notify X days before expiry
+    product_overrides = {}
+    
+    if config:
+        global_grace_days = config.get('global_grace_days', 30)
+        warning_days = config.get('warning_days', 7)
+        product_overrides = {p['product_id']: p['grace_days'] for p in config.get('product_overrides', [])}
+    
+    print(f"Config: global_grace_days={global_grace_days}, warning_days={warning_days}, product_overrides={len(product_overrides)}")
     
     # Get all approved reserved members
     reserved_members = await db.reserved_members.find(
@@ -659,7 +677,11 @@ async def process_reserved_member_cleanup():
         customer_name = member.get('customer_name', '')
         staff_id = member.get('staff_id')
         staff_name = member.get('staff_name', 'Unknown')
+        product_id = member.get('product_id', '')
         product_name = member.get('product_name', 'Unknown')
+        
+        # Get grace period for this member (product-specific or global)
+        grace_days = product_overrides.get(product_id, global_grace_days)
         
         # Get the reservation date (use approved_at if available, otherwise created_at)
         reserved_at_str = member.get('approved_at') or member.get('created_at')
@@ -676,7 +698,7 @@ async def process_reserved_member_cleanup():
         
         # Calculate days since reservation
         days_since_reservation = (jakarta_now - reserved_at).days
-        days_remaining = 30 - days_since_reservation
+        days_remaining = grace_days - days_since_reservation
         
         # Check if there's any OMSET from this customer since reservation
         # Match by customer_name (username) - case insensitive
