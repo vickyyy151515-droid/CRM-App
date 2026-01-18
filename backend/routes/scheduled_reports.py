@@ -427,19 +427,25 @@ async def send_atrisk_alert():
         print("At-risk alerts are disabled")
         return
     
-    # Check if we already sent an alert in the last 30 minutes (prevent duplicates)
-    last_sent = config.get('atrisk_last_sent')
-    if last_sent:
-        try:
-            last_sent_time = datetime.fromisoformat(last_sent.replace('Z', '+00:00'))
-            if last_sent_time.tzinfo is None:
-                last_sent_time = last_sent_time.replace(tzinfo=JAKARTA_TZ)
-            minutes_since_last = (datetime.now(JAKARTA_TZ) - last_sent_time).total_seconds() / 60
-            if minutes_since_last < 30:
-                print(f"At-risk alert already sent {minutes_since_last:.1f} minutes ago, skipping duplicate")
-                return
-        except Exception as e:
-            print(f"Error parsing atrisk_last_sent time: {e}")
+    # Use atomic operation to prevent duplicate sends
+    jakarta_now = datetime.now(JAKARTA_TZ)
+    thirty_mins_ago = (jakarta_now - timedelta(minutes=30)).isoformat()
+    
+    result = await db.scheduled_report_config.update_one(
+        {
+            'id': 'scheduled_report_config',
+            '$or': [
+                {'atrisk_last_sent': {'$exists': False}},
+                {'atrisk_last_sent': None},
+                {'atrisk_last_sent': {'$lt': thirty_mins_ago}}
+            ]
+        },
+        {'$set': {'atrisk_last_sent': jakarta_now.isoformat()}}
+    )
+    
+    if result.modified_count == 0:
+        print(f"At-risk alert already sent recently, skipping duplicate")
+        return
     
     bot_token = config.get('telegram_bot_token')
     group_chat_id = config.get('atrisk_group_chat_id')
@@ -455,17 +461,21 @@ async def send_atrisk_alert():
         success = await send_telegram_message(bot_token, group_chat_id, alert)
         
         if success:
-            # Update last_sent timestamp
-            await db.scheduled_report_config.update_one(
-                {'id': 'scheduled_report_config'},
-                {'$set': {'atrisk_last_sent': datetime.now(JAKARTA_TZ).isoformat()}}
-            )
-            print(f"At-risk alert sent successfully at {datetime.now(JAKARTA_TZ)}")
+            print(f"At-risk alert sent successfully at {jakarta_now}")
         else:
             print("Failed to send at-risk alert")
+            # Reset last_sent so it can try again
+            await db.scheduled_report_config.update_one(
+                {'id': 'scheduled_report_config'},
+                {'$set': {'atrisk_last_sent': config.get('atrisk_last_sent')}}
+            )
             
     except Exception as e:
         print(f"Error sending at-risk alert: {e}")
+        await db.scheduled_report_config.update_one(
+            {'id': 'scheduled_report_config'},
+            {'$set': {'atrisk_last_sent': config.get('atrisk_last_sent')}}
+        )
 
 
 async def generate_staff_offline_alert() -> str:
