@@ -23,6 +23,9 @@ class InventoryItemCreate(BaseModel):
     purchase_price: Optional[float] = None
     condition: str = "good"  # good, fair, poor
     notes: Optional[str] = None
+    # Optional: Assign to staff immediately when creating
+    assign_to_staff_id: Optional[str] = None
+    assignment_notes: Optional[str] = None
 
 class InventoryItemUpdate(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -117,13 +120,21 @@ async def get_inventory_item(item_id: str, user: User = Depends(get_admin_user))
 
 @router.post("/inventory")
 async def create_inventory_item(item_data: InventoryItemCreate, user: User = Depends(get_admin_user)):
-    """Create a new inventory item"""
+    """Create a new inventory item, optionally assigning it to a staff member"""
     db = get_db()
     
     now = get_jakarta_now()
+    item_id = str(uuid.uuid4())
+    
+    # Check if we need to assign to a staff member
+    staff = None
+    if item_data.assign_to_staff_id:
+        staff = await db.users.find_one({'id': item_data.assign_to_staff_id})
+        if not staff:
+            raise HTTPException(status_code=404, detail="Staff not found")
     
     item = {
-        'id': str(uuid.uuid4()),
+        'id': item_id,
         'name': item_data.name,
         'description': item_data.description,
         'category': item_data.category,
@@ -132,10 +143,10 @@ async def create_inventory_item(item_data: InventoryItemCreate, user: User = Dep
         'purchase_price': item_data.purchase_price,
         'condition': item_data.condition,
         'notes': item_data.notes,
-        'status': 'available',
-        'assigned_to': None,
-        'assigned_to_name': None,
-        'assigned_at': None,
+        'status': 'assigned' if staff else 'available',
+        'assigned_to': staff['id'] if staff else None,
+        'assigned_to_name': staff['name'] if staff else None,
+        'assigned_at': now.isoformat() if staff else None,
         'created_at': now.isoformat(),
         'created_by': user.id,
         'created_by_name': user.name,
@@ -144,6 +155,23 @@ async def create_inventory_item(item_data: InventoryItemCreate, user: User = Dep
     
     await db.inventory_items.insert_one(item)
     item.pop('_id', None)
+    
+    # Create assignment record if assigned
+    if staff:
+        assignment_record = {
+            'id': str(uuid.uuid4()),
+            'item_id': item_id,
+            'item_name': item_data.name,
+            'staff_id': staff['id'],
+            'staff_name': staff['name'],
+            'assigned_at': now.isoformat(),
+            'assigned_by': user.id,
+            'assigned_by_name': user.name,
+            'returned_at': None,
+            'return_condition': None,
+            'notes': item_data.assignment_notes
+        }
+        await db.inventory_assignments.insert_one(assignment_record)
     
     return item
 
