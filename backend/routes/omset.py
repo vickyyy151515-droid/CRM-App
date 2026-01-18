@@ -564,7 +564,13 @@ async def export_omset_records(
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
         key = (cid_normalized, record['product_id'])
         first_date = customer_first_date.get(key)
-        record_type = 'NDP' if first_date == record['record_date'] else 'RDP'
+        
+        # Check if "tambahan" in notes - if so, always RDP
+        keterangan = record.get('keterangan', '') or ''
+        if 'tambahan' in keterangan.lower():
+            record_type = 'RDP'
+        else:
+            record_type = 'NDP' if first_date == record['record_date'] else 'RDP'
         
         writer.writerow([
             record['record_date'],
