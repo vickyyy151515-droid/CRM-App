@@ -604,6 +604,7 @@ async def get_my_request_batches(user: User = Depends(get_current_user)):
             'database_name': database.get('name', 'Unknown') if database else 'Unknown',
             'product_name': database.get('product_name', 'Unknown') if database else 'Unknown',
             'custom_title': req.get('custom_title'),
+            'is_pinned': req.get('is_pinned', False),
             'quantity': req.get('quantity', 0),
             'record_count': record_count,
             'ada_count': ada_count,
