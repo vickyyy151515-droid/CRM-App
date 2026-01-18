@@ -12,7 +12,10 @@ import {
   Zap,
   MessageSquare,
   AlertTriangle,
-  Users
+  Users,
+  UserX,
+  Trash2,
+  Plus
 } from 'lucide-react';
 
 export default function ScheduledReports() {
@@ -48,6 +51,17 @@ export default function ScheduledReports() {
   const [staffOfflineMinute, setStaffOfflineMinute] = useState(0);
   const [staffOfflineSaving, setStaffOfflineSaving] = useState(false);
   const [staffOfflineSending, setStaffOfflineSending] = useState(false);
+
+  // Reserved Member Grace Period state
+  const [reservedConfig, setReservedConfig] = useState(null);
+  const [reservedConfigLoading, setReservedConfigLoading] = useState(false);
+  const [reservedSaving, setReservedSaving] = useState(false);
+  const [reservedPreview, setReservedPreview] = useState(null);
+  const [reservedPreviewing, setReservedPreviewing] = useState(false);
+  const [globalGraceDays, setGlobalGraceDays] = useState(30);
+  const [warningDays, setWarningDays] = useState(7);
+  const [productOverrides, setProductOverrides] = useState([]);
+  const [availableProducts, setAvailableProducts] = useState([]);
 
   useEffect(() => {
     loadConfig();
