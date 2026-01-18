@@ -439,6 +439,33 @@ export default function SidebarConfigurator({ isOpen, onClose, menuItems, onConf
     });
   };
 
+  const addToFolder = (folderId, itemId, itemLabel) => {
+    setConfig(prev => {
+      // Find the folder and add the item to it
+      const newItems = prev.items
+        .filter(item => item.id !== itemId) // Remove standalone item
+        .map(item => {
+          if (item.id === folderId && item.type === 'folder') {
+            return {
+              ...item,
+              items: [...(item.items || []), itemId],
+              itemLabels: {
+                ...item.itemLabels,
+                [itemId]: itemLabel
+              }
+            };
+          }
+          return item;
+        });
+
+      return {
+        ...prev,
+        items: newItems
+      };
+    });
+    toast.success('Item added to folder');
+  };
+
   const toggleItemSelection = (itemId) => {
     setSelectedItems(prev => 
       prev.includes(itemId) 
