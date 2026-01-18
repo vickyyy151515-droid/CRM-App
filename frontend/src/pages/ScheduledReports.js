@@ -65,6 +65,7 @@ export default function ScheduledReports() {
 
   useEffect(() => {
     loadConfig();
+    loadReservedMemberConfig();
   }, []);
 
   const loadConfig = async () => {
