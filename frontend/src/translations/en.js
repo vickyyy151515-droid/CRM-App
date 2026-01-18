@@ -116,6 +116,7 @@ const en = {
     downloadHistory: 'Download History',
     userManagement: 'Manage Users',
     productManagement: 'Manage Products',
+    officeInventory: 'Office Inventory',
     dbBonanza: 'DB Bonanza',
     memberWDCRM: 'Member WD CRM',
     leaveCalendar: 'Leave Calendar',
