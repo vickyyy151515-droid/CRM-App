@@ -470,6 +470,17 @@ async def create_download_request(request_data: DownloadRequestCreate, user: Use
             {'$set': {'status': 'requested'}}
         )
     
+    # Notify all admins about the new request
+    admins = await db.users.find({'role': {'$in': ['admin', 'master_admin']}}, {'_id': 0, 'id': 1}).to_list(100)
+    for admin in admins:
+        await create_notification(
+            user_id=admin['id'],
+            type='new_download_request',
+            title='New Download Request',
+            message=f'{user.name} requested {len(record_ids)} records from {database["filename"]}',
+            data={'request_id': request.id, 'staff_name': user.name, 'database_name': database['filename'], 'record_count': len(record_ids)}
+        )
+    
     return request
 
 @router.get("/download-requests", response_model=List[DownloadRequest])
