@@ -767,6 +767,10 @@ const id = {
     copyWhatsappLink: 'Salin link WhatsApp',
     linkCopied: 'Link WhatsApp tersalin! Paste di address bar browser',
     openInNewTab: 'Buka di tab baru',
+    pin: 'Sematkan ke atas',
+    unpin: 'Lepas sematan',
+    batchPinned: 'Batch disematkan ke atas',
+    batchUnpinned: 'Batch dilepas dari sematan',
   },
 
   // Staff Progress
