@@ -846,6 +846,15 @@ def start_scheduler(report_hour: int = 1, report_minute: int = 0,
         )
         print(f"Staff offline alerts scheduled at {staff_offline_hour:02d}:{staff_offline_minute or 0:02d} WIB")
     
+    # Schedule reserved member cleanup at 00:01 AM daily (always enabled)
+    scheduler.add_job(
+        send_reserved_member_cleanup,
+        CronTrigger(hour=0, minute=1, timezone=JAKARTA_TZ),
+        id='reserved_member_cleanup',
+        replace_existing=True
+    )
+    print("Reserved member cleanup scheduled at 00:01 WIB daily")
+    
     scheduler.start()
     print("Scheduler started successfully")
 
