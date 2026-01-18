@@ -734,6 +734,10 @@ async def get_omset_ndp_rdp(
     customer_first_date = {}
     
     for record in sorted(all_records, key=lambda x: x['record_date']):
+        # Skip "tambahan" records when determining first deposit date
+        keterangan = record.get('keterangan', '') or ''
+        if 'tambahan' in keterangan.lower():
+            continue
         # Use normalized customer_id for comparison (handle old records without normalized field)
         cid = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
         if cid not in customer_first_date:
@@ -751,7 +755,12 @@ async def get_omset_ndp_rdp(
         cid = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
         first_date = customer_first_date.get(cid)
         
-        if first_date == record_date:
+        # Check if "tambahan" in notes - if so, always RDP
+        keterangan = record.get('keterangan', '') or ''
+        if 'tambahan' in keterangan.lower():
+            rdp_customers.add(cid)
+            rdp_total += record.get('depo_total', 0)
+        elif first_date == record_date:
             ndp_customers.add(cid)
             ndp_total += record.get('depo_total', 0)
         else:
