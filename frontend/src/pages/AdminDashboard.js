@@ -240,6 +240,7 @@ export default function AdminDashboard({ user, onLogout }) {
     { id: 'requests', label: t('nav.downloadRequests'), icon: Clock, badge: stats.pendingRequests },
     { id: 'history', label: t('nav.downloadHistory'), icon: LayoutDashboard, badge: 0 },
     { id: 'products', label: t('nav.productManagement'), icon: Package, badge: 0 },
+    { id: 'inventory', label: t('nav.officeInventory') || 'Office Inventory', icon: Boxes, badge: 0 },
     { id: 'manage-users', label: t('nav.userManagement'), icon: UserCog, badge: 0 },
     { id: 'users', label: t('nav.createUser'), icon: Users, badge: 0 }
   ], [t, language, stats.pendingReservations, stats.pendingRequests]);
