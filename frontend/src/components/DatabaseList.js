@@ -32,16 +32,23 @@ export default function DatabaseList({ onUpdate, isStaff = false }) {
     }
   };
 
-  const loadDatabases = async () => {
+  const loadDatabases = async (retryCount = 0) => {
     try {
       const params = {};
       if (search) params.search = search;
       if (selectedProduct) params.product_id = selectedProduct;
       
-      const response = await api.get('/databases', { params });
+      const response = await api.get('/databases', { params, timeout: 15000 });
       setDatabases(response.data);
     } catch (error) {
-      toast.error('Failed to load databases');
+      console.error('Error loading databases:', error);
+      // Retry once on network error
+      if (retryCount < 1 && (error.code === 'ECONNABORTED' || error.message?.includes('Network') || !error.response)) {
+        console.log('Retrying database load...');
+        setTimeout(() => loadDatabases(retryCount + 1), 1000);
+        return;
+      }
+      toast.error(error.response?.data?.detail || 'Failed to load databases. Please refresh the page.');
     } finally {
       setLoading(false);
     }
