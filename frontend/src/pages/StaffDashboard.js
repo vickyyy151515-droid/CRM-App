@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { api } from '../App';
 import DashboardLayout from '../components/DashboardLayout';
 import DatabaseList from '../components/DatabaseList';
@@ -25,6 +25,10 @@ export default function StaffDashboard({ user, onLogout }) {
     totalDatabases: 0,
     myRequests: 0,
     myDownloads: 0
+  });
+  const [notificationCounts, setNotificationCounts] = useState({
+    bonanza_new: 0,
+    memberwd_new: 0
   });
 
   useEffect(() => {
