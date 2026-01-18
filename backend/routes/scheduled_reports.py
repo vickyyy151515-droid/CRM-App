@@ -788,25 +788,39 @@ async def send_scheduled_report():
         print("Scheduled report is disabled")
         return
     
-    # Check if we already sent a report in the last 30 minutes (prevent duplicates)
-    last_sent = config.get('last_sent')
-    if last_sent:
-        try:
-            last_sent_time = datetime.fromisoformat(last_sent.replace('Z', '+00:00'))
-            if last_sent_time.tzinfo is None:
-                last_sent_time = last_sent_time.replace(tzinfo=JAKARTA_TZ)
-            minutes_since_last = (datetime.now(JAKARTA_TZ) - last_sent_time).total_seconds() / 60
-            if minutes_since_last < 30:
-                print(f"Daily report already sent {minutes_since_last:.1f} minutes ago, skipping duplicate")
-                return
-        except Exception as e:
-            print(f"Error parsing last_sent time: {e}")
+    # Use atomic operation to prevent duplicate sends
+    # Try to acquire a "lock" by setting last_sent only if it's been more than 30 mins
+    jakarta_now = datetime.now(JAKARTA_TZ)
+    thirty_mins_ago = (jakarta_now - timedelta(minutes=30)).isoformat()
+    
+    # Attempt to atomically update last_sent only if current last_sent is old enough
+    result = await db.scheduled_report_config.update_one(
+        {
+            'id': 'scheduled_report_config',
+            '$or': [
+                {'last_sent': {'$exists': False}},
+                {'last_sent': None},
+                {'last_sent': {'$lt': thirty_mins_ago}}
+            ]
+        },
+        {'$set': {'last_sent': jakarta_now.isoformat(), 'sending_in_progress': True}}
+    )
+    
+    # If no document was modified, another process already sent/is sending the report
+    if result.modified_count == 0:
+        print(f"Daily report already sent recently or send in progress, skipping duplicate")
+        return
     
     bot_token = config.get('telegram_bot_token')
     chat_id = config.get('telegram_chat_id')
     
     if not bot_token or not chat_id:
         print("Telegram bot token or chat ID not configured")
+        # Reset the lock since we didn't actually send
+        await db.scheduled_report_config.update_one(
+            {'id': 'scheduled_report_config'},
+            {'$unset': {'sending_in_progress': ''}}
+        )
         return
     
     try:
@@ -815,17 +829,27 @@ async def send_scheduled_report():
         success = await send_telegram_message(bot_token, chat_id, report)
         
         if success:
-            # Update last_sent timestamp
+            # Clear the in_progress flag
             await db.scheduled_report_config.update_one(
                 {'id': 'scheduled_report_config'},
-                {'$set': {'last_sent': datetime.now(JAKARTA_TZ).isoformat()}}
+                {'$unset': {'sending_in_progress': ''}}
             )
-            print(f"Daily report sent successfully at {datetime.now(JAKARTA_TZ)}")
+            print(f"Daily report sent successfully at {jakarta_now}")
         else:
             print("Failed to send daily report")
+            # Reset so it can try again
+            await db.scheduled_report_config.update_one(
+                {'id': 'scheduled_report_config'},
+                {'$set': {'last_sent': config.get('last_sent')}, '$unset': {'sending_in_progress': ''}}
+            )
             
     except Exception as e:
         print(f"Error sending scheduled report: {e}")
+        # Reset so it can try again
+        await db.scheduled_report_config.update_one(
+            {'id': 'scheduled_report_config'},
+            {'$set': {'last_sent': config.get('last_sent')}, '$unset': {'sending_in_progress': ''}}
+        )
 
 
 def start_scheduler(report_hour: int = 1, report_minute: int = 0, 
