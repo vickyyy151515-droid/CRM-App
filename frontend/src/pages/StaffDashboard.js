@@ -156,11 +156,11 @@ export default function StaffDashboard({ user, onLogout }) {
     { id: 'assigned', label: t('nav.myAssignedCustomers'), icon: User },
     { id: 'reserved', label: t('nav.reservedMembers'), icon: UserCheck },
     { id: 'omset', label: t('nav.omsetCRM'), icon: DollarSign },
-    { id: 'bonanza', label: t('nav.dbBonanza'), icon: Gift },
-    { id: 'memberwd', label: t('nav.memberWDCRM'), icon: CreditCard },
+    { id: 'bonanza', label: t('nav.dbBonanza'), icon: Gift, badge: notificationCounts.bonanza_new },
+    { id: 'memberwd', label: t('nav.memberWDCRM'), icon: CreditCard, badge: notificationCounts.memberwd_new },
     { id: 'leave', label: t('nav.offDaySakit'), icon: CalendarOff },
     { id: 'izin', label: t('nav.izin'), icon: Timer }
-  ], [t, language]);
+  ], [t, language, notificationCounts]);
 
   return (
     <DashboardLayout
