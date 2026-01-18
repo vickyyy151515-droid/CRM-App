@@ -49,6 +49,7 @@ export default function OfficeInventory() {
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [filterStaff, setFilterStaff] = useState('');
   
   // Modals
   const [showAddModal, setShowAddModal] = useState(false);
