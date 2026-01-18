@@ -80,7 +80,7 @@ export default function StaffDBBonanza() {
 
   return (
     <div data-testid="staff-db-bonanza">
-      <h2 className="text-3xl font-semibold tracking-tight text-slate-900 mb-6">{t('dbRecords.title')}</h2>
+      <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white mb-6">{t('dbRecords.title')}</h2>
 
       {/* Filters */}
       <div className="mb-6 flex flex-col sm:flex-row gap-4">
@@ -89,15 +89,15 @@ export default function StaffDBBonanza() {
           placeholder={t('dbRecords.searchRecords')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="flex-1 max-w-md h-10 px-4 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="flex-1 max-w-md h-10 px-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder:text-slate-400 dark:placeholder:text-slate-500"
           data-testid="bonanza-search"
         />
         <div className="flex items-center gap-2">
-          <Package size={18} className="text-slate-500" />
+          <Package size={18} className="text-slate-500 dark:text-slate-400" />
           <select
             value={filterProduct}
             onChange={(e) => setFilterProduct(e.target.value)}
-            className="h-10 px-4 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[180px]"
+            className="h-10 px-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[180px]"
             data-testid="bonanza-filter-product"
           >
             <option value="">{t('dbRecords.allProducts')}</option>
@@ -109,29 +109,29 @@ export default function StaffDBBonanza() {
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-slate-600">{t('dbRecords.loadingRecords')}</div>
+        <div className="text-center py-12 text-slate-600 dark:text-slate-400">{t('dbRecords.loadingRecords')}</div>
       ) : records.length === 0 ? (
-        <div className="text-center py-12 bg-white border border-slate-200 rounded-xl">
-          <Gift className="mx-auto text-slate-300 mb-4" size={64} />
-          <p className="text-slate-600">{t('dbRecords.noRecordsYet')}</p>
-          <p className="text-sm text-slate-500 mt-2">{t('dbRecords.adminWillAssign')}</p>
+        <div className="text-center py-12 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
+          <Gift className="mx-auto text-slate-300 dark:text-slate-600 mb-4" size={64} />
+          <p className="text-slate-600 dark:text-slate-400">{t('dbRecords.noRecordsYet')}</p>
+          <p className="text-sm text-slate-500 dark:text-slate-500 mt-2">{t('dbRecords.adminWillAssign')}</p>
         </div>
       ) : (
         <div className="space-y-6">
           {Object.entries(filteredGroupedRecords).map(([dbName, dbRecords]) => (
-            <div key={dbName} className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-              <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-slate-200">
+            <div key={dbName} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
+              <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/30 dark:to-purple-900/30 border-b border-slate-200 dark:border-slate-700">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center">
-                      <FileSpreadsheet className="text-indigo-600" size={20} />
+                    <div className="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
+                      <FileSpreadsheet className="text-indigo-600 dark:text-indigo-400" size={20} />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-slate-900">{dbName}</h3>
+                      <h3 className="font-semibold text-slate-900 dark:text-white">{dbName}</h3>
                       <div className="flex items-center gap-2">
-                        <p className="text-sm text-slate-500">{dbRecords.length} {t('dbRecords.recordsAssigned')}</p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">{dbRecords.length} {t('dbRecords.recordsAssigned')}</p>
                         {dbRecords[0]?.product_name && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-300">
                             <Package size={10} className="mr-1" />
                             {dbRecords[0].product_name}
                           </span>
@@ -139,7 +139,7 @@ export default function StaffDBBonanza() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 text-sm text-slate-500">
+                  <div className="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400">
                     <Calendar size={14} />
                     {t('dbRecords.assigned')}: {formatDate(dbRecords[0]?.assigned_at)}
                   </div>
@@ -148,20 +148,20 @@ export default function StaffDBBonanza() {
 
               <div className="overflow-x-auto">
                 <table className="min-w-full">
-                  <thead className="bg-slate-50">
+                  <thead className="bg-slate-50 dark:bg-slate-900/50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">#</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300">#</th>
                       {columns.map(col => (
-                        <th key={col} className="px-4 py-3 text-left text-xs font-semibold text-slate-700">{col}</th>
+                        <th key={col} className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300">{col}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {dbRecords.map(record => (
-                      <tr key={record.id} className="border-b border-slate-100 hover:bg-slate-50">
-                        <td className="px-4 py-3 text-sm text-slate-900 font-medium">{record.row_number}</td>
+                      <tr key={record.id} className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                        <td className="px-4 py-3 text-sm text-slate-900 dark:text-white font-medium">{record.row_number}</td>
                         {columns.map(col => (
-                          <td key={col} className="px-4 py-3 text-sm text-slate-700">{record.row_data[col] || '-'}</td>
+                          <td key={col} className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">{record.row_data[col] || '-'}</td>
                         ))}
                       </tr>
                     ))}
