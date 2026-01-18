@@ -41,7 +41,7 @@ export default function StaffDashboard({ user, onLogout }) {
     }
   }, []);
 
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       const [databases, requests, history] = await Promise.all([
         api.get('/databases'),
@@ -57,12 +57,12 @@ export default function StaffDashboard({ user, onLogout }) {
     } catch (error) {
       console.error('Error loading stats:', error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadStats();
     loadNotificationCounts();
-  }, [loadNotificationCounts]);
+  }, [loadStats, loadNotificationCounts]);
 
   // Mark page as viewed when user navigates to bonanza or memberwd
   useEffect(() => {
