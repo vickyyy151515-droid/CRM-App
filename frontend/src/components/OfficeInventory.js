@@ -82,6 +82,7 @@ export default function OfficeInventory() {
       if (search) params.search = search;
       if (filterCategory) params.category = filterCategory;
       if (filterStatus) params.status = filterStatus;
+      if (filterStaff) params.assigned_to = filterStaff;
       
       const response = await api.get('/inventory', { params });
       setItems(response.data.items);
@@ -92,7 +93,7 @@ export default function OfficeInventory() {
     } finally {
       setLoading(false);
     }
-  }, [search, filterCategory, filterStatus]);
+  }, [search, filterCategory, filterStatus, filterStaff]);
 
   const loadStaff = async () => {
     try {
