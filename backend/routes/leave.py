@@ -102,7 +102,7 @@ async def create_leave_request(request_data: LeaveRequestCreate, user: User = De
     }
     await db.leave_requests.insert_one(leave_request)
     
-    admin_users = await db.users.find({'role': 'admin'}, {'_id': 0}).to_list(100)
+    admin_users = await db.users.find({'role': {'$in': ['admin', 'master_admin']}}, {'_id': 0}).to_list(100)
     for admin in admin_users:
         notification = {
             'id': str(uuid.uuid4()), 'user_id': admin['id'], 'type': 'leave_request',
