@@ -10,6 +10,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from .deps import get_db, get_admin_user, User
+from .notifications import create_notification
 
 router = APIRouter()
 
