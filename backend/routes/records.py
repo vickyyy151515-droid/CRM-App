@@ -617,9 +617,11 @@ async def get_my_request_batches(user: User = Depends(get_current_user)):
         })
     
     legacy_titles = {}
+    legacy_pins = {}
     legacy_title_docs = await db.batch_titles.find({'user_id': user.id}, {'_id': 0}).to_list(100)
     for doc in legacy_title_docs:
         legacy_titles[doc['batch_id']] = doc.get('title')
+        legacy_pins[doc['batch_id']] = doc.get('is_pinned', False)
     
     legacy_records_all = await db.customer_records.find(
         {
@@ -665,6 +667,7 @@ async def get_my_request_batches(user: User = Depends(get_current_user)):
                 'database_name': info['database_name'],
                 'product_name': info['product_name'],
                 'custom_title': legacy_titles.get(batch_id),
+                'is_pinned': legacy_pins.get(batch_id, False),
                 'quantity': info['count'],
                 'record_count': info['count'],
                 'ada_count': info['ada_count'],
@@ -677,7 +680,14 @@ async def get_my_request_batches(user: User = Depends(get_current_user)):
                 'is_legacy': True
             })
     
-    return batches
+    # Sort batches: pinned first, then by approved_at date
+    batches.sort(key=lambda x: (not x.get('is_pinned', False), x.get('approved_at') is None, x.get('approved_at', '') or ''), reverse=False)
+    # Reverse the non-pinned part to show recent first
+    pinned = [b for b in batches if b.get('is_pinned')]
+    non_pinned = [b for b in batches if not b.get('is_pinned')]
+    non_pinned.sort(key=lambda x: x.get('approved_at') or '', reverse=True)
+    
+    return pinned + non_pinned
 
 @router.patch("/my-request-batches/{batch_id}/title")
 async def update_batch_title(batch_id: str, title_update: BatchTitleUpdate, user: User = Depends(get_current_user)):
