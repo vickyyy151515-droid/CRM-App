@@ -192,27 +192,40 @@ export default function MyAssignedRecords() {
             <div
               key={batch.id}
               onClick={() => loadBatchRecords(batch.id)}
-              className={`bg-white dark:bg-slate-800 border rounded-xl p-5 shadow-sm hover:shadow-md cursor-pointer transition-all group ${
-                batch.is_legacy 
-                  ? 'border-amber-200 dark:border-amber-800 hover:border-amber-400 dark:hover:border-amber-600' 
-                  : 'border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-600'
+              className={`bg-white dark:bg-slate-800 border rounded-xl p-5 shadow-sm hover:shadow-md cursor-pointer transition-all group relative ${
+                batch.is_pinned
+                  ? 'border-yellow-400 dark:border-yellow-500 ring-1 ring-yellow-200 dark:ring-yellow-800'
+                  : batch.is_legacy 
+                    ? 'border-amber-200 dark:border-amber-800 hover:border-amber-400 dark:hover:border-amber-600' 
+                    : 'border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-600'
               }`}
               data-testid={`batch-card-${batch.id}`}
             >
+              {/* Pinned indicator */}
+              {batch.is_pinned && (
+                <div className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center shadow-sm">
+                  <Pin size={12} className="text-yellow-900" />
+                </div>
+              )}
+              
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold ${
-                    batch.is_legacy 
-                      ? 'bg-amber-100 text-amber-600' 
-                      : 'bg-indigo-100 text-indigo-600'
+                    batch.is_pinned
+                      ? 'bg-yellow-100 text-yellow-700'
+                      : batch.is_legacy 
+                        ? 'bg-amber-100 text-amber-600' 
+                        : 'bg-indigo-100 text-indigo-600'
                   }`}>
-                    {batch.is_legacy ? '★' : `#${filteredBatches.filter(b => !b.is_legacy).length - filteredBatches.filter(b => !b.is_legacy).indexOf(batch)}`}
+                    {batch.is_pinned ? <Pin size={18} /> : batch.is_legacy ? '★' : `#${filteredBatches.filter(b => !b.is_legacy && !b.is_pinned).length - filteredBatches.filter(b => !b.is_legacy && !b.is_pinned).indexOf(batch)}`}
                   </div>
                   <div>
                     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                      batch.is_legacy 
-                        ? 'bg-amber-100 text-amber-800' 
-                        : 'bg-indigo-100 text-indigo-800'
+                      batch.is_pinned
+                        ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300'
+                        : batch.is_legacy 
+                          ? 'bg-amber-100 text-amber-800' 
+                          : 'bg-indigo-100 text-indigo-800'
                     }`}>
                       {batch.product_name}
                     </span>
@@ -226,6 +239,19 @@ export default function MyAssignedRecords() {
                 <div className="flex items-center gap-1">
                   {editingBatchId !== batch.id && (
                     <>
+                      {/* Pin button */}
+                      <button
+                        onClick={(e) => handleTogglePin(e, batch.id, batch.is_pinned)}
+                        className={`p-1.5 rounded transition-colors ${
+                          batch.is_pinned 
+                            ? 'text-yellow-500 hover:text-yellow-700 hover:bg-yellow-50 dark:hover:bg-yellow-900/30' 
+                            : 'text-slate-400 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 opacity-0 group-hover:opacity-100'
+                        }`}
+                        title={batch.is_pinned ? t('myRecords.unpin') : t('myRecords.pin')}
+                        data-testid={`pin-batch-${batch.id}`}
+                      >
+                        <Pin size={16} className={batch.is_pinned ? 'fill-current' : ''} />
+                      </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -247,7 +273,7 @@ export default function MyAssignedRecords() {
                           : 'text-slate-400 group-hover:text-indigo-600'
                       }`} size={20} />
                     </>
-                  )}
+                  )}}
                 </div>
               </div>
               
