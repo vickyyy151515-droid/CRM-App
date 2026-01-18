@@ -595,19 +595,25 @@ async def send_staff_offline_alert():
         print("Staff offline alerts are disabled")
         return
     
-    # Check if we already sent an alert in the last 30 minutes (prevent duplicates)
-    last_sent = config.get('staff_offline_last_sent')
-    if last_sent:
-        try:
-            last_sent_time = datetime.fromisoformat(last_sent.replace('Z', '+00:00'))
-            if last_sent_time.tzinfo is None:
-                last_sent_time = last_sent_time.replace(tzinfo=JAKARTA_TZ)
-            minutes_since_last = (datetime.now(JAKARTA_TZ) - last_sent_time).total_seconds() / 60
-            if minutes_since_last < 30:
-                print(f"Staff offline alert already sent {minutes_since_last:.1f} minutes ago, skipping duplicate")
-                return
-        except Exception as e:
-            print(f"Error parsing staff_offline_last_sent time: {e}")
+    # Use atomic operation to prevent duplicate sends
+    jakarta_now = datetime.now(JAKARTA_TZ)
+    thirty_mins_ago = (jakarta_now - timedelta(minutes=30)).isoformat()
+    
+    result = await db.scheduled_report_config.update_one(
+        {
+            'id': 'scheduled_report_config',
+            '$or': [
+                {'staff_offline_last_sent': {'$exists': False}},
+                {'staff_offline_last_sent': None},
+                {'staff_offline_last_sent': {'$lt': thirty_mins_ago}}
+            ]
+        },
+        {'$set': {'staff_offline_last_sent': jakarta_now.isoformat()}}
+    )
+    
+    if result.modified_count == 0:
+        print(f"Staff offline alert already sent recently, skipping duplicate")
+        return
     
     bot_token = config.get('telegram_bot_token')
     # Send to admin's personal chat
@@ -623,17 +629,20 @@ async def send_staff_offline_alert():
         success = await send_telegram_message(bot_token, chat_id, alert)
         
         if success:
-            # Update last_sent timestamp
-            await db.scheduled_report_config.update_one(
-                {'id': 'scheduled_report_config'},
-                {'$set': {'staff_offline_last_sent': datetime.now(JAKARTA_TZ).isoformat()}}
-            )
-            print(f"Staff offline alert sent successfully at {datetime.now(JAKARTA_TZ)}")
+            print(f"Staff offline alert sent successfully at {jakarta_now}")
         else:
             print("Failed to send staff offline alert")
+            await db.scheduled_report_config.update_one(
+                {'id': 'scheduled_report_config'},
+                {'$set': {'staff_offline_last_sent': config.get('staff_offline_last_sent')}}
+            )
             
     except Exception as e:
         print(f"Error sending staff offline alert: {e}")
+        await db.scheduled_report_config.update_one(
+            {'id': 'scheduled_report_config'},
+            {'$set': {'staff_offline_last_sent': config.get('staff_offline_last_sent')}}
+        )
 
 
 async def process_reserved_member_cleanup():
