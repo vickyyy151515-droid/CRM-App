@@ -339,6 +339,17 @@ export default function OfficeInventory() {
               <option value="available">Available</option>
               <option value="assigned">Assigned</option>
             </select>
+            <select
+              value={filterStaff}
+              onChange={(e) => setFilterStaff(e.target.value)}
+              className="px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              data-testid="filter-staff"
+            >
+              <option value="">All Staff</option>
+              {staff.map(s => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
