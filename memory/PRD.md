@@ -161,6 +161,20 @@ All staff-facing components now fully translated to casual Indonesian.
 - Config stored in MongoDB collection `reserved_member_config`
 - Frontend: Grace Period Settings section with Add/Remove product override functionality
 
+### Admin Notification Fix - COMPLETED (Jan 18, 2026)
+- Fixed: Notifications were only sent to users with `role: 'admin'`, missing `master_admin` users
+- Updated queries to use `{'role': {'$in': ['admin', 'master_admin']}}` in:
+  - Reserved member requests (records.py)
+  - Leave/Off Day requests (leave.py)
+  - Download requests (records.py - NEW: added notification on request creation)
+- Master admins (like vicky@crm.com) now receive all admin notifications
+
+### Network Error Handling Improvement - COMPLETED (Jan 18, 2026)
+- Added 30-second global timeout to axios API client
+- Added retry logic to DatabaseList component (retries once on network error)
+- Better error messages to help users understand what went wrong
+- Response interceptor for consistent network error logging
+
 ## Test Credentials
 - **Master Admin**: vicky@crm.com / vicky123
 - **Admin**: admin@crm.com / admin123
