@@ -263,6 +263,85 @@ export default function ScheduledReports() {
     }
   };
 
+  // Reserved Member Grace Period functions
+  const loadReservedMemberConfig = async () => {
+    setReservedConfigLoading(true);
+    try {
+      const response = await api.get('/reserved-members/cleanup-config');
+      setReservedConfig(response.data);
+      setGlobalGraceDays(response.data.global_grace_days || 30);
+      setWarningDays(response.data.warning_days || 7);
+      setProductOverrides(response.data.product_overrides || []);
+      setAvailableProducts(response.data.available_products || []);
+    } catch (error) {
+      console.error('Error loading reserved member config:', error);
+    } finally {
+      setReservedConfigLoading(false);
+    }
+  };
+
+  const handleReservedConfigSave = async (e) => {
+    e.preventDefault();
+    setReservedSaving(true);
+    try {
+      await api.put('/reserved-members/cleanup-config', {
+        global_grace_days: globalGraceDays,
+        warning_days: warningDays,
+        product_overrides: productOverrides
+      });
+      toast.success('Grace period configuration saved!');
+      loadReservedMemberConfig();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to save configuration');
+    } finally {
+      setReservedSaving(false);
+    }
+  };
+
+  const handleReservedPreview = async () => {
+    setReservedPreviewing(true);
+    try {
+      const response = await api.get('/scheduled-reports/reserved-member-cleanup-preview');
+      setReservedPreview(response.data);
+    } catch (error) {
+      toast.error('Failed to load preview');
+    } finally {
+      setReservedPreviewing(false);
+    }
+  };
+
+  const addProductOverride = () => {
+    // Find first product not already in overrides
+    const usedProductIds = productOverrides.map(p => p.product_id);
+    const availableProduct = availableProducts.find(p => !usedProductIds.includes(p.id));
+    if (availableProduct) {
+      setProductOverrides([...productOverrides, {
+        product_id: availableProduct.id,
+        product_name: availableProduct.name,
+        grace_days: globalGraceDays
+      }]);
+    }
+  };
+
+  const removeProductOverride = (index) => {
+    setProductOverrides(productOverrides.filter((_, i) => i !== index));
+  };
+
+  const updateProductOverride = (index, field, value) => {
+    const updated = [...productOverrides];
+    if (field === 'product_id') {
+      const product = availableProducts.find(p => p.id === value);
+      updated[index] = {
+        ...updated[index],
+        product_id: value,
+        product_name: product?.name || 'Unknown'
+      };
+    } else {
+      updated[index] = { ...updated[index], [field]: value };
+    }
+    setProductOverrides(updated);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64" data-testid="scheduled-reports-loading">
