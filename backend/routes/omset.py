@@ -125,28 +125,36 @@ async def create_omset_record(record_data: OmsetRecordCreate, user: User = Depen
     # Normalize customer_id for consistent NDP/RDP comparison
     normalized_cid = normalize_customer_id(record_data.customer_id)
     
-    # Determine if this is NDP or RDP by checking for existing records with same normalized customer_id
-    existing_record = await db.omset_records.find_one({
-        'customer_id_normalized': normalized_cid,
-        'product_id': record_data.product_id,
-        'record_date': {'$lt': record_data.record_date}
-    })
+    # Check if notes contain "tambahan" (case-insensitive) - if so, force RDP
+    is_tambahan = record_data.keterangan and 'tambahan' in record_data.keterangan.lower()
     
-    # Also check old records that might not have normalized field
-    if not existing_record:
-        # Query all records for this product and check normalized match
-        potential_matches = await db.omset_records.find({
+    # Determine if this is NDP or RDP
+    if is_tambahan:
+        # If "tambahan" in notes, always count as RDP regardless of history
+        customer_type = 'RDP'
+    else:
+        # Normal logic: Check for existing records with same normalized customer_id before this date
+        existing_record = await db.omset_records.find_one({
+            'customer_id_normalized': normalized_cid,
             'product_id': record_data.product_id,
             'record_date': {'$lt': record_data.record_date}
-        }, {'customer_id': 1, 'customer_id_normalized': 1}).to_list(10000)
+        })
         
-        for match in potential_matches:
-            match_normalized = match.get('customer_id_normalized') or normalize_customer_id(match['customer_id'])
-            if match_normalized == normalized_cid:
-                existing_record = match
-                break
-    
-    customer_type = 'RDP' if existing_record else 'NDP'
+        # Also check old records that might not have normalized field
+        if not existing_record:
+            # Query all records for this product and check normalized match
+            potential_matches = await db.omset_records.find({
+                'product_id': record_data.product_id,
+                'record_date': {'$lt': record_data.record_date}
+            }, {'customer_id': 1, 'customer_id_normalized': 1}).to_list(10000)
+            
+            for match in potential_matches:
+                match_normalized = match.get('customer_id_normalized') or normalize_customer_id(match['customer_id'])
+                if match_normalized == normalized_cid:
+                    existing_record = match
+                    break
+        
+        customer_type = 'RDP' if existing_record else 'NDP'
     
     record = OmsetRecord(
         product_id=record_data.product_id,
