@@ -120,6 +120,22 @@ All staff-facing components now fully translated to casual Indonesian.
 - Fixed table headers, borders, and hover states for dark mode
 - Fixed input fields and select dropdowns with proper dark backgrounds
 
+### Pin Batches Feature - COMPLETED (Jan 18, 2026)
+- Added pin button on batch cards in "My Assigned Customers" page
+- Pinned batches show yellow border/ring effect and pin icon in top-right corner
+- Pinned batches sorted to top of the list automatically
+- Backend: New `PATCH /api/my-request-batches/{batch_id}/pin` endpoint to toggle pin status
+- Backend: Modified `GET /api/my-request-batches` to include `is_pinned` field and sort pinned first
+- Works for both regular batches (stored in download_requests) and legacy batches (stored in batch_titles)
+- Translations added for pin/unpin actions in both English and Indonesian
+
+### Default Language for Staff - COMPLETED (Jan 18, 2026)
+- Staff users automatically get Indonesian language on first login
+- Uses `language_preference_set` localStorage key to track if user has manually changed language
+- If user manually toggles language, their preference is preserved and auto-switch is skipped
+- Frontend: `LanguageContext.js` has `setDefaultLanguageForRole` function
+- Frontend: `StaffDashboard.js` calls this function when staff user logs in
+
 ## Test Credentials
 - **Master Admin**: vicky@crm.com / vicky123
 - **Admin**: admin@crm.com / admin123
