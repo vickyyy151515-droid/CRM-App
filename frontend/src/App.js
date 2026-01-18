@@ -15,6 +15,7 @@ const API = `${BACKEND_URL}/api`;
 
 export const api = axios.create({
   baseURL: API,
+  timeout: 30000, // 30 second timeout
 });
 
 api.interceptors.request.use((config) => {
@@ -24,6 +25,25 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Response interceptor for global error handling
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Don't show toast for canceled requests or auth errors (handled elsewhere)
+    if (axios.isCancel(error)) {
+      return Promise.reject(error);
+    }
+    
+    // Network error (no response from server)
+    if (!error.response) {
+      console.error('Network error:', error.message);
+      // Don't show toast here - let individual components handle retry logic
+    }
+    
+    return Promise.reject(error);
+  }
+);
 
 function App() {
   const [user, setUser] = useState(null);
