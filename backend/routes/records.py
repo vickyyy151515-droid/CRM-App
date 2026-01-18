@@ -121,6 +121,9 @@ class DownloadHistory(BaseModel):
 class BatchTitleUpdate(BaseModel):
     title: str
 
+class BatchPinUpdate(BaseModel):
+    is_pinned: bool
+
 # ==================== HELPER FUNCTIONS ====================
 
 def parse_file_to_records(file_path: str, file_type: str) -> tuple:
