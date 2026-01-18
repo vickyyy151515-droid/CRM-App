@@ -915,7 +915,7 @@ async def create_reserved_member(member_data: ReservedMemberCreate, user: User =
             created_by_name=user.name
         )
         
-        admins = await db.users.find({'role': 'admin'}, {'_id': 0, 'id': 1}).to_list(100)
+        admins = await db.users.find({'role': {'$in': ['admin', 'master_admin']}}, {'_id': 0, 'id': 1}).to_list(100)
         for admin in admins:
             await create_notification(
                 user_id=admin['id'],
