@@ -829,6 +829,7 @@ async def migrate_normalize_customer_ids(user: User = Depends(get_admin_user)):
     Admin-only endpoint to migrate existing records:
     1. Add customer_id_normalized field to all records
     2. Recalculate and update customer_type (NDP/RDP) based on normalized customer_id
+    Note: Records with "tambahan" in keterangan are always marked as RDP
     """
     db = get_db()
     
@@ -836,8 +837,13 @@ async def migrate_normalize_customer_ids(user: User = Depends(get_admin_user)):
     all_records = await db.omset_records.find({}).to_list(500000)
     
     # Build customer first deposit map using normalized IDs
+    # Exclude "tambahan" records from first_date calculation
     customer_first_date = {}
     for record in sorted(all_records, key=lambda x: x['record_date']):
+        # Skip "tambahan" records when determining first deposit date
+        keterangan = record.get('keterangan', '') or ''
+        if 'tambahan' in keterangan.lower():
+            continue
         cid_normalized = normalize_customer_id(record['customer_id'])
         key = (cid_normalized, record['product_id'])
         if key not in customer_first_date:
@@ -849,7 +855,13 @@ async def migrate_normalize_customer_ids(user: User = Depends(get_admin_user)):
         cid_normalized = normalize_customer_id(record['customer_id'])
         key = (cid_normalized, record['product_id'])
         first_date = customer_first_date.get(key)
-        customer_type = 'NDP' if first_date == record['record_date'] else 'RDP'
+        
+        # Check if "tambahan" in notes - if so, always RDP
+        keterangan = record.get('keterangan', '') or ''
+        if 'tambahan' in keterangan.lower():
+            customer_type = 'RDP'
+        else:
+            customer_type = 'NDP' if first_date == record['record_date'] else 'RDP'
         
         # Update the record
         await db.omset_records.update_one(
