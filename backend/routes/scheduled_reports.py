@@ -626,6 +626,133 @@ async def send_staff_offline_alert():
         print(f"Error sending staff offline alert: {e}")
 
 
+async def process_reserved_member_cleanup():
+    """
+    Task that runs daily at 00:01 AM to:
+    1. Send notifications to staff whose reserved members will expire in 7 days or less
+    2. Auto-delete reserved members that have been inactive for 30+ days
+    
+    A reserved member is considered "active" if there's an OMSET record with matching
+    username from that customer since the reservation was created.
+    """
+    db = get_db()
+    jakarta_now = datetime.now(JAKARTA_TZ)
+    
+    print(f"[{jakarta_now}] Starting reserved member cleanup job...")
+    
+    # Get all approved reserved members
+    reserved_members = await db.reserved_members.find(
+        {'status': 'approved'},
+        {'_id': 0}
+    ).to_list(10000)
+    
+    if not reserved_members:
+        print("No approved reserved members to process")
+        return
+    
+    # Track stats
+    notifications_sent = 0
+    members_deleted = 0
+    
+    for member in reserved_members:
+        member_id = member.get('id')
+        customer_name = member.get('customer_name', '')
+        staff_id = member.get('staff_id')
+        staff_name = member.get('staff_name', 'Unknown')
+        product_name = member.get('product_name', 'Unknown')
+        
+        # Get the reservation date (use approved_at if available, otherwise created_at)
+        reserved_at_str = member.get('approved_at') or member.get('created_at')
+        if not reserved_at_str:
+            continue
+            
+        try:
+            reserved_at = datetime.fromisoformat(reserved_at_str.replace('Z', '+00:00'))
+            if reserved_at.tzinfo is None:
+                reserved_at = JAKARTA_TZ.localize(reserved_at)
+        except Exception as e:
+            print(f"Error parsing date for member {member_id}: {e}")
+            continue
+        
+        # Calculate days since reservation
+        days_since_reservation = (jakarta_now - reserved_at).days
+        days_remaining = 30 - days_since_reservation
+        
+        # Check if there's any OMSET from this customer since reservation
+        # Match by customer_name (username) - case insensitive
+        omset_query = {
+            '$or': [
+                {'customer_id': {'$regex': f'^{customer_name}$', '$options': 'i'}},
+                {'customer_name': {'$regex': f'^{customer_name}$', '$options': 'i'}}
+            ],
+            'staff_id': staff_id,
+            'created_at': {'$gte': reserved_at_str}
+        }
+        
+        has_omset = await db.omset_records.find_one(omset_query, {'_id': 1})
+        
+        if has_omset:
+            # Customer has OMSET, skip (reservation is valid)
+            continue
+        
+        # No OMSET from this customer
+        if days_remaining <= 0:
+            # 30 days passed with no OMSET - delete the reservation
+            await db.reserved_members.delete_one({'id': member_id})
+            members_deleted += 1
+            
+            # Send notification to staff that reservation was removed
+            await create_notification(
+                user_id=staff_id,
+                type='reserved_member_expired',
+                title='Reserved Member Removed',
+                message=f'Your reservation for "{customer_name}" ({product_name}) has been removed due to no OMSET in 30 days.',
+                data={
+                    'customer_name': customer_name,
+                    'product_name': product_name,
+                    'reason': 'no_omset_30_days'
+                }
+            )
+            print(f"Deleted expired reservation: {customer_name} (staff: {staff_name})")
+            
+        elif days_remaining <= 7:
+            # Send warning notification (7 days or less remaining)
+            # Check if we already sent notification today
+            today_str = jakarta_now.strftime('%Y-%m-%d')
+            existing_notification = await db.notifications.find_one({
+                'user_id': staff_id,
+                'type': 'reserved_member_expiring',
+                'data.member_id': member_id,
+                'created_at': {'$regex': f'^{today_str}'}
+            })
+            
+            if not existing_notification:
+                await create_notification(
+                    user_id=staff_id,
+                    type='reserved_member_expiring',
+                    title='Reserved Member Expiring Soon',
+                    message=f'Your reservation for "{customer_name}" ({product_name}) will expire in {days_remaining} day(s) if no OMSET is recorded.',
+                    data={
+                        'member_id': member_id,
+                        'customer_name': customer_name,
+                        'product_name': product_name,
+                        'days_remaining': days_remaining
+                    }
+                )
+                notifications_sent += 1
+                print(f"Sent expiry warning for: {customer_name} (staff: {staff_name}, {days_remaining} days left)")
+    
+    print(f"Reserved member cleanup completed: {notifications_sent} warnings sent, {members_deleted} members removed")
+
+
+async def send_reserved_member_cleanup():
+    """Wrapper for the reserved member cleanup job"""
+    try:
+        await process_reserved_member_cleanup()
+    except Exception as e:
+        print(f"Error in reserved member cleanup: {e}")
+
+
 async def send_scheduled_report():
     """Task that runs daily to send the report"""
     db = get_db()
