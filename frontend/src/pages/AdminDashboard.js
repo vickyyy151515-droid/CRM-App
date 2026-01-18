@@ -207,6 +207,8 @@ export default function AdminDashboard({ user, onLogout }) {
         return <ScheduledReports />;
       case 'user-activity':
         return <UserActivity />;
+      case 'inventory':
+        return <OfficeInventory />;
       default:
         return null;
     }
