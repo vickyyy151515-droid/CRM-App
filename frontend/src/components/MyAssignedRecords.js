@@ -273,7 +273,7 @@ export default function MyAssignedRecords() {
                           : 'text-slate-400 group-hover:text-indigo-600'
                       }`} size={20} />
                     </>
-                  )}}
+                  )}
                 </div>
               </div>
               
