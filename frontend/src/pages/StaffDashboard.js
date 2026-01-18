@@ -19,7 +19,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { LayoutDashboard, FileSpreadsheet, Clock, User, UserCheck, DollarSign, Gift, CreditCard, CalendarOff, Timer, Trophy, Bell, CalendarDays, Filter, Heart } from 'lucide-react';
 
 export default function StaffDashboard({ user, onLogout }) {
-  const { t, language } = useLanguage();
+  const { t, setDefaultLanguageForRole } = useLanguage();
   const [activeTab, setActiveTab] = useState('databases');
   const [stats, setStats] = useState({
     totalDatabases: 0,
@@ -30,6 +30,13 @@ export default function StaffDashboard({ user, onLogout }) {
     bonanza_new: 0,
     memberwd_new: 0
   });
+  
+  // Auto-set language to Indonesian for staff users
+  useEffect(() => {
+    if (user?.role === 'staff') {
+      setDefaultLanguageForRole('staff');
+    }
+  }, [user?.role, setDefaultLanguageForRole]);
 
   // Load notification counts
   const loadNotificationCounts = useCallback(async () => {
