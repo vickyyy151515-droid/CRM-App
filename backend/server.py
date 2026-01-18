@@ -56,6 +56,7 @@ from routes.retention import router as retention_router
 from routes.search import router as search_router
 from routes.websocket import router as websocket_router
 from routes.scheduled_reports import router as scheduled_reports_router, init_scheduler
+from routes.staff_notifications import router as staff_notifications_router
 
 # Initialize database connection for all route modules
 set_database(db)
@@ -81,6 +82,7 @@ api_router.include_router(funnel_router)
 api_router.include_router(retention_router)
 api_router.include_router(search_router)
 api_router.include_router(scheduled_reports_router)
+api_router.include_router(staff_notifications_router)
 # WebSocket routes are added at the app level (not under /api)
 app.include_router(websocket_router)
 
