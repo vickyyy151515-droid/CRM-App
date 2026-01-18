@@ -197,6 +197,8 @@ All staff-facing components now fully translated to casual Indonesian.
 - `DELETE /scheduled-reports/atrisk-rotation-reset` - Reset at-risk alert rotation history
 - `GET /scheduled-reports/reserved-member-cleanup-preview` - Preview which reserved members will expire
 - `POST /scheduled-reports/reserved-member-cleanup-run` - Manually trigger reserved member cleanup
+- `GET /reserved-members/cleanup-config` - Get grace period configuration with available products
+- `PUT /reserved-members/cleanup-config` - Update grace period configuration (global, warning, product overrides)
 - `GET /report-crm/export` - Export CRM Report (supports token query param)
 - `GET /omset/export-summary` - Export OMSET summary (supports token query param)
 - `GET /staff/notifications/summary` - Get staff notification counts (bonanza_new, memberwd_new)
