@@ -33,7 +33,37 @@ export default function StaffDashboard({ user, onLogout }) {
 
   useEffect(() => {
     loadStats();
+    loadNotificationCounts();
   }, []);
+
+  // Load notification counts when component mounts or tab changes
+  const loadNotificationCounts = useCallback(async () => {
+    try {
+      const response = await api.get('/staff/notifications/summary');
+      setNotificationCounts(response.data);
+    } catch (error) {
+      console.error('Error loading notification counts:', error);
+    }
+  }, []);
+
+  // Mark page as viewed when user navigates to bonanza or memberwd
+  useEffect(() => {
+    const markAsViewed = async (pageType) => {
+      try {
+        await api.post(`/staff/notifications/mark-viewed/${pageType}`);
+        // Refresh notification counts after marking as viewed
+        loadNotificationCounts();
+      } catch (error) {
+        console.error('Error marking page as viewed:', error);
+      }
+    };
+
+    if (activeTab === 'bonanza') {
+      markAsViewed('bonanza');
+    } else if (activeTab === 'memberwd') {
+      markAsViewed('memberwd');
+    }
+  }, [activeTab, loadNotificationCounts]);
 
   const loadStats = async () => {
     try {
