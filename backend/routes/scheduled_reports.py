@@ -154,8 +154,13 @@ async def send_telegram_message(bot_token: str, chat_id: str, message: str) -> b
             return False
 
 
-async def generate_daily_report(target_date: datetime = None) -> str:
-    """Generate daily summary report for all staff and products"""
+async def generate_daily_report(target_date: datetime = None, compact: bool = True) -> str:
+    """Generate daily summary report for all staff and products.
+    
+    Args:
+        target_date: Date to generate report for (defaults to yesterday)
+        compact: If True, generates a condensed single-message report
+    """
     db = get_db()
     
     if target_date is None:
@@ -254,54 +259,105 @@ async def generate_daily_report(target_date: datetime = None) -> str:
     
     # Format the report
     def format_rupiah(amount):
+        if amount >= 1000000000:
+            return f"Rp {amount/1000000000:.1f}B"
+        elif amount >= 1000000:
+            return f"Rp {amount/1000000:.1f}M"
+        elif amount >= 1000:
+            return f"Rp {amount/1000:.1f}K"
         return f"Rp {amount:,.0f}".replace(',', '.')
     
-    report_lines = [
-        f"📊 <b>Daily CRM Report</b>",
-        f"📅 <b>Date:</b> {date_str}",
-        f"⏰ <b>Generated:</b> {datetime.now(JAKARTA_TZ).strftime('%Y-%m-%d %H:%M')} WIB",
-        ""
-    ]
+    def format_rupiah_full(amount):
+        return f"Rp {amount:,.0f}".replace(',', '.')
     
     grand_totals = {'ndp': 0, 'rdp': 0, 'total_form': 0, 'nominal': 0}
     
-    for product_id, product_data in sorted(product_staff_data.items(), key=lambda x: x[1]['totals']['nominal'], reverse=True):
-        report_lines.append(f"━━━━━━━━━━━━━━━━━━━━")
-        report_lines.append(f"🏷 <b>{product_data['product_name']}</b>")
-        report_lines.append("")
-        
-        # Sort staff by nominal
-        sorted_staff = sorted(product_data['staff'].items(), key=lambda x: x[1]['nominal'], reverse=True)
-        
-        for idx, (staff_id, staff_data) in enumerate(sorted_staff, 1):
-            emoji = "🥇" if idx == 1 else "🥈" if idx == 2 else "🥉" if idx == 3 else "👤"
-            report_lines.append(
-                f"{emoji} <b>{staff_data['staff_name']}</b>\n"
-                f"   NDP: {staff_data['ndp']} | RDP: {staff_data['rdp']} | Form: {staff_data['total_form']}\n"
-                f"   💰 {format_rupiah(staff_data['nominal'])}"
-            )
-        
-        report_lines.append("")
-        report_lines.append(
-            f"📈 <b>Product Total:</b>\n"
-            f"   NDP: {product_data['totals']['ndp']} | RDP: {product_data['totals']['rdp']} | Form: {product_data['totals']['total_form']}\n"
-            f"   💰 {format_rupiah(product_data['totals']['nominal'])}"
-        )
-        report_lines.append("")
-        
-        # Add to grand totals
+    # Calculate grand totals first
+    for product_id, product_data in product_staff_data.items():
         for k in grand_totals:
             grand_totals[k] += product_data['totals'][k]
     
-    # Grand totals
-    report_lines.append("━━━━━━━━━━━━━━━━━━━━")
-    report_lines.append(f"🏆 <b>GRAND TOTAL</b>")
-    report_lines.append(
-        f"   NDP: {grand_totals['ndp']} | RDP: {grand_totals['rdp']} | Form: {grand_totals['total_form']}\n"
-        f"   💰 <b>{format_rupiah(grand_totals['nominal'])}</b>"
-    )
+    if compact:
+        # COMPACT FORMAT - All in one message
+        report_lines = [
+            f"📊 <b>DAILY CRM REPORT</b>",
+            f"📅 {date_str} | ⏰ {datetime.now(JAKARTA_TZ).strftime('%H:%M')} WIB",
+            ""
+        ]
+        
+        # Grand Total Summary at top
+        report_lines.append(f"💰 <b>TOTAL: {format_rupiah_full(grand_totals['nominal'])}</b>")
+        report_lines.append(f"📈 NDP: {grand_totals['ndp']} | RDP: {grand_totals['rdp']} | Form: {grand_totals['total_form']}")
+        report_lines.append("")
+        
+        # Products with their staff (condensed)
+        for product_id, product_data in sorted(product_staff_data.items(), key=lambda x: x[1]['totals']['nominal'], reverse=True):
+            # Product header with totals inline
+            p_totals = product_data['totals']
+            report_lines.append(f"━━ <b>{product_data['product_name']}</b> ━━")
+            report_lines.append(f"💵 {format_rupiah_full(p_totals['nominal'])} | N:{p_totals['ndp']} R:{p_totals['rdp']} F:{p_totals['total_form']}")
+            
+            # Staff list (top performers only in compact mode)
+            sorted_staff = sorted(product_data['staff'].items(), key=lambda x: x[1]['nominal'], reverse=True)
+            
+            staff_lines = []
+            for idx, (staff_id, staff_data) in enumerate(sorted_staff[:5], 1):  # Top 5 per product
+                medal = "🥇" if idx == 1 else "🥈" if idx == 2 else "🥉" if idx == 3 else "•"
+                staff_lines.append(
+                    f"{medal} {staff_data['staff_name']}: {format_rupiah(staff_data['nominal'])} (N:{staff_data['ndp']} R:{staff_data['rdp']})"
+                )
+            
+            report_lines.append('\n'.join(staff_lines))
+            
+            if len(sorted_staff) > 5:
+                report_lines.append(f"<i>+{len(sorted_staff)-5} more staff</i>")
+            
+            report_lines.append("")
+        
+        return "\n".join(report_lines)
     
-    return "\n".join(report_lines)
+    else:
+        # DETAILED FORMAT (original)
+        report_lines = [
+            f"📊 <b>Daily CRM Report</b>",
+            f"📅 <b>Date:</b> {date_str}",
+            f"⏰ <b>Generated:</b> {datetime.now(JAKARTA_TZ).strftime('%Y-%m-%d %H:%M')} WIB",
+            ""
+        ]
+        
+        for product_id, product_data in sorted(product_staff_data.items(), key=lambda x: x[1]['totals']['nominal'], reverse=True):
+            report_lines.append(f"━━━━━━━━━━━━━━━━━━━━")
+            report_lines.append(f"🏷 <b>{product_data['product_name']}</b>")
+            report_lines.append("")
+            
+            # Sort staff by nominal
+            sorted_staff = sorted(product_data['staff'].items(), key=lambda x: x[1]['nominal'], reverse=True)
+            
+            for idx, (staff_id, staff_data) in enumerate(sorted_staff, 1):
+                emoji = "🥇" if idx == 1 else "🥈" if idx == 2 else "🥉" if idx == 3 else "👤"
+                report_lines.append(
+                    f"{emoji} <b>{staff_data['staff_name']}</b>\n"
+                    f"   NDP: {staff_data['ndp']} | RDP: {staff_data['rdp']} | Form: {staff_data['total_form']}\n"
+                    f"   💰 {format_rupiah_full(staff_data['nominal'])}"
+                )
+            
+            report_lines.append("")
+            report_lines.append(
+                f"📈 <b>Product Total:</b>\n"
+                f"   NDP: {product_data['totals']['ndp']} | RDP: {product_data['totals']['rdp']} | Form: {product_data['totals']['total_form']}\n"
+                f"   💰 {format_rupiah_full(product_data['totals']['nominal'])}"
+            )
+            report_lines.append("")
+        
+        # Grand totals
+        report_lines.append("━━━━━━━━━━━━━━━━━━━━")
+        report_lines.append(f"🏆 <b>GRAND TOTAL</b>")
+        report_lines.append(
+            f"   NDP: {grand_totals['ndp']} | RDP: {grand_totals['rdp']} | Form: {grand_totals['total_form']}\n"
+            f"   💰 <b>{format_rupiah_full(grand_totals['nominal'])}</b>"
+        )
+        
+        return "\n".join(report_lines)
 
 
 async def generate_atrisk_alert(inactive_days: int = 14) -> str:
