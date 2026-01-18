@@ -69,22 +69,86 @@ class ScheduledReportConfig(BaseModel):
 
 
 async def send_telegram_message(bot_token: str, chat_id: str, message: str) -> bool:
-    """Send a message via Telegram Bot API"""
+    """Send a message via Telegram Bot API. Handles long messages by splitting."""
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+    
+    # Telegram has a 4096 character limit per message
+    MAX_LENGTH = 4000  # Leave some buffer
     
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.post(url, json={
-                "chat_id": chat_id,
-                "text": message,
-                "parse_mode": "HTML"
-            }, timeout=30.0)
+            # If message is short enough, send as-is
+            if len(message) <= MAX_LENGTH:
+                response = await client.post(url, json={
+                    "chat_id": chat_id,
+                    "text": message,
+                    "parse_mode": "HTML"
+                }, timeout=30.0)
+                
+                if response.status_code == 200:
+                    return True
+                else:
+                    print(f"Telegram API error: {response.text}")
+                    return False
             
-            if response.status_code == 200:
-                return True
-            else:
-                print(f"Telegram API error: {response.text}")
-                return False
+            # For long messages, we need to split intelligently
+            # We'll split at the "━━━" separators to keep product sections together
+            parts = []
+            lines = message.split('\n')
+            current_part = []
+            current_length = 0
+            
+            for line in lines:
+                line_length = len(line) + 1  # +1 for newline
+                
+                # Check if adding this line would exceed limit
+                if current_length + line_length > MAX_LENGTH:
+                    # Save current part and start new one
+                    if current_part:
+                        parts.append('\n'.join(current_part))
+                    current_part = [line]
+                    current_length = line_length
+                else:
+                    current_part.append(line)
+                    current_length += line_length
+            
+            # Don't forget the last part
+            if current_part:
+                parts.append('\n'.join(current_part))
+            
+            # Send all parts as a single message if possible, otherwise multiple
+            if len(parts) == 1:
+                response = await client.post(url, json={
+                    "chat_id": chat_id,
+                    "text": parts[0],
+                    "parse_mode": "HTML"
+                }, timeout=30.0)
+                return response.status_code == 200
+            
+            # Send multiple parts with indicators
+            total_parts = len(parts)
+            for i, part in enumerate(parts):
+                # Add part indicator for continuation
+                if i == 0:
+                    part_text = part
+                else:
+                    part_text = f"📊 <i>(continued {i+1}/{total_parts})</i>\n\n{part}"
+                
+                response = await client.post(url, json={
+                    "chat_id": chat_id,
+                    "text": part_text,
+                    "parse_mode": "HTML"
+                }, timeout=30.0)
+                
+                if response.status_code != 200:
+                    print(f"Telegram API error on part {i+1}: {response.text}")
+                    return False
+                
+                # Small delay between messages to avoid rate limiting
+                await asyncio.sleep(0.5)
+            
+            return True
+            
         except Exception as e:
             print(f"Failed to send Telegram message: {e}")
             return False
