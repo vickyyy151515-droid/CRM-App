@@ -645,8 +645,13 @@ async def export_omset_summary(
     
     all_records = await db.omset_records.find({} if not product_id else {'product_id': product_id}, {'_id': 0}).to_list(100000)
     
+    # Build customer_first_date, excluding "tambahan" records
     customer_first_date = {}
     for record in sorted(all_records, key=lambda x: x['record_date']):
+        # Skip "tambahan" records when determining first deposit date
+        keterangan = record.get('keterangan', '') or ''
+        if 'tambahan' in keterangan.lower():
+            continue
         key = (record['customer_id'], record['product_id'])
         if key not in customer_first_date:
             customer_first_date[key] = record['record_date']
@@ -656,7 +661,13 @@ async def export_omset_summary(
         date = record['record_date']
         key = (record['customer_id'], record['product_id'])
         first_date = customer_first_date.get(key)
-        is_ndp = first_date == date
+        
+        # Check if "tambahan" in notes - if so, always RDP
+        keterangan = record.get('keterangan', '') or ''
+        if 'tambahan' in keterangan.lower():
+            is_ndp = False
+        else:
+            is_ndp = first_date == date
         
         if date not in daily_summary:
             daily_summary[date] = {
