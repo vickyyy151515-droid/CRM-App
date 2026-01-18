@@ -544,6 +544,10 @@ const en = {
     copyWhatsappLink: 'Copy WhatsApp link',
     linkCopied: 'WhatsApp link copied! Paste in browser address bar',
     openInNewTab: 'Open in new tab',
+    pin: 'Pin to top',
+    unpin: 'Unpin',
+    batchPinned: 'Batch pinned to top',
+    batchUnpinned: 'Batch unpinned',
   },
 
   // Staff Progress
