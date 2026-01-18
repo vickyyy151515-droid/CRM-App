@@ -162,7 +162,8 @@ All staff-facing components now fully translated to casual Indonesian.
 - `DELETE /notifications` - Bulk delete notifications
 - `GET /users/activity` - User activity status (timestamp-based)
 - `POST /reserved-members` - Requires phone_number field
-- `GET /my-request-batches` - Get user's batch list
+- `GET /my-request-batches` - Get user's batch list (includes is_pinned field, sorted pinned first)
+- `PATCH /my-request-batches/{batch_id}/pin` - Toggle pin status for a batch
 - `GET /my-assigned-records-by-batch` - Get records for a specific batch
 - `GET /followups/filters` - Get unique products/databases for staff's follow-up filtering
 - `GET /followups` - Supports product_id, database_id, and urgency query params
