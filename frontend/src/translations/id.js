@@ -152,6 +152,7 @@ const id = {
     downloadHistory: 'Riwayat Unduhan',
     userManagement: 'Kelola Pengguna',
     productManagement: 'Kelola Produk',
+    officeInventory: 'Inventaris Kantor',
     dbBonanza: 'DB Bonanza',
     memberWDCRM: 'Member WD CRM',
     leaveCalendar: 'Kalender Cuti',
