@@ -104,6 +104,22 @@ All staff-facing components now fully translated to casual Indonesian.
 - Staff can now work on multiple batches simultaneously in different tabs
 - Stats summary, search, WhatsApp/Respond status buttons all functional
 
+### Staff Notification Indicators - COMPLETED (Jan 18, 2026)
+- Added notification badges on sidebar for "DB Bonanza" and "Member WD CRM" menu items
+- Red badge shows count of newly assigned records since last view
+- Badge count resets to 0 when staff navigates to the respective page
+- Backend: New `/api/staff/notifications/summary` endpoint returns bonanza_new and memberwd_new counts
+- Backend: New `/api/staff/notifications/mark-viewed/{page_type}` endpoint updates last viewed timestamp
+- New MongoDB collection: `staff_last_viewed` tracks when staff last viewed each page
+- Frontend: `StaffDashboard.js` fetches counts and passes badge prop to menuItems
+
+### Dark Mode Fixes for DB Bonanza & Member WD CRM - COMPLETED (Jan 18, 2026)
+- Fixed all text visibility issues in `StaffDBBonanza.js` and `StaffMemberWDCRM.js`
+- Added proper dark mode classes: dark:bg-slate-800, dark:text-white, dark:text-slate-300
+- Fixed gradient headers: dark:from-indigo-900/30 dark:to-purple-900/30
+- Fixed table headers, borders, and hover states for dark mode
+- Fixed input fields and select dropdowns with proper dark backgrounds
+
 ## Test Credentials
 - **Master Admin**: vicky@crm.com / vicky123
 - **Admin**: admin@crm.com / admin123
