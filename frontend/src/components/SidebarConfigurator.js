@@ -566,7 +566,7 @@ export default function SidebarConfigurator({ isOpen, onClose, menuItems, onConf
 
               {/* Sortable Items */}
               <div className="mb-4">
-                <p className="text-sm text-slate-500 mb-3">Drag items to reorder:</p>
+                <p className="text-sm text-slate-500 mb-3">Drag items to reorder. Click <FolderPlus size={14} className="inline text-blue-500" /> to add an item to a folder:</p>
                 <DndContext
                   sensors={sensors}
                   collisionDetection={closestCenter}
@@ -604,7 +604,9 @@ export default function SidebarConfigurator({ isOpen, onClose, menuItems, onConf
                             onEditFolder={editFolder}
                             onDeleteFolder={deleteFolder}
                             onRemoveFromFolder={removeFromFolder}
+                            onAddToFolder={addToFolder}
                             icons={icons}
+                            folders={config?.items?.filter(i => i.type === 'folder') || []}
                           />
                         )}
                       </div>
