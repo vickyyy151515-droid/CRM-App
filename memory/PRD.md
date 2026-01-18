@@ -136,6 +136,18 @@ All staff-facing components now fully translated to casual Indonesian.
 - Frontend: `LanguageContext.js` has `setDefaultLanguageForRole` function
 - Frontend: `StaffDashboard.js` calls this function when staff user logs in
 
+### Reserved Member Auto-Cleanup - COMPLETED (Jan 18, 2026)
+- Auto-deletes reserved members if no OMSET from that customer in 30 days
+- Matching: Compares reserved member's customer_name with OMSET's customer_id/customer_name (case-insensitive)
+- 30-day countdown starts from reservation approval date (approved_at or created_at)
+- Sends daily in-app notifications to staff starting 7 days before expiration
+- Scheduled job runs at 00:01 AM Jakarta time daily
+- Backend: `process_reserved_member_cleanup()` function in scheduled_reports.py
+- Admin endpoints: 
+  - `GET /api/scheduled-reports/reserved-member-cleanup-preview` - preview what will happen
+  - `POST /api/scheduled-reports/reserved-member-cleanup-run` - manually trigger cleanup
+- Notification types: `reserved_member_expiring` (warning), `reserved_member_expired` (deleted)
+
 ## Test Credentials
 - **Master Admin**: vicky@crm.com / vicky123
 - **Admin**: admin@crm.com / admin123
