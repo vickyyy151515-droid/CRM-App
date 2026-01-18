@@ -14,6 +14,11 @@ export function LanguageProvider({ children }) {
     const saved = localStorage.getItem('language');
     return saved || LANGUAGES.EN;
   });
+  
+  // Track if user has manually changed language preference
+  const [userHasSetPreference, setUserHasSetPreference] = useState(() => {
+    return localStorage.getItem('language_preference_set') === 'true';
+  });
 
   useEffect(() => {
     localStorage.setItem('language', language);
@@ -23,6 +28,8 @@ export function LanguageProvider({ children }) {
 
   const toggleLanguage = () => {
     setLanguage(prev => prev === LANGUAGES.EN ? LANGUAGES.ID : LANGUAGES.EN);
+    setUserHasSetPreference(true);
+    localStorage.setItem('language_preference_set', 'true');
   };
 
   const switchLanguage = (lang) => {
@@ -30,6 +37,17 @@ export function LanguageProvider({ children }) {
       setLanguage(lang);
     }
   };
+  
+  // Set default language based on user role (called after login)
+  const setDefaultLanguageForRole = useCallback((role) => {
+    // Only auto-switch if user hasn't manually set a preference
+    if (!userHasSetPreference) {
+      if (role === 'staff') {
+        setLanguage(LANGUAGES.ID);
+        localStorage.setItem('language', LANGUAGES.ID);
+      }
+    }
+  }, [userHasSetPreference]);
 
   // Translation function that uses current language
   const t = useCallback((path, params) => {
@@ -37,7 +55,14 @@ export function LanguageProvider({ children }) {
   }, [language]);
 
   return (
-    <LanguageContext.Provider value={{ language, toggleLanguage, switchLanguage, isIndonesian: language === LANGUAGES.ID, t }}>
+    <LanguageContext.Provider value={{ 
+      language, 
+      toggleLanguage, 
+      switchLanguage, 
+      setDefaultLanguageForRole,
+      isIndonesian: language === LANGUAGES.ID, 
+      t 
+    }}>
       {children}
     </LanguageContext.Provider>
   );
