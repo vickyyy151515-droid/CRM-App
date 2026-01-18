@@ -20,7 +20,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import {
   GripVertical, FolderPlus, Folder, FolderOpen, ChevronDown, ChevronRight,
-  X, Check, Pencil, Trash2, RotateCcw, Settings, Save
+  X, Check, Pencil, Trash2, RotateCcw, Settings, Save, Plus
 } from 'lucide-react';
 
 // Sortable Item Component
