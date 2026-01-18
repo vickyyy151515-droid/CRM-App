@@ -719,7 +719,7 @@ async def process_reserved_member_cleanup():
         
         # No OMSET from this customer
         if days_remaining <= 0:
-            # 30 days passed with no OMSET - delete the reservation
+            # Grace period passed with no OMSET - delete the reservation
             await db.reserved_members.delete_one({'id': member_id})
             members_deleted += 1
             
@@ -728,17 +728,18 @@ async def process_reserved_member_cleanup():
                 user_id=staff_id,
                 type='reserved_member_expired',
                 title='Reserved Member Removed',
-                message=f'Your reservation for "{customer_name}" ({product_name}) has been removed due to no OMSET in 30 days.',
+                message=f'Your reservation for "{customer_name}" ({product_name}) has been removed due to no OMSET in {grace_days} days.',
                 data={
                     'customer_name': customer_name,
                     'product_name': product_name,
-                    'reason': 'no_omset_30_days'
+                    'grace_days': grace_days,
+                    'reason': 'no_omset_grace_period'
                 }
             )
-            print(f"Deleted expired reservation: {customer_name} (staff: {staff_name})")
+            print(f"Deleted expired reservation: {customer_name} (staff: {staff_name}, grace: {grace_days} days)")
             
-        elif days_remaining <= 7:
-            # Send warning notification (7 days or less remaining)
+        elif days_remaining <= warning_days:
+            # Send warning notification (within warning period)
             # Check if we already sent notification today
             today_str = jakarta_now.strftime('%Y-%m-%d')
             existing_notification = await db.notifications.find_one({
@@ -758,7 +759,8 @@ async def process_reserved_member_cleanup():
                         'member_id': member_id,
                         'customer_name': customer_name,
                         'product_name': product_name,
-                        'days_remaining': days_remaining
+                        'days_remaining': days_remaining,
+                        'grace_days': grace_days
                     }
                 )
                 notifications_sent += 1
