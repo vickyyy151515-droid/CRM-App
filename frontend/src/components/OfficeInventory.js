@@ -67,7 +67,9 @@ export default function OfficeInventory() {
     purchase_date: '',
     purchase_price: '',
     condition: 'good',
-    notes: ''
+    notes: '',
+    assign_to_staff_id: '',
+    assignment_notes: ''
   });
   const [assignData, setAssignData] = useState({ staff_id: '', notes: '' });
   const [returnData, setReturnData] = useState({ condition: 'good', notes: '' });
@@ -203,7 +205,9 @@ export default function OfficeInventory() {
       purchase_date: '',
       purchase_price: '',
       condition: 'good',
-      notes: ''
+      notes: '',
+      assign_to_staff_id: '',
+      assignment_notes: ''
     });
     setSelectedItem(null);
   };
@@ -218,7 +222,9 @@ export default function OfficeInventory() {
       purchase_date: item.purchase_date || '',
       purchase_price: item.purchase_price || '',
       condition: item.condition,
-      notes: item.notes || ''
+      notes: item.notes || '',
+      assign_to_staff_id: '',
+      assignment_notes: ''
     });
     setShowAddModal(true);
   };
