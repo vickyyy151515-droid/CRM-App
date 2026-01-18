@@ -573,6 +573,45 @@ export default function OfficeInventory() {
                   data-testid="input-item-notes"
                 />
               </div>
+              
+              {/* Staff Assignment Section - Only show when adding new item */}
+              {!selectedItem && (
+                <div className="border-t border-slate-200 dark:border-slate-700 pt-4 mt-4">
+                  <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                    <UserPlus size={16} />
+                    Assign to Staff (Optional)
+                  </h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Staff Member</label>
+                      <select
+                        value={formData.assign_to_staff_id}
+                        onChange={(e) => setFormData({ ...formData, assign_to_staff_id: e.target.value })}
+                        className="w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                        data-testid="select-assign-staff-on-create"
+                      >
+                        <option value="">Not assigned (Available)</option>
+                        {staff.map(s => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    {formData.assign_to_staff_id && (
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Assignment Notes</label>
+                        <input
+                          type="text"
+                          value={formData.assignment_notes}
+                          onChange={(e) => setFormData({ ...formData, assignment_notes: e.target.value })}
+                          className="w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                          placeholder="e.g., For daily work, temporary use..."
+                          data-testid="input-assignment-notes-on-create"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
               <div className="flex justify-end gap-3 pt-4">
                 <button
                   type="button"
