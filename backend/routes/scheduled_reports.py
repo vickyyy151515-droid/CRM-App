@@ -1273,22 +1273,38 @@ async def preview_reserved_member_cleanup(user: User = Depends(get_admin_user)):
     db = get_db()
     jakarta_now = datetime.now(JAKARTA_TZ)
     
+    # Get grace period configuration
+    config = await db.reserved_member_config.find_one({'id': 'reserved_member_config'}, {'_id': 0})
+    global_grace_days = 30
+    warning_days = 7
+    product_overrides = {}
+    
+    if config:
+        global_grace_days = config.get('global_grace_days', 30)
+        warning_days = config.get('warning_days', 7)
+        product_overrides = {p['product_id']: p['grace_days'] for p in config.get('product_overrides', [])}
+    
     # Get all approved reserved members
     reserved_members = await db.reserved_members.find(
         {'status': 'approved'},
         {'_id': 0}
     ).to_list(10000)
     
-    expiring_soon = []  # 7 days or less remaining
+    expiring_soon = []  # Within warning period
     will_be_deleted = []  # 0 days or less remaining
     active_members = []  # Has OMSET
+    safe_members = []  # No OMSET but still within grace period (outside warning)
     
     for member in reserved_members:
         member_id = member.get('id')
         customer_name = member.get('customer_name', '')
         staff_id = member.get('staff_id')
         staff_name = member.get('staff_name', 'Unknown')
+        product_id = member.get('product_id', '')
         product_name = member.get('product_name', 'Unknown')
+        
+        # Get grace period for this member
+        grace_days = product_overrides.get(product_id, global_grace_days)
         
         # Get the reservation date
         reserved_at_str = member.get('approved_at') or member.get('created_at')
@@ -1303,7 +1319,7 @@ async def preview_reserved_member_cleanup(user: User = Depends(get_admin_user)):
             continue
         
         days_since_reservation = (jakarta_now - reserved_at).days
-        days_remaining = 30 - days_since_reservation
+        days_remaining = grace_days - days_since_reservation
         
         # Check if there's any OMSET from this customer since reservation
         omset_query = {
@@ -1321,9 +1337,11 @@ async def preview_reserved_member_cleanup(user: User = Depends(get_admin_user)):
             'id': member_id,
             'customer_name': customer_name,
             'staff_name': staff_name,
+            'product_id': product_id,
             'product_name': product_name,
             'days_since_reservation': days_since_reservation,
             'days_remaining': days_remaining,
+            'grace_days': grace_days,
             'reserved_at': reserved_at_str
         }
         
@@ -1331,12 +1349,20 @@ async def preview_reserved_member_cleanup(user: User = Depends(get_admin_user)):
             active_members.append(member_info)
         elif days_remaining <= 0:
             will_be_deleted.append(member_info)
-        elif days_remaining <= 7:
+        elif days_remaining <= warning_days:
             expiring_soon.append(member_info)
+        else:
+            safe_members.append(member_info)
     
     return {
+        'config': {
+            'global_grace_days': global_grace_days,
+            'warning_days': warning_days,
+            'product_overrides_count': len(product_overrides)
+        },
         'total_approved_members': len(reserved_members),
         'active_members_with_omset': len(active_members),
+        'safe_members_count': len(safe_members),
         'expiring_soon_count': len(expiring_soon),
         'will_be_deleted_count': len(will_be_deleted),
         'expiring_soon': expiring_soon,
