@@ -795,6 +795,10 @@ async def get_omset_record_types(
     
     customer_first_date = {}
     for record in sorted(all_records, key=lambda x: x['record_date']):
+        # Skip "tambahan" records when determining first deposit date
+        keterangan = record.get('keterangan', '') or ''
+        if 'tambahan' in keterangan.lower():
+            continue
         # Use normalized customer_id for comparison
         cid = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
         if cid not in customer_first_date:
@@ -806,7 +810,14 @@ async def get_omset_record_types(
         # Use normalized customer_id for comparison
         cid = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
         first_date = customer_first_date.get(cid)
-        record['record_type'] = 'NDP' if first_date == record_date else 'RDP'
+        
+        # Check if "tambahan" in notes - if so, always RDP
+        keterangan = record.get('keterangan', '') or ''
+        if 'tambahan' in keterangan.lower():
+            record['record_type'] = 'RDP'
+        else:
+            record['record_type'] = 'NDP' if first_date == record_date else 'RDP'
+        
         if isinstance(record.get('created_at'), str):
             record['created_at'] = datetime.fromisoformat(record['created_at'])
     
