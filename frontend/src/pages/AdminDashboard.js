@@ -29,8 +29,9 @@ import ConversionFunnel from '../components/ConversionFunnel';
 import CustomerRetention from '../components/CustomerRetention';
 import ScheduledReports from './ScheduledReports';
 import UserActivity from './UserActivity';
+import OfficeInventory from '../components/OfficeInventory';
 import { useLanguage } from '../contexts/LanguageContext';
-import { LayoutDashboard, Upload, FileSpreadsheet, Clock, Users, Package, List, BarChart, UserCheck, DollarSign, UserCog, Gift, CreditCard, PieChart, Download, FileText, Calculator, CalendarOff, Calendar, Timer, Trophy, CalendarDays, Filter, Heart, Send, Activity } from 'lucide-react';
+import { LayoutDashboard, Upload, FileSpreadsheet, Clock, Users, Package, List, BarChart, UserCheck, DollarSign, UserCog, Gift, CreditCard, PieChart, Download, FileText, Calculator, CalendarOff, Calendar, Timer, Trophy, CalendarDays, Filter, Heart, Send, Activity, Boxes } from 'lucide-react';
 
 export default function AdminDashboard({ user, onLogout }) {
   const { t, language } = useLanguage();
