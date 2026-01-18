@@ -177,6 +177,7 @@ All staff-facing components now fully translated to casual Indonesian.
 - `izin_records` - Short break tracking
 - `notifications` - In-app notifications
 - `atrisk_alert_history` - Tracks at-risk customers shown in alerts (for 3-day rotation)
+- `staff_last_viewed` - Tracks when staff last viewed DB Bonanza/Member WD pages (for notification badges)
 
 ## Third Party Integrations
 - @dnd-kit/core, @dnd-kit/sortable - Sidebar customization
