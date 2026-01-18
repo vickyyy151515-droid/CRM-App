@@ -1009,6 +1009,222 @@ export default function ScheduledReports() {
           </div>
         </div>
       </div>
+
+      {/* Reserved Member Grace Period Section */}
+      <div className="bg-gradient-to-r from-teal-500 to-emerald-600 rounded-xl p-6 text-white shadow-lg">
+        <div className="flex items-center gap-3 mb-2">
+          <UserX size={24} />
+          <span className="text-lg font-semibold">Reserved Member Auto-Cleanup</span>
+        </div>
+        <p className="text-teal-100 text-sm">
+          Automatically removes reserved members if no OMSET is recorded within the grace period. 
+          Daily cleanup runs at 00:01 AM WIB.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Grace Period Configuration */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <Settings size={20} className="text-teal-600" />
+            Grace Period Settings
+          </h3>
+          
+          <form onSubmit={handleReservedConfigSave} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Global Grace Period (Days)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="365"
+                  value={globalGraceDays}
+                  onChange={(e) => setGlobalGraceDays(Number(e.target.value))}
+                  className="w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                  data-testid="input-global-grace-days"
+                />
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Default days before auto-delete
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Warning Period (Days)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max={globalGraceDays - 1}
+                  value={warningDays}
+                  onChange={(e) => setWarningDays(Number(e.target.value))}
+                  className="w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                  data-testid="input-warning-days"
+                />
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Start warning notifications X days before expiry
+                </p>
+              </div>
+            </div>
+
+            {/* Product Overrides */}
+            <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Product-Specific Grace Periods (Optional)
+                </label>
+                <button
+                  type="button"
+                  onClick={addProductOverride}
+                  disabled={productOverrides.length >= availableProducts.length}
+                  className="text-teal-600 hover:text-teal-700 text-sm flex items-center gap-1 disabled:opacity-50"
+                  data-testid="btn-add-product-override"
+                >
+                  <Plus size={16} /> Add Product
+                </button>
+              </div>
+              
+              {productOverrides.length === 0 ? (
+                <p className="text-sm text-slate-500 dark:text-slate-400 italic">
+                  No product-specific overrides. All products use the global grace period.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {productOverrides.map((override, index) => (
+                    <div key={index} className="flex items-center gap-2 bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg">
+                      <select
+                        value={override.product_id}
+                        onChange={(e) => updateProductOverride(index, 'product_id', e.target.value)}
+                        className="flex-1 px-3 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
+                        data-testid={`select-override-product-${index}`}
+                      >
+                        {availableProducts.map(p => (
+                          <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                      </select>
+                      <input
+                        type="number"
+                        min="1"
+                        max="365"
+                        value={override.grace_days}
+                        onChange={(e) => updateProductOverride(index, 'grace_days', Number(e.target.value))}
+                        className="w-20 px-3 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
+                        data-testid={`input-override-days-${index}`}
+                      />
+                      <span className="text-sm text-slate-500 dark:text-slate-400">days</span>
+                      <button
+                        type="button"
+                        onClick={() => removeProductOverride(index)}
+                        className="text-red-500 hover:text-red-700 p-1"
+                        data-testid={`btn-remove-override-${index}`}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <button
+              type="submit"
+              disabled={reservedSaving}
+              className="w-full px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+              data-testid="btn-save-reserved-config"
+            >
+              {reservedSaving ? <RefreshCw className="animate-spin" size={18} /> : <CheckCircle size={18} />}
+              {reservedSaving ? 'Saving...' : 'Save Grace Period Configuration'}
+            </button>
+          </form>
+        </div>
+
+        {/* Preview Section */}
+        <div className="space-y-4">
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+              <Eye size={20} className="text-teal-500" />
+              Cleanup Preview
+            </h3>
+            
+            <button
+              onClick={handleReservedPreview}
+              disabled={reservedPreviewing}
+              className="w-full px-4 py-3 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 rounded-lg hover:bg-teal-100 dark:hover:bg-teal-900/50 disabled:opacity-50 transition-colors flex items-center gap-3 mb-4"
+              data-testid="btn-preview-reserved-cleanup"
+            >
+              {reservedPreviewing ? <RefreshCw className="animate-spin" size={18} /> : <Eye size={18} />}
+              <div className="text-left">
+                <div className="font-medium">Preview Cleanup</div>
+                <div className="text-xs text-teal-600 dark:text-teal-500">See which members will be warned/deleted</div>
+              </div>
+            </button>
+
+            {reservedPreview && (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3">
+                    <div className="text-slate-500 dark:text-slate-400">Total Approved</div>
+                    <div className="text-xl font-bold text-slate-900 dark:text-white">{reservedPreview.total_approved_members}</div>
+                  </div>
+                  <div className="bg-emerald-50 dark:bg-emerald-900/30 rounded-lg p-3">
+                    <div className="text-emerald-600 dark:text-emerald-400">Active (Has OMSET)</div>
+                    <div className="text-xl font-bold text-emerald-700 dark:text-emerald-300">{reservedPreview.active_members_with_omset}</div>
+                  </div>
+                  <div className="bg-amber-50 dark:bg-amber-900/30 rounded-lg p-3">
+                    <div className="text-amber-600 dark:text-amber-400">Expiring Soon</div>
+                    <div className="text-xl font-bold text-amber-700 dark:text-amber-300">{reservedPreview.expiring_soon_count}</div>
+                  </div>
+                  <div className="bg-red-50 dark:bg-red-900/30 rounded-lg p-3">
+                    <div className="text-red-600 dark:text-red-400">Will Be Deleted</div>
+                    <div className="text-xl font-bold text-red-700 dark:text-red-300">{reservedPreview.will_be_deleted_count}</div>
+                  </div>
+                </div>
+
+                {reservedPreview.expiring_soon?.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="text-sm font-medium text-amber-600 dark:text-amber-400 mb-2">Expiring Soon:</h4>
+                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                      {reservedPreview.expiring_soon.map((m, i) => (
+                        <div key={i} className="text-xs bg-amber-50 dark:bg-amber-900/20 p-2 rounded flex justify-between">
+                          <span className="text-slate-700 dark:text-slate-300">{m.customer_name} ({m.staff_name})</span>
+                          <span className="text-amber-600 dark:text-amber-400">{m.days_remaining}d left</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {reservedPreview.will_be_deleted?.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="text-sm font-medium text-red-600 dark:text-red-400 mb-2">Will Be Deleted:</h4>
+                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                      {reservedPreview.will_be_deleted.map((m, i) => (
+                        <div key={i} className="text-xs bg-red-50 dark:bg-red-900/20 p-2 rounded flex justify-between">
+                          <span className="text-slate-700 dark:text-slate-300">{m.customer_name} ({m.staff_name})</span>
+                          <span className="text-red-600 dark:text-red-400">{m.grace_days}d grace period</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Info Section */}
+          <div className="bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-xl p-4">
+            <h4 className="font-medium text-teal-800 dark:text-teal-400 mb-2">How it works:</h4>
+            <ul className="text-sm text-teal-700 dark:text-teal-500 space-y-1 list-disc list-inside">
+              <li>Reserved members without OMSET are tracked</li>
+              <li>Warning notifications start {warningDays} days before expiry</li>
+              <li>After {globalGraceDays} days with no OMSET, auto-deleted</li>
+              <li>Product-specific periods override the global setting</li>
+              <li>Cleanup runs automatically at 00:01 AM WIB daily</li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
