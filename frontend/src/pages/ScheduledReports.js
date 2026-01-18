@@ -1001,7 +1001,7 @@ export default function ScheduledReports() {
               <h4 className="font-medium text-red-800 dark:text-red-400 mb-2">How it works:</h4>
               <ul className="text-sm text-red-700 dark:text-red-500 space-y-1 list-disc list-inside">
                 <li>At the scheduled time, checks which staff are online</li>
-                <li>Staff are considered "online" if active within 30 minutes</li>
+                <li>Staff are considered &quot;online&quot; if active within 30 minutes</li>
                 <li>Alert lists all offline staff with last login time</li>
                 <li>Helps ensure team is working on time</li>
               </ul>
