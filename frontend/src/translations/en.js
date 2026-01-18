@@ -381,6 +381,8 @@ const en = {
     requestRejected: 'Request Rejected',
     recordsAssigned: 'Records Assigned',
     followupReminder: 'Follow-up Reminder',
+    reservedMemberExpiring: 'Reserved Member Expiring Soon',
+    reservedMemberExpired: 'Reserved Member Removed',
   },
 
   // Conversion Funnel
