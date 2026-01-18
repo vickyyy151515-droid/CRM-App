@@ -66,6 +66,17 @@ export default function MyAssignedRecords() {
     setEditTitle('');
   };
 
+  const handleTogglePin = async (e, batchId, currentPinned) => {
+    e.stopPropagation();
+    try {
+      await api.patch(`/my-request-batches/${batchId}/pin`, { is_pinned: !currentPinned });
+      toast.success(!currentPinned ? t('myRecords.batchPinned') : t('myRecords.batchUnpinned'));
+      loadBatches();
+    } catch (error) {
+      toast.error(t('messages.saveFailed'));
+    }
+  };
+
   const loadBatchRecords = async (batchId) => {
     if (editingBatchId) return; // Don't navigate while editing
     setLoadingRecords(true);
