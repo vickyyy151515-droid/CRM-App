@@ -159,6 +159,8 @@ All staff-facing components now fully translated to casual Indonesian.
 - `DELETE /scheduled-reports/atrisk-rotation-reset` - Reset at-risk alert rotation history
 - `GET /report-crm/export` - Export CRM Report (supports token query param)
 - `GET /omset/export-summary` - Export OMSET summary (supports token query param)
+- `GET /staff/notifications/summary` - Get staff notification counts (bonanza_new, memberwd_new)
+- `POST /staff/notifications/mark-viewed/{page_type}` - Mark page as viewed (bonanza or memberwd)
 
 ## New Route
 - `/batch/:batchId` - Standalone batch view page (opens in new tab)
