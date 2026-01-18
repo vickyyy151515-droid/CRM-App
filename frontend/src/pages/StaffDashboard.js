@@ -31,12 +31,7 @@ export default function StaffDashboard({ user, onLogout }) {
     memberwd_new: 0
   });
 
-  useEffect(() => {
-    loadStats();
-    loadNotificationCounts();
-  }, []);
-
-  // Load notification counts when component mounts or tab changes
+  // Load notification counts
   const loadNotificationCounts = useCallback(async () => {
     try {
       const response = await api.get('/staff/notifications/summary');
@@ -45,6 +40,29 @@ export default function StaffDashboard({ user, onLogout }) {
       console.error('Error loading notification counts:', error);
     }
   }, []);
+
+  const loadStats = async () => {
+    try {
+      const [databases, requests, history] = await Promise.all([
+        api.get('/databases'),
+        api.get('/download-requests'),
+        api.get('/download-history')
+      ]);
+
+      setStats({
+        totalDatabases: databases.data.length,
+        myRequests: requests.data.length,
+        myDownloads: history.data.length
+      });
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
+  };
+
+  useEffect(() => {
+    loadStats();
+    loadNotificationCounts();
+  }, [loadNotificationCounts]);
 
   // Mark page as viewed when user navigates to bonanza or memberwd
   useEffect(() => {
@@ -64,24 +82,6 @@ export default function StaffDashboard({ user, onLogout }) {
       markAsViewed('memberwd');
     }
   }, [activeTab, loadNotificationCounts]);
-
-  const loadStats = async () => {
-    try {
-      const [databases, requests, history] = await Promise.all([
-        api.get('/databases'),
-        api.get('/download-requests'),
-        api.get('/download-history')
-      ]);
-
-      setStats({
-        totalDatabases: databases.data.length,
-        myRequests: requests.data.length,
-        myDownloads: history.data.length
-      });
-    } catch (error) {
-      console.error('Error loading stats:', error);
-    }
-  };
 
   const renderContent = () => {
     switch (activeTab) {
