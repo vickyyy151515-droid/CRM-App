@@ -1355,6 +1355,92 @@ async def run_reserved_member_cleanup(user: User = Depends(get_admin_user)):
         raise HTTPException(status_code=500, detail=f"Cleanup failed: {str(e)}")
 
 
+# ==================== RESERVED MEMBER GRACE PERIOD CONFIG ====================
+
+class ProductGracePeriod(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    product_id: str
+    product_name: str
+    grace_days: int
+
+class ReservedMemberConfigUpdate(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    global_grace_days: int = 30
+    warning_days: int = 7
+    product_overrides: List[ProductGracePeriod] = []
+
+
+@router.get("/reserved-members/cleanup-config")
+async def get_reserved_member_config(user: User = Depends(get_admin_user)):
+    """Get reserved member cleanup configuration (grace periods)"""
+    db = get_db()
+    
+    config = await db.reserved_member_config.find_one({'id': 'reserved_member_config'}, {'_id': 0})
+    
+    # Get all products for reference
+    products = await db.products.find({}, {'_id': 0, 'id': 1, 'name': 1}).to_list(100)
+    
+    if not config:
+        config = {
+            'id': 'reserved_member_config',
+            'global_grace_days': 30,
+            'warning_days': 7,
+            'product_overrides': []
+        }
+    
+    return {
+        **config,
+        'available_products': products
+    }
+
+
+@router.put("/reserved-members/cleanup-config")
+async def update_reserved_member_config(config_update: ReservedMemberConfigUpdate, user: User = Depends(get_admin_user)):
+    """Update reserved member cleanup configuration (grace periods)"""
+    db = get_db()
+    
+    # Validate grace_days values
+    if config_update.global_grace_days < 1:
+        raise HTTPException(status_code=400, detail="Global grace days must be at least 1")
+    if config_update.warning_days < 1:
+        raise HTTPException(status_code=400, detail="Warning days must be at least 1")
+    if config_update.warning_days >= config_update.global_grace_days:
+        raise HTTPException(status_code=400, detail="Warning days must be less than global grace days")
+    
+    # Validate product overrides
+    for override in config_update.product_overrides:
+        if override.grace_days < 1:
+            raise HTTPException(status_code=400, detail=f"Grace days for {override.product_name} must be at least 1")
+        # Verify product exists
+        product = await db.products.find_one({'id': override.product_id})
+        if not product:
+            raise HTTPException(status_code=400, detail=f"Product {override.product_id} not found")
+    
+    now = datetime.now(JAKARTA_TZ)
+    
+    update_data = {
+        'id': 'reserved_member_config',
+        'global_grace_days': config_update.global_grace_days,
+        'warning_days': config_update.warning_days,
+        'product_overrides': [p.model_dump() for p in config_update.product_overrides],
+        'updated_at': now.isoformat(),
+        'updated_by': user.id,
+        'updated_by_name': user.name
+    }
+    
+    await db.reserved_member_config.update_one(
+        {'id': 'reserved_member_config'},
+        {'$set': update_data, '$setOnInsert': {'created_at': now.isoformat()}},
+        upsert=True
+    )
+    
+    return {
+        'success': True,
+        'message': 'Configuration updated successfully',
+        'config': update_data
+    }
+
+
 # Initialize scheduler on startup
 async def init_scheduler():
     """Initialize scheduler from saved config"""
