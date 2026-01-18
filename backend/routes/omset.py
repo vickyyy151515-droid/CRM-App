@@ -306,9 +306,18 @@ async def get_omset_summary(
             return ""
         return customer_id.strip().lower()
     
+    # Helper function to check if record has "tambahan" in notes
+    def is_tambahan_record(record) -> bool:
+        keterangan = record.get('keterangan', '') or ''
+        return 'tambahan' in keterangan.lower()
+    
     # Build customer_first_date with normalized IDs
+    # IMPORTANT: Exclude records with "tambahan" in notes from first_date calculation
     customer_first_date = {}
     for record in sorted(all_records_for_ndp, key=lambda x: x['record_date']):
+        # Skip "tambahan" records when determining first deposit date
+        if is_tambahan_record(record):
+            continue
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
         key = (cid_normalized, record['product_id'])
         if key not in customer_first_date:
@@ -342,7 +351,14 @@ async def get_omset_summary(
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
         key = (cid_normalized, product_id_rec)
         first_date = customer_first_date.get(key)
-        is_ndp = first_date == date
+        
+        # Determine NDP/RDP:
+        # 1. If notes contain "tambahan" (case-insensitive), always RDP
+        # 2. Otherwise, NDP if this is the first deposit date for this customer
+        if is_tambahan_record(record):
+            is_ndp = False  # "tambahan" records are always RDP
+        else:
+            is_ndp = first_date == date
         
         total_nominal += nominal
         total_depo += depo_total
