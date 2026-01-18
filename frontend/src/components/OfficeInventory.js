@@ -342,7 +342,7 @@ export default function OfficeInventory() {
         <div className="text-center py-12 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
           <Package className="mx-auto text-slate-300 dark:text-slate-600 mb-4" size={64} />
           <p className="text-slate-600 dark:text-slate-400">No inventory items found</p>
-          <p className="text-sm text-slate-500 mt-2">Click "Add Item" to add your first item</p>
+          <p className="text-sm text-slate-500 mt-2">Click &quot;Add Item&quot; to add your first item</p>
         </div>
       ) : (
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
