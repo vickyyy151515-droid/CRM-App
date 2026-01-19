@@ -198,11 +198,13 @@ All staff-facing components now fully translated to casual Indonesian.
 
 ## Fixes Applied (Jan 20, 2026)
 
-### Conversion Funnel Fix - COMPLETED
+### Conversion Funnel Fix - COMPLETED (Jan 20, 2026)
 - Fixed "Deposited" metric calculation in all three funnel endpoints
 - Root cause: The funnel was matching internal `customer_id` with OMSET's `customer_id` (username)
 - Solution: Now matches by extracting username from `row_data` and normalizing to uppercase
 - Fixed endpoints: `/api/funnel`, `/api/funnel/by-product`, `/api/funnel/by-staff`
+- **NEW**: Added `deposited_customers` field showing usernames of customers who deposited
+- **NEW**: Frontend now displays expandable list of deposited customer usernames with copy button
 
 ### User Activity Diagnostic Endpoints - ADDED
 - `GET /api/auth/diagnostics/activity-sync` - Check if timestamps are synced (bug indicator)
