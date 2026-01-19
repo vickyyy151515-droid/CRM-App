@@ -213,6 +213,8 @@ All staff-facing components now fully translated to casual Indonesian.
 - `GET /auth/session-status` - Check session validity
 - `DELETE /notifications` - Bulk delete notifications
 - `GET /users/activity` - User activity status (timestamp-based)
+- `POST /auth/reset-activity` - Reset all user activity timestamps (Admin) - USE THIS TO FIX SYNC BUG
+- `GET /auth/diagnostics/activity-sync` - Check for activity timestamp sync issues
 - `POST /reserved-members` - Requires phone_number field
 - `GET /my-request-batches` - Get user's batch list (includes is_pinned field, sorted pinned first)
 - `PATCH /my-request-batches/{batch_id}/pin` - Toggle pin status for a batch
@@ -230,6 +232,9 @@ All staff-facing components now fully translated to casual Indonesian.
 - `GET /omset/export-summary` - Export OMSET summary (supports token query param)
 - `GET /staff/notifications/summary` - Get staff notification counts (bonanza_new, memberwd_new)
 - `POST /staff/notifications/mark-viewed/{page_type}` - Mark page as viewed (bonanza or memberwd)
+- `GET /funnel` - Conversion funnel data (now correctly calculates deposited from row_data username)
+- `GET /funnel/by-product` - Funnel breakdown by product
+- `GET /funnel/by-staff` - Funnel breakdown by staff (Admin only)
 
 ## New Route
 - `/batch/:batchId` - Standalone batch view page (opens in new tab)
