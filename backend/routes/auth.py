@@ -407,6 +407,32 @@ async def get_user_activity(admin: User = Depends(get_admin_user)):
         }
     }
 
+@router.get("/users/activity/debug")
+async def debug_activity(admin: User = Depends(get_admin_user)):
+    """Debug endpoint to check for activity tracking issues"""
+    db = get_db()
+    from collections import Counter
+    
+    users = await db.users.find({}, {'_id': 0, 'id': 1, 'name': 1, 'last_activity': 1}).to_list(1000)
+    
+    # Check for duplicate IDs
+    ids = [u.get('id') for u in users]
+    id_counts = Counter(ids)
+    duplicates = {k: v for k, v in id_counts.items() if v > 1}
+    
+    # Check for identical last_activity timestamps
+    activities = [u.get('last_activity') for u in users if u.get('last_activity')]
+    activity_counts = Counter(activities)
+    identical_activities = {k: v for k, v in activity_counts.items() if v > 1}
+    
+    return {
+        'total_users': len(users),
+        'unique_ids': len(set(ids)),
+        'duplicate_ids': duplicates,
+        'users_with_same_activity_timestamp': identical_activities,
+        'warning': 'If you see duplicate IDs or many users with identical timestamps, there may be a data issue'
+    }
+
 # ==================== USER MANAGEMENT ENDPOINTS ====================
 
 @router.get("/users")
