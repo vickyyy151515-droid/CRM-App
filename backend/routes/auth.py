@@ -87,15 +87,24 @@ async def get_me(user: User = Depends(get_current_user)):
     """Get current user info including blocked_pages"""
     db = get_db()
     
+    # Safety check - ensure we have a valid user ID
+    if not user.id:
+        raise HTTPException(status_code=400, detail="Invalid user ID")
+    
     # Update last_activity on every /me call to ensure activity is tracked
+    # IMPORTANT: Only update THIS specific user
     now = get_jakarta_now()
-    await db.users.update_one(
-        {'id': user.id},
+    result = await db.users.update_one(
+        {'id': user.id},  # Filter by exact user ID
         {'$set': {
             'last_activity': now.isoformat(),
             'is_online': True
         }}
     )
+    
+    # Log if something unexpected happens
+    if result.matched_count != 1:
+        print(f"WARNING: /me update matched {result.matched_count} documents for user {user.id}")
     
     user_data = await db.users.find_one({'id': user.id}, {'_id': 0, 'password_hash': 0})
     return {
