@@ -182,7 +182,19 @@ All staff-facing components now fully translated to casual Indonesian.
 
 ## Known Issues
 - WebSocket connection fails in preview environment (infrastructure limitation)
-- User Activity Timestamp Bug (PRODUCTION): If all staff timestamps sync together, run `POST /api/auth/reset-activity` to fix
+
+### User Activity Timestamp Bug - IN PROGRESS (Resume Later)
+**Problem**: All staff activity timestamps sync to the same time when admin views activity page
+**Status**: Partially addressed - reset endpoint created but issue persists after reset
+**What was tried**:
+1. Created `POST /api/auth/reset-activity` endpoint to clear corrupted data
+2. Created `GET /api/auth/diagnostics/activity-sync` to detect sync issues
+3. User ran reset via browser console - staff still shows as "online" after reset
+**Next steps to investigate**:
+- Check if there's frontend polling that immediately updates all users
+- Check if `/api/users/activity` GET endpoint has side effects updating timestamps
+- Add detailed logging to heartbeat endpoint to trace which user IDs are being updated
+- Consider if browser tabs sharing localStorage token could cause issues
 
 ## Fixes Applied (Jan 20, 2026)
 
