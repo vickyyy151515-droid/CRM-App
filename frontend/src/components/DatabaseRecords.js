@@ -157,7 +157,7 @@ export default function DatabaseRecords({ database, isStaff, onRequestSuccess })
                     data-testid={`record-row-${record.id}`}
                   >
                     <td className="px-4 py-3 text-sm text-slate-900 font-medium">{record.row_number}</td>
-                    {columns.map((col, idx) => {
+                    {visibleColumns.map((col, idx) => {
                       const cellValue = record.row_data[col];
                       const isWhatsAppColumn = col.toLowerCase() === 'telpon';
                       
