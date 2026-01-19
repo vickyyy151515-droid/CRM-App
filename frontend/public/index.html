@@ -2,32 +2,36 @@
 <html lang="en">
     <head>
         <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
         <meta name="theme-color" content="#3b82f6" />
         <meta name="description" content="CRM Hub - Customer Relationship Management System" />
         
-        <!-- PWA Meta Tags -->
+        <!-- PWA Meta Tags - Critical for iOS -->
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-touch-fullscreen" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="CRM Hub" />
         <meta name="application-name" content="CRM Hub" />
         <meta name="msapplication-TileColor" content="#3b82f6" />
         <meta name="msapplication-tap-highlight" content="no" />
+        <meta name="format-detection" content="telephone=no" />
         
         <!-- PWA Manifest -->
-        <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+        <link rel="manifest" href="%PUBLIC_URL%/manifest.json" crossorigin="use-credentials" />
         
-        <!-- Favicon & App Icons -->
+        <!-- iOS App Icons - Order matters! Most specific first -->
+        <link rel="apple-touch-icon" href="%PUBLIC_URL%/icons/apple-touch-icon.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="%PUBLIC_URL%/icons/apple-touch-icon-180x180.png" />
+        <link rel="apple-touch-icon" sizes="152x152" href="%PUBLIC_URL%/icons/icon-152x152.png" />
+        <link rel="apple-touch-icon" sizes="144x144" href="%PUBLIC_URL%/icons/icon-144x144.png" />
+        <link rel="apple-touch-icon" sizes="120x120" href="%PUBLIC_URL%/icons/icon-128x128.png" />
+        <link rel="apple-touch-icon" sizes="76x76" href="%PUBLIC_URL%/icons/icon-72x72.png" />
+        
+        <!-- Favicon -->
         <link rel="icon" type="image/png" sizes="32x32" href="%PUBLIC_URL%/icons/icon-96x96.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="%PUBLIC_URL%/icons/icon-72x72.png" />
-        <link rel="apple-touch-icon" href="%PUBLIC_URL%/icons/icon-192x192.png" />
-        <link rel="apple-touch-icon" sizes="152x152" href="%PUBLIC_URL%/icons/icon-152x152.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="%PUBLIC_URL%/icons/icon-192x192.png" />
-        <link rel="apple-touch-icon" sizes="167x167" href="%PUBLIC_URL%/icons/icon-192x192.png" />
-        
-        <!-- Splash screens for iOS -->
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <link rel="shortcut icon" href="%PUBLIC_URL%/icons/icon-96x96.png" />
         
         <title>CRM Hub</title>
         <script src="https://assets.emergent.sh/scripts/emergent-main.js"></script>
@@ -82,6 +86,27 @@
                         });
                 });
             }
+        </script>
+        
+        <!-- iOS Standalone Mode Link Handler -->
+        <script>
+            // Prevent iOS from opening links in external browser when in standalone mode
+            (function() {
+                if (window.navigator.standalone) {
+                    document.addEventListener('click', function(e) {
+                        var target = e.target;
+                        while (target && target.nodeName !== 'A') {
+                            target = target.parentNode;
+                        }
+                        if (target && target.href && 
+                            target.href.indexOf(window.location.host) !== -1 &&
+                            !target.hasAttribute('target')) {
+                            e.preventDefault();
+                            window.location.href = target.href;
+                        }
+                    }, false);
+                }
+            })();
         </script>
     </head>
     <body>
