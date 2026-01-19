@@ -182,6 +182,19 @@ All staff-facing components now fully translated to casual Indonesian.
 
 ## Known Issues
 - WebSocket connection fails in preview environment (infrastructure limitation)
+- User Activity Timestamp Bug (PRODUCTION): If all staff timestamps sync together, run `POST /api/auth/reset-activity` to fix
+
+## Fixes Applied (Jan 20, 2026)
+
+### Conversion Funnel Fix - COMPLETED
+- Fixed "Deposited" metric calculation in all three funnel endpoints
+- Root cause: The funnel was matching internal `customer_id` with OMSET's `customer_id` (username)
+- Solution: Now matches by extracting username from `row_data` and normalizing to uppercase
+- Fixed endpoints: `/api/funnel`, `/api/funnel/by-product`, `/api/funnel/by-staff`
+
+### User Activity Diagnostic Endpoints - ADDED
+- `GET /api/auth/diagnostics/activity-sync` - Check if timestamps are synced (bug indicator)
+- `POST /api/auth/reset-activity` - Admin-accessible endpoint to reset corrupted activity data
 
 ## Upcoming Tasks (P2)
 - WhatsApp Quick Actions button
