@@ -298,25 +298,73 @@ export default function ConversionFunnel({ isAdmin = false }) {
             {funnelData.stages.map((stage, index) => {
               const Icon = stageIcons[stage.name] || Users;
               const prevStage = index > 0 ? funnelData.stages[index - 1] : null;
+              const isDeposited = stage.name === 'Deposited';
+              const customers = stage.customers || [];
               
               return (
-                <div key={stage.name} className="bg-white border border-slate-200 rounded-xl p-4">
+                <div key={stage.name} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <div className={`w-10 h-10 rounded-lg bg-gradient-to-r ${stageColors[stage.name]} flex items-center justify-center`}>
                       <Icon className="text-white" size={20} />
                     </div>
-                    <span className="text-sm font-medium text-slate-700">{stage.name}</span>
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{stage.name}</span>
                   </div>
-                  <p className="text-2xl font-bold text-slate-900">{formatNumber(stage.count)}</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white">{formatNumber(stage.count)}</p>
                   {prevStage && (
-                    <p className="text-sm text-slate-500 mt-1">
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                       {stage.rate}% from {prevStage.name.toLowerCase()}
                     </p>
+                  )}
+                  
+                  {/* Show deposited customer list toggle */}
+                  {isDeposited && customers.length > 0 && (
+                    <button
+                      onClick={() => setShowDeposited(!showDeposited)}
+                      className="mt-3 flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+                      data-testid="show-deposited-btn"
+                    >
+                      {showDeposited ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                      {showDeposited ? 'Hide' : 'Show'} usernames ({customers.length})
+                    </button>
                   )}
                 </div>
               );
             })}
           </div>
+          
+          {/* Deposited Customers List */}
+          {showDeposited && getDepositedCustomers().length > 0 && (
+            <div className="mt-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <DollarSign className="text-emerald-600" size={18} />
+                <h4 className="font-semibold text-emerald-800 dark:text-emerald-300">Deposited Customers</h4>
+                <span className="px-2 py-0.5 bg-emerald-200 dark:bg-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs rounded-full">
+                  {getDepositedCustomers().length}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {getDepositedCustomers().map((customer, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-700 rounded-lg text-sm"
+                  >
+                    <span className="font-medium text-slate-800 dark:text-slate-200">{customer.username}</span>
+                    <button
+                      onClick={() => copyUsername(customer.username)}
+                      className="ml-1 p-1 hover:bg-emerald-100 dark:hover:bg-emerald-800 rounded transition-colors"
+                      title="Copy username"
+                    >
+                      {copiedUsername === customer.username ? (
+                        <Check size={14} className="text-emerald-600" />
+                      ) : (
+                        <Copy size={14} className="text-slate-400 hover:text-emerald-600" />
+                      )}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       ) : activeView === 'by-product' && productBreakdown ? (
         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
