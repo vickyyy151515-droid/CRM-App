@@ -157,7 +157,7 @@ export default function StaffMemberWDCRM() {
                   <thead className="bg-slate-50 dark:bg-slate-900/50">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300">#</th>
-                      {columns.map(col => (
+                      {visibleColumns.map(col => (
                         <th key={col} className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300">{col}</th>
                       ))}
                     </tr>
@@ -166,7 +166,7 @@ export default function StaffMemberWDCRM() {
                     {dbRecords.map(record => (
                       <tr key={record.id} className="border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50">
                         <td className="px-4 py-3 text-sm text-slate-900 dark:text-white font-medium">{record.row_number}</td>
-                        {columns.map(col => (
+                        {visibleColumns.map(col => (
                           <td key={col} className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">{record.row_data[col] || '-'}</td>
                         ))}
                       </tr>
