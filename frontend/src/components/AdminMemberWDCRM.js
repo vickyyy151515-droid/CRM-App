@@ -623,7 +623,7 @@ export default function AdminMemberWDCRM() {
                               />
                             </th>
                             <th className="px-3 py-2 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">#</th>
-                            {columns.map(col => (
+                            {visibleColumns.map(col => (
                               <th key={col} className="px-3 py-2 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">{col}</th>
                             ))}
                             <th className="px-3 py-2 text-left text-xs font-semibold text-slate-700 dark:text-slate-200">Status</th>
@@ -647,7 +647,7 @@ export default function AdminMemberWDCRM() {
                                 )}
                               </td>
                               <td className="px-3 py-2 text-sm text-slate-900 font-medium">{record.row_number}</td>
-                              {columns.map(col => (
+                              {visibleColumns.map(col => (
                                 <td key={col} className="px-3 py-2 text-sm text-slate-700 dark:text-slate-200">{record.row_data[col] || '-'}</td>
                               ))}
                               <td className="px-3 py-2">
