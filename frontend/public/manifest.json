@@ -2,12 +2,13 @@
   "name": "CRM Hub",
   "short_name": "CRM",
   "description": "Customer Relationship Management System",
-  "start_url": "/",
+  "start_url": "/login",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#3b82f6",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "scope": "/",
+  "id": "/",
   "icons": [
     {
       "src": "/icons/icon-72x72.png",
@@ -61,9 +62,10 @@
   "categories": ["business", "productivity"],
   "shortcuts": [
     {
-      "name": "Dashboard",
-      "url": "/",
-      "description": "Open CRM Dashboard"
+      "name": "Login",
+      "url": "/login",
+      "description": "Open CRM Login"
     }
-  ]
+  ],
+  "prefer_related_applications": false
 }
