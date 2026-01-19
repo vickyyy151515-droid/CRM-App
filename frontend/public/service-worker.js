@@ -1,12 +1,15 @@
 // CRM Hub Service Worker
-const CACHE_NAME = 'crm-hub-v1';
+const CACHE_NAME = 'crm-hub-v2';
 const OFFLINE_URL = '/offline.html';
 
 // Assets to cache on install
 const PRECACHE_ASSETS = [
   '/',
+  '/login',
   '/offline.html',
-  '/manifest.json'
+  '/manifest.json',
+  '/icons/icon-192x192.png',
+  '/icons/apple-touch-icon.png'
 ];
 
 // Install event - cache essential assets
