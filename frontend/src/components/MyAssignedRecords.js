@@ -382,6 +382,12 @@ export default function MyAssignedRecords() {
   const renderRecordsView = () => {
     const columns = records.length > 0 ? Object.keys(records[0].row_data) : [];
     
+    // Filter out sensitive columns for staff users (rekening/bank account info)
+    const HIDDEN_COLUMNS_FOR_STAFF = ['rekening', 'rek', 'bank', 'no_rekening', 'norek', 'account'];
+    const visibleColumns = columns.filter(col => 
+      !HIDDEN_COLUMNS_FOR_STAFF.some(hidden => col.toLowerCase().includes(hidden.toLowerCase()))
+    );
+    
     return (
       <div>
         <div className="mb-6">
