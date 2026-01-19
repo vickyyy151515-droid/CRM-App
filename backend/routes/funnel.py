@@ -47,11 +47,11 @@ async def get_conversion_funnel(
     if database_id:
         query['database_id'] = database_id
     
-    # Get all assigned records
+    # Get all assigned records with row_data to extract username
     assigned_records = await db.customer_records.find(
         query,
         {'_id': 0, 'id': 1, 'customer_id': 1, 'product_id': 1, 'database_id': 1, 
-         'whatsapp_status': 1, 'respond_status': 1, 'assigned_to': 1}
+         'whatsapp_status': 1, 'respond_status': 1, 'assigned_to': 1, 'row_data': 1}
     ).to_list(100000)
     
     total_assigned = len(assigned_records)
@@ -65,7 +65,7 @@ async def get_conversion_funnel(
     total_responded = len(responded)
     
     # Stage 4: Deposited - get customer_ids that have OMSET records
-    # Build query for omset records within date range
+    # OMSET records use the username from row_data, not the record ID
     omset_query = {
         'record_date': {'$gte': start_date, '$lte': end_date}
     }
@@ -76,19 +76,39 @@ async def get_conversion_funnel(
     
     omset_records = await db.omset_records.find(
         omset_query,
-        {'_id': 0, 'customer_id': 1, 'product_id': 1}
+        {'_id': 0, 'customer_id': 1, 'customer_id_normalized': 1, 'product_id': 1}
     ).to_list(100000)
     
-    # Create set of deposited customer-product pairs
+    # Create set of deposited customer identifiers (normalized username)
     deposited_customers = set()
     for omset in omset_records:
-        deposited_customers.add((omset['customer_id'], omset.get('product_id')))
+        # Use normalized customer_id (uppercase username)
+        cust_id = omset.get('customer_id_normalized') or omset.get('customer_id', '').strip().upper()
+        prod_id = omset.get('product_id')
+        if cust_id:
+            deposited_customers.add((cust_id, prod_id))
+            # Also add without product for looser matching
+            deposited_customers.add((cust_id, None))
     
     # Check how many assigned records have deposited
+    # Match by username from row_data
     deposited_from_assigned = 0
     for record in assigned_records:
-        key = (record.get('customer_id'), record.get('product_id'))
-        if key in deposited_customers:
+        row_data = record.get('row_data', {})
+        # Try to get username from row_data (could be 'username', 'Username', 'user', etc.)
+        username = None
+        for key in ['username', 'Username', 'USER', 'user', 'name', 'Name', 'customer_id', 'id']:
+            if key in row_data and row_data[key]:
+                username = str(row_data[key]).strip().upper()
+                break
+        
+        if not username:
+            continue
+            
+        prod_id = record.get('product_id')
+        
+        # Check if this customer deposited (with or without product match)
+        if (username, prod_id) in deposited_customers or (username, None) in deposited_customers:
             deposited_from_assigned += 1
     
     total_deposited = deposited_from_assigned
