@@ -410,8 +410,13 @@ async def debug_activity(admin: User = Depends(get_admin_user)):
     """Debug endpoint to check for activity tracking issues"""
     db = get_db()
     from collections import Counter
+    import pytz
+    from datetime import datetime
     
-    users = await db.users.find({}, {'_id': 0, 'id': 1, 'name': 1, 'last_activity': 1}).to_list(1000)
+    JAKARTA_TZ = pytz.timezone('Asia/Jakarta')
+    now = datetime.now(JAKARTA_TZ)
+    
+    users = await db.users.find({}, {'_id': 0, 'id': 1, 'name': 1, 'email': 1, 'last_activity': 1, 'role': 1}).to_list(1000)
     
     # Check for duplicate IDs
     ids = [u.get('id') for u in users]
@@ -423,12 +428,43 @@ async def debug_activity(admin: User = Depends(get_admin_user)):
     activity_counts = Counter(activities)
     identical_activities = {k: v for k, v in activity_counts.items() if v > 1}
     
+    # List users with their activity
+    user_activities = []
+    for u in users:
+        last_act = u.get('last_activity')
+        mins_ago = None
+        if last_act:
+            try:
+                la = datetime.fromisoformat(last_act.replace('Z', '+00:00'))
+                if la.tzinfo is None:
+                    la = JAKARTA_TZ.localize(la)
+                mins_ago = int((now - la).total_seconds() / 60)
+            except:
+                pass
+        user_activities.append({
+            'name': u.get('name'),
+            'email': u.get('email'),
+            'role': u.get('role'),
+            'last_activity': last_act,
+            'minutes_ago': mins_ago
+        })
+    
+    issues = []
+    if duplicates:
+        issues.append(f"CRITICAL: Found {len(duplicates)} duplicate user IDs!")
+    if identical_activities:
+        for timestamp, count in identical_activities.items():
+            if count > 2:  # More than 2 users with same timestamp is suspicious
+                issues.append(f"WARNING: {count} users have identical timestamp: {timestamp}")
+    
     return {
+        'current_time': now.isoformat(),
         'total_users': len(users),
         'unique_ids': len(set(ids)),
-        'duplicate_ids': duplicates,
-        'users_with_same_activity_timestamp': identical_activities,
-        'warning': 'If you see duplicate IDs or many users with identical timestamps, there may be a data issue'
+        'duplicate_ids': duplicates if duplicates else "None - OK",
+        'identical_timestamps': identical_activities if identical_activities else "None - OK",
+        'issues': issues if issues else ["No issues detected"],
+        'user_details': user_activities
     }
 
 # ==================== USER MANAGEMENT ENDPOINTS ====================
