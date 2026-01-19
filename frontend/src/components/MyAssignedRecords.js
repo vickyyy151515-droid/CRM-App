@@ -465,7 +465,7 @@ export default function MyAssignedRecords() {
                 <thead className="bg-slate-50 dark:bg-slate-900">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300">#</th>
-                    {columns.map((col, idx) => (
+                    {visibleColumns.map((col, idx) => (
                       <th key={idx} className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300">
                         {col}
                       </th>
@@ -479,7 +479,7 @@ export default function MyAssignedRecords() {
                   {filteredRecords.map((record) => (
                     <tr key={record.id} className="border-b border-slate-100 hover:bg-slate-50">
                       <td className="px-4 py-3 text-sm text-slate-900 font-medium">{record.row_number}</td>
-                      {columns.map((col, idx) => {
+                      {visibleColumns.map((col, idx) => {
                         const cellValue = record.row_data[col];
                         const isWhatsAppColumn = col.toLowerCase() === 'telpon';
                         
