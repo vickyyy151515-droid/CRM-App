@@ -180,28 +180,39 @@ async def logout(user: User = Depends(get_current_user)):
 
 @router.post("/auth/heartbeat")
 async def heartbeat(user: User = Depends(get_current_user)):
-    """Update user's last activity timestamp (call this periodically from frontend)"""
+    """Update user's last activity timestamp - ONLY updates the authenticated user"""
     db = get_db()
     now = get_jakarta_now()
     
-    # Safety check - ensure we have a valid user ID
-    if not user.id:
-        raise HTTPException(status_code=400, detail="Invalid user ID")
+    # CRITICAL: Validate user ID exists and is not empty
+    if not user.id or not isinstance(user.id, str) or len(user.id) < 10:
+        raise HTTPException(status_code=400, detail=f"Invalid user ID: {user.id}")
     
-    # Update ONLY this specific user's activity
+    # Double-check: Verify this user exists with this exact ID
+    existing_user = await db.users.find_one({'id': user.id}, {'_id': 0, 'id': 1, 'email': 1})
+    if not existing_user:
+        raise HTTPException(status_code=404, detail=f"User not found: {user.id}")
+    
+    # Update ONLY this specific user's activity using their unique ID
     result = await db.users.update_one(
-        {'id': user.id},  # Filter by exact user ID
+        {'id': user.id},  # Filter by exact user ID string
         {'$set': {
             'last_activity': now.isoformat(),
             'is_online': True
         }}
     )
     
-    # Log if something unexpected happens
+    # Verify exactly 1 document was matched
     if result.matched_count != 1:
-        print(f"WARNING: Heartbeat update matched {result.matched_count} documents for user {user.id}")
+        print(f"CRITICAL BUG: Heartbeat matched {result.matched_count} docs for user_id={user.id}, email={user.email}")
+        raise HTTPException(status_code=500, detail=f"Activity update error: matched {result.matched_count} users")
     
-    return {'status': 'ok', 'timestamp': now.isoformat(), 'user_id': user.id}
+    return {
+        'status': 'ok', 
+        'timestamp': now.isoformat(), 
+        'user_id': user.id,
+        'user_email': user.email
+    }
 
 @router.get("/auth/session-status")
 async def get_session_status(user: User = Depends(get_current_user)):
