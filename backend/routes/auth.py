@@ -492,6 +492,81 @@ async def reset_all_activity(admin: User = Depends(get_master_admin_user)):
         'modified_count': result.modified_count
     }
 
+@router.post("/auth/reset-activity")
+async def reset_activity(admin: User = Depends(get_admin_user)):
+    """Reset all users' activity timestamps to fix corrupted data (Admin accessible)"""
+    db = get_db()
+    
+    # Clear last_activity for all users - this forces fresh timestamps on next heartbeat
+    result = await db.users.update_many(
+        {},
+        {
+            '$set': {
+                'is_online': False
+            },
+            '$unset': {
+                'last_activity': '',
+                'logout_reason': ''
+            }
+        }
+    )
+    
+    return {
+        'status': 'ok',
+        'message': f'Reset activity timestamps for {result.modified_count} users. All users will show as offline until they send a new heartbeat.',
+        'modified_count': result.modified_count
+    }
+
+@router.get("/auth/diagnostics/activity-sync")
+async def diagnostics_activity_sync(admin: User = Depends(get_admin_user)):
+    """Diagnostic endpoint to check if all users have the same last_activity timestamp (indicates sync bug)"""
+    db = get_db()
+    from collections import Counter
+    import pytz
+    from datetime import datetime
+    
+    JAKARTA_TZ = pytz.timezone('Asia/Jakarta')
+    now = datetime.now(JAKARTA_TZ)
+    
+    users = await db.users.find({}, {'_id': 0, 'id': 1, 'name': 1, 'email': 1, 'last_activity': 1, 'role': 1}).to_list(1000)
+    
+    # Check for identical timestamps (within same second)
+    timestamps = [u.get('last_activity', '')[:19] for u in users if u.get('last_activity')]  # Truncate to seconds
+    timestamp_counts = Counter(timestamps)
+    
+    # Find timestamps shared by more than 2 users (suspicious)
+    suspicious = {ts: count for ts, count in timestamp_counts.items() if count > 2}
+    
+    user_details = []
+    for u in users:
+        last_act = u.get('last_activity')
+        mins_ago = None
+        if last_act:
+            try:
+                la = datetime.fromisoformat(last_act.replace('Z', '+00:00'))
+                if la.tzinfo is None:
+                    la = JAKARTA_TZ.localize(la)
+                mins_ago = int((now - la).total_seconds() / 60)
+            except:
+                pass
+        user_details.append({
+            'name': u.get('name'),
+            'role': u.get('role'),
+            'last_activity': last_act,
+            'minutes_ago': mins_ago
+        })
+    
+    is_synced = len(suspicious) > 0 and any(count >= len(users) * 0.5 for count in suspicious.values())
+    
+    return {
+        'current_time': now.isoformat(),
+        'total_users': len(users),
+        'has_sync_issue': is_synced,
+        'suspicious_timestamps': suspicious if suspicious else None,
+        'recommendation': 'Call POST /api/auth/reset-activity to fix' if is_synced else 'No action needed',
+        'users': user_details
+    }
+
 # ==================== USER MANAGEMENT ENDPOINTS ====================
 
 @router.get("/users")
