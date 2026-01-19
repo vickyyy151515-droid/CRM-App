@@ -307,6 +307,12 @@ export default function AdminDBBonanza() {
   });
 
   const columns = records.length > 0 ? Object.keys(records[0].row_data) : [];
+  
+  // Filter out rekening/bank account columns (no longer needed)
+  const HIDDEN_COLUMNS = ['rekening', 'rek', 'bank', 'no_rekening', 'norek', 'account'];
+  const visibleColumns = columns.filter(col => 
+    !HIDDEN_COLUMNS.some(hidden => col.toLowerCase().includes(hidden.toLowerCase()))
+  );
 
   return (
     <div data-testid="admin-db-bonanza">
