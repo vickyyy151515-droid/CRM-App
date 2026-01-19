@@ -182,11 +182,11 @@ async def get_funnel_by_product(
     if user.role == 'staff':
         query['assigned_to'] = user.id
     
-    # Get all assigned records
+    # Get all assigned records with row_data
     assigned_records = await db.customer_records.find(
         query,
         {'_id': 0, 'id': 1, 'customer_id': 1, 'product_id': 1, 'product_name': 1,
-         'whatsapp_status': 1, 'respond_status': 1}
+         'whatsapp_status': 1, 'respond_status': 1, 'row_data': 1}
     ).to_list(100000)
     
     # Get OMSET records
@@ -198,12 +198,18 @@ async def get_funnel_by_product(
     
     omset_records = await db.omset_records.find(
         omset_query,
-        {'_id': 0, 'customer_id': 1, 'product_id': 1}
+        {'_id': 0, 'customer_id': 1, 'customer_id_normalized': 1, 'product_id': 1}
     ).to_list(100000)
     
-    deposited_customers = set()
+    # Create set of deposited customers by product
+    deposited_by_product = {}  # product_id -> set of usernames
     for omset in omset_records:
-        deposited_customers.add((omset['customer_id'], omset.get('product_id')))
+        cust_id = omset.get('customer_id_normalized') or omset.get('customer_id', '').strip().upper()
+        prod_id = omset.get('product_id')
+        if prod_id not in deposited_by_product:
+            deposited_by_product[prod_id] = set()
+        if cust_id:
+            deposited_by_product[prod_id].add(cust_id)
     
     # Group by product
     products = {}
@@ -229,8 +235,15 @@ async def get_funnel_by_product(
         if record.get('respond_status') == 'ya':
             products[prod_id]['responded'] += 1
         
-        key = (record.get('customer_id'), prod_id)
-        if key in deposited_customers:
+        # Check if deposited by matching username from row_data
+        row_data = record.get('row_data', {})
+        username = None
+        for key in ['username', 'Username', 'USER', 'user', 'name', 'Name', 'customer_id', 'id']:
+            if key in row_data and row_data[key]:
+                username = str(row_data[key]).strip().upper()
+                break
+        
+        if username and prod_id in deposited_by_product and username in deposited_by_product[prod_id]:
             products[prod_id]['deposited'] += 1
     
     # Calculate conversion rates
