@@ -84,29 +84,16 @@ async def login(credentials: UserLogin):
 
 @router.get("/auth/me")
 async def get_me(user: User = Depends(get_current_user)):
-    """Get current user info including blocked_pages"""
+    """Get current user info including blocked_pages - READ ONLY, no activity update"""
     db = get_db()
     
-    # Safety check - ensure we have a valid user ID
-    if not user.id:
-        raise HTTPException(status_code=400, detail="Invalid user ID")
-    
-    # Update last_activity on every /me call to ensure activity is tracked
-    # IMPORTANT: Only update THIS specific user
-    now = get_jakarta_now()
-    result = await db.users.update_one(
-        {'id': user.id},  # Filter by exact user ID
-        {'$set': {
-            'last_activity': now.isoformat(),
-            'is_online': True
-        }}
-    )
-    
-    # Log if something unexpected happens
-    if result.matched_count != 1:
-        print(f"WARNING: /me update matched {result.matched_count} documents for user {user.id}")
+    # DO NOT update last_activity here - only heartbeat should update activity
+    # This prevents issues where viewing the page updates all users
     
     user_data = await db.users.find_one({'id': user.id}, {'_id': 0, 'password_hash': 0})
+    if not user_data:
+        raise HTTPException(status_code=404, detail="User not found")
+    
     return {
         'id': user_data['id'],
         'email': user_data['email'],
