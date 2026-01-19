@@ -259,8 +259,10 @@ async def get_user_activity(admin: User = Depends(get_admin_user)):
     
     # Consider user idle if no activity for 5 minutes
     IDLE_THRESHOLD_MINUTES = 5
-    # Consider user offline if no activity for 30 minutes
-    OFFLINE_THRESHOLD_MINUTES = 30
+    # Consider user offline if no activity for 15 minutes (more realistic)
+    OFFLINE_THRESHOLD_MINUTES = 15
+    # Staff auto-logout threshold - 60 minutes
+    STAFF_AUTO_LOGOUT_MINUTES = 60
     
     users = await db.users.find({}, {'_id': 0, 'password_hash': 0}).to_list(1000)
     
@@ -273,11 +275,13 @@ async def get_user_activity(admin: User = Depends(get_admin_user)):
         last_activity_str = user.get('last_activity')
         last_login_str = user.get('last_login')
         last_logout_str = user.get('last_logout')
+        user_role = user.get('role', 'staff')
         
         status = 'offline'
         idle_minutes = None
+        minutes_since_activity = None
         
-        # Determine status purely based on last_activity timestamp, not is_online flag
+        # Determine status based on last_activity timestamp
         if last_activity_str:
             try:
                 last_activity = datetime.fromisoformat(last_activity_str.replace('Z', '+00:00'))
@@ -299,9 +303,24 @@ async def get_user_activity(admin: User = Depends(get_admin_user)):
                     except:
                         pass
                 
-                if user_explicitly_logged_out:
+                # For staff users, auto-consider them logged out after 60 minutes of inactivity
+                staff_session_expired = (user_role == 'staff' and minutes_since_activity >= STAFF_AUTO_LOGOUT_MINUTES)
+                
+                if user_explicitly_logged_out or staff_session_expired:
                     status = 'offline'
                     offline_count += 1
+                    # Auto-update the user's is_online flag and record implicit logout
+                    if staff_session_expired and user.get('is_online', False):
+                        await db.users.update_one(
+                            {'id': user['id']}, 
+                            {
+                                '$set': {
+                                    'is_online': False,
+                                    'last_logout': last_activity.isoformat(),
+                                    'logout_reason': 'auto_logout_inactivity'
+                                }
+                            }
+                        )
                 elif minutes_since_activity < IDLE_THRESHOLD_MINUTES:
                     status = 'online'
                     online_count += 1
