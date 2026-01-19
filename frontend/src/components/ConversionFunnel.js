@@ -524,36 +524,76 @@ export default function ConversionFunnel({ isAdmin = false }) {
                                 {index + 1}
                               </div>
                               <span className="font-medium text-slate-900 dark:text-white">{staff.staff_name}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <span className="font-semibold text-indigo-600">{formatNumber(staff.stages.assigned)}</span>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <div>
-                          <span className="font-semibold text-green-600">{formatNumber(staff.stages.wa_reached)}</span>
-                          <span className="text-xs text-slate-500 block">{staff.conversion_rates.assigned_to_wa}%</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <div>
-                          <span className="font-semibold text-amber-600">{formatNumber(staff.stages.responded)}</span>
-                          <span className="text-xs text-slate-500 block">{staff.conversion_rates.wa_to_responded}%</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <div>
-                          <span className="font-semibold text-emerald-600">{formatNumber(staff.stages.deposited)}</span>
-                          <span className="text-xs text-slate-500 block">{staff.conversion_rates.responded_to_deposited}%</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <span className={`px-3 py-1 rounded-full text-sm font-bold ${getConversionBg(staff.conversion_rates.overall)} ${getConversionColor(staff.conversion_rates.overall)}`}>
-                          {staff.conversion_rates.overall}%
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <span className="font-semibold text-indigo-600">{formatNumber(staff.stages.assigned)}</span>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <div>
+                              <span className="font-semibold text-green-600">{formatNumber(staff.stages.wa_reached)}</span>
+                              <span className="text-xs text-slate-500 block">{staff.conversion_rates.assigned_to_wa}%</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <div>
+                              <span className="font-semibold text-amber-600">{formatNumber(staff.stages.responded)}</span>
+                              <span className="text-xs text-slate-500 block">{staff.conversion_rates.wa_to_responded}%</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <div>
+                              <span className="font-semibold text-emerald-600">{formatNumber(staff.stages.deposited)}</span>
+                              <span className="text-xs text-slate-500 block">{staff.conversion_rates.responded_to_deposited}%</span>
+                              {depositedCustomers.length > 0 && (
+                                <button
+                                  onClick={() => setExpandedStaff(isExpanded ? null : staff.staff_id)}
+                                  className="mt-1 text-xs text-emerald-600 hover:text-emerald-700 flex items-center gap-1 mx-auto"
+                                >
+                                  {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                                  {isExpanded ? 'Hide' : 'View'} users
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <span className={`px-3 py-1 rounded-full text-sm font-bold ${getConversionBg(staff.conversion_rates.overall)} ${getConversionColor(staff.conversion_rates.overall)}`}>
+                              {staff.conversion_rates.overall}%
+                            </span>
+                          </td>
+                        </tr>
+                        {/* Expanded row showing deposited customer usernames */}
+                        {isExpanded && depositedCustomers.length > 0 && (
+                          <tr key={`${staff.staff_id}-expanded`} className="bg-emerald-50 dark:bg-emerald-900/20">
+                            <td colSpan={6} className="px-4 py-3">
+                              <div className="flex flex-wrap gap-2">
+                                <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 mr-2">Deposited Users:</span>
+                                {depositedCustomers.map((username, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="flex items-center gap-1 px-2 py-1 bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-700 rounded text-xs"
+                                  >
+                                    <span className="font-medium text-slate-800 dark:text-slate-200">{username}</span>
+                                    <button
+                                      onClick={() => copyUsername(username)}
+                                      className="p-0.5 hover:bg-emerald-100 dark:hover:bg-emerald-800 rounded transition-colors"
+                                      title="Copy username"
+                                    >
+                                      {copiedUsername === username ? (
+                                        <Check size={12} className="text-emerald-600" />
+                                      ) : (
+                                        <Copy size={12} className="text-slate-400 hover:text-emerald-600" />
+                                      )}
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
