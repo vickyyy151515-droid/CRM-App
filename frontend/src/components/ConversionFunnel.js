@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Filter, TrendingDown, TrendingUp, Users, MessageCircle, UserCheck, DollarSign, BarChart3, ChevronDown, RefreshCcw, Package } from 'lucide-react';
+import { Filter, TrendingDown, TrendingUp, Users, MessageCircle, UserCheck, DollarSign, BarChart3, ChevronDown, ChevronUp, RefreshCcw, Package, Copy, Check } from 'lucide-react';
 
 export default function ConversionFunnel({ isAdmin = false }) {
   const [funnelData, setFunnelData] = useState(null);
@@ -12,6 +12,10 @@ export default function ConversionFunnel({ isAdmin = false }) {
   const [dateRange, setDateRange] = useState('30');
   const [products, setProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState('');
+  const [showDeposited, setShowDeposited] = useState(false);
+  const [expandedProduct, setExpandedProduct] = useState(null);
+  const [expandedStaff, setExpandedStaff] = useState(null);
+  const [copiedUsername, setCopiedUsername] = useState(null);
 
   const loadFunnelData = useCallback(async () => {
     try {
