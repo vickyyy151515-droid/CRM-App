@@ -187,14 +187,25 @@ async def heartbeat(user: User = Depends(get_current_user)):
     """Update user's last activity timestamp (call this periodically from frontend)"""
     db = get_db()
     now = get_jakarta_now()
-    await db.users.update_one(
-        {'id': user.id},
+    
+    # Safety check - ensure we have a valid user ID
+    if not user.id:
+        raise HTTPException(status_code=400, detail="Invalid user ID")
+    
+    # Update ONLY this specific user's activity
+    result = await db.users.update_one(
+        {'id': user.id},  # Filter by exact user ID
         {'$set': {
             'last_activity': now.isoformat(),
             'is_online': True
         }}
     )
-    return {'status': 'ok', 'timestamp': now.isoformat()}
+    
+    # Log if something unexpected happens
+    if result.matched_count != 1:
+        print(f"WARNING: Heartbeat update matched {result.matched_count} documents for user {user.id}")
+    
+    return {'status': 'ok', 'timestamp': now.isoformat(), 'user_id': user.id}
 
 @router.get("/auth/session-status")
 async def get_session_status(user: User = Depends(get_current_user)):
