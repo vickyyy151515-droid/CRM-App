@@ -442,20 +442,51 @@ export default function ConversionFunnel({ isAdmin = false }) {
                             <span className={`px-3 py-1 rounded-full text-sm font-bold ${getConversionBg(product.conversion_rates.overall)} ${getConversionColor(product.conversion_rates.overall)}`}>
                               {product.conversion_rates.overall}%
                             </span>
-                      </td>
-                    </tr>
-                  ))}
+                          </td>
+                        </tr>
+                        {/* Expanded row showing deposited customer usernames */}
+                        {isExpanded && depositedCustomers.length > 0 && (
+                          <tr key={`${product.product_id}-expanded`} className="bg-emerald-50 dark:bg-emerald-900/20">
+                            <td colSpan={6} className="px-4 py-3">
+                              <div className="flex flex-wrap gap-2">
+                                <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 mr-2">Deposited Users:</span>
+                                {depositedCustomers.map((username, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="flex items-center gap-1 px-2 py-1 bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-700 rounded text-xs"
+                                  >
+                                    <span className="font-medium text-slate-800 dark:text-slate-200">{username}</span>
+                                    <button
+                                      onClick={() => copyUsername(username)}
+                                      className="p-0.5 hover:bg-emerald-100 dark:hover:bg-emerald-800 rounded transition-colors"
+                                      title="Copy username"
+                                    >
+                                      {copiedUsername === username ? (
+                                        <Check size={12} className="text-emerald-600" />
+                                      ) : (
+                                        <Copy size={12} className="text-slate-400 hover:text-emerald-600" />
+                                      )}
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           )}
         </div>
       ) : activeView === 'by-staff' && staffBreakdown ? (
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-200 bg-slate-50">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
             <div className="flex items-center gap-2">
               <Users className="text-indigo-600" size={20} />
-              <h3 className="font-semibold text-slate-900">Funnel by Staff</h3>
+              <h3 className="font-semibold text-slate-900 dark:text-white">Funnel by Staff</h3>
             </div>
           </div>
           
@@ -464,30 +495,35 @@ export default function ConversionFunnel({ isAdmin = false }) {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-slate-50 border-b border-slate-200">
+                <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Staff</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Assigned</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">WA Reached</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Responded</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Deposited</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Overall Rate</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Staff</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Assigned</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">WA Reached</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Responded</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Deposited</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Overall Rate</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {staffBreakdown.staff.map((staff, index) => (
-                    <tr key={staff.staff_id} className="hover:bg-slate-50">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                            index === 0 ? 'bg-yellow-100 text-yellow-700' :
-                            index === 1 ? 'bg-slate-200 text-slate-700' :
-                            index === 2 ? 'bg-orange-100 text-orange-700' :
-                            'bg-slate-100 text-slate-600'
-                          }`}>
-                            {index + 1}
-                          </div>
-                          <span className="font-medium text-slate-900">{staff.staff_name}</span>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                  {staffBreakdown.staff.map((staff, index) => {
+                    const isExpanded = expandedStaff === staff.staff_id;
+                    const depositedCustomers = staff.deposited_customers || [];
+                    
+                    return (
+                      <>
+                        <tr key={staff.staff_id} className="hover:bg-slate-50 dark:hover:bg-slate-700">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                                index === 0 ? 'bg-yellow-100 text-yellow-700' :
+                                index === 1 ? 'bg-slate-200 text-slate-700' :
+                                index === 2 ? 'bg-orange-100 text-orange-700' :
+                                'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                              }`}>
+                                {index + 1}
+                              </div>
+                              <span className="font-medium text-slate-900 dark:text-white">{staff.staff_name}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-center">
