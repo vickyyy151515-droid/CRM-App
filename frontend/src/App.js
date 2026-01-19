@@ -197,11 +197,11 @@ function App() {
             <Routes>
               <Route
                 path="/login"
-                element={!user ? <Login onLogin={handleLogin} /> : <Navigate to="/" />}
+                element={!user ? <Login onLogin={handleLogin} /> : <Navigate to="/" replace />}
               />
               <Route
                 path="/batch/:batchId"
-                element={user ? <BatchRecordsView /> : <Navigate to="/login" />}
+                element={user ? <BatchRecordsView /> : <Navigate to="/login" replace />}
               />
               <Route
                 path="/"
@@ -213,7 +213,7 @@ function App() {
                       <StaffDashboard user={user} onLogout={handleLogout} />
                     )
                   ) : (
-                  <Navigate to="/login" />
+                  <Navigate to="/login" replace />
                 )
               }
             />
