@@ -296,11 +296,11 @@ async def get_funnel_by_staff(
     if not start_date:
         start_date = (jakarta_now - timedelta(days=30)).strftime('%Y-%m-%d')
     
-    # Get all assigned records
+    # Get all assigned records with row_data to extract username
     assigned_records = await db.customer_records.find(
         {'status': 'assigned'},
         {'_id': 0, 'id': 1, 'customer_id': 1, 'product_id': 1, 'assigned_to': 1,
-         'whatsapp_status': 1, 'respond_status': 1}
+         'whatsapp_status': 1, 'respond_status': 1, 'row_data': 1}
     ).to_list(100000)
     
     # Get staff info
@@ -313,16 +313,19 @@ async def get_funnel_by_staff(
     # Get OMSET records
     omset_records = await db.omset_records.find(
         {'record_date': {'$gte': start_date, '$lte': end_date}},
-        {'_id': 0, 'customer_id': 1, 'product_id': 1, 'staff_id': 1}
+        {'_id': 0, 'customer_id': 1, 'customer_id_normalized': 1, 'product_id': 1, 'staff_id': 1}
     ).to_list(100000)
     
-    # Build deposited map per staff
-    deposited_by_staff = {}
+    # Build deposited map per staff - using normalized username
+    deposited_by_staff = {}  # staff_id -> set of normalized usernames
     for omset in omset_records:
         staff_id = omset.get('staff_id')
         if staff_id not in deposited_by_staff:
             deposited_by_staff[staff_id] = set()
-        deposited_by_staff[staff_id].add((omset['customer_id'], omset.get('product_id')))
+        # Use normalized customer_id (uppercase username)
+        cust_id = omset.get('customer_id_normalized') or omset.get('customer_id', '').strip().upper()
+        if cust_id:
+            deposited_by_staff[staff_id].add(cust_id)
     
     # Group by staff
     staff_data = {}
@@ -351,8 +354,15 @@ async def get_funnel_by_staff(
         if record.get('respond_status') == 'ya':
             staff_data[staff_id]['responded'] += 1
         
-        key = (record.get('customer_id'), record.get('product_id'))
-        if key in deposited_by_staff.get(staff_id, set()):
+        # Check if deposited by matching username from row_data
+        row_data = record.get('row_data', {})
+        username = None
+        for key in ['username', 'Username', 'USER', 'user', 'name', 'Name', 'customer_id', 'id']:
+            if key in row_data and row_data[key]:
+                username = str(row_data[key]).strip().upper()
+                break
+        
+        if username and username in deposited_by_staff.get(staff_id, set()):
             staff_data[staff_id]['deposited'] += 1
     
     # Calculate conversion rates
