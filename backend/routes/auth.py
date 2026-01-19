@@ -198,7 +198,7 @@ async def heartbeat(user: User = Depends(get_current_user)):
 
 @router.get("/auth/session-status")
 async def get_session_status(user: User = Depends(get_current_user)):
-    """Check session status and return time until auto-logout"""
+    """Check session status and return time until auto-logout (staff only)"""
     db = get_db()
     from datetime import datetime
     import pytz
@@ -206,16 +206,20 @@ async def get_session_status(user: User = Depends(get_current_user)):
     JAKARTA_TZ = pytz.timezone('Asia/Jakarta')
     now = datetime.now(JAKARTA_TZ)
     
-    # Auto-logout after 1 hour (60 minutes) of inactivity
+    # Auto-logout after 1 hour (60 minutes) of inactivity - STAFF ONLY
     AUTO_LOGOUT_MINUTES = 60
     
     user_doc = await db.users.find_one({'id': user.id})
     if not user_doc:
         return {'valid': False, 'reason': 'User not found'}
     
+    # Admin/Master Admin don't have auto-logout
+    if user.role in ['admin', 'master_admin']:
+        return {'valid': True, 'auto_logout_enabled': False, 'role': user.role}
+    
     last_activity_str = user_doc.get('last_activity')
     if not last_activity_str:
-        return {'valid': True, 'minutes_remaining': AUTO_LOGOUT_MINUTES}
+        return {'valid': True, 'minutes_remaining': AUTO_LOGOUT_MINUTES, 'auto_logout_enabled': True}
     
     try:
         last_activity = datetime.fromisoformat(last_activity_str.replace('Z', '+00:00'))
@@ -226,24 +230,32 @@ async def get_session_status(user: User = Depends(get_current_user)):
         minutes_remaining = max(0, AUTO_LOGOUT_MINUTES - minutes_since_activity)
         
         if minutes_since_activity >= AUTO_LOGOUT_MINUTES:
-            # Session expired due to inactivity
+            # Session expired due to inactivity - update user status
             await db.users.update_one(
                 {'id': user.id},
-                {'$set': {'is_online': False}}
+                {
+                    '$set': {
+                        'is_online': False,
+                        'last_logout': now.isoformat(),
+                        'logout_reason': 'auto_logout_inactivity'
+                    }
+                }
             )
             return {
                 'valid': False,
                 'reason': 'Session expired due to inactivity',
-                'minutes_inactive': int(minutes_since_activity)
+                'minutes_inactive': int(minutes_since_activity),
+                'auto_logout_enabled': True
             }
         
         return {
             'valid': True,
             'minutes_remaining': int(minutes_remaining),
-            'minutes_inactive': int(minutes_since_activity)
+            'minutes_inactive': int(minutes_since_activity),
+            'auto_logout_enabled': True
         }
     except Exception as e:
-        return {'valid': True, 'minutes_remaining': AUTO_LOGOUT_MINUTES, 'error': str(e)}
+        return {'valid': True, 'minutes_remaining': AUTO_LOGOUT_MINUTES, 'error': str(e), 'auto_logout_enabled': True}
 
 # ==================== USER ACTIVITY MONITORING ====================
 
