@@ -139,7 +139,7 @@ export default function DatabaseRecords({ database, isStaff, onRequestSuccess })
               <thead className="bg-slate-50">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">#</th>
-                  {columns.map((col, idx) => (
+                  {visibleColumns.map((col, idx) => (
                     <th key={idx} className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
                       {col}
                     </th>
