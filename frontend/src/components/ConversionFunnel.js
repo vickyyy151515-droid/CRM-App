@@ -367,11 +367,11 @@ export default function ConversionFunnel({ isAdmin = false }) {
           )}
         </div>
       ) : activeView === 'by-product' && productBreakdown ? (
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-200 bg-slate-50">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
             <div className="flex items-center gap-2">
               <Package className="text-indigo-600" size={20} />
-              <h3 className="font-semibold text-slate-900">Funnel by Product</h3>
+              <h3 className="font-semibold text-slate-900 dark:text-white">Funnel by Product</h3>
             </div>
           </div>
           
@@ -380,54 +380,68 @@ export default function ConversionFunnel({ isAdmin = false }) {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-slate-50 border-b border-slate-200">
+                <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Product</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Assigned</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">WA Reached</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Responded</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Deposited</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Overall Rate</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Product</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Assigned</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">WA Reached</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Responded</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Deposited</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Overall Rate</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {productBreakdown.products.map((product, index) => (
-                    <tr key={product.product_id} className="hover:bg-slate-50">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                            index === 0 ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'
-                          }`}>
-                            {index + 1}
-                          </div>
-                          <span className="font-medium text-slate-900">{product.product_name}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <span className="font-semibold text-indigo-600">{formatNumber(product.stages.assigned)}</span>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <div>
-                          <span className="font-semibold text-green-600">{formatNumber(product.stages.wa_reached)}</span>
-                          <span className="text-xs text-slate-500 block">{product.conversion_rates.assigned_to_wa}%</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <div>
-                          <span className="font-semibold text-amber-600">{formatNumber(product.stages.responded)}</span>
-                          <span className="text-xs text-slate-500 block">{product.conversion_rates.wa_to_responded}%</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <div>
-                          <span className="font-semibold text-emerald-600">{formatNumber(product.stages.deposited)}</span>
-                          <span className="text-xs text-slate-500 block">{product.conversion_rates.responded_to_deposited}%</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <span className={`px-3 py-1 rounded-full text-sm font-bold ${getConversionBg(product.conversion_rates.overall)} ${getConversionColor(product.conversion_rates.overall)}`}>
-                          {product.conversion_rates.overall}%
-                        </span>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                  {productBreakdown.products.map((product, index) => {
+                    const isExpanded = expandedProduct === product.product_id;
+                    const depositedCustomers = product.deposited_customers || [];
+                    
+                    return (
+                      <>
+                        <tr key={product.product_id} className="hover:bg-slate-50 dark:hover:bg-slate-700">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                                index === 0 ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                              }`}>
+                                {index + 1}
+                              </div>
+                              <span className="font-medium text-slate-900 dark:text-white">{product.product_name}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <span className="font-semibold text-indigo-600">{formatNumber(product.stages.assigned)}</span>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <div>
+                              <span className="font-semibold text-green-600">{formatNumber(product.stages.wa_reached)}</span>
+                              <span className="text-xs text-slate-500 block">{product.conversion_rates.assigned_to_wa}%</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <div>
+                              <span className="font-semibold text-amber-600">{formatNumber(product.stages.responded)}</span>
+                              <span className="text-xs text-slate-500 block">{product.conversion_rates.wa_to_responded}%</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <div>
+                              <span className="font-semibold text-emerald-600">{formatNumber(product.stages.deposited)}</span>
+                              <span className="text-xs text-slate-500 block">{product.conversion_rates.responded_to_deposited}%</span>
+                              {depositedCustomers.length > 0 && (
+                                <button
+                                  onClick={() => setExpandedProduct(isExpanded ? null : product.product_id)}
+                                  className="mt-1 text-xs text-emerald-600 hover:text-emerald-700 flex items-center gap-1 mx-auto"
+                                >
+                                  {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                                  {isExpanded ? 'Hide' : 'View'} users
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <span className={`px-3 py-1 rounded-full text-sm font-bold ${getConversionBg(product.conversion_rates.overall)} ${getConversionColor(product.conversion_rates.overall)}`}>
+                              {product.conversion_rates.overall}%
+                            </span>
                       </td>
                     </tr>
                   ))}
