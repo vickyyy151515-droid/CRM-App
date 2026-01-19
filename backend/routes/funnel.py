@@ -235,7 +235,8 @@ async def get_funnel_by_product(
                 'assigned': 0,
                 'wa_reached': 0,
                 'responded': 0,
-                'deposited': 0
+                'deposited': 0,
+                'deposited_customers': []  # Track deposited customer usernames
             }
         
         products[prod_id]['assigned'] += 1
@@ -249,13 +250,16 @@ async def get_funnel_by_product(
         # Check if deposited by matching username from row_data
         row_data = record.get('row_data', {})
         username = None
+        original_username = None
         for key in ['username', 'Username', 'USER', 'user', 'name', 'Name', 'customer_id', 'id']:
             if key in row_data and row_data[key]:
-                username = str(row_data[key]).strip().upper()
+                original_username = str(row_data[key]).strip()
+                username = original_username.upper()
                 break
         
         if username and prod_id in deposited_by_product and username in deposited_by_product[prod_id]:
             products[prod_id]['deposited'] += 1
+            products[prod_id]['deposited_customers'].append(original_username)
     
     # Calculate conversion rates
     result = []
@@ -274,6 +278,7 @@ async def get_funnel_by_product(
                 'responded': responded,
                 'deposited': deposited
             },
+            'deposited_customers': prod['deposited_customers'],  # Include customer usernames
             'conversion_rates': {
                 'assigned_to_wa': round((wa_reached / assigned * 100), 1) if assigned > 0 else 0,
                 'wa_to_responded': round((responded / wa_reached * 100), 1) if wa_reached > 0 else 0,
