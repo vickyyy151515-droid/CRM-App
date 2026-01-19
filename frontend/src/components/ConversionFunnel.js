@@ -115,6 +115,24 @@ export default function ConversionFunnel({ isAdmin = false }) {
     'Deposited': 'from-emerald-500 to-teal-600'
   };
 
+  const copyUsername = async (username) => {
+    try {
+      await navigator.clipboard.writeText(username);
+      setCopiedUsername(username);
+      setTimeout(() => setCopiedUsername(null), 2000);
+      toast.success(`Copied: ${username}`);
+    } catch (err) {
+      toast.error('Failed to copy');
+    }
+  };
+
+  // Get deposited customers from the funnel data
+  const getDepositedCustomers = () => {
+    if (!funnelData || !funnelData.stages) return [];
+    const depositedStage = funnelData.stages.find(s => s.name === 'Deposited');
+    return depositedStage?.customers || [];
+  };
+
   return (
     <div data-testid="conversion-funnel">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
