@@ -93,13 +93,17 @@ async def get_conversion_funnel(
     # Check how many assigned records have deposited
     # Match by username from row_data
     deposited_from_assigned = 0
+    deposited_customer_list = []  # Track deposited customers with details
+    
     for record in assigned_records:
         row_data = record.get('row_data', {})
         # Try to get username from row_data (could be 'username', 'Username', 'user', etc.)
         username = None
+        original_username = None
         for key in ['username', 'Username', 'USER', 'user', 'name', 'Name', 'customer_id', 'id']:
             if key in row_data and row_data[key]:
-                username = str(row_data[key]).strip().upper()
+                original_username = str(row_data[key]).strip()
+                username = original_username.upper()
                 break
         
         if not username:
@@ -110,6 +114,12 @@ async def get_conversion_funnel(
         # Check if this customer deposited (with or without product match)
         if (username, prod_id) in deposited_customers or (username, None) in deposited_customers:
             deposited_from_assigned += 1
+            # Add to deposited list with details
+            deposited_customer_list.append({
+                'username': original_username,
+                'product_id': prod_id,
+                'assigned_to': record.get('assigned_to')
+            })
     
     total_deposited = deposited_from_assigned
     
@@ -147,7 +157,8 @@ async def get_conversion_funnel(
                 'name': 'Deposited',
                 'count': total_deposited,
                 'rate': calc_rate(total_deposited, total_responded),
-                'color': '#10b981'
+                'color': '#10b981',
+                'customers': deposited_customer_list  # Include deposited customer details
             }
         ],
         'overall_conversion': calc_rate(total_deposited, total_assigned),
