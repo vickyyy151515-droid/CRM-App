@@ -346,12 +346,14 @@ async def get_user_activity(admin: User = Depends(get_admin_user)):
             'id': user['id'],
             'name': user['name'],
             'email': user['email'],
-            'role': user['role'],
+            'role': user.get('role', 'staff'),
             'status': status,
             'idle_minutes': idle_minutes,
+            'minutes_since_activity': int(minutes_since_activity) if minutes_since_activity else None,
             'last_login': last_login_str,
             'last_activity': last_activity_str,
-            'last_logout': last_logout_str
+            'last_logout': last_logout_str,
+            'logout_reason': user.get('logout_reason')
         })
     
     # Sort: online first, then idle, then offline
@@ -368,7 +370,8 @@ async def get_user_activity(admin: User = Depends(get_admin_user)):
         },
         'thresholds': {
             'idle_minutes': IDLE_THRESHOLD_MINUTES,
-            'offline_minutes': OFFLINE_THRESHOLD_MINUTES
+            'offline_minutes': OFFLINE_THRESHOLD_MINUTES,
+            'staff_auto_logout_minutes': STAFF_AUTO_LOGOUT_MINUTES
         }
     }
 
