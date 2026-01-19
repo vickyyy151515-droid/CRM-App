@@ -467,6 +467,31 @@ async def debug_activity(admin: User = Depends(get_admin_user)):
         'user_details': user_activities
     }
 
+@router.post("/users/activity/reset-all")
+async def reset_all_activity(admin: User = Depends(get_master_admin_user)):
+    """Reset all users' activity status to offline (Master Admin only) - Use this to fix corrupted data"""
+    db = get_db()
+    
+    # Reset all users to offline with no last_activity
+    result = await db.users.update_many(
+        {},
+        {
+            '$set': {
+                'is_online': False
+            },
+            '$unset': {
+                'last_activity': '',
+                'logout_reason': ''
+            }
+        }
+    )
+    
+    return {
+        'status': 'ok',
+        'message': f'Reset activity for {result.modified_count} users',
+        'modified_count': result.modified_count
+    }
+
 # ==================== USER MANAGEMENT ENDPOINTS ====================
 
 @router.get("/users")
