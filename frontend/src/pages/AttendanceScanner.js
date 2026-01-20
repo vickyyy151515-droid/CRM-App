@@ -138,10 +138,13 @@ export default function AttendanceScanner() {
       scannerRef.current = html5QrCode;
 
       const config = { 
-        fps: 10, 
+        fps: 15,  // Increased FPS for better detection
         qrbox: { width: 250, height: 250 },
         aspectRatio: 1.0,
-        disableFlip: false
+        disableFlip: false,
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true  // Use native barcode API if available
+        }
       };
 
       // Get available cameras
