@@ -144,11 +144,34 @@ async def startup_event():
     """Initialize scheduler and seed data on startup"""
     logger.info("Starting up CRM Pro API...")
     
-    # Ensure master admin user exists
-    await ensure_master_admin_exists()
+    # Test database connection with retry
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            # Ping the database to verify connection
+            await client.admin.command('ping')
+            logger.info("✅ Database connection verified")
+            break
+        except Exception as e:
+            logger.error(f"Database connection attempt {attempt + 1}/{max_retries} failed: {e}")
+            if attempt == max_retries - 1:
+                logger.critical("❌ Failed to connect to database after all retries!")
+                # Don't crash - let the app start and handle errors gracefully
+            else:
+                import asyncio
+                await asyncio.sleep(2)  # Wait 2 seconds before retry
     
-    await init_scheduler()
-    logger.info("Scheduler initialized")
+    # Ensure master admin user exists
+    try:
+        await ensure_master_admin_exists()
+    except Exception as e:
+        logger.error(f"Error ensuring master admin exists: {e}")
+    
+    try:
+        await init_scheduler()
+        logger.info("Scheduler initialized")
+    except Exception as e:
+        logger.error(f"Error initializing scheduler: {e}")
 
 async def ensure_master_admin_exists():
     """Ensure the master admin user vicky@crm.com exists"""
