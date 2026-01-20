@@ -103,6 +103,28 @@ export default function AttendanceQRScreen({ onComplete, userName, onLogout }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
+        {/* Back / Skip / Logout buttons */}
+        <div className="flex justify-between items-center mb-4 -mt-2">
+          <button
+            onClick={onComplete}
+            className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 transition-colors"
+            data-testid="skip-attendance-btn"
+          >
+            <ArrowLeft size={16} />
+            Skip for now
+          </button>
+          {onLogout && (
+            <button
+              onClick={onLogout}
+              className="flex items-center gap-1 text-sm text-red-500 hover:text-red-700 transition-colors"
+              data-testid="logout-btn"
+            >
+              <LogOut size={16} />
+              Logout
+            </button>
+          )}
+        </div>
+
         {/* Header */}
         <div className="text-center mb-6">
           <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
