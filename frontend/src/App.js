@@ -277,6 +277,7 @@ function App() {
                       <AttendanceQRScreen 
                         onComplete={() => setAttendanceChecked(true)} 
                         userName={user.name}
+                        onLogout={handleLogout}
                       />
                     ) : (
                       <StaffDashboard user={user} onLogout={handleLogout} />
