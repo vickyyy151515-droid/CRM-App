@@ -107,7 +107,21 @@ async def health_check():
 @api_router.get("/health")
 async def api_health_check():
     """Health check endpoint accessible via /api/health for ingress routing"""
-    return {"status": "healthy", "service": "crm-pro-api"}
+    health_status = {
+        "status": "healthy",
+        "service": "crm-pro-api",
+        "timestamp": get_jakarta_now().isoformat()
+    }
+    
+    # Check database connectivity
+    try:
+        await client.admin.command('ping')
+        health_status["database"] = "connected"
+    except Exception as e:
+        health_status["status"] = "degraded"
+        health_status["database"] = f"error: {str(e)[:50]}"
+    
+    return health_status
 
 @api_router.get("/server-time")
 async def get_server_time():
