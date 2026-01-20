@@ -1,6 +1,6 @@
 # Authentication and User Management Routes
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 from .deps import (
