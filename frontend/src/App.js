@@ -196,6 +196,8 @@ function App() {
   const handleLogin = (userData, token) => {
     localStorage.setItem('token', token);
     setUser(userData);
+    // Reset attendance check for new login
+    setAttendanceChecked(false);
   };
 
   const handleLogout = async () => {
@@ -206,7 +208,35 @@ function App() {
     }
     localStorage.removeItem('token');
     setUser(null);
+    setAttendanceChecked(false);
   };
+
+  // State for attendance check (staff only)
+  const [attendanceChecked, setAttendanceChecked] = useState(false);
+  const [checkingAttendance, setCheckingAttendance] = useState(false);
+
+  // Check attendance status for staff on login
+  useEffect(() => {
+    const checkAttendance = async () => {
+      // Only check for staff users
+      if (!user || user.role !== 'staff' || attendanceChecked) return;
+      
+      setCheckingAttendance(true);
+      try {
+        const response = await api.get('/attendance/check-today');
+        if (response.data.checked_in) {
+          setAttendanceChecked(true);
+        }
+      } catch (error) {
+        // If endpoint fails, allow access anyway
+        setAttendanceChecked(true);
+      } finally {
+        setCheckingAttendance(false);
+      }
+    };
+    
+    checkAttendance();
+  }, [user, attendanceChecked]);
 
   if (loading) {
     return (
@@ -216,6 +246,9 @@ function App() {
     );
   }
 
+  // Show attendance QR screen for staff who haven't checked in
+  const shouldShowAttendanceQR = user && user.role === 'staff' && !attendanceChecked && !checkingAttendance;
+
   return (
     <ThemeProvider>
       <LanguageProvider>
@@ -223,6 +256,9 @@ function App() {
           <Toaster position="top-right" richColors />
           <BrowserRouter>
             <Routes>
+              {/* Public attendance scanner route */}
+              <Route path="/attendance-scanner" element={<AttendanceScanner />} />
+              
               <Route
                 path="/login"
                 element={!user ? <Login onLogin={handleLogin} /> : <Navigate to="/" replace />}
@@ -237,6 +273,11 @@ function App() {
                   user ? (
                     (user.role === 'admin' || user.role === 'master_admin') ? (
                       <AdminDashboard user={user} onLogout={handleLogout} />
+                    ) : shouldShowAttendanceQR ? (
+                      <AttendanceQRScreen 
+                        onComplete={() => setAttendanceChecked(true)} 
+                        userName={user.name}
+                      />
                     ) : (
                       <StaffDashboard user={user} onLogout={handleLogout} />
                     )
