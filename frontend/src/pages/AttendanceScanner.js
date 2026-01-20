@@ -354,7 +354,37 @@ export default function AttendanceScanner() {
             <Smartphone size={24} />
           </div>
           <h1 className="text-lg font-bold">Attendance Scanner</h1>
+          
+          {/* Debug toggle button */}
+          <button
+            onClick={() => setShowDebug(!showDebug)}
+            className="mt-2 text-xs text-slate-500 flex items-center justify-center gap-1 mx-auto"
+          >
+            <Bug size={12} />
+            {showDebug ? 'Hide Debug' : 'Show Debug'}
+          </button>
         </div>
+
+        {/* Debug Panel */}
+        {showDebug && (
+          <div className="bg-slate-800 rounded-lg p-3 mb-4 max-h-40 overflow-y-auto">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs font-mono text-slate-400">Debug Logs ({debugLogs.length})</span>
+              <button 
+                onClick={() => setDebugLogs([])}
+                className="text-xs text-red-400"
+              >
+                Clear
+              </button>
+            </div>
+            <div className="text-xs font-mono text-green-400 space-y-0.5">
+              {debugLogs.slice(-15).map((log, i) => (
+                <div key={i} className="break-all">{log}</div>
+              ))}
+              {debugLogs.length === 0 && <div className="text-slate-500">No logs yet</div>}
+            </div>
+          </div>
+        )}
 
         {/* Not Logged In */}
         {!isLoggedIn && (
@@ -377,6 +407,7 @@ export default function AttendanceScanner() {
                 <button
                   onClick={registerDevice}
                   className="mt-3 px-4 py-2 bg-amber-600 hover:bg-amber-700 rounded-lg text-sm font-medium"
+                  data-testid="register-device-btn"
                 >
                   Register This Device
                 </button>
@@ -395,25 +426,23 @@ export default function AttendanceScanner() {
               </div>
             </div>
 
-            {/* Scanner Container - ALWAYS VISIBLE when device registered */}
-            <div className="bg-slate-800 rounded-xl overflow-hidden mb-4">
-              {/* This div must always exist for html5-qrcode */}
+            {/* Scanner Container */}
+            <div className="bg-slate-800 rounded-xl overflow-hidden mb-4 relative">
+              {/* Scanner element - always present */}
               <div 
                 id="qr-reader-box" 
+                className="w-full"
                 style={{ 
-                  width: '100%', 
-                  minHeight: '280px',
-                  background: '#000'
+                  minHeight: scanning ? '300px' : '0px',
+                  background: '#000',
+                  display: scanning ? 'block' : 'none'
                 }}
               />
               
-              {/* Overlay when not scanning */}
+              {/* Idle state placeholder */}
               {!scanning && scannerStatus !== 'starting' && (
-                <div 
-                  className="flex flex-col items-center justify-center p-8"
-                  style={{ marginTop: '-280px', minHeight: '280px', background: 'rgba(30,41,59,0.95)' }}
-                >
-                  <Camera size={40} className="text-slate-500 mb-3" />
+                <div className="flex flex-col items-center justify-center p-8 min-h-[280px] bg-slate-800">
+                  <Camera size={48} className="text-slate-500 mb-3" />
                   <p className="text-slate-400 text-sm text-center">
                     Tap button below to start camera
                   </p>
@@ -422,25 +451,28 @@ export default function AttendanceScanner() {
               
               {/* Starting indicator */}
               {scannerStatus === 'starting' && (
-                <div 
-                  className="flex flex-col items-center justify-center p-8"
-                  style={{ marginTop: '-280px', minHeight: '280px', background: 'rgba(30,41,59,0.95)' }}
-                >
-                  <RefreshCw size={40} className="text-indigo-400 mb-3 animate-spin" />
+                <div className="flex flex-col items-center justify-center p-8 min-h-[280px] bg-slate-800">
+                  <RefreshCw size={48} className="text-indigo-400 mb-3 animate-spin" />
                   <p className="text-indigo-300 text-sm">Starting camera...</p>
+                  <p className="text-slate-500 text-xs mt-2">Please allow camera access if prompted</p>
                 </div>
               )}
             </div>
 
-            {/* Scanning indicator */}
+            {/* Scanning indicator with scan count */}
             {scanning && (
               <div className="bg-indigo-900/50 border border-indigo-500 rounded-lg p-3 mb-4">
                 <div className="flex items-center justify-center gap-2">
                   <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
                   <span className="text-indigo-200 text-sm">
-                    {scannerStatus === 'processing' ? 'Processing...' : 'Point camera at QR code'}
+                    {scannerStatus === 'processing' ? 'Processing QR code...' : 'Camera active - point at QR code'}
                   </span>
                 </div>
+                {scanCount > 0 && (
+                  <p className="text-center text-xs text-slate-400 mt-1">
+                    Detected: {scanCount} QR code(s)
+                  </p>
+                )}
               </div>
             )}
 
@@ -450,6 +482,7 @@ export default function AttendanceScanner() {
                 onClick={startScanner}
                 disabled={scannerStatus === 'starting'}
                 className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-800 rounded-xl font-medium flex items-center justify-center gap-2"
+                data-testid="start-camera-btn"
               >
                 {scannerStatus === 'starting' ? (
                   <><RefreshCw className="animate-spin" size={20} /> Starting...</>
@@ -461,6 +494,7 @@ export default function AttendanceScanner() {
               <button
                 onClick={stopScanner}
                 className="w-full py-4 bg-red-600 hover:bg-red-700 rounded-xl font-medium"
+                data-testid="stop-camera-btn"
               >
                 Stop Camera
               </button>
@@ -478,6 +512,7 @@ export default function AttendanceScanner() {
                 <button
                   onClick={resetScanner}
                   className="mt-2 px-4 py-2 bg-red-600 rounded-lg text-sm"
+                  data-testid="try-again-btn"
                 >
                   Try Again
                 </button>
@@ -516,6 +551,7 @@ export default function AttendanceScanner() {
               <button
                 onClick={resetScanner}
                 className="mt-4 w-full py-3 bg-slate-700 hover:bg-slate-600 rounded-lg"
+                data-testid="scan-again-btn"
               >
                 Scan Again
               </button>
@@ -529,6 +565,7 @@ export default function AttendanceScanner() {
             <button
               onClick={() => setShowManualInput(!showManualInput)}
               className="w-full py-2 text-slate-400 text-sm flex items-center justify-center gap-2"
+              data-testid="manual-input-toggle"
             >
               <Keyboard size={16} />
               {showManualInput ? 'Hide manual input' : 'Camera not working? Enter code manually'}
@@ -545,15 +582,13 @@ export default function AttendanceScanner() {
                   onChange={(e) => setManualCode(e.target.value)}
                   placeholder="ATT-..."
                   className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm mb-2"
+                  data-testid="manual-code-input"
                 />
                 <button
-                  onClick={() => {
-                    if (manualCode.trim()) {
-                      handleQRDetected(manualCode.trim());
-                    }
-                  }}
+                  onClick={handleManualSubmit}
                   disabled={!manualCode.trim()}
                   className="w-full py-2 bg-indigo-600 disabled:bg-slate-600 rounded-lg text-sm font-medium"
+                  data-testid="submit-manual-code-btn"
                 >
                   Submit Code
                 </button>
@@ -577,8 +612,8 @@ export default function AttendanceScanner() {
 
         {/* Debug Info */}
         {debugInfo && (
-          <p className="text-center text-xs text-slate-600 mt-2">
-            Debug: {debugInfo}
+          <p className="text-center text-xs text-slate-500 mt-2" data-testid="debug-info">
+            {debugInfo}
           </p>
         )}
 
