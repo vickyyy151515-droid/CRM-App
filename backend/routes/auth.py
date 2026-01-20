@@ -239,9 +239,33 @@ async def heartbeat(user: User = Depends(get_current_user)):
         raise HTTPException(status_code=400, detail=f"Invalid user ID: {user.id}")
     
     # Double-check: Verify this user exists with this exact ID
-    existing_user = await db.users.find_one({'id': user.id}, {'_id': 0, 'id': 1, 'email': 1})
+    existing_user = await db.users.find_one({'id': user.id}, {'_id': 0, 'id': 1, 'email': 1, 'last_logout': 1})
     if not existing_user:
         raise HTTPException(status_code=404, detail=f"User not found: {user.id}")
+    
+    # CRITICAL FIX: Don't update activity if user has logged out recently
+    # This prevents race conditions where heartbeat fires after logout
+    last_logout_str = existing_user.get('last_logout')
+    if last_logout_str:
+        try:
+            from datetime import datetime
+            import pytz
+            JAKARTA_TZ = pytz.timezone('Asia/Jakarta')
+            last_logout = datetime.fromisoformat(last_logout_str.replace('Z', '+00:00'))
+            if last_logout.tzinfo is None:
+                last_logout = JAKARTA_TZ.localize(last_logout)
+            
+            # If logout was within last 5 minutes, reject the heartbeat
+            # The JWT might still be valid but user has explicitly logged out
+            minutes_since_logout = (now - last_logout).total_seconds() / 60
+            if minutes_since_logout < 5:
+                return {
+                    'status': 'rejected',
+                    'reason': 'User has recently logged out',
+                    'user_id': user.id
+                }
+        except Exception:
+            pass
     
     # Update ONLY this specific user's activity using their unique ID
     result = await db.users.update_one(
