@@ -433,17 +433,6 @@ async def reset_activity(admin: User = Depends(get_admin_user)):
         'message': f'Reset activity for {result.modified_count} users. All will show offline until they interact.',
         'modified_count': result.modified_count
     }
-    
-    is_synced = len(suspicious) > 0 and any(count >= len(users) * 0.5 for count in suspicious.values())
-    
-    return {
-        'current_time': now.isoformat(),
-        'total_users': len(users),
-        'has_sync_issue': is_synced,
-        'suspicious_timestamps': suspicious if suspicious else None,
-        'recommendation': 'Call POST /api/auth/reset-activity to fix' if is_synced else 'No action needed',
-        'users': user_details
-    }
 
 # ==================== EMERGENCY PASSWORD RESET ====================
 
