@@ -186,10 +186,47 @@ async def logout(user: User = Depends(get_current_user)):
         {'id': user.id},
         {'$set': {
             'last_logout': now.isoformat(),
-            'is_online': False
         }}
     )
     return {'message': 'Logged out successfully'}
+
+class BeaconLogout(BaseModel):
+    token: str
+
+@router.post("/auth/logout-beacon")
+async def logout_beacon(request: Request):
+    """
+    Logout endpoint for browser beacon (when tab/browser closes).
+    Uses raw token since we can't use normal auth flow for beacon requests.
+    """
+    db = get_db()
+    now = get_jakarta_now()
+    
+    try:
+        # Parse the beacon body
+        body = await request.json()
+        token = body.get('token')
+        
+        if not token:
+            return {'status': 'no_token'}
+        
+        # Decode the token to get user ID
+        import jwt
+        import os
+        payload = jwt.decode(token, os.environ.get('JWT_SECRET', 'secret'), algorithms=['HS256'])
+        user_id = payload.get('user_id')
+        
+        if user_id:
+            await db.users.update_one(
+                {'id': user_id},
+                {'$set': {
+                    'last_logout': now.isoformat(),
+                }}
+            )
+            return {'status': 'logged_out', 'user_id': user_id}
+    except Exception as e:
+        # Silently fail - beacon requests shouldn't cause errors
+        return {'status': 'error', 'message': str(e)}
 
 @router.post("/auth/heartbeat")
 async def heartbeat(user: User = Depends(get_current_user)):
