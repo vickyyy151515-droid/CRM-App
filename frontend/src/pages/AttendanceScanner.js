@@ -305,23 +305,36 @@ export default function AttendanceScanner() {
       const deviceName = /iPhone|iPad|iPod/.test(navigator.userAgent) ? 'iPhone' : 
                          /Android/.test(navigator.userAgent) ? 'Android' : 'Mobile';
       
+      addDebugLog(`Registering device: ${deviceName}`);
+      
       await api.post('/attendance/register-device', {
         device_token: deviceToken,
         device_name: deviceName
       });
       
       setDeviceRegistered(true);
+      addDebugLog('Device registered successfully');
       toast.success('Device registered successfully!');
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Registration failed');
+      const errMsg = error.response?.data?.detail || 'Registration failed';
+      addDebugLog(`Registration failed: ${errMsg}`);
+      toast.error(errMsg);
     }
   };
 
   const resetScanner = () => {
+    addDebugLog('Resetting scanner state');
     setResult(null);
     setError(null);
     setScannerStatus('idle');
     hasScannedRef.current = false;
+  };
+
+  const handleManualSubmit = () => {
+    if (manualCode.trim()) {
+      addDebugLog(`Manual code submitted: ${manualCode.trim()}`);
+      handleQRDetected(manualCode.trim(), { result: { format: { formatName: 'MANUAL' } } });
+    }
   };
 
   if (checkingDevice) {
