@@ -171,6 +171,7 @@ export default function AttendanceScanner() {
 
       // Start with camera
       if (cameraId) {
+        setDebugInfo(`Using camera: ${cameraId}`);
         await html5QrCode.start(
           cameraId,
           config,
@@ -178,6 +179,7 @@ export default function AttendanceScanner() {
           () => {} // Ignore scan errors
         );
       } else {
+        setDebugInfo('Using facingMode: environment');
         // Fallback to facingMode
         await html5QrCode.start(
           { facingMode: "environment" },
@@ -189,6 +191,7 @@ export default function AttendanceScanner() {
 
       setScanning(true);
       setScannerStatus('scanning');
+      setDebugInfo(prev => prev + ' | Camera started OK');
       toast.success('Camera ready! Point at QR code.');
       
     } catch (err) {
