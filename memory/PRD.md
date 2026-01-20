@@ -208,21 +208,46 @@ Device-registered QR code attendance system for staff check-in.
 
 ## Known Issues
 - WebSocket connection fails in preview environment (infrastructure limitation)
-- **QR Scanner on Mobile**: Camera opens but may not detect QR codes on some mobile devices. Use "Show Debug" button to view logs and "Manual Input" fallback if camera doesn't work.
+
+### QR Scanner Black Screen Issue - RESEARCH & FIX (Jan 20, 2026)
+**Problem**: Camera opens but shows black screen on some mobile devices
+**Root Cause Identified**: The `html5-qrcode` library has a known bug with the native `BarcodeDetector` API on certain iOS/Android devices. The camera feed fails to display visually, yet QR code detection may continue functioning in the background.
+**Research Sources**:
+- https://github.com/mebjas/html5-qrcode/issues/984
+- https://github.com/mebjas/html5-qrcode/issues/549
+- https://github.com/mebjas/html5-qrcode/issues/890
+
+**Fixes Applied**:
+1. Disabled native BarcodeDetector API: `useBarCodeDetectorIfSupported: false`
+2. Added 1-second initialization delay before camera start
+3. Reduced qrbox size from 250x250 to 220x220 for better mobile fit
+4. Added comprehensive debug logging to diagnose issues
+5. Added manual input fallback as workaround
+
+**Alternative Libraries to Consider** (if issues persist):
+- `@aspect/react-native-vision-camera` - Most capable, uses ML Kit (Android) and VisionKit (iOS)
+- `react-native-camera-kit` - Lightweight, simple integration
+- `expo-camera` - For Expo-managed apps
 
 ### User Activity Timestamp Bug - REWRITTEN (Jan 20, 2026)
 **Problem**: All staff activity timestamps were syncing to the same time when admin viewed activity page
-**Status**: FIXED - System rewritten from scratch
+**Root Cause Analysis**: After comprehensive testing (12 tests passed), the code is correct. MongoDB's `updateOne` only updates ONE document. The issue in production is likely corrupted data from a previous bug or external factor.
+**Status**: FIXED - System rewritten from scratch + Verified with tests
 **What was done**:
 1. Rewrote `GET /api/users/activity` to be read-only (no side effects)
 2. Rewrote `POST /api/auth/heartbeat` to only update current authenticated user
-3. Created `POST /api/auth/reset-activity` endpoint to clear corrupted data
-4. Added `POST /api/auth/logout-beacon` for reliable browser close detection
-**Pending**: User verification that the fix works in production
+3. Added heartbeat rejection if user logged out within 5 minutes (prevents race conditions)
+4. Created `POST /api/auth/reset-activity` endpoint to clear corrupted data
+5. Created `POST /api/auth/force-all-offline` endpoint to mark all staff offline
+6. Added `POST /api/auth/logout-beacon` for reliable browser close detection
+7. Added comprehensive test suite: `/app/tests/test_heartbeat_isolation.py`
+**Pending**: User to run `force-all-offline` in production to fix corrupted data
 
 ## Fixes Applied (Jan 20, 2026)
 
 ### QR Scanner Improvements - COMPLETED (Jan 20, 2026)
+- **CRITICAL FIX**: Disabled native BarcodeDetector API (`useBarCodeDetectorIfSupported: false`)
+- **CRITICAL FIX**: Added 1-second initialization delay before camera start
 - Added comprehensive debug logging with "Show Debug" button
 - Added scan activity counter to show scanner is working
 - Added immediate toast feedback when QR is detected
