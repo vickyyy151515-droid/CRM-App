@@ -567,6 +567,50 @@ async def diagnostics_activity_sync(admin: User = Depends(get_admin_user)):
         'users': user_details
     }
 
+# ==================== EMERGENCY PASSWORD RESET ====================
+
+class EmergencyPasswordReset(BaseModel):
+    email: str
+    new_password: str
+    secret_key: str
+
+@router.post("/auth/emergency-reset-password")
+async def emergency_reset_password(data: EmergencyPasswordReset):
+    """
+    Emergency password reset - requires secret key for security.
+    Use this only when locked out of your account.
+    """
+    db = get_db()
+    
+    # Secret key must match JWT_SECRET for security
+    import os
+    expected_secret = os.environ.get('JWT_SECRET', '')[:16]  # First 16 chars of JWT secret
+    
+    if not data.secret_key or data.secret_key != expected_secret:
+        raise HTTPException(status_code=403, detail="Invalid secret key")
+    
+    # Find user
+    user = await db.users.find_one({'email': data.email})
+    if not user:
+        raise HTTPException(status_code=404, detail=f"User not found: {data.email}")
+    
+    # Validate new password
+    if len(data.new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    
+    # Update password
+    new_hash = hash_password(data.new_password)
+    await db.users.update_one(
+        {'email': data.email},
+        {'$set': {'password_hash': new_hash}}
+    )
+    
+    return {
+        'status': 'ok',
+        'message': f'Password reset successful for {data.email}',
+        'user_role': user.get('role')
+    }
+
 # ==================== USER MANAGEMENT ENDPOINTS ====================
 
 @router.get("/users")
