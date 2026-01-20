@@ -57,7 +57,7 @@ api.interceptors.response.use(
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [lastActivityTime, setLastActivityTime] = useState(Date.now());
+  const [lastActivityTime, setLastActivityTime] = useState(() => Date.now());
   
   // Auto-logout after 1 hour (60 minutes) of inactivity
   const AUTO_LOGOUT_MS = 60 * 60 * 1000; // 1 hour in milliseconds
