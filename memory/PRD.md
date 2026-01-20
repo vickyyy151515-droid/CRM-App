@@ -208,21 +208,29 @@ Device-registered QR code attendance system for staff check-in.
 
 ## Known Issues
 - WebSocket connection fails in preview environment (infrastructure limitation)
+- **QR Scanner on Mobile**: Camera opens but may not detect QR codes on some mobile devices. Use "Show Debug" button to view logs and "Manual Input" fallback if camera doesn't work.
 
-### User Activity Timestamp Bug - IN PROGRESS (Resume Later)
-**Problem**: All staff activity timestamps sync to the same time when admin views activity page
-**Status**: Partially addressed - reset endpoint created but issue persists after reset
-**What was tried**:
-1. Created `POST /api/auth/reset-activity` endpoint to clear corrupted data
-2. Created `GET /api/auth/diagnostics/activity-sync` to detect sync issues
-3. User ran reset via browser console - staff still shows as "online" after reset
-**Next steps to investigate**:
-- Check if there's frontend polling that immediately updates all users
-- Check if `/api/users/activity` GET endpoint has side effects updating timestamps
-- Add detailed logging to heartbeat endpoint to trace which user IDs are being updated
-- Consider if browser tabs sharing localStorage token could cause issues
+### User Activity Timestamp Bug - REWRITTEN (Jan 20, 2026)
+**Problem**: All staff activity timestamps were syncing to the same time when admin viewed activity page
+**Status**: FIXED - System rewritten from scratch
+**What was done**:
+1. Rewrote `GET /api/users/activity` to be read-only (no side effects)
+2. Rewrote `POST /api/auth/heartbeat` to only update current authenticated user
+3. Created `POST /api/auth/reset-activity` endpoint to clear corrupted data
+4. Added `POST /api/auth/logout-beacon` for reliable browser close detection
+**Pending**: User verification that the fix works in production
 
 ## Fixes Applied (Jan 20, 2026)
+
+### QR Scanner Improvements - COMPLETED (Jan 20, 2026)
+- Added comprehensive debug logging with "Show Debug" button
+- Added scan activity counter to show scanner is working
+- Added immediate toast feedback when QR is detected
+- Fixed component lifecycle issues (proper cleanup on unmount)
+- Added better error messages for camera permission/availability issues
+- Improved camera selection logic (prefers back camera)
+- Added manual input fallback for when camera scanning doesn't work
+- All interactive elements have data-testid attributes for testing
 
 ### Conversion Funnel Fix - COMPLETED (Jan 20, 2026)
 - Fixed "Deposited" metric calculation in all three funnel endpoints
