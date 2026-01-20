@@ -530,6 +530,36 @@ async def reset_activity(admin: User = Depends(get_admin_user)):
         'modified_count': result.modified_count
     }
 
+
+@router.post("/auth/force-all-offline")
+async def force_all_offline(admin: User = Depends(get_admin_user)):
+    """
+    Force all staff users to be marked as offline.
+    Sets last_logout to now, which will make them show as offline.
+    Use this when activity data is corrupted.
+    """
+    db = get_db()
+    now = get_jakarta_now()
+    
+    # Update all staff users to have a recent logout
+    result = await db.users.update_many(
+        {'role': 'staff'},
+        {
+            '$set': {
+                'last_logout': now.isoformat(),
+                'logout_reason': 'admin_force_offline',
+                'is_online': False
+            }
+        }
+    )
+    
+    return {
+        'status': 'ok',
+        'message': f'Forced {result.modified_count} staff members offline.',
+        'modified_count': result.modified_count,
+        'logout_time': now.isoformat()
+    }
+
 # ==================== EMERGENCY PASSWORD RESET ====================
 
 class EmergencyPasswordReset(BaseModel):
