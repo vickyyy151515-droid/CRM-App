@@ -288,24 +288,38 @@ async def get_session_status(user: User = Depends(get_current_user)):
     except Exception as e:
         return {'valid': True, 'minutes_remaining': AUTO_LOGOUT_MINUTES, 'error': str(e), 'auto_logout_enabled': True}
 
-# ==================== USER ACTIVITY MONITORING ====================
+# ==================== USER ACTIVITY MONITORING (REBUILT) ====================
+# 
+# IMPORTANT: Activity tracking works as follows:
+# 1. Frontend sends heartbeat on user interaction (click, scroll, keypress)
+# 2. Heartbeat updates ONLY the authenticated user's last_activity timestamp
+# 3. This endpoint is READ-ONLY - it calculates status from timestamps, never writes
+#
+# Status thresholds:
+# - Online: activity within 5 minutes
+# - Idle: no activity for 5-30 minutes  
+# - Offline: no activity for 30+ minutes
+#
+# Staff auto-logout: 60 minutes of inactivity
 
 @router.get("/users/activity")
 async def get_user_activity(admin: User = Depends(get_admin_user)):
-    """Get all users' activity status (Admin only)"""
+    """
+    Get all users' activity status (Admin only).
+    This is READ-ONLY - status is calculated from timestamps, no updates happen here.
+    """
     db = get_db()
-    from datetime import datetime, timedelta
+    from datetime import datetime
     import pytz
     
     JAKARTA_TZ = pytz.timezone('Asia/Jakarta')
     now = datetime.now(JAKARTA_TZ)
     
-    # Consider user idle if no activity for 5 minutes
-    IDLE_THRESHOLD_MINUTES = 5
-    # Consider user offline if no activity for 15 minutes (more realistic)
-    OFFLINE_THRESHOLD_MINUTES = 15
-    # Staff auto-logout threshold - 60 minutes
-    STAFF_AUTO_LOGOUT_MINUTES = 60
+    # Thresholds (in minutes)
+    ONLINE_THRESHOLD = 5      # Active within 5 minutes = online
+    IDLE_THRESHOLD = 30       # 5-30 minutes = idle
+    # > 30 minutes = offline
+    STAFF_AUTO_LOGOUT = 60    # Staff auto-logout after 60 minutes
     
     users = await db.users.find({}, {'_id': 0, 'password_hash': 0}).to_list(1000)
     
@@ -316,15 +330,12 @@ async def get_user_activity(admin: User = Depends(get_admin_user)):
     
     for user in users:
         last_activity_str = user.get('last_activity')
-        last_login_str = user.get('last_login')
         last_logout_str = user.get('last_logout')
         user_role = user.get('role', 'staff')
         
         status = 'offline'
-        idle_minutes = None
         minutes_since_activity = None
         
-        # Determine status based on last_activity timestamp
         if last_activity_str:
             try:
                 last_activity = datetime.fromisoformat(last_activity_str.replace('Z', '+00:00'))
@@ -333,55 +344,39 @@ async def get_user_activity(admin: User = Depends(get_admin_user)):
                 
                 minutes_since_activity = (now - last_activity).total_seconds() / 60
                 
-                # Check if user has explicitly logged out after their last activity
-                user_explicitly_logged_out = False
+                # Check if user explicitly logged out after their last activity
+                explicitly_logged_out = False
                 if last_logout_str:
                     try:
                         last_logout = datetime.fromisoformat(last_logout_str.replace('Z', '+00:00'))
                         if last_logout.tzinfo is None:
                             last_logout = JAKARTA_TZ.localize(last_logout)
-                        # If logout is more recent than last activity, user is offline
                         if last_logout > last_activity:
-                            user_explicitly_logged_out = True
+                            explicitly_logged_out = True
                     except:
                         pass
                 
-                # For staff users, auto-consider them logged out after 60 minutes of inactivity
-                staff_session_expired = (user_role == 'staff' and minutes_since_activity >= STAFF_AUTO_LOGOUT_MINUTES)
+                # For staff, consider them offline if past auto-logout threshold
+                staff_session_expired = (user_role == 'staff' and minutes_since_activity >= STAFF_AUTO_LOGOUT)
                 
-                if user_explicitly_logged_out or staff_session_expired:
+                # Determine status (READ-ONLY calculation)
+                if explicitly_logged_out or staff_session_expired:
                     status = 'offline'
-                    offline_count += 1
-                    # Auto-update the user's is_online flag and record implicit logout
-                    if staff_session_expired and user.get('is_online', False):
-                        await db.users.update_one(
-                            {'id': user['id']}, 
-                            {
-                                '$set': {
-                                    'is_online': False,
-                                    'last_logout': last_activity.isoformat(),
-                                    'logout_reason': 'auto_logout_inactivity'
-                                }
-                            }
-                        )
-                elif minutes_since_activity < IDLE_THRESHOLD_MINUTES:
+                elif minutes_since_activity < ONLINE_THRESHOLD:
                     status = 'online'
-                    online_count += 1
-                elif minutes_since_activity < OFFLINE_THRESHOLD_MINUTES:
+                elif minutes_since_activity < IDLE_THRESHOLD:
                     status = 'idle'
-                    idle_minutes = int(minutes_since_activity)
-                    idle_count += 1
                 else:
                     status = 'offline'
-                    offline_count += 1
-                
-                # Update is_online flag to match actual status
-                actual_is_online = status in ['online', 'idle']
-                if user.get('is_online', False) != actual_is_online:
-                    await db.users.update_one({'id': user['id']}, {'$set': {'is_online': actual_is_online}})
-            except:
+                    
+            except Exception as e:
                 status = 'offline'
-                offline_count += 1
+        
+        # Count by status
+        if status == 'online':
+            online_count += 1
+        elif status == 'idle':
+            idle_count += 1
         else:
             offline_count += 1
         
@@ -389,17 +384,15 @@ async def get_user_activity(admin: User = Depends(get_admin_user)):
             'id': user['id'],
             'name': user['name'],
             'email': user['email'],
-            'role': user.get('role', 'staff'),
+            'role': user_role,
             'status': status,
-            'idle_minutes': idle_minutes,
-            'minutes_since_activity': int(minutes_since_activity) if minutes_since_activity else None,
-            'last_login': last_login_str,
+            'minutes_since_activity': int(minutes_since_activity) if minutes_since_activity is not None else None,
             'last_activity': last_activity_str,
-            'last_logout': last_logout_str,
-            'logout_reason': user.get('logout_reason')
+            'last_login': user.get('last_login'),
+            'last_logout': last_logout_str
         })
     
-    # Sort: online first, then idle, then offline
+    # Sort: online first, then idle, then offline, then by name
     status_order = {'online': 0, 'idle': 1, 'offline': 2}
     activity_list.sort(key=lambda x: (status_order.get(x['status'], 3), x['name']))
     
@@ -412,113 +405,24 @@ async def get_user_activity(admin: User = Depends(get_admin_user)):
             'offline': offline_count
         },
         'thresholds': {
-            'idle_minutes': IDLE_THRESHOLD_MINUTES,
-            'offline_minutes': OFFLINE_THRESHOLD_MINUTES,
-            'staff_auto_logout_minutes': STAFF_AUTO_LOGOUT_MINUTES
-        }
-    }
-
-@router.get("/users/activity/debug")
-async def debug_activity(admin: User = Depends(get_admin_user)):
-    """Debug endpoint to check for activity tracking issues"""
-    db = get_db()
-    from collections import Counter
-    import pytz
-    from datetime import datetime
-    
-    JAKARTA_TZ = pytz.timezone('Asia/Jakarta')
-    now = datetime.now(JAKARTA_TZ)
-    
-    users = await db.users.find({}, {'_id': 0, 'id': 1, 'name': 1, 'email': 1, 'last_activity': 1, 'role': 1}).to_list(1000)
-    
-    # Check for duplicate IDs
-    ids = [u.get('id') for u in users]
-    id_counts = Counter(ids)
-    duplicates = {k: v for k, v in id_counts.items() if v > 1}
-    
-    # Check for identical last_activity timestamps
-    activities = [u.get('last_activity') for u in users if u.get('last_activity')]
-    activity_counts = Counter(activities)
-    identical_activities = {k: v for k, v in activity_counts.items() if v > 1}
-    
-    # List users with their activity
-    user_activities = []
-    for u in users:
-        last_act = u.get('last_activity')
-        mins_ago = None
-        if last_act:
-            try:
-                la = datetime.fromisoformat(last_act.replace('Z', '+00:00'))
-                if la.tzinfo is None:
-                    la = JAKARTA_TZ.localize(la)
-                mins_ago = int((now - la).total_seconds() / 60)
-            except:
-                pass
-        user_activities.append({
-            'name': u.get('name'),
-            'email': u.get('email'),
-            'role': u.get('role'),
-            'last_activity': last_act,
-            'minutes_ago': mins_ago
-        })
-    
-    issues = []
-    if duplicates:
-        issues.append(f"CRITICAL: Found {len(duplicates)} duplicate user IDs!")
-    if identical_activities:
-        for timestamp, count in identical_activities.items():
-            if count > 2:  # More than 2 users with same timestamp is suspicious
-                issues.append(f"WARNING: {count} users have identical timestamp: {timestamp}")
-    
-    return {
-        'current_time': now.isoformat(),
-        'total_users': len(users),
-        'unique_ids': len(set(ids)),
-        'duplicate_ids': duplicates if duplicates else "None - OK",
-        'identical_timestamps': identical_activities if identical_activities else "None - OK",
-        'issues': issues if issues else ["No issues detected"],
-        'user_details': user_activities
-    }
-
-@router.post("/users/activity/reset-all")
-async def reset_all_activity(admin: User = Depends(get_master_admin_user)):
-    """Reset all users' activity status to offline (Master Admin only) - Use this to fix corrupted data"""
-    db = get_db()
-    
-    # Reset all users to offline with no last_activity
-    result = await db.users.update_many(
-        {},
-        {
-            '$set': {
-                'is_online': False
-            },
-            '$unset': {
-                'last_activity': '',
-                'logout_reason': ''
-            }
-        }
-    )
-    
-    return {
-        'status': 'ok',
-        'message': f'Reset activity for {result.modified_count} users',
-        'modified_count': result.modified_count
+            'online_minutes': ONLINE_THRESHOLD,
+            'idle_minutes': IDLE_THRESHOLD,
+            'staff_auto_logout_minutes': STAFF_AUTO_LOGOUT
+        },
+        'server_time': now.isoformat()
     }
 
 @router.post("/auth/reset-activity")
 async def reset_activity(admin: User = Depends(get_admin_user)):
-    """Reset all users' activity timestamps to fix corrupted data (Admin accessible)"""
+    """Reset all users' activity timestamps (Admin accessible) - Use to fix corrupted data"""
     db = get_db()
     
-    # Clear last_activity for all users - this forces fresh timestamps on next heartbeat
     result = await db.users.update_many(
         {},
         {
-            '$set': {
-                'is_online': False
-            },
             '$unset': {
                 'last_activity': '',
+                'last_logout': '',
                 'logout_reason': ''
             }
         }
@@ -526,48 +430,9 @@ async def reset_activity(admin: User = Depends(get_admin_user)):
     
     return {
         'status': 'ok',
-        'message': f'Reset activity timestamps for {result.modified_count} users. All users will show as offline until they send a new heartbeat.',
+        'message': f'Reset activity for {result.modified_count} users. All will show offline until they interact.',
         'modified_count': result.modified_count
     }
-
-@router.get("/auth/diagnostics/activity-sync")
-async def diagnostics_activity_sync(admin: User = Depends(get_admin_user)):
-    """Diagnostic endpoint to check if all users have the same last_activity timestamp (indicates sync bug)"""
-    db = get_db()
-    from collections import Counter
-    import pytz
-    from datetime import datetime
-    
-    JAKARTA_TZ = pytz.timezone('Asia/Jakarta')
-    now = datetime.now(JAKARTA_TZ)
-    
-    users = await db.users.find({}, {'_id': 0, 'id': 1, 'name': 1, 'email': 1, 'last_activity': 1, 'role': 1}).to_list(1000)
-    
-    # Check for identical timestamps (within same second)
-    timestamps = [u.get('last_activity', '')[:19] for u in users if u.get('last_activity')]  # Truncate to seconds
-    timestamp_counts = Counter(timestamps)
-    
-    # Find timestamps shared by more than 2 users (suspicious)
-    suspicious = {ts: count for ts, count in timestamp_counts.items() if count > 2}
-    
-    user_details = []
-    for u in users:
-        last_act = u.get('last_activity')
-        mins_ago = None
-        if last_act:
-            try:
-                la = datetime.fromisoformat(last_act.replace('Z', '+00:00'))
-                if la.tzinfo is None:
-                    la = JAKARTA_TZ.localize(la)
-                mins_ago = int((now - la).total_seconds() / 60)
-            except:
-                pass
-        user_details.append({
-            'name': u.get('name'),
-            'role': u.get('role'),
-            'last_activity': last_act,
-            'minutes_ago': mins_ago
-        })
     
     is_synced = len(suspicious) > 0 and any(count >= len(users) * 0.5 for count in suspicious.values())
     
