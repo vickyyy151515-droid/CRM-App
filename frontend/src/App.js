@@ -5,6 +5,8 @@ import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import StaffDashboard from './pages/StaffDashboard';
 import BatchRecordsView from './components/BatchRecordsView';
+import AttendanceScanner from './pages/AttendanceScanner';
+import AttendanceQRScreen from './components/AttendanceQRScreen';
 import { Toaster, toast } from 'sonner';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { LanguageProvider } from './contexts/LanguageContext';
