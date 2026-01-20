@@ -426,8 +426,47 @@ export default function AttendanceScanner() {
           </div>
         )}
 
-        {/* Instructions */}
+        {/* Manual Input Option - For when camera scanning doesn't work */}
         {isLoggedIn && deviceRegistered && !result && (
+          <div className="mt-4">
+            <button
+              onClick={() => setShowManualInput(!showManualInput)}
+              className="w-full py-2 text-slate-400 text-sm flex items-center justify-center gap-2"
+            >
+              <Keyboard size={16} />
+              {showManualInput ? 'Hide manual input' : 'Camera not working? Enter code manually'}
+            </button>
+            
+            {showManualInput && (
+              <div className="mt-2 bg-slate-800 rounded-xl p-4">
+                <p className="text-xs text-slate-400 mb-2">
+                  Ask admin to read the QR code text (starts with ATT-)
+                </p>
+                <input
+                  type="text"
+                  value={manualCode}
+                  onChange={(e) => setManualCode(e.target.value)}
+                  placeholder="ATT-..."
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm mb-2"
+                />
+                <button
+                  onClick={() => {
+                    if (manualCode.trim()) {
+                      handleQRDetected(manualCode.trim());
+                    }
+                  }}
+                  disabled={!manualCode.trim()}
+                  className="w-full py-2 bg-indigo-600 disabled:bg-slate-600 rounded-lg text-sm font-medium"
+                >
+                  Submit Code
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Instructions */}
+        {isLoggedIn && deviceRegistered && !result && !showManualInput && (
           <div className="bg-slate-800 rounded-xl p-4 mt-4">
             <p className="font-medium text-sm mb-2">Instructions:</p>
             <ol className="text-xs text-slate-400 space-y-1">
@@ -439,7 +478,14 @@ export default function AttendanceScanner() {
           </div>
         )}
 
-        <p className="text-center text-xs text-slate-600 mt-4">
+        {/* Debug Info */}
+        {debugInfo && (
+          <p className="text-center text-xs text-slate-600 mt-2">
+            Debug: {debugInfo}
+          </p>
+        )}
+
+        <p className="text-center text-xs text-slate-600 mt-2">
           Device: {deviceToken?.slice(-8)}
         </p>
       </div>
