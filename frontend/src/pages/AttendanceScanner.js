@@ -192,14 +192,11 @@ export default function AttendanceScanner() {
       return;
     }
     
-    // Clear the element content
-    element.innerHTML = '';
     addDebugLog(`Element found, dimensions: ${element.offsetWidth}x${element.offsetHeight}`);
 
     try {
       const html5QrCode = new Html5Qrcode("qr-reader-box", { 
-        verbose: true,
-        formatsToSupport: [ 0 ] // 0 = QR_CODE format
+        verbose: false
       });
       scannerRef.current = html5QrCode;
       addDebugLog('Html5Qrcode instance created');
