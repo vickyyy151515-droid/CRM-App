@@ -249,7 +249,7 @@ export default function UserActivity() {
                   <div className="flex items-center gap-2">
                     <Circle size={8} className={`fill-current ${getStatusColor(user.status)}`} />
                     <span className={`text-sm font-medium ${getStatusColor(user.status)}`}>
-                      {getStatusLabel(user.status, user.idle_minutes)}
+                      {getStatusLabel(user.status, user.minutes_since_activity)}
                     </span>
                   </div>
                 </div>
