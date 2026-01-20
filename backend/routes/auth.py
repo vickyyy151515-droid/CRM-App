@@ -370,7 +370,7 @@ async def get_user_activity(admin: User = Depends(get_admin_user)):
         last_logout_str = user.get('last_logout')
         user_role = user.get('role', 'staff')
         
-        status = 'offline'
+        user_status = 'offline'
         minutes_since_activity = None
         
         if last_activity_str:
@@ -390,7 +390,7 @@ async def get_user_activity(admin: User = Depends(get_admin_user)):
                             last_logout = JAKARTA_TZ.localize(last_logout)
                         if last_logout > last_activity:
                             explicitly_logged_out = True
-                    except:
+                    except Exception:
                         pass
                 
                 # For staff, consider them offline if past auto-logout threshold
