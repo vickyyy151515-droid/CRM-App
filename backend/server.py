@@ -67,6 +67,7 @@ from routes.websocket import router as websocket_router
 from routes.scheduled_reports import router as scheduled_reports_router, init_scheduler
 from routes.staff_notifications import router as staff_notifications_router
 from routes.inventory import router as inventory_router
+from routes.attendance import router as attendance_router
 
 # Initialize database connection for all route modules
 set_database(db)
