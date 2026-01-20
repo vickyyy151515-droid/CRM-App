@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { QrCode, RefreshCw, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
+import { QrCode, RefreshCw, CheckCircle, Clock, AlertTriangle, LogOut, ArrowLeft } from 'lucide-react';
 import QRCode from 'react-qr-code';
 
-export default function AttendanceQRScreen({ onComplete, userName }) {
+export default function AttendanceQRScreen({ onComplete, userName, onLogout }) {
   const [qrData, setQrData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState(60);
