@@ -184,9 +184,10 @@ export default function UserActivity() {
       {/* Activity Thresholds Info */}
       <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
         <p className="text-sm text-blue-700 dark:text-blue-400">
-          <strong>Status Thresholds:</strong> Users are marked as <span className="text-emerald-600 font-medium">Online</span> if active within {data?.thresholds?.idle_minutes || 5} minutes, 
-          <span className="text-amber-600 font-medium"> Idle</span> if inactive for {data?.thresholds?.idle_minutes || 5}-{data?.thresholds?.offline_minutes || 30} minutes, 
-          and <span className="text-slate-500 font-medium">Offline</span> after {data?.thresholds?.offline_minutes || 30} minutes.
+          <strong>Status Thresholds:</strong> Users are marked as <span className="text-emerald-600 font-medium">Online</span> if active within {data?.thresholds?.online_minutes || 5} minutes, 
+          <span className="text-amber-600 font-medium"> Idle</span> if inactive for {data?.thresholds?.online_minutes || 5}-{data?.thresholds?.idle_minutes || 30} minutes, 
+          and <span className="text-slate-500 font-medium">Offline</span> after {data?.thresholds?.idle_minutes || 30} minutes.
+          Staff accounts auto-logout after {data?.thresholds?.staff_auto_logout_minutes || 60} minutes of inactivity.
         </p>
       </div>
 
