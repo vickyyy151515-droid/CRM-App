@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, RefreshCw } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 export default function Login({ onLogin }) {
@@ -10,17 +10,25 @@ export default function Login({ onLogin }) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [serviceError, setServiceError] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setServiceError(false);
 
     try {
       const response = await api.post('/auth/login', { email, password });
       toast.success(t('common.success') + '!');
       onLogin(response.data.user, response.data.token);
     } catch (error) {
-      toast.error(error.response?.data?.detail || t('auth.invalidCredentials'));
+      // Handle service unavailable (503) - server restarting
+      if (error.response?.status === 503 || !error.response) {
+        setServiceError(true);
+        toast.error('Service temporarily unavailable. Please wait and try again.', { duration: 5000 });
+      } else {
+        toast.error(error.response?.data?.detail || t('auth.invalidCredentials'));
+      }
     } finally {
       setLoading(false);
     }
