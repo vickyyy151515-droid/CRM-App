@@ -175,7 +175,9 @@ export default function AttendanceScanner() {
     if (scannerRef.current) {
       try {
         await scannerRef.current.stop();
-      } catch (e) {}
+      } catch (e) {
+        // Ignore cleanup errors
+      }
       scannerRef.current = null;
     }
     
@@ -603,7 +605,7 @@ export default function AttendanceScanner() {
             <p className="font-medium text-sm mb-2">Instructions:</p>
             <ol className="text-xs text-slate-400 space-y-1">
               <li>1. Log in on office computer → QR shows</li>
-              <li>2. Tap "Start Camera" above</li>
+              <li>2. Tap &quot;Start Camera&quot; above</li>
               <li>3. Point phone at QR code</li>
               <li>4. Wait for success message</li>
             </ol>
