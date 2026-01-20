@@ -139,37 +139,54 @@ function App() {
     return () => clearInterval(inactivityInterval);
   }, [user, lastActivityTime, forceLogout, AUTO_LOGOUT_MS, WARNING_BEFORE_LOGOUT_MS]);
 
-  // Send heartbeat every 1 minute when user is logged in
+  // Send heartbeat every 2 minutes when user is logged in
+  // Also send on meaningful user interactions (click, keypress) but NOT mousemove
   useEffect(() => {
     if (user) {
       // Send initial heartbeat
       sendHeartbeat();
       
-      // Set up interval for periodic heartbeats (every 1 minute)
-      const heartbeatInterval = setInterval(sendHeartbeat, 60 * 1000); // 1 minute
+      // Set up interval for periodic heartbeats (every 2 minutes)
+      const heartbeatInterval = setInterval(sendHeartbeat, 2 * 60 * 1000); // 2 minutes
       
-      // Also send heartbeat on user activity (mouse move, key press, click, scroll)
+      // Track user activity on meaningful interactions only (not mousemove - too frequent)
       let activityTimeout;
       const handleActivity = () => {
         setLastActivityTime(Date.now()); // Update local activity time immediately
+        // Debounce heartbeat to avoid flooding server
         if (activityTimeout) clearTimeout(activityTimeout);
-        activityTimeout = setTimeout(sendHeartbeat, 500); // Debounce to 500ms
+        activityTimeout = setTimeout(sendHeartbeat, 2000); // 2 second debounce
       };
       
-      window.addEventListener('mousemove', handleActivity);
-      window.addEventListener('keypress', handleActivity);
+      // Only track clicks, keypresses, and scroll - NOT mousemove
       window.addEventListener('click', handleActivity);
+      window.addEventListener('keypress', handleActivity);
       window.addEventListener('scroll', handleActivity);
       window.addEventListener('touchstart', handleActivity);
+      
+      // Handle browser/tab close - log out the user
+      const handleBeforeUnload = () => {
+        // Use sendBeacon for reliable delivery even when page is closing
+        const token = localStorage.getItem('token');
+        if (token) {
+          const apiUrl = process.env.REACT_APP_BACKEND_URL || '';
+          navigator.sendBeacon(
+            `${apiUrl}/api/auth/logout-beacon`,
+            JSON.stringify({ token })
+          );
+        }
+      };
+      
+      window.addEventListener('beforeunload', handleBeforeUnload);
       
       return () => {
         clearInterval(heartbeatInterval);
         if (activityTimeout) clearTimeout(activityTimeout);
-        window.removeEventListener('mousemove', handleActivity);
-        window.removeEventListener('keypress', handleActivity);
         window.removeEventListener('click', handleActivity);
+        window.removeEventListener('keypress', handleActivity);
         window.removeEventListener('scroll', handleActivity);
         window.removeEventListener('touchstart', handleActivity);
+        window.removeEventListener('beforeunload', handleBeforeUnload);
       };
     }
   }, [user, sendHeartbeat]);
