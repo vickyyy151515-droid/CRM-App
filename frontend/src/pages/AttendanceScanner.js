@@ -439,20 +439,23 @@ export default function AttendanceScanner() {
 
             {/* Scanner Container */}
             <div className="bg-slate-800 rounded-xl overflow-hidden mb-4 relative">
-              {/* Scanner element - always present */}
+              {/* Scanner element - MUST always be in DOM with dimensions for html5-qrcode */}
               <div 
                 id="qr-reader-box" 
                 className="w-full"
                 style={{ 
-                  minHeight: scanning ? '300px' : '0px',
+                  minHeight: '300px',
                   background: '#000',
-                  display: scanning ? 'block' : 'none'
+                  position: scanning ? 'relative' : 'absolute',
+                  opacity: scanning ? 1 : 0,
+                  pointerEvents: scanning ? 'auto' : 'none',
+                  zIndex: scanning ? 1 : -1
                 }}
               />
               
-              {/* Idle state placeholder */}
+              {/* Idle state placeholder - shown OVER the scanner element when not scanning */}
               {!scanning && scannerStatus !== 'starting' && (
-                <div className="flex flex-col items-center justify-center p-8 min-h-[280px] bg-slate-800">
+                <div className="flex flex-col items-center justify-center p-8 min-h-[300px] bg-slate-800">
                   <Camera size={48} className="text-slate-500 mb-3" />
                   <p className="text-slate-400 text-sm text-center">
                     Tap button below to start camera
@@ -462,7 +465,7 @@ export default function AttendanceScanner() {
               
               {/* Starting indicator */}
               {scannerStatus === 'starting' && (
-                <div className="flex flex-col items-center justify-center p-8 min-h-[280px] bg-slate-800">
+                <div className="flex flex-col items-center justify-center p-8 min-h-[300px] bg-slate-800">
                   <RefreshCw size={48} className="text-indigo-400 mb-3 animate-spin" />
                   <p className="text-indigo-300 text-sm">Starting camera...</p>
                   <p className="text-slate-500 text-xs mt-2">Please allow camera access if prompted</p>
