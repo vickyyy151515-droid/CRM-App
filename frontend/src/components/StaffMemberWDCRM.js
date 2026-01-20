@@ -79,10 +79,18 @@ export default function StaffMemberWDCRM() {
   const columns = records.length > 0 ? Object.keys(records[0].row_data) : [];
   
   // Filter out sensitive columns for staff users (rekening/bank account info)
+  // EXCEPTION: 'nama_rekening' or 'nama rekening' is allowed because it's the customer's full name
   const HIDDEN_COLUMNS_FOR_STAFF = ['rekening', 'rek', 'bank', 'no_rekening', 'norek', 'account'];
-  const visibleColumns = columns.filter(col => 
-    !HIDDEN_COLUMNS_FOR_STAFF.some(hidden => col.toLowerCase().includes(hidden.toLowerCase()))
-  );
+  const ALLOWED_COLUMNS = ['nama_rekening', 'nama rekening']; // Customer full name - allowed
+  const visibleColumns = columns.filter(col => {
+    const colLower = col.toLowerCase();
+    // Allow if it's in the allowed list
+    if (ALLOWED_COLUMNS.some(allowed => colLower === allowed.toLowerCase())) {
+      return true;
+    }
+    // Otherwise filter out hidden columns
+    return !HIDDEN_COLUMNS_FOR_STAFF.some(hidden => colLower.includes(hidden.toLowerCase()));
+  });
 
   return (
     <div data-testid="staff-db-memberwd">
