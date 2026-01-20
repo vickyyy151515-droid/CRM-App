@@ -90,6 +90,17 @@ export default function Login({ onLogin }) {
               </div>
             </div>
 
+            {/* Service Error Banner */}
+            {serviceError && (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-3">
+                <RefreshCw size={18} className="text-amber-600 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-amber-800">Service temporarily unavailable</p>
+                  <p className="text-xs text-amber-600">The server is restarting. Please wait a moment and try again.</p>
+                </div>
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={loading}
