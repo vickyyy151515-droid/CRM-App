@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Camera, CheckCircle, XCircle, Smartphone, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Camera, CheckCircle, XCircle, Smartphone, AlertTriangle, RefreshCw, Keyboard } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 
 export default function AttendanceScanner() {
@@ -14,6 +14,9 @@ export default function AttendanceScanner() {
   const [user, setUser] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [scannerStatus, setScannerStatus] = useState('idle');
+  const [showManualInput, setShowManualInput] = useState(false);
+  const [manualCode, setManualCode] = useState('');
+  const [debugInfo, setDebugInfo] = useState('');
   const scannerRef = useRef(null);
   const hasScannedRef = useRef(false);
 
