@@ -281,13 +281,14 @@ export default function AttendanceScanner() {
         {/* Scanner Area */}
         {isLoggedIn && deviceRegistered && !result && (
           <div className="mb-6">
-            {/* QR Reader Container */}
+            {/* QR Reader Container - Always render but control visibility */}
             <div 
               id="qr-reader-element" 
               className="bg-black rounded-xl overflow-hidden"
               style={{ 
                 width: '100%',
-                minHeight: scanning ? '300px' : '0px'
+                minHeight: '300px',
+                display: scanning ? 'block' : 'none'
               }}
             />
             
