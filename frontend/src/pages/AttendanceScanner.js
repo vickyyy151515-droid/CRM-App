@@ -196,15 +196,20 @@ export default function AttendanceScanner() {
 
     try {
       const html5QrCode = new Html5Qrcode("qr-reader-box", { 
-        verbose: false
+        verbose: false,
+        // CRITICAL FIX: Disable native BarcodeDetector API
+        // Research shows this causes black screen on many iOS/Android devices
+        // See: https://github.com/mebjas/html5-qrcode/issues/984
+        useBarCodeDetectorIfSupported: false
       });
       scannerRef.current = html5QrCode;
-      addDebugLog('Html5Qrcode instance created');
+      addDebugLog('Html5Qrcode instance created (BarcodeDetector disabled for compatibility)');
 
       // Simpler config for better mobile compatibility
+      // Research: Lower FPS and smaller qrbox improve scanning on older devices
       const config = { 
         fps: 10,
-        qrbox: { width: 250, height: 250 },
+        qrbox: { width: 220, height: 220 },  // Slightly smaller for better fit
         aspectRatio: 1.0,
         disableFlip: false
       };
