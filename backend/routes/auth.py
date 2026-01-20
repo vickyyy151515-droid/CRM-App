@@ -58,7 +58,7 @@ async def login(credentials: UserLogin):
     
     try:
         user = await db.users.find_one({'email': credentials.email})
-    except Exception as e:
+    except Exception:
         # Database connection error
         raise HTTPException(
             status_code=503, 
@@ -406,7 +406,7 @@ async def get_user_activity(admin: User = Depends(get_admin_user)):
                 else:
                     status = 'offline'
                     
-            except Exception as e:
+            except Exception:
                 status = 'offline'
         
         # Count by status
