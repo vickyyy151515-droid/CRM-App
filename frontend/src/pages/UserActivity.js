@@ -79,10 +79,10 @@ export default function UserActivity() {
     }
   };
 
-  const getStatusLabel = (status, idleMinutes) => {
+  const getStatusLabel = (status, minutesSinceActivity) => {
     switch (status) {
       case 'online': return 'Online';
-      case 'idle': return `Idle (${idleMinutes}m)`;
+      case 'idle': return minutesSinceActivity ? `Idle (${minutesSinceActivity}m)` : 'Idle';
       case 'offline': return 'Offline';
       default: return 'Unknown';
     }
