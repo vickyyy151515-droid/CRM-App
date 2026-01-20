@@ -398,21 +398,21 @@ async def get_user_activity(admin: User = Depends(get_admin_user)):
                 
                 # Determine status (READ-ONLY calculation)
                 if explicitly_logged_out or staff_session_expired:
-                    status = 'offline'
+                    user_status = 'offline'
                 elif minutes_since_activity < ONLINE_THRESHOLD:
-                    status = 'online'
+                    user_status = 'online'
                 elif minutes_since_activity < IDLE_THRESHOLD:
-                    status = 'idle'
+                    user_status = 'idle'
                 else:
-                    status = 'offline'
+                    user_status = 'offline'
                     
             except Exception:
-                status = 'offline'
+                user_status = 'offline'
         
         # Count by status
-        if status == 'online':
+        if user_status == 'online':
             online_count += 1
-        elif status == 'idle':
+        elif user_status == 'idle':
             idle_count += 1
         else:
             offline_count += 1
@@ -422,7 +422,7 @@ async def get_user_activity(admin: User = Depends(get_admin_user)):
             'name': user['name'],
             'email': user['email'],
             'role': user_role,
-            'status': status,
+            'status': user_status,
             'minutes_since_activity': int(minutes_since_activity) if minutes_since_activity is not None else None,
             'last_activity': last_activity_str,
             'last_login': user.get('last_login'),
