@@ -35,6 +35,15 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
     
+    // Service unavailable (503) - server is restarting or database issue
+    if (error.response?.status === 503) {
+      console.warn('Service temporarily unavailable, will retry...');
+      toast.error('Service temporarily unavailable. Please wait a moment and try again.', {
+        duration: 5000,
+        id: 'service-unavailable' // Prevent duplicate toasts
+      });
+    }
+    
     // Network error (no response from server)
     if (!error.response) {
       console.error('Network error:', error.message);
