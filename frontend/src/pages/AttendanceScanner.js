@@ -248,15 +248,24 @@ export default function AttendanceScanner() {
       const onScanSuccess = (decodedText, decodedResult) => {
         setScanCount(prev => prev + 1);
         addDebugLog(`SCAN SUCCESS: ${decodedText.substring(0, 20)}...`);
+        // Show immediate visual feedback
+        toast.success('QR Code Found!', { duration: 1000 });
         handleQRDetected(decodedText, decodedResult);
       };
       
-      // Error callback - log first few then sample
+      // Error callback - shows scanning activity
       let errorCount = 0;
+      let lastStatusTime = Date.now();
       const onScanError = (errorMessage) => {
         errorCount++;
-        if (errorCount <= 3 || errorCount % 50 === 0) {
+        // Log first few errors for debugging
+        if (errorCount <= 3) {
           addDebugLog(`Scan attempt ${errorCount}: ${errorMessage.substring(0, 50)}`);
+        }
+        // Every 100 attempts (roughly every 10 seconds at 10fps), show activity
+        if (errorCount % 100 === 0) {
+          const elapsed = Math.round((Date.now() - lastStatusTime) / 1000);
+          addDebugLog(`Still scanning... ${errorCount} frames processed in ${elapsed}s`);
         }
       };
 
