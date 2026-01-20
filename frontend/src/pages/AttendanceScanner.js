@@ -438,24 +438,23 @@ export default function AttendanceScanner() {
             </div>
 
             {/* Scanner Container */}
-            <div className="bg-slate-800 rounded-xl overflow-hidden mb-4 relative">
-              {/* Scanner element - MUST always be in DOM with dimensions for html5-qrcode */}
+            <div className="bg-slate-800 rounded-xl overflow-hidden mb-4 relative" style={{ minHeight: '300px' }}>
+              {/* Scanner element - ALWAYS visible with fixed dimensions */}
               <div 
                 id="qr-reader-box" 
-                className="w-full"
                 style={{ 
+                  width: '100%', 
                   minHeight: '300px',
-                  background: '#000',
-                  position: scanning ? 'relative' : 'absolute',
-                  opacity: scanning ? 1 : 0,
-                  pointerEvents: scanning ? 'auto' : 'none',
-                  zIndex: scanning ? 1 : -1
+                  background: '#000'
                 }}
               />
               
-              {/* Idle state placeholder - shown OVER the scanner element when not scanning */}
+              {/* Overlay when not scanning - covers the scanner element */}
               {!scanning && scannerStatus !== 'starting' && (
-                <div className="flex flex-col items-center justify-center p-8 min-h-[300px] bg-slate-800">
+                <div 
+                  className="absolute inset-0 flex flex-col items-center justify-center bg-slate-800"
+                  style={{ zIndex: 10 }}
+                >
                   <Camera size={48} className="text-slate-500 mb-3" />
                   <p className="text-slate-400 text-sm text-center">
                     Tap button below to start camera
@@ -463,9 +462,12 @@ export default function AttendanceScanner() {
                 </div>
               )}
               
-              {/* Starting indicator */}
+              {/* Starting indicator overlay */}
               {scannerStatus === 'starting' && (
-                <div className="flex flex-col items-center justify-center p-8 min-h-[300px] bg-slate-800">
+                <div 
+                  className="absolute inset-0 flex flex-col items-center justify-center bg-slate-800"
+                  style={{ zIndex: 10 }}
+                >
                   <RefreshCw size={48} className="text-indigo-400 mb-3 animate-spin" />
                   <p className="text-indigo-300 text-sm">Starting camera...</p>
                   <p className="text-slate-500 text-xs mt-2">Please allow camera access if prompted</p>
