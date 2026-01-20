@@ -1,8 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
 import { Camera, CheckCircle, XCircle, Smartphone, AlertTriangle, RefreshCw } from 'lucide-react';
-import { Html5Qrcode } from 'html5-qrcode';
 
 export default function AttendanceScanner() {
   const [scanning, setScanning] = useState(false);
@@ -13,14 +12,16 @@ export default function AttendanceScanner() {
   const [checkingDevice, setCheckingDevice] = useState(true);
   const [user, setUser] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const scannerRef = useRef(null);
-  const html5QrCodeRef = useRef(null);
+  const [cameraError, setCameraError] = useState(null);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const streamRef = useRef(null);
+  const scanIntervalRef = useRef(null);
 
   // Generate or retrieve device token
   useEffect(() => {
     let token = localStorage.getItem('attendance_device_token');
     if (!token) {
-      // Generate unique device token
       token = `DEV-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       localStorage.setItem('attendance_device_token', token);
     }
@@ -50,48 +51,93 @@ export default function AttendanceScanner() {
     checkAuth();
   }, []);
 
-  const startScanner = async () => {
-    setScanning(true);
+  // Start camera
+  const startCamera = useCallback(async () => {
+    setCameraError(null);
     setError(null);
-    setResult(null);
-
+    
     try {
-      const html5QrCode = new Html5Qrcode("qr-reader");
-      html5QrCodeRef.current = html5QrCode;
-
-      await html5QrCode.start(
-        { facingMode: "environment" },
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 }
-        },
-        async (decodedText) => {
-          // QR code scanned successfully
-          await html5QrCode.stop();
-          setScanning(false);
-          await handleScan(decodedText);
-        },
-        (errorMessage) => {
-          // Ignore scan errors (normal during scanning)
+      const constraints = {
+        video: {
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
         }
-      );
+      };
+      
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      streamRef.current = stream;
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+        setScanning(true);
+        
+        // Start scanning for QR codes
+        startQRScanning();
+      }
     } catch (err) {
-      setError('Failed to start camera. Please ensure camera permissions are granted.');
+      console.error('Camera error:', err);
+      setCameraError(err.message || 'Failed to access camera');
       setScanning(false);
     }
-  };
+  }, []);
 
-  const stopScanner = async () => {
-    if (html5QrCodeRef.current) {
-      try {
-        await html5QrCodeRef.current.stop();
-      } catch (err) {
-        // Ignore
-      }
+  // Stop camera
+  const stopCamera = useCallback(() => {
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current);
+      scanIntervalRef.current = null;
     }
+    
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    
     setScanning(false);
-  };
+  }, []);
 
+  // Scan for QR codes using canvas
+  const startQRScanning = useCallback(() => {
+    // Dynamically import jsQR
+    import('jsqr').then(({ default: jsQR }) => {
+      scanIntervalRef.current = setInterval(() => {
+        if (!videoRef.current || !canvasRef.current) return;
+        
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        
+        if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
+        
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: 'dontInvert'
+        });
+        
+        if (code && code.data) {
+          // Found a QR code
+          console.log('QR Code found:', code.data);
+          stopCamera();
+          handleScan(code.data);
+        }
+      }, 100); // Scan every 100ms
+    }).catch(err => {
+      console.error('Failed to load jsQR:', err);
+      setCameraError('Failed to load QR scanner');
+    });
+  }, [stopCamera]);
+
+  // Handle scanned QR code
   const handleScan = async (qrCode) => {
     if (!qrCode.startsWith('ATT-')) {
       setError('Invalid QR code. Please scan the attendance QR code.');
@@ -147,7 +193,15 @@ export default function AttendanceScanner() {
   const resetAndScanAgain = () => {
     setResult(null);
     setError(null);
+    setCameraError(null);
   };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, [stopCamera]);
 
   if (checkingDevice) {
     return (
@@ -161,13 +215,28 @@ export default function AttendanceScanner() {
     <div className="min-h-screen bg-slate-900 text-white p-4">
       <div className="max-w-md mx-auto">
         {/* Header */}
-        <div className="text-center mb-8 pt-8">
-          <div className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Smartphone size={32} />
+        <div className="text-center mb-6 pt-4">
+          <div className="w-14 h-14 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3">
+            <Smartphone size={28} />
           </div>
-          <h1 className="text-2xl font-bold">Attendance Scanner</h1>
-          <p className="text-slate-400 mt-1">Scan the QR code on your computer</p>
+          <h1 className="text-xl font-bold">Attendance Scanner</h1>
+          <p className="text-slate-400 text-sm mt-1">Scan the QR code on your computer</p>
         </div>
+
+        {/* Login Prompt */}
+        {!isLoggedIn && (
+          <div className="bg-slate-800 rounded-xl p-6 text-center mb-6">
+            <p className="text-slate-400 mb-4">
+              Please log in to register your device and scan attendance.
+            </p>
+            <a
+              href="/"
+              className="inline-block px-6 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg font-medium transition-colors"
+            >
+              Go to Login
+            </a>
+          </div>
+        )}
 
         {/* Device Registration Status */}
         {isLoggedIn && !deviceRegistered && (
@@ -177,7 +246,7 @@ export default function AttendanceScanner() {
               <div>
                 <p className="font-medium text-amber-200">Device Not Registered</p>
                 <p className="text-sm text-amber-300 mt-1">
-                  This phone is not registered to your account. Register it to use for attendance.
+                  Register this phone to use for attendance.
                 </p>
                 <button
                   onClick={registerDevice}
@@ -191,7 +260,7 @@ export default function AttendanceScanner() {
         )}
 
         {isLoggedIn && deviceRegistered && (
-          <div className="bg-emerald-900/50 border border-emerald-600 rounded-lg p-4 mb-6">
+          <div className="bg-emerald-900/50 border border-emerald-600 rounded-lg p-3 mb-6">
             <div className="flex items-center gap-3">
               <CheckCircle className="text-emerald-500" size={20} />
               <div>
@@ -203,44 +272,68 @@ export default function AttendanceScanner() {
         )}
 
         {/* Scanner Area */}
-        {!result && (
+        {isLoggedIn && deviceRegistered && !result && (
           <div className="bg-slate-800 rounded-xl overflow-hidden mb-6">
-            <div 
-              id="qr-reader" 
-              ref={scannerRef}
-              className={`${scanning ? 'block' : 'hidden'}`}
-              style={{ width: '100%' }}
-            />
+            {/* Video Preview */}
+            <div className="relative aspect-square bg-black">
+              <video 
+                ref={videoRef}
+                className={`w-full h-full object-cover ${scanning ? 'block' : 'hidden'}`}
+                playsInline
+                muted
+              />
+              <canvas ref={canvasRef} className="hidden" />
+              
+              {/* Scan overlay */}
+              {scanning && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="w-64 h-64 border-2 border-indigo-500 rounded-lg relative">
+                    <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-indigo-500 rounded-tl-lg"></div>
+                    <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-indigo-500 rounded-tr-lg"></div>
+                    <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-indigo-500 rounded-bl-lg"></div>
+                    <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-indigo-500 rounded-br-lg"></div>
+                  </div>
+                </div>
+              )}
+              
+              {!scanning && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <Camera size={48} className="text-slate-500 mb-4" />
+                  <p className="text-slate-400 text-center px-4 mb-4">
+                    Tap to start camera and scan QR code
+                  </p>
+                </div>
+              )}
+            </div>
             
-            {!scanning && (
-              <div className="p-8 text-center">
-                <Camera size={48} className="text-slate-500 mx-auto mb-4" />
-                <p className="text-slate-400 mb-4">
-                  {deviceRegistered 
-                    ? 'Tap the button below to start scanning'
-                    : 'Register your device first, then scan the QR code'}
-                </p>
-                <button
-                  onClick={startScanner}
-                  disabled={!deviceRegistered}
-                  className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-600 disabled:cursor-not-allowed rounded-lg font-medium transition-colors"
-                >
-                  Start Scanner
-                </button>
+            {/* Camera Error */}
+            {cameraError && (
+              <div className="p-4 bg-red-900/50 text-red-300 text-sm">
+                <p className="font-medium">Camera Error:</p>
+                <p>{cameraError}</p>
+                <p className="mt-2 text-xs">Make sure you've granted camera permission.</p>
               </div>
             )}
-
-            {scanning && (
-              <div className="p-4 text-center">
-                <p className="text-slate-400 mb-2">Point camera at QR code</p>
+            
+            {/* Control Button */}
+            <div className="p-4 text-center">
+              {!scanning ? (
                 <button
-                  onClick={stopScanner}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium transition-colors"
+                  onClick={startCamera}
+                  className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg font-medium transition-colors w-full"
                 >
-                  Stop Scanner
+                  <Camera className="inline mr-2" size={20} />
+                  Start Camera
                 </button>
-              </div>
-            )}
+              ) : (
+                <button
+                  onClick={stopCamera}
+                  className="px-6 py-3 bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors w-full"
+                >
+                  Stop Camera
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -303,34 +396,20 @@ export default function AttendanceScanner() {
           </div>
         )}
 
-        {/* Login Prompt */}
-        {!isLoggedIn && (
-          <div className="bg-slate-800 rounded-xl p-6 text-center">
-            <p className="text-slate-400 mb-4">
-              Please log in on this device to register it for attendance scanning.
-            </p>
-            <a
-              href="/"
-              className="inline-block px-6 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg font-medium transition-colors"
-            >
-              Go to Login
-            </a>
-          </div>
-        )}
-
         {/* Instructions */}
-        <div className="bg-slate-800 rounded-xl p-4 mt-6">
+        <div className="bg-slate-800 rounded-xl p-4">
           <h3 className="font-semibold mb-3">Instructions</h3>
           <ol className="text-sm text-slate-400 space-y-2">
             <li>1. Log in on your computer at the office</li>
             <li>2. A QR code will appear on screen</li>
-            <li>3. Open this scanner on your registered phone</li>
-            <li>4. Scan the QR code to check in</li>
+            <li>3. Tap "Start Camera" above</li>
+            <li>4. Point your camera at the QR code</li>
+            <li>5. Wait for confirmation</li>
           </ol>
         </div>
 
         {/* Device Info */}
-        <div className="mt-6 text-center text-xs text-slate-500">
+        <div className="mt-4 text-center text-xs text-slate-500">
           <p>Device ID: {deviceToken?.slice(-8)}</p>
         </div>
       </div>
