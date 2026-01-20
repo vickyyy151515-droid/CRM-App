@@ -180,6 +180,32 @@ All staff-facing components now fully translated to casual Indonesian.
 - **Admin**: admin@crm.com / admin123
 - **Staff**: staff@crm.com / staff123
 
+## Attendance System (NEW - Jan 20, 2026)
+Device-registered QR code attendance system for staff check-in.
+
+### Flow:
+1. Staff logs in on office computer → QR code displayed (expires in 1 minute)
+2. Staff scans QR with registered phone → Attendance recorded
+3. Admin can view daily attendance, history, and manage device registrations
+
+### Features:
+- **QR Code**: Unique per staff, expires in 1 minute, auto-regenerates
+- **Device Registration**: One phone per staff account
+- **Late Detection**: Shift starts 11:00 AM, 15-minute grace period
+- **Admin Dashboard**: Today's attendance, history with filters, Excel export
+- **Device Management**: Admin can reset staff device registrations
+
+### API Endpoints:
+- `GET /api/attendance/check-today` - Check if staff checked in today
+- `POST /api/attendance/generate-qr` - Generate QR code for staff
+- `POST /api/attendance/scan` - Verify QR scan from phone
+- `POST /api/attendance/register-device` - Register phone to staff
+- `GET /api/attendance/admin/today` - Today's attendance summary
+- `GET /api/attendance/admin/records` - Historical records
+- `GET /api/attendance/admin/devices` - List registered devices
+- `DELETE /api/attendance/admin/device/{staff_id}` - Reset device registration
+- `GET /api/attendance/admin/export` - Export to Excel
+
 ## Known Issues
 - WebSocket connection fails in preview environment (infrastructure limitation)
 
