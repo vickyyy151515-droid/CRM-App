@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
 import { Camera, CheckCircle, XCircle, Smartphone, AlertTriangle, RefreshCw } from 'lucide-react';
@@ -13,8 +13,9 @@ export default function AttendanceScanner() {
   const [checkingDevice, setCheckingDevice] = useState(true);
   const [user, setUser] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [scannerStatus, setScannerStatus] = useState('idle'); // idle, starting, scanning, processing
+  const [scannerStatus, setScannerStatus] = useState('idle');
   const scannerRef = useRef(null);
+  const hasScannedRef = useRef(false);
 
   // Generate or retrieve device token
   useEffect(() => {
@@ -26,7 +27,7 @@ export default function AttendanceScanner() {
     setDeviceToken(token);
   }, []);
 
-  // Check if user is logged in and device is registered
+  // Check auth status
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem('token');
@@ -44,114 +45,53 @@ export default function AttendanceScanner() {
       }
       setCheckingDevice(false);
     };
-    
     checkAuth();
   }, []);
 
-  // Cleanup scanner on unmount
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (scannerRef.current) {
-        scannerRef.current.stop().catch(() => {});
-      }
+      stopScanner();
     };
   }, []);
 
-  const startScanner = async () => {
-    setError(null);
-    setScannerStatus('starting');
-    
-    try {
-      const html5QrCode = new Html5Qrcode("qr-reader-element");
-      scannerRef.current = html5QrCode;
-
-      const qrCodeSuccessCallback = async (decodedText) => {
-        console.log('QR Code detected:', decodedText);
-        setScannerStatus('processing');
-        
-        // Stop scanner immediately after detection
-        try {
-          await html5QrCode.stop();
-          scannerRef.current = null;
-        } catch (e) {
-          console.log('Scanner already stopped');
-        }
-        
-        setScanning(false);
-        await handleScan(decodedText);
-      };
-
-      const config = { 
-        fps: 10, 
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0
-      };
-
-      // Try back camera first, fall back to any camera
-      try {
-        await html5QrCode.start(
-          { facingMode: "environment" },
-          config,
-          qrCodeSuccessCallback,
-          (errorMessage) => {
-            // Ignore scanning errors - these happen constantly while scanning
-          }
-        );
-      } catch (err) {
-        console.log('Back camera failed, trying any camera:', err);
-        // Try any available camera
-        const devices = await Html5Qrcode.getCameras();
-        if (devices && devices.length > 0) {
-          await html5QrCode.start(
-            devices[0].id,
-            config,
-            qrCodeSuccessCallback,
-            (errorMessage) => {}
-          );
-        } else {
-          throw new Error('No cameras found');
-        }
-      }
-
-      setScanning(true);
-      setScannerStatus('scanning');
-      toast.success('Camera started! Point at QR code.');
-      
-    } catch (err) {
-      console.error('Scanner error:', err);
-      setError(`Camera error: ${err.message}. Please ensure camera permission is granted and try again.`);
-      setScannerStatus('idle');
-      setScanning(false);
-    }
-  };
-
-  const stopScanner = async () => {
+  const stopScanner = useCallback(async () => {
     if (scannerRef.current) {
       try {
         await scannerRef.current.stop();
-        scannerRef.current = null;
       } catch (e) {
-        console.log('Error stopping scanner:', e);
+        // Ignore
       }
+      scannerRef.current = null;
     }
     setScanning(false);
     setScannerStatus('idle');
-  };
+  }, []);
 
-  const handleScan = async (qrCode) => {
-    console.log('Processing QR code:', qrCode);
+  const handleQRDetected = useCallback(async (decodedText) => {
+    // Prevent multiple scans
+    if (hasScannedRef.current) return;
+    hasScannedRef.current = true;
     
-    if (!qrCode.startsWith('ATT-')) {
-      setError('Invalid QR code format. Please scan the attendance QR code from your computer.');
+    console.log('QR Code detected:', decodedText);
+    setScannerStatus('processing');
+    
+    // Stop scanner
+    await stopScanner();
+    
+    // Validate QR format
+    if (!decodedText.startsWith('ATT-')) {
+      setError('Invalid QR code. Please scan the attendance QR from your computer.');
       setScannerStatus('idle');
+      hasScannedRef.current = false;
       return;
     }
 
     try {
-      toast.loading('Verifying attendance...');
+      toast.loading('Recording attendance...');
       
       const response = await api.post('/attendance/scan', {
-        qr_code: qrCode,
+        qr_code: decodedText,
         device_token: deviceToken
       });
 
@@ -166,47 +106,129 @@ export default function AttendanceScanner() {
       });
       
       toast.success('Check-in successful!');
-      setScannerStatus('idle');
       
     } catch (error) {
       toast.dismiss();
-      const errorMsg = error.response?.data?.detail || 'Failed to process QR code';
+      const errorMsg = error.response?.data?.detail || 'Failed to check in';
       setError(errorMsg);
-      setResult({
-        success: false,
-        message: errorMsg
-      });
+      setResult({ success: false, message: errorMsg });
       toast.error(errorMsg);
+    }
+    
+    setScannerStatus('idle');
+  }, [deviceToken, stopScanner]);
+
+  const startScanner = async () => {
+    setError(null);
+    setScannerStatus('starting');
+    hasScannedRef.current = false;
+    
+    // Wait for element to be ready
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    const element = document.getElementById('qr-reader-box');
+    if (!element) {
+      setError('Scanner element not found. Please refresh the page.');
+      setScannerStatus('idle');
+      return;
+    }
+
+    try {
+      const html5QrCode = new Html5Qrcode("qr-reader-box");
+      scannerRef.current = html5QrCode;
+
+      const config = { 
+        fps: 10, 
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0,
+        disableFlip: false
+      };
+
+      // Get available cameras
+      let cameraId = null;
+      try {
+        const cameras = await Html5Qrcode.getCameras();
+        console.log('Available cameras:', cameras);
+        
+        if (cameras && cameras.length > 0) {
+          // Prefer back camera
+          const backCamera = cameras.find(c => 
+            c.label.toLowerCase().includes('back') || 
+            c.label.toLowerCase().includes('rear') ||
+            c.label.toLowerCase().includes('environment')
+          );
+          cameraId = backCamera ? backCamera.id : cameras[cameras.length - 1].id;
+        }
+      } catch (e) {
+        console.log('Could not enumerate cameras:', e);
+      }
+
+      // Start with camera
+      if (cameraId) {
+        await html5QrCode.start(
+          cameraId,
+          config,
+          handleQRDetected,
+          () => {} // Ignore scan errors
+        );
+      } else {
+        // Fallback to facingMode
+        await html5QrCode.start(
+          { facingMode: "environment" },
+          config,
+          handleQRDetected,
+          () => {}
+        );
+      }
+
+      setScanning(true);
+      setScannerStatus('scanning');
+      toast.success('Camera ready! Point at QR code.');
+      
+    } catch (err) {
+      console.error('Scanner error:', err);
+      let errorMsg = 'Could not start camera.';
+      
+      if (err.message?.includes('NotAllowedError') || err.message?.includes('Permission')) {
+        errorMsg = 'Camera permission denied. Please allow camera access and try again.';
+      } else if (err.message?.includes('NotFoundError')) {
+        errorMsg = 'No camera found on this device.';
+      } else if (err.message?.includes('NotReadableError')) {
+        errorMsg = 'Camera is in use by another app. Please close other apps using the camera.';
+      }
+      
+      setError(errorMsg);
       setScannerStatus('idle');
     }
   };
 
   const registerDevice = async () => {
     if (!isLoggedIn) {
-      toast.error('Please log in first to register this device');
+      toast.error('Please log in first');
       return;
     }
 
     try {
       const deviceName = /iPhone|iPad|iPod/.test(navigator.userAgent) ? 'iPhone' : 
-                         /Android/.test(navigator.userAgent) ? 'Android Phone' : 'Mobile Device';
+                         /Android/.test(navigator.userAgent) ? 'Android' : 'Mobile';
       
-      const response = await api.post('/attendance/register-device', {
+      await api.post('/attendance/register-device', {
         device_token: deviceToken,
         device_name: deviceName
       });
       
       setDeviceRegistered(true);
-      toast.success(response.data.message);
+      toast.success('Device registered successfully!');
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Failed to register device');
+      toast.error(error.response?.data?.detail || 'Registration failed');
     }
   };
 
-  const resetAndScanAgain = () => {
+  const resetScanner = () => {
     setResult(null);
     setError(null);
     setScannerStatus('idle');
+    hasScannedRef.current = false;
   };
 
   if (checkingDevice) {
@@ -221,42 +243,34 @@ export default function AttendanceScanner() {
     <div className="min-h-screen bg-slate-900 text-white p-4">
       <div className="max-w-md mx-auto">
         {/* Header */}
-        <div className="text-center mb-6 pt-4">
-          <div className="w-14 h-14 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3">
-            <Smartphone size={28} />
+        <div className="text-center mb-4 pt-2">
+          <div className="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-2">
+            <Smartphone size={24} />
           </div>
-          <h1 className="text-xl font-bold">Attendance Scanner</h1>
-          <p className="text-slate-400 text-sm mt-1">Scan QR code from office computer</p>
+          <h1 className="text-lg font-bold">Attendance Scanner</h1>
         </div>
 
-        {/* Login Prompt */}
+        {/* Not Logged In */}
         {!isLoggedIn && (
-          <div className="bg-slate-800 rounded-xl p-6 text-center mb-6">
-            <p className="text-slate-400 mb-4">
-              Please log in to register your device and scan attendance.
-            </p>
-            <a
-              href="/"
-              className="inline-block px-6 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg font-medium transition-colors"
-            >
+          <div className="bg-slate-800 rounded-xl p-6 text-center">
+            <p className="text-slate-400 mb-4">Please log in first</p>
+            <a href="/" className="inline-block px-6 py-3 bg-indigo-600 rounded-lg font-medium">
               Go to Login
             </a>
           </div>
         )}
 
-        {/* Device Registration */}
+        {/* Device Not Registered */}
         {isLoggedIn && !deviceRegistered && (
-          <div className="bg-amber-900/50 border border-amber-600 rounded-lg p-4 mb-6">
+          <div className="bg-amber-900/50 border border-amber-500 rounded-xl p-4 mb-4">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="text-amber-500 flex-shrink-0 mt-0.5" size={20} />
+              <AlertTriangle className="text-amber-400 mt-0.5" size={20} />
               <div>
                 <p className="font-medium text-amber-200">Device Not Registered</p>
-                <p className="text-sm text-amber-300 mt-1">
-                  Register this phone to use for attendance.
-                </p>
+                <p className="text-sm text-amber-300 mt-1">Register this phone first.</p>
                 <button
                   onClick={registerDevice}
-                  className="mt-3 px-4 py-2 bg-amber-600 hover:bg-amber-700 rounded-lg text-sm font-medium transition-colors"
+                  className="mt-3 px-4 py-2 bg-amber-600 hover:bg-amber-700 rounded-lg text-sm font-medium"
                 >
                   Register This Device
                 </button>
@@ -266,123 +280,119 @@ export default function AttendanceScanner() {
         )}
 
         {/* Device Registered */}
-        {isLoggedIn && deviceRegistered && (
-          <div className="bg-emerald-900/50 border border-emerald-600 rounded-lg p-3 mb-6">
-            <div className="flex items-center gap-3">
-              <CheckCircle className="text-emerald-500" size={20} />
-              <div>
-                <p className="font-medium text-emerald-200">Device Registered ✓</p>
-                <p className="text-sm text-emerald-300">Logged in as {user?.name}</p>
+        {isLoggedIn && deviceRegistered && !result && (
+          <>
+            <div className="bg-emerald-900/50 border border-emerald-600 rounded-lg p-3 mb-4">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="text-emerald-400" size={18} />
+                <span className="text-emerald-200 text-sm">Device registered • {user?.name}</span>
               </div>
             </div>
-          </div>
-        )}
 
-        {/* Scanner Area */}
-        {isLoggedIn && deviceRegistered && !result && (
-          <div className="mb-6">
-            {/* QR Reader Container - Always render but control visibility */}
-            <div 
-              id="qr-reader-element" 
-              className="bg-black rounded-xl overflow-hidden"
-              style={{ 
-                width: '100%',
-                minHeight: '300px',
-                display: scanning ? 'block' : 'none'
-              }}
-            />
-            
-            {/* Placeholder when not scanning */}
-            {!scanning && (
-              <div className="bg-slate-800 rounded-xl p-8 text-center">
-                <Camera size={48} className="text-slate-500 mx-auto mb-4" />
-                <p className="text-slate-400 mb-2">
-                  {scannerStatus === 'starting' ? 'Starting camera...' : 'Ready to scan'}
-                </p>
-                <p className="text-slate-500 text-sm mb-4">
-                  Tap the button below to open camera
-                </p>
-              </div>
-            )}
+            {/* Scanner Container - ALWAYS VISIBLE when device registered */}
+            <div className="bg-slate-800 rounded-xl overflow-hidden mb-4">
+              {/* This div must always exist for html5-qrcode */}
+              <div 
+                id="qr-reader-box" 
+                style={{ 
+                  width: '100%', 
+                  minHeight: '280px',
+                  background: '#000'
+                }}
+              />
+              
+              {/* Overlay when not scanning */}
+              {!scanning && scannerStatus !== 'starting' && (
+                <div 
+                  className="flex flex-col items-center justify-center p-8"
+                  style={{ marginTop: '-280px', minHeight: '280px', background: 'rgba(30,41,59,0.95)' }}
+                >
+                  <Camera size={40} className="text-slate-500 mb-3" />
+                  <p className="text-slate-400 text-sm text-center">
+                    Tap button below to start camera
+                  </p>
+                </div>
+              )}
+              
+              {/* Starting indicator */}
+              {scannerStatus === 'starting' && (
+                <div 
+                  className="flex flex-col items-center justify-center p-8"
+                  style={{ marginTop: '-280px', minHeight: '280px', background: 'rgba(30,41,59,0.95)' }}
+                >
+                  <RefreshCw size={40} className="text-indigo-400 mb-3 animate-spin" />
+                  <p className="text-indigo-300 text-sm">Starting camera...</p>
+                </div>
+              )}
+            </div>
 
-            {/* Scanner Status */}
+            {/* Scanning indicator */}
             {scanning && (
-              <div className="mt-2 p-3 bg-indigo-900/50 rounded-lg text-center">
+              <div className="bg-indigo-900/50 border border-indigo-500 rounded-lg p-3 mb-4">
                 <div className="flex items-center justify-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-indigo-300 text-sm">
-                    {scannerStatus === 'processing' ? 'Processing QR code...' : 'Scanning... Point camera at QR code'}
+                  <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                  <span className="text-indigo-200 text-sm">
+                    {scannerStatus === 'processing' ? 'Processing...' : 'Point camera at QR code'}
                   </span>
                 </div>
               </div>
             )}
 
             {/* Control Button */}
-            <div className="mt-4">
-              {!scanning ? (
-                <button
-                  onClick={startScanner}
-                  disabled={scannerStatus === 'starting'}
-                  className="w-full px-6 py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-800 rounded-xl font-medium transition-colors flex items-center justify-center gap-2"
-                >
-                  {scannerStatus === 'starting' ? (
-                    <>
-                      <RefreshCw className="animate-spin" size={20} />
-                      Starting Camera...
-                    </>
-                  ) : (
-                    <>
-                      <Camera size={20} />
-                      Start Camera
-                    </>
-                  )}
-                </button>
-              ) : (
-                <button
-                  onClick={stopScanner}
-                  className="w-full px-6 py-4 bg-red-600 hover:bg-red-700 rounded-xl font-medium transition-colors"
-                >
-                  Stop Camera
-                </button>
-              )}
-            </div>
-          </div>
+            {!scanning ? (
+              <button
+                onClick={startScanner}
+                disabled={scannerStatus === 'starting'}
+                className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-800 rounded-xl font-medium flex items-center justify-center gap-2"
+              >
+                {scannerStatus === 'starting' ? (
+                  <><RefreshCw className="animate-spin" size={20} /> Starting...</>
+                ) : (
+                  <><Camera size={20} /> Start Camera</>
+                )}
+              </button>
+            ) : (
+              <button
+                onClick={stopScanner}
+                className="w-full py-4 bg-red-600 hover:bg-red-700 rounded-xl font-medium"
+              >
+                Stop Camera
+              </button>
+            )}
+          </>
         )}
 
-        {/* Error Display */}
+        {/* Error */}
         {error && !result && (
-          <div className="bg-red-900/50 border border-red-600 rounded-lg p-4 mb-6">
+          <div className="bg-red-900/50 border border-red-500 rounded-xl p-4 mt-4">
             <div className="flex items-start gap-3">
-              <XCircle className="text-red-500 flex-shrink-0 mt-0.5" size={20} />
+              <XCircle className="text-red-400 mt-0.5" size={20} />
               <div className="flex-1">
-                <p className="font-medium text-red-200">Error</p>
-                <p className="text-sm text-red-300 mt-1">{error}</p>
+                <p className="text-red-200 text-sm">{error}</p>
+                <button
+                  onClick={resetScanner}
+                  className="mt-2 px-4 py-2 bg-red-600 rounded-lg text-sm"
+                >
+                  Try Again
+                </button>
               </div>
             </div>
-            <button
-              onClick={resetAndScanAgain}
-              className="mt-3 w-full px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium transition-colors"
-            >
-              Try Again
-            </button>
           </div>
         )}
 
-        {/* Success/Failure Result */}
+        {/* Result */}
         {result && (
-          <div className={`rounded-xl p-6 mb-6 ${
-            result.success 
-              ? 'bg-emerald-900/50 border border-emerald-600' 
-              : 'bg-red-900/50 border border-red-600'
+          <div className={`rounded-xl p-6 mt-4 ${
+            result.success ? 'bg-emerald-900/50 border border-emerald-500' : 'bg-red-900/50 border border-red-500'
           }`}>
             <div className="text-center">
               {result.success ? (
                 <>
-                  <CheckCircle size={64} className="text-emerald-500 mx-auto mb-4" />
-                  <h2 className="text-2xl font-bold text-emerald-200 mb-2">Check-in Successful!</h2>
-                  <p className="text-emerald-300">{result.staffName}</p>
-                  <div className="mt-4 p-3 bg-emerald-800/50 rounded-lg">
-                    <p className="text-sm text-emerald-400">Time: {result.time}</p>
+                  <CheckCircle size={56} className="text-emerald-400 mx-auto mb-3" />
+                  <h2 className="text-xl font-bold text-emerald-200">Check-in Successful!</h2>
+                  <p className="text-emerald-300 mt-1">{result.staffName}</p>
+                  <div className="mt-3 p-3 bg-emerald-800/50 rounded-lg">
+                    <p className="text-emerald-300">Time: {result.time}</p>
                     <p className={`text-lg font-bold mt-1 ${
                       result.status === 'on_time' ? 'text-emerald-300' : 'text-amber-400'
                     }`}>
@@ -392,49 +402,37 @@ export default function AttendanceScanner() {
                 </>
               ) : (
                 <>
-                  <XCircle size={64} className="text-red-500 mx-auto mb-4" />
-                  <h2 className="text-2xl font-bold text-red-200 mb-2">Check-in Failed</h2>
-                  <p className="text-red-300">{result.message}</p>
+                  <XCircle size={56} className="text-red-400 mx-auto mb-3" />
+                  <h2 className="text-xl font-bold text-red-200">Failed</h2>
+                  <p className="text-red-300 mt-1">{result.message}</p>
                 </>
               )}
-              
               <button
-                onClick={resetAndScanAgain}
-                className="mt-6 w-full px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg font-medium transition-colors"
+                onClick={resetScanner}
+                className="mt-4 w-full py-3 bg-slate-700 hover:bg-slate-600 rounded-lg"
               >
-                Scan Another QR
+                Scan Again
               </button>
             </div>
           </div>
         )}
 
         {/* Instructions */}
-        <div className="bg-slate-800 rounded-xl p-4">
-          <h3 className="font-semibold mb-3">How to check in:</h3>
-          <ol className="text-sm text-slate-400 space-y-2">
-            <li className="flex gap-2">
-              <span className="text-indigo-400 font-bold">1.</span>
-              Log in on office computer - QR code appears
-            </li>
-            <li className="flex gap-2">
-              <span className="text-indigo-400 font-bold">2.</span>
-              Tap "Start Camera" button above
-            </li>
-            <li className="flex gap-2">
-              <span className="text-indigo-400 font-bold">3.</span>
-              Point phone camera at the QR code
-            </li>
-            <li className="flex gap-2">
-              <span className="text-indigo-400 font-bold">4.</span>
-              Wait for "Check-in Successful" message
-            </li>
-          </ol>
-        </div>
+        {isLoggedIn && deviceRegistered && !result && (
+          <div className="bg-slate-800 rounded-xl p-4 mt-4">
+            <p className="font-medium text-sm mb-2">Instructions:</p>
+            <ol className="text-xs text-slate-400 space-y-1">
+              <li>1. Log in on office computer → QR shows</li>
+              <li>2. Tap "Start Camera" above</li>
+              <li>3. Point phone at QR code</li>
+              <li>4. Wait for success message</li>
+            </ol>
+          </div>
+        )}
 
-        {/* Device Info */}
-        <div className="mt-4 text-center text-xs text-slate-500">
-          <p>Device ID: {deviceToken?.slice(-8)}</p>
-        </div>
+        <p className="text-center text-xs text-slate-600 mt-4">
+          Device: {deviceToken?.slice(-8)}
+        </p>
       </div>
     </div>
   );
