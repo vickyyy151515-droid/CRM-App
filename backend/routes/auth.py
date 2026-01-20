@@ -373,7 +373,39 @@ async def get_user_activity(admin: User = Depends(get_admin_user)):
         user_status = 'offline'
         minutes_since_activity = None
         
-        if last_activity_str:
+        # First check: If user has a recent logout (within 24 hours), prioritize logout time
+        # This fixes the bug where heartbeats might update last_activity after logout
+        has_recent_logout = False
+        if last_logout_str:
+            try:
+                last_logout = datetime.fromisoformat(last_logout_str.replace('Z', '+00:00'))
+                if last_logout.tzinfo is None:
+                    last_logout = JAKARTA_TZ.localize(last_logout)
+                
+                minutes_since_logout = (now - last_logout).total_seconds() / 60
+                
+                # If logout was within the last 24 hours, consider them offline
+                if minutes_since_logout < 24 * 60:  # 24 hours
+                    has_recent_logout = True
+                    # If activity is before or at logout time, definitely offline
+                    if last_activity_str:
+                        try:
+                            last_activity = datetime.fromisoformat(last_activity_str.replace('Z', '+00:00'))
+                            if last_activity.tzinfo is None:
+                                last_activity = JAKARTA_TZ.localize(last_activity)
+                            # Bug fix: If activity is within 1 minute of logout, treat as logged out
+                            # This handles race conditions where heartbeat fires near logout
+                            if abs((last_activity - last_logout).total_seconds()) < 60:
+                                user_status = 'offline'
+                                minutes_since_activity = int(minutes_since_logout)
+                                has_recent_logout = True
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+        
+        # If no recent logout, calculate status based on last_activity
+        if last_activity_str and not has_recent_logout:
             try:
                 last_activity = datetime.fromisoformat(last_activity_str.replace('Z', '+00:00'))
                 if last_activity.tzinfo is None:
@@ -408,6 +440,9 @@ async def get_user_activity(admin: User = Depends(get_admin_user)):
                     
             except Exception:
                 user_status = 'offline'
+        elif has_recent_logout:
+            # Already handled above - user is offline due to recent logout
+            pass
         
         # Count by status
         if user_status == 'online':
