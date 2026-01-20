@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Camera, CheckCircle, XCircle, Smartphone, AlertTriangle, RefreshCw, Keyboard } from 'lucide-react';
-import { Html5Qrcode } from 'html5-qrcode';
+import { Camera, CheckCircle, XCircle, Smartphone, AlertTriangle, RefreshCw, Keyboard, Bug } from 'lucide-react';
+import { Html5Qrcode, Html5QrcodeScanner } from 'html5-qrcode';
 
 export default function AttendanceScanner() {
   const [scanning, setScanning] = useState(false);
@@ -17,8 +17,19 @@ export default function AttendanceScanner() {
   const [showManualInput, setShowManualInput] = useState(false);
   const [manualCode, setManualCode] = useState('');
   const [debugInfo, setDebugInfo] = useState('');
+  const [debugLogs, setDebugLogs] = useState([]);
+  const [showDebug, setShowDebug] = useState(false);
+  const [scanCount, setScanCount] = useState(0);
   const scannerRef = useRef(null);
   const hasScannedRef = useRef(false);
+  const mountedRef = useRef(true);
+
+  // Add debug log helper
+  const addDebugLog = useCallback((message) => {
+    const timestamp = new Date().toLocaleTimeString();
+    console.log(`[Scanner ${timestamp}]`, message);
+    setDebugLogs(prev => [...prev.slice(-20), `${timestamp}: ${message}`]);
+  }, []);
 
   // Generate or retrieve device token
   useEffect(() => {
@@ -28,7 +39,8 @@ export default function AttendanceScanner() {
       localStorage.setItem('attendance_device_token', token);
     }
     setDeviceToken(token);
-  }, []);
+    addDebugLog(`Device token: ${token.slice(-8)}`);
+  }, [addDebugLog]);
 
   // Check auth status
   useEffect(() => {
@@ -39,51 +51,79 @@ export default function AttendanceScanner() {
           const response = await api.get('/auth/me');
           setUser(response.data);
           setIsLoggedIn(true);
+          addDebugLog(`Logged in as: ${response.data.name}`);
           
           const deviceResponse = await api.get('/attendance/device-status');
           setDeviceRegistered(deviceResponse.data.has_device);
+          addDebugLog(`Device registered: ${deviceResponse.data.has_device}`);
         } catch (error) {
           setIsLoggedIn(false);
+          addDebugLog(`Auth check failed: ${error.message}`);
         }
       }
       setCheckingDevice(false);
     };
     checkAuth();
-  }, []);
+  }, [addDebugLog]);
 
   // Cleanup on unmount
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
-      stopScanner();
+      mountedRef.current = false;
+      if (scannerRef.current) {
+        try {
+          scannerRef.current.stop().catch(() => {});
+        } catch (e) {
+          // Ignore cleanup errors
+        }
+      }
     };
   }, []);
 
   const stopScanner = useCallback(async () => {
+    addDebugLog('Stopping scanner...');
     if (scannerRef.current) {
       try {
-        await scannerRef.current.stop();
+        const state = scannerRef.current.getState();
+        addDebugLog(`Scanner state before stop: ${state}`);
+        if (state === 2) { // SCANNING state
+          await scannerRef.current.stop();
+          addDebugLog('Scanner stopped successfully');
+        }
       } catch (e) {
-        // Ignore
+        addDebugLog(`Stop error (ignoring): ${e.message}`);
       }
       scannerRef.current = null;
     }
-    setScanning(false);
-    setScannerStatus('idle');
-  }, []);
+    if (mountedRef.current) {
+      setScanning(false);
+      setScannerStatus('idle');
+    }
+  }, [addDebugLog]);
 
-  const handleQRDetected = useCallback(async (decodedText) => {
+  const handleQRDetected = useCallback(async (decodedText, decodedResult) => {
     // Prevent multiple scans
-    if (hasScannedRef.current) return;
-    hasScannedRef.current = true;
+    if (hasScannedRef.current) {
+      addDebugLog('Ignoring duplicate scan');
+      return;
+    }
     
-    console.log('QR Code detected:', decodedText);
+    addDebugLog(`*** QR DETECTED: ${decodedText.substring(0, 30)}...`);
+    addDebugLog(`Format: ${decodedResult?.result?.format?.formatName || 'unknown'}`);
+    
+    // IMPORTANT: Show immediate feedback
+    toast.success(`QR Detected! Processing...`, { duration: 2000 });
+    
+    hasScannedRef.current = true;
     setScannerStatus('processing');
     
-    // Stop scanner
+    // Stop scanner first
     await stopScanner();
     
     // Validate QR format
     if (!decodedText.startsWith('ATT-')) {
+      addDebugLog('Invalid QR format - not ATT- prefix');
       setError('Invalid QR code. Please scan the attendance QR from your computer.');
       setScannerStatus('idle');
       hasScannedRef.current = false;
@@ -91,14 +131,16 @@ export default function AttendanceScanner() {
     }
 
     try {
-      toast.loading('Recording attendance...');
+      addDebugLog('Sending attendance scan API request...');
+      toast.loading('Recording attendance...', { id: 'attendance-loading' });
       
       const response = await api.post('/attendance/scan', {
         qr_code: decodedText,
         device_token: deviceToken
       });
 
-      toast.dismiss();
+      toast.dismiss('attendance-loading');
+      addDebugLog(`API response: ${JSON.stringify(response.data)}`);
       
       setResult({
         success: true,
@@ -111,99 +153,141 @@ export default function AttendanceScanner() {
       toast.success('Check-in successful!');
       
     } catch (error) {
-      toast.dismiss();
+      toast.dismiss('attendance-loading');
       const errorMsg = error.response?.data?.detail || 'Failed to check in';
+      addDebugLog(`API error: ${errorMsg}`);
       setError(errorMsg);
       setResult({ success: false, message: errorMsg });
       toast.error(errorMsg);
     }
     
     setScannerStatus('idle');
-  }, [deviceToken, stopScanner]);
+  }, [deviceToken, stopScanner, addDebugLog]);
 
   const startScanner = async () => {
     setError(null);
     setScannerStatus('starting');
     hasScannedRef.current = false;
+    setScanCount(0);
+    addDebugLog('Starting scanner...');
     
-    // Wait for element to be ready
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Cleanup any existing scanner
+    if (scannerRef.current) {
+      try {
+        await scannerRef.current.stop();
+      } catch (e) {}
+      scannerRef.current = null;
+    }
+    
+    // Wait for DOM to be ready
+    await new Promise(resolve => setTimeout(resolve, 200));
     
     const element = document.getElementById('qr-reader-box');
     if (!element) {
+      addDebugLog('ERROR: Scanner element not found');
       setError('Scanner element not found. Please refresh the page.');
       setScannerStatus('idle');
       return;
     }
+    
+    // Clear the element content
+    element.innerHTML = '';
+    addDebugLog(`Element found, dimensions: ${element.offsetWidth}x${element.offsetHeight}`);
 
     try {
-      const html5QrCode = new Html5Qrcode("qr-reader-box");
+      const html5QrCode = new Html5Qrcode("qr-reader-box", { 
+        verbose: true,
+        formatsToSupport: [ 0 ] // 0 = QR_CODE format
+      });
       scannerRef.current = html5QrCode;
+      addDebugLog('Html5Qrcode instance created');
 
+      // Simpler config for better mobile compatibility
       const config = { 
-        fps: 15,  // Increased FPS for better detection
+        fps: 10,
         qrbox: { width: 250, height: 250 },
         aspectRatio: 1.0,
-        disableFlip: false,
-        experimentalFeatures: {
-          useBarCodeDetectorIfSupported: true  // Use native barcode API if available
-        }
+        disableFlip: false
       };
 
       // Get available cameras
-      let cameraId = null;
+      let cameraConfig;
       try {
+        addDebugLog('Enumerating cameras...');
         const cameras = await Html5Qrcode.getCameras();
-        console.log('Available cameras:', cameras);
+        addDebugLog(`Found ${cameras.length} cameras: ${cameras.map(c => c.label || c.id).join(', ')}`);
         
         if (cameras && cameras.length > 0) {
           // Prefer back camera
-          const backCamera = cameras.find(c => 
-            c.label.toLowerCase().includes('back') || 
-            c.label.toLowerCase().includes('rear') ||
-            c.label.toLowerCase().includes('environment')
-          );
-          cameraId = backCamera ? backCamera.id : cameras[cameras.length - 1].id;
+          const backCamera = cameras.find(c => {
+            const label = (c.label || '').toLowerCase();
+            return label.includes('back') || label.includes('rear') || label.includes('environment');
+          });
+          
+          if (backCamera) {
+            cameraConfig = backCamera.id;
+            addDebugLog(`Using back camera: ${backCamera.label || backCamera.id}`);
+          } else {
+            // Use last camera (usually back camera on phones)
+            cameraConfig = cameras[cameras.length - 1].id;
+            addDebugLog(`Using camera: ${cameras[cameras.length - 1].label || cameraConfig}`);
+          }
+        } else {
+          // No cameras enumerated, use facingMode
+          cameraConfig = { facingMode: "environment" };
+          addDebugLog('No cameras enumerated, using facingMode: environment');
         }
       } catch (e) {
-        console.log('Could not enumerate cameras:', e);
+        addDebugLog(`Camera enumeration failed: ${e.message}, using facingMode`);
+        cameraConfig = { facingMode: "environment" };
       }
 
-      // Start with camera
-      if (cameraId) {
-        setDebugInfo(`Using camera: ${cameraId}`);
-        await html5QrCode.start(
-          cameraId,
-          config,
-          handleQRDetected,
-          () => {} // Ignore scan errors
-        );
-      } else {
-        setDebugInfo('Using facingMode: environment');
-        // Fallback to facingMode
-        await html5QrCode.start(
-          { facingMode: "environment" },
-          config,
-          handleQRDetected,
-          () => {}
-        );
-      }
+      // Success callback wrapper with extra logging
+      const onScanSuccess = (decodedText, decodedResult) => {
+        setScanCount(prev => prev + 1);
+        addDebugLog(`SCAN SUCCESS: ${decodedText.substring(0, 20)}...`);
+        handleQRDetected(decodedText, decodedResult);
+      };
+      
+      // Error callback - log first few then sample
+      let errorCount = 0;
+      const onScanError = (errorMessage) => {
+        errorCount++;
+        if (errorCount <= 3 || errorCount % 50 === 0) {
+          addDebugLog(`Scan attempt ${errorCount}: ${errorMessage.substring(0, 50)}`);
+        }
+      };
 
+      addDebugLog(`Starting with config: ${JSON.stringify(config)}`);
+      addDebugLog(`Camera config: ${typeof cameraConfig === 'string' ? cameraConfig : JSON.stringify(cameraConfig)}`);
+      
+      await html5QrCode.start(
+        cameraConfig,
+        config,
+        onScanSuccess,
+        onScanError
+      );
+
+      addDebugLog('Camera started successfully!');
       setScanning(true);
       setScannerStatus('scanning');
-      setDebugInfo(prev => prev + ' | Camera started OK');
+      setDebugInfo('Camera active - point at QR code');
       toast.success('Camera ready! Point at QR code.');
       
     } catch (err) {
+      addDebugLog(`Scanner error: ${err.name} - ${err.message}`);
       console.error('Scanner error:', err);
+      
       let errorMsg = 'Could not start camera.';
       
-      if (err.message?.includes('NotAllowedError') || err.message?.includes('Permission')) {
-        errorMsg = 'Camera permission denied. Please allow camera access and try again.';
-      } else if (err.message?.includes('NotFoundError')) {
+      if (err.name === 'NotAllowedError' || err.message?.includes('Permission')) {
+        errorMsg = 'Camera permission denied. Please allow camera access in your browser settings and try again.';
+      } else if (err.name === 'NotFoundError') {
         errorMsg = 'No camera found on this device.';
-      } else if (err.message?.includes('NotReadableError')) {
+      } else if (err.name === 'NotReadableError' || err.name === 'AbortError') {
         errorMsg = 'Camera is in use by another app. Please close other apps using the camera.';
+      } else if (err.name === 'OverconstrainedError') {
+        errorMsg = 'Camera does not support required settings. Try a different browser.';
       }
       
       setError(errorMsg);
