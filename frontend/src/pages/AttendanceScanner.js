@@ -181,8 +181,11 @@ export default function AttendanceScanner() {
       scannerRef.current = null;
     }
     
-    // Wait for DOM to be ready
-    await new Promise(resolve => setTimeout(resolve, 200));
+    // RESEARCH FIX: Add 1-second delay before camera initialization
+    // This allows proper setup on slower devices
+    // See: https://github.com/mebjas/html5-qrcode/issues/984
+    addDebugLog('Waiting for camera initialization...');
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
     const element = document.getElementById('qr-reader-box');
     if (!element) {
