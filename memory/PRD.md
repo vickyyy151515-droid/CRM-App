@@ -39,6 +39,14 @@ Build a sophisticated CRM (Customer Relationship Management) application for man
 - Leave tracking ("Off Day/Sakit")
 - Short Break tracking ("Izin")
 - Leave balance management
+- **QR Code Attendance System** (NEW - Jan 21, 2026)
+  - Staff login on computer shows QR code (60-second expiry, auto-refresh)
+  - Staff scans QR with registered phone using native camera capture
+  - 1 Staff = 1 Phone (prevents cheating)
+  - 1 QR Code = 1 Use (prevents sharing)
+  - Shift hours: 11:00 AM - 23:00 PM
+  - Lateness tracking in minutes
+  - Admin panel for viewing attendance and managing devices
 
 ### 6. UI/UX
 - Customizable dark-mode-ready sidebar
