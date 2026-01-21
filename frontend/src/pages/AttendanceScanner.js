@@ -378,9 +378,12 @@ export default function AttendanceScanner() {
       
       addDebugLog(`Registering device: ${deviceName}`);
       
+      const scannerToken = localStorage.getItem('scanner_token');
       await api.post('/attendance/register-device', {
         device_token: deviceToken,
         device_name: deviceName
+      }, {
+        headers: scannerToken ? { Authorization: `Bearer ${scannerToken}` } : {}
       });
       
       setDeviceRegistered(true);
