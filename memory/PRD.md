@@ -188,31 +188,33 @@ All staff-facing components now fully translated to casual Indonesian.
 - **Admin**: admin@crm.com / admin123
 - **Staff**: staff@crm.com / staff123
 
-## Attendance System (NEW - Jan 20, 2026)
-Device-registered QR code attendance system for staff check-in.
+## Attendance System - TOTP Based (Jan 22, 2026)
+Google Authenticator-style TOTP attendance system for staff check-in. Replaced previous QR code scanning approach due to Android device inconsistencies.
 
 ### Flow:
-1. Staff logs in on office computer → QR code displayed (expires in 1 minute)
-2. Staff scans QR with registered phone → Attendance recorded
-3. Admin can view daily attendance, history, and manage device registrations
+1. **First-time Setup**: Staff logs in → Shown TOTP setup screen with QR code
+2. **Scan QR**: Staff scans QR with Google Authenticator app (one-time setup)
+3. **Verify Setup**: Staff enters 6-digit code to verify authenticator is working
+4. **Daily Check-in**: On first login each day, staff enters 6-digit TOTP code
+5. Admin can view attendance, history, and reset TOTP for staff who lose phones
 
 ### Features:
-- **QR Code**: Unique per staff, expires in 1 minute, auto-regenerates
-- **Device Registration**: One phone per staff account
-- **Late Detection**: Shift starts 11:00 AM, 15-minute grace period
-- **Admin Dashboard**: Today's attendance, history with filters, Excel export
-- **Device Management**: Admin can reset staff device registrations
+- **TOTP**: 30-second code rotation (standard Google Authenticator)
+- **Device Binding**: One TOTP secret per staff account
+- **Late Detection**: Shift starts 11:00 AM Jakarta time
+- **Admin Dashboard**: Today's attendance, history with filters
+- **TOTP Reset**: Admin can reset staff authenticator if phone lost
 
 ### API Endpoints:
+- `GET /api/attendance/totp/status` - Check if staff has TOTP setup
+- `POST /api/attendance/totp/setup` - Generate QR code and secret for setup
+- `POST /api/attendance/totp/verify-setup` - Verify TOTP during initial setup
+- `POST /api/attendance/checkin` - Check in with valid TOTP code
 - `GET /api/attendance/check-today` - Check if staff checked in today
-- `POST /api/attendance/generate-qr` - Generate QR code for staff
-- `POST /api/attendance/scan` - Verify QR scan from phone
-- `POST /api/attendance/register-device` - Register phone to staff
 - `GET /api/attendance/admin/today` - Today's attendance summary
-- `GET /api/attendance/admin/records` - Historical records
-- `GET /api/attendance/admin/devices` - List registered devices
-- `DELETE /api/attendance/admin/device/{staff_id}` - Reset device registration
-- `GET /api/attendance/admin/export` - Export to Excel
+- `GET /api/attendance/admin/records` - Historical records with date filters
+- `GET /api/attendance/admin/totp-status` - All staff TOTP setup status
+- `DELETE /api/attendance/admin/totp/{staff_id}` - Reset staff TOTP
 
 ## Known Issues
 - WebSocket connection fails in preview environment (infrastructure limitation)
