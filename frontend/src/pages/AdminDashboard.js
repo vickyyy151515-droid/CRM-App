@@ -242,6 +242,8 @@ export default function AdminDashboard({ user, onLogout }) {
         return <ScheduledReports />;
       case 'user-activity':
         return <UserActivity />;
+      case 'attendance':
+        return <AttendanceAdmin />;
       case 'inventory':
         return <OfficeInventory />;
       default:
@@ -259,6 +261,7 @@ export default function AdminDashboard({ user, onLogout }) {
     { id: 'export', label: t('nav.exportCenter'), icon: Download, badge: 0 },
     { id: 'scheduled-reports', label: t('nav.scheduledReports') || 'Scheduled Reports', icon: Send, badge: 0 },
     { id: 'user-activity', label: t('nav.userActivity') || 'User Activity', icon: Activity, badge: 0 },
+    { id: 'attendance', label: t('nav.attendance') || 'Attendance', icon: ScanLine, badge: 0 },
     { id: 'report', label: t('nav.reportCRM'), icon: FileText, badge: 0 },
     { id: 'bonus', label: t('nav.bonusCalculation'), icon: Calculator, badge: 0 },
     { id: 'leave', label: t('nav.leaveRequests'), icon: CalendarOff, badge: 0 },
