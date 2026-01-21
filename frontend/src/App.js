@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
 import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
@@ -17,15 +17,12 @@ const API = `${BACKEND_URL}/api`;
 
 export const api = axios.create({
   baseURL: API,
-  timeout: 30000, // 30 second timeout
+  timeout: 30000,
 });
 
 api.interceptors.request.use((config) => {
-  // For scanner page, use scanner_token if available
   const scannerToken = localStorage.getItem('scanner_token');
   const mainToken = localStorage.getItem('token');
-  
-  // Prefer scanner_token for attendance endpoints, otherwise use main token
   const token = (config.url?.includes('attendance') && scannerToken) ? scannerToken : mainToken;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -33,50 +30,30 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor for global error handling
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Don't show toast for canceled requests or auth errors (handled elsewhere)
     if (axios.isCancel(error)) {
       return Promise.reject(error);
     }
-    
-    // Service unavailable (503) - server is restarting or database issue
     if (error.response?.status === 503) {
-      console.warn('Service temporarily unavailable, will retry...');
-      toast.error('Service temporarily unavailable. Please wait a moment and try again.', {
+      toast.error('Service temporarily unavailable. Please wait and try again.', {
         duration: 5000,
-        id: 'service-unavailable' // Prevent duplicate toasts
+        id: 'service-unavailable'
       });
     }
-    
-    // Network error (no response from server)
-    if (!error.response) {
-      console.error('Network error:', error.message);
-      // Don't show toast here - let individual components handle retry logic
-    }
-    
     return Promise.reject(error);
   }
 );
 
-// Separate component for the main app content (excludes scanner)
-function MainApp() {
+// Main app content component - handles auth and normal routing
+function MainAppContent() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const location = useLocation();
-
-  // Skip auth check entirely if on scanner page
-  const isOnScannerPage = location.pathname === '/attendance-scanner';
+  const [attendanceChecked, setAttendanceChecked] = useState(false);
+  const [checkingAttendance, setCheckingAttendance] = useState(false);
 
   useEffect(() => {
-    // Don't load user state for scanner page - it handles its own auth
-    if (isOnScannerPage) {
-      setLoading(false);
-      return;
-    }
-
     const token = localStorage.getItem('token');
     if (token) {
       api.get('/auth/me')
@@ -91,12 +68,11 @@ function MainApp() {
     } else {
       setLoading(false);
     }
-  }, [isOnScannerPage]);
+  }, []);
 
   const handleLogin = (userData, token) => {
     localStorage.setItem('token', token);
     setUser(userData);
-    // Reset attendance check for new login
     setAttendanceChecked(false);
   };
 
@@ -111,17 +87,8 @@ function MainApp() {
     setAttendanceChecked(false);
   };
 
-  // State for attendance check (staff only)
-  const [attendanceChecked, setAttendanceChecked] = useState(false);
-  const [checkingAttendance, setCheckingAttendance] = useState(false);
-
-  // Check attendance status for staff on login
   useEffect(() => {
-    // Skip for scanner page
-    if (isOnScannerPage) return;
-    
     const checkAttendance = async () => {
-      // Only check for staff users
       if (!user || user.role !== 'staff' || attendanceChecked) return;
       
       setCheckingAttendance(true);
@@ -131,7 +98,6 @@ function MainApp() {
           setAttendanceChecked(true);
         }
       } catch (error) {
-        // If endpoint fails, allow access anyway
         setAttendanceChecked(true);
       } finally {
         setCheckingAttendance(false);
@@ -139,22 +105,16 @@ function MainApp() {
     };
     
     checkAttendance();
-  }, [user, attendanceChecked, isOnScannerPage]);
-
-  // Scanner page - render directly without any main app logic
-  if (isOnScannerPage) {
-    return <AttendanceScanner />;
-  }
+  }, [user, attendanceChecked]);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-50">
-        <div className="text-slate-600">Loading...</div>
+      <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-900">
+        <div className="text-slate-600 dark:text-slate-300">Loading...</div>
       </div>
     );
   }
 
-  // Show attendance QR screen for staff who haven't checked in
   const shouldShowAttendanceQR = user && user.role === 'staff' && !attendanceChecked && !checkingAttendance;
 
   return (
@@ -199,7 +159,13 @@ function App() {
         <div className="App min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors">
           <Toaster position="top-right" richColors />
           <BrowserRouter>
-            <MainApp />
+            <Routes>
+              {/* CRITICAL: Scanner route MUST be first and completely standalone */}
+              <Route path="/attendance-scanner" element={<AttendanceScanner />} />
+              
+              {/* All other routes go through MainAppContent */}
+              <Route path="/*" element={<MainAppContent />} />
+            </Routes>
           </BrowserRouter>
         </div>
       </LanguageProvider>
