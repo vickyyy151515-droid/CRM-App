@@ -234,6 +234,16 @@ Device-registered QR code attendance system for staff check-in.
 - `react-native-camera-kit` - Lightweight, simple integration
 - `expo-camera` - For Expo-managed apps
 
+### QR Scanner Redirect Bug Fix - COMPLETED (Jan 21, 2026)
+**Issue**: On Android, staff logging into `/attendance-scanner` were redirected to show QR code instead of camera scanner
+**Root Cause**: After login, the main App.js flow would redirect staff to `AttendanceQRScreen` (QR generator) if they hadn't checked in today
+**Fix**: Made `/attendance-scanner` completely independent with its own login form and separate `scanner_token` in localStorage
+**Changes**:
+- Added inline login form to `AttendanceScanner.js`
+- Uses `scanner_token` instead of main app's `token` to avoid auth interference
+- Staff can now log in directly on the scanner page and stay on it
+**Testing**: Verified login shows "Start Camera" button, not QR code
+
 ### NDP/RDP "Tambahan" Logic Unification - COMPLETED (Jan 21, 2026)
 **Issue**: NDP/RDP counts were inconsistent between different reporting pages
 **Root Cause**: Not all modules applied the "tambahan" rule correctly
