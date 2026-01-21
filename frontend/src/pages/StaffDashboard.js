@@ -91,6 +91,9 @@ export default function StaffDashboard({ user, onLogout }) {
   // Auto-logout check - runs every minute
   useEffect(() => {
     const checkInactivity = () => {
+      // Skip if not initialized yet
+      if (!lastActivityRef.current) return;
+      
       const timeSinceActivity = Date.now() - lastActivityRef.current;
       
       // Auto-logout if inactive for 60 minutes
