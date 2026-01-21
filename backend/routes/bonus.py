@@ -165,9 +165,18 @@ async def get_bonus_calculation_data(
     
     all_time_records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
     
+    def is_tambahan_record(record):
+        """Check if record has 'tambahan' in keterangan field"""
+        keterangan = record.get('keterangan', '') or ''
+        return 'tambahan' in keterangan.lower()
+    
     # Build customer first deposit map (using normalized customer_id)
+    # IMPORTANT: Exclude records with "tambahan" from first_date calculation
     customer_first_date = {}
     for record in sorted(all_time_records, key=lambda x: x['record_date']):
+        # Skip "tambahan" records when determining first deposit date
+        if is_tambahan_record(record):
+            continue
         # Use normalized customer_id for comparison
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
         pid = record['product_id']
@@ -204,13 +213,19 @@ async def get_bonus_calculation_data(
         key = (cid_normalized, record['product_id'])
         first_date = customer_first_date.get(key)
         
-        if first_date == date:
+        # "tambahan" records are always RDP
+        if is_tambahan_record(record):
+            # RDP - only count unique customers per day
+            if cid_normalized not in staff_data[sid]['daily_rdp_customers'][date]:
+                staff_data[sid]['daily_rdp_customers'][date].add(cid_normalized)
+                staff_data[sid]['daily_stats'][date]['rdp'] += 1
+        elif first_date == date:
             # NDP - only count unique customers per day
             if cid_normalized not in staff_data[sid]['daily_ndp_customers'][date]:
                 staff_data[sid]['daily_ndp_customers'][date].add(cid_normalized)
                 staff_data[sid]['daily_stats'][date]['ndp'] += 1
         else:
-            # RDP - only count unique customers per day (NEW LOGIC)
+            # RDP - only count unique customers per day
             if cid_normalized not in staff_data[sid]['daily_rdp_customers'][date]:
                 staff_data[sid]['daily_rdp_customers'][date].add(cid_normalized)
                 staff_data[sid]['daily_stats'][date]['rdp'] += 1
