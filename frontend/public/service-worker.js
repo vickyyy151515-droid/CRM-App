@@ -1,5 +1,6 @@
 // CRM Hub Service Worker
-const CACHE_NAME = 'crm-hub-v2';
+// IMPORTANT: Update version to force cache refresh
+const CACHE_NAME = 'crm-hub-v3-scanner-fix';
 const OFFLINE_URL = '/offline.html';
 
 // Assets to cache on install
