@@ -456,6 +456,34 @@ export default function AttendanceScanner() {
               </button>
             )}
 
+            {/* Manual Code Input - Backup Option */}
+            <div className="bg-slate-800/50 rounded-xl p-4">
+              <p className="text-xs text-slate-400 mb-2 text-center">
+                Camera not working? Paste QR code text here:
+              </p>
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const input = e.target.elements.qrcode;
+                if (input.value.trim()) {
+                  processQRCode(input.value.trim());
+                  input.value = '';
+                }
+              }} className="flex gap-2">
+                <input
+                  name="qrcode"
+                  type="text"
+                  placeholder="ATT-xxxxx..."
+                  className="flex-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-sm font-mono"
+                />
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg text-sm font-medium"
+                >
+                  Submit
+                </button>
+              </form>
+            </div>
+
             {/* Instructions */}
             <div className="bg-slate-800 rounded-xl p-4 text-sm">
               <h3 className="font-semibold mb-2">Instructions:</h3>
