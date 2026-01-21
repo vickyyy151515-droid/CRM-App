@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
 import { Camera, CheckCircle, XCircle, Smartphone, AlertTriangle, RefreshCw, Keyboard, Bug, LogIn } from 'lucide-react';
-import { Html5Qrcode, Html5QrcodeScanner } from 'html5-qrcode';
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 
 export default function AttendanceScanner() {
   const [scanning, setScanning] = useState(false);
