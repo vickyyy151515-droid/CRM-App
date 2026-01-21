@@ -59,37 +59,6 @@ api.interceptors.response.use(
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [lastActivityTime, setLastActivityTime] = useState(() => Date.now());
-  
-  // Auto-logout after 1 hour (60 minutes) of inactivity
-  const AUTO_LOGOUT_MS = 60 * 60 * 1000; // 1 hour in milliseconds
-  const WARNING_BEFORE_LOGOUT_MS = 5 * 60 * 1000; // Show warning 5 minutes before logout
-  
-  // Heartbeat function to track user activity
-  const sendHeartbeat = useCallback(async () => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        await api.post('/auth/heartbeat');
-        setLastActivityTime(Date.now());
-      } catch (error) {
-        // Silently fail - don't disrupt user experience
-        console.debug('Heartbeat failed:', error.message);
-      }
-    }
-  }, []);
-  
-  // Force logout function
-  const forceLogout = useCallback(async (reason = 'Session expired') => {
-    try {
-      await api.post('/auth/logout');
-    } catch (error) {
-      console.debug('Logout API call failed:', error.message);
-    }
-    localStorage.removeItem('token');
-    setUser(null);
-    toast.error(`${reason}. Please login again.`);
-  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -98,7 +67,6 @@ function App() {
         .then(res => {
           setUser(res.data);
           setLoading(false);
-          setLastActivityTime(Date.now());
         })
         .catch(() => {
           localStorage.removeItem('token');
@@ -108,90 +76,6 @@ function App() {
       setLoading(false);
     }
   }, []);
-  
-  // Auto-logout check - runs every minute (only for staff users)
-  useEffect(() => {
-    // Only apply auto-logout to staff users
-    if (!user || user.role !== 'staff') return;
-    
-    const checkInactivity = () => {
-      const timeSinceActivity = Date.now() - lastActivityTime;
-      
-      // Check if session should be expired
-      if (timeSinceActivity >= AUTO_LOGOUT_MS) {
-        forceLogout('Session expired due to 1 hour of inactivity');
-        return;
-      }
-      
-      // Show warning 5 minutes before auto-logout
-      const timeRemaining = AUTO_LOGOUT_MS - timeSinceActivity;
-      if (timeRemaining <= WARNING_BEFORE_LOGOUT_MS && timeRemaining > WARNING_BEFORE_LOGOUT_MS - 60000) {
-        const minutesRemaining = Math.ceil(timeRemaining / 60000);
-        toast.warning(`Your session will expire in ${minutesRemaining} minutes due to inactivity. Move your mouse or click to stay logged in.`, {
-          duration: 10000,
-          id: 'session-warning' // Prevent duplicate toasts
-        });
-      }
-    };
-    
-    // Check immediately and then every minute
-    checkInactivity();
-    const inactivityInterval = setInterval(checkInactivity, 60 * 1000);
-    
-    return () => clearInterval(inactivityInterval);
-  }, [user, lastActivityTime, forceLogout, AUTO_LOGOUT_MS, WARNING_BEFORE_LOGOUT_MS]);
-
-  // Send heartbeat every 2 minutes when user is logged in
-  // Also send on meaningful user interactions (click, keypress) but NOT mousemove
-  useEffect(() => {
-    if (user) {
-      // Send initial heartbeat
-      sendHeartbeat();
-      
-      // Set up interval for periodic heartbeats (every 2 minutes)
-      const heartbeatInterval = setInterval(sendHeartbeat, 2 * 60 * 1000); // 2 minutes
-      
-      // Track user activity on meaningful interactions only (not mousemove - too frequent)
-      let activityTimeout;
-      const handleActivity = () => {
-        setLastActivityTime(Date.now()); // Update local activity time immediately
-        // Debounce heartbeat to avoid flooding server
-        if (activityTimeout) clearTimeout(activityTimeout);
-        activityTimeout = setTimeout(sendHeartbeat, 2000); // 2 second debounce
-      };
-      
-      // Only track clicks, keypresses, and scroll - NOT mousemove
-      window.addEventListener('click', handleActivity);
-      window.addEventListener('keypress', handleActivity);
-      window.addEventListener('scroll', handleActivity);
-      window.addEventListener('touchstart', handleActivity);
-      
-      // Handle browser/tab close - log out the user
-      const handleBeforeUnload = () => {
-        // Use sendBeacon for reliable delivery even when page is closing
-        const token = localStorage.getItem('token');
-        if (token) {
-          const apiUrl = process.env.REACT_APP_BACKEND_URL || '';
-          navigator.sendBeacon(
-            `${apiUrl}/api/auth/logout-beacon`,
-            JSON.stringify({ token })
-          );
-        }
-      };
-      
-      window.addEventListener('beforeunload', handleBeforeUnload);
-      
-      return () => {
-        clearInterval(heartbeatInterval);
-        if (activityTimeout) clearTimeout(activityTimeout);
-        window.removeEventListener('click', handleActivity);
-        window.removeEventListener('keypress', handleActivity);
-        window.removeEventListener('scroll', handleActivity);
-        window.removeEventListener('touchstart', handleActivity);
-        window.removeEventListener('beforeunload', handleBeforeUnload);
-      };
-    }
-  }, [user, sendHeartbeat]);
 
   const handleLogin = (userData, token) => {
     localStorage.setItem('token', token);
