@@ -463,13 +463,56 @@ export default function AttendanceScanner() {
           </div>
         )}
 
-        {/* Not Logged In */}
+        {/* Not Logged In - Show Login Form */}
         {!isLoggedIn && (
-          <div className="bg-slate-800 rounded-xl p-6 text-center">
-            <p className="text-slate-400 mb-4">Please log in first</p>
-            <a href="/" className="inline-block px-6 py-3 bg-indigo-600 rounded-lg font-medium">
-              Go to Login
-            </a>
+          <div className="bg-slate-800 rounded-xl p-6">
+            <div className="text-center mb-4">
+              <LogIn className="w-10 h-10 text-indigo-400 mx-auto mb-2" />
+              <h2 className="text-lg font-semibold">Login Required</h2>
+              <p className="text-slate-400 text-sm mt-1">Please log in to use the scanner</p>
+            </div>
+            
+            <form onSubmit={handleScannerLogin} className="space-y-3">
+              <div>
+                <input
+                  type="email"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  placeholder="Email"
+                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400"
+                  required
+                  data-testid="scanner-login-email"
+                />
+              </div>
+              <div>
+                <input
+                  type="password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  placeholder="Password"
+                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400"
+                  required
+                  data-testid="scanner-login-password"
+                />
+              </div>
+              
+              {loginError && (
+                <div className="text-red-400 text-sm text-center">{loginError}</div>
+              )}
+              
+              <button
+                type="submit"
+                disabled={loginLoading}
+                className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-800 rounded-lg font-medium flex items-center justify-center gap-2"
+                data-testid="scanner-login-btn"
+              >
+                {loginLoading ? (
+                  <><RefreshCw className="animate-spin" size={18} /> Logging in...</>
+                ) : (
+                  <><LogIn size={18} /> Login</>
+                )}
+              </button>
+            </form>
           </div>
         )}
 
