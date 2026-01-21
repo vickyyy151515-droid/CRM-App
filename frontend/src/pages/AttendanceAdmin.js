@@ -1,393 +1,235 @@
 /**
- * AttendanceAdmin - Admin page to view and manage attendance
- * Shows today's attendance, lateness, device management, and history
+ * AttendanceAdmin - Admin dashboard for viewing attendance records and managing TOTP
  */
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
 import { 
-  Clock, CheckCircle, XCircle, AlertTriangle, Users, Smartphone, 
-  Trash2, RefreshCw, Calendar, Download, ChevronDown, ChevronUp 
+  Users, Clock, CheckCircle, AlertTriangle, RefreshCw, 
+  Calendar, UserX, Shield, Search, ChevronDown,
+  ChevronUp, Key, Trash2
 } from 'lucide-react';
-import * as XLSX from 'xlsx';
 
 export default function AttendanceAdmin() {
   const [loading, setLoading] = useState(true);
   const [todayData, setTodayData] = useState(null);
-  const [devices, setDevices] = useState([]);
-  const [showDevices, setShowDevices] = useState(false);
+  const [totpStatus, setTotpStatus] = useState([]);
   const [historyData, setHistoryData] = useState(null);
-  const [showHistory, setShowHistory] = useState(false);
-  const [dateRange, setDateRange] = useState({
-    start: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    end: new Date().toISOString().split('T')[0]
-  });
+  const [activeTab, setActiveTab] = useState('today');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [expandedStaff, setExpandedStaff] = useState(null);
+  const [resettingTotp, setResettingTotp] = useState(null);
 
-  // Load today's attendance
-  const loadTodayAttendance = useCallback(async () => {
+  // Fetch today's attendance
+  const fetchTodayAttendance = useCallback(async () => {
     try {
       const response = await api.get('/attendance/admin/today');
       setTodayData(response.data);
     } catch (error) {
-      toast.error('Failed to load attendance data');
-    } finally {
-      setLoading(false);
+      console.error('Error fetching today attendance:', error);
+      toast.error('Failed to load today\'s attendance');
     }
   }, []);
 
-  // Load registered devices
-  const loadDevices = useCallback(async () => {
+  // Fetch TOTP setup status
+  const fetchTotpStatus = useCallback(async () => {
     try {
-      const response = await api.get('/attendance/admin/devices');
-      setDevices(response.data.devices || []);
+      const response = await api.get('/attendance/admin/totp-status');
+      setTotpStatus(response.data.staff || []);
     } catch (error) {
-      toast.error('Failed to load devices');
+      console.error('Error fetching TOTP status:', error);
     }
   }, []);
 
-  // Load history
-  const loadHistory = useCallback(async () => {
+  // Fetch attendance history
+  const fetchHistory = useCallback(async () => {
     try {
-      const response = await api.get(`/attendance/admin/records?start_date=${dateRange.start}&end_date=${dateRange.end}`);
+      const params = new URLSearchParams();
+      if (startDate) params.append('start_date', startDate);
+      if (endDate) params.append('end_date', endDate);
+      
+      const response = await api.get(`/attendance/admin/records?${params}`);
       setHistoryData(response.data);
     } catch (error) {
-      toast.error('Failed to load history');
+      console.error('Error fetching history:', error);
+      toast.error('Failed to load attendance history');
     }
-  }, [dateRange]);
+  }, [startDate, endDate]);
 
+  // Initial data fetch
   useEffect(() => {
-    loadTodayAttendance();
-    loadDevices();
-  }, [loadTodayAttendance, loadDevices]);
+    const loadData = async () => {
+      setLoading(true);
+      await Promise.all([fetchTodayAttendance(), fetchTotpStatus()]);
+      setLoading(false);
+    };
+    loadData();
+  }, [fetchTodayAttendance, fetchTotpStatus]);
 
+  // Fetch history when tab changes or dates change
   useEffect(() => {
-    if (showHistory) {
-      loadHistory();
+    if (activeTab === 'history') {
+      fetchHistory();
     }
-  }, [showHistory, loadHistory]);
+  }, [activeTab, fetchHistory]);
 
-  // Delete device
-  const handleDeleteDevice = async (staffId, staffName) => {
-    if (!window.confirm(`Remove device registration for ${staffName}? They will need to register again.`)) {
+  // Reset staff TOTP
+  const handleResetTotp = async (staffId, staffName) => {
+    if (!window.confirm(`Reset authenticator for ${staffName}? They will need to set up again.`)) {
       return;
     }
 
+    setResettingTotp(staffId);
     try {
-      await api.delete(`/attendance/admin/device/${staffId}`);
-      toast.success('Device registration removed');
-      loadDevices();
+      await api.delete(`/attendance/admin/totp/${staffId}`);
+      toast.success(`Authenticator reset for ${staffName}`);
+      fetchTotpStatus();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Failed to remove device');
+      toast.error(error.response?.data?.detail || 'Failed to reset authenticator');
+    } finally {
+      setResettingTotp(null);
     }
   };
 
-  // Export to Excel
-  const handleExport = async () => {
-    try {
-      const response = await api.get(`/attendance/admin/export?start_date=${dateRange.start}&end_date=${dateRange.end}`);
-      const records = response.data.records;
-
-      if (!records || records.length === 0) {
-        toast.error('No records to export');
-        return;
-      }
-
-      const exportData = records.map(r => ({
-        'Date': r.date,
-        'Staff Name': r.staff_name,
-        'Check-in Time': r.check_in_time,
-        'Status': r.is_late ? 'Late' : 'On Time',
-        'Late (minutes)': r.late_minutes || 0,
-        'Device': r.device_name || 'Unknown'
-      }));
-
-      const ws = XLSX.utils.json_to_sheet(exportData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Attendance');
-      XLSX.writeFile(wb, `attendance_${dateRange.start}_to_${dateRange.end}.xlsx`);
-      
-      toast.success('Export complete!');
-    } catch (error) {
-      toast.error('Failed to export');
-    }
-  };
+  // Filter staff by search
+  const filteredTotpStatus = totpStatus.filter(staff => 
+    staff.staff_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    staff.email?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex items-center justify-center min-h-[400px]">
         <RefreshCw className="animate-spin text-indigo-600" size={32} />
       </div>
     );
   }
 
-  const summary = todayData?.summary || {};
-
   return (
-    <div className="space-y-6" data-testid="attendance-admin-page">
+    <div className="space-y-6" data-testid="attendance-admin">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Attendance</h2>
-          <p className="text-slate-600 dark:text-slate-400">Track staff attendance and manage devices</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Attendance Management</h1>
+          <p className="text-slate-600 dark:text-slate-400">TOTP-based attendance tracking</p>
         </div>
         <button
-          onClick={loadTodayAttendance}
-          className="p-2 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+          onClick={() => { fetchTodayAttendance(); fetchTotpStatus(); }}
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg"
+          data-testid="refresh-attendance-btn"
         >
-          <RefreshCw size={20} />
+          <RefreshCw size={18} />
+          Refresh
         </button>
       </div>
 
-      {/* Today's Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg">
-              <Users className="text-indigo-600 dark:text-indigo-400" size={20} />
-            </div>
-            <div>
-              <p className="text-sm text-slate-500 dark:text-slate-400">Total Staff</p>
-              <p className="text-2xl font-bold text-slate-900 dark:text-white">{summary.total_staff || 0}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg">
-              <CheckCircle className="text-emerald-600 dark:text-emerald-400" size={20} />
-            </div>
-            <div>
-              <p className="text-sm text-slate-500 dark:text-slate-400">Checked In</p>
-              <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{summary.checked_in || 0}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-lg">
-              <Clock className="text-amber-600 dark:text-amber-400" size={20} />
-            </div>
-            <div>
-              <p className="text-sm text-slate-500 dark:text-slate-400">Late</p>
-              <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{summary.late || 0}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-red-100 dark:bg-red-900/50 rounded-lg">
-              <XCircle className="text-red-600 dark:text-red-400" size={20} />
-            </div>
-            <div>
-              <p className="text-sm text-slate-500 dark:text-slate-400">Not Checked In</p>
-              <p className="text-2xl font-bold text-red-600 dark:text-red-400">{summary.not_checked_in || 0}</p>
-            </div>
-          </div>
-        </div>
+      {/* Tab Navigation */}
+      <div className="flex border-b border-slate-200 dark:border-slate-700">
+        {['today', 'history', 'totp-setup'].map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2 font-medium capitalize transition-colors ${
+              activeTab === tab 
+                ? 'text-indigo-600 border-b-2 border-indigo-600' 
+                : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600'
+            }`}
+            data-testid={`tab-${tab}`}
+          >
+            {tab === 'totp-setup' ? 'TOTP Setup Status' : tab.charAt(0).toUpperCase() + tab.slice(1)}
+          </button>
+        ))}
       </div>
 
-      {/* Today's Records */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
-        <div className="p-4 border-b border-slate-200 dark:border-slate-700">
-          <h3 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-            <Calendar size={18} />
-            Today&apos;s Attendance - {todayData?.date}
-          </h3>
-        </div>
-        <div className="p-4">
-          {todayData?.records?.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-left text-sm text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
-                    <th className="pb-2 font-medium">Staff</th>
-                    <th className="pb-2 font-medium">Time</th>
-                    <th className="pb-2 font-medium">Status</th>
-                    <th className="pb-2 font-medium">Device</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                  {todayData.records.map((record, idx) => (
-                    <tr key={idx} className="text-sm">
-                      <td className="py-3 text-slate-900 dark:text-white font-medium">
-                        {record.staff_name}
-                      </td>
-                      <td className="py-3 text-slate-600 dark:text-slate-300 font-mono">
-                        {record.check_in_time}
-                      </td>
-                      <td className="py-3">
-                        {record.is_late ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 rounded-full text-xs font-medium">
-                            <Clock size={12} />
-                            Late ({record.late_minutes}m)
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 rounded-full text-xs font-medium">
-                            <CheckCircle size={12} />
-                            On Time
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3 text-slate-500 dark:text-slate-400 text-xs">
-                        {record.device_name || 'Unknown'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="text-slate-500 dark:text-slate-400 text-center py-8">
-              No attendance records yet today
-            </p>
-          )}
-
-          {/* Not Checked In List */}
-          {todayData?.not_checked_in?.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-              <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
-                <AlertTriangle size={16} className="text-amber-500" />
-                Not Checked In ({todayData.not_checked_in.length})
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {todayData.not_checked_in.map((staff, idx) => (
-                  <span 
-                    key={idx}
-                    className="px-3 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-full text-sm"
-                  >
-                    {staff.name}
-                  </span>
-                ))}
+      {/* Today Tab */}
+      {activeTab === 'today' && todayData && (
+        <div className="space-y-6">
+          {/* Summary Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                  <Users className="text-blue-600" size={24} />
+                </div>
+                <div>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Total Staff</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white">{todayData.summary.total_staff}</p>
+                </div>
               </div>
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* Device Management */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
-        <button
-          onClick={() => setShowDevices(!showDevices)}
-          className="w-full p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
-        >
-          <h3 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-            <Smartphone size={18} />
-            Registered Devices ({devices.length})
-          </h3>
-          {showDevices ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-        </button>
-        
-        {showDevices && (
-          <div className="p-4 border-t border-slate-200 dark:border-slate-700">
-            {devices.length > 0 ? (
-              <div className="space-y-2">
-                {devices.map((device, idx) => (
-                  <div 
-                    key={idx}
-                    className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg"
-                  >
-                    <div>
-                      <p className="font-medium text-slate-900 dark:text-white">{device.staff_name}</p>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">
-                        {device.device_name} • Registered {new Date(device.registered_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => handleDeleteDevice(device.staff_id, device.staff_name)}
-                      className="p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                      title="Remove device"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                ))}
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+                  <CheckCircle className="text-emerald-600" size={24} />
+                </div>
+                <div>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Checked In</p>
+                  <p className="text-2xl font-bold text-emerald-600">{todayData.summary.checked_in}</p>
+                </div>
               </div>
-            ) : (
-              <p className="text-slate-500 dark:text-slate-400 text-center py-4">
-                No devices registered yet
-              </p>
-            )}
+            </div>
+
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+                  <Clock className="text-amber-600" size={24} />
+                </div>
+                <div>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Late</p>
+                  <p className="text-2xl font-bold text-amber-600">{todayData.summary.late}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                  <UserX className="text-red-600" size={24} />
+                </div>
+                <div>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Not Checked In</p>
+                  <p className="text-2xl font-bold text-red-600">{todayData.summary.not_checked_in}</p>
+                </div>
+              </div>
+            </div>
           </div>
-        )}
-      </div>
 
-      {/* History & Export */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
-        <button
-          onClick={() => setShowHistory(!showHistory)}
-          className="w-full p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
-        >
-          <h3 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-            <Calendar size={18} />
-            Attendance History
-          </h3>
-          {showHistory ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-        </button>
-        
-        {showHistory && (
-          <div className="p-4 border-t border-slate-200 dark:border-slate-700">
-            {/* Date Range Selector */}
-            <div className="flex flex-wrap gap-3 mb-4">
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-slate-600 dark:text-slate-400">From:</label>
-                <input
-                  type="date"
-                  value={dateRange.start}
-                  onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-                  className="px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-slate-600 dark:text-slate-400">To:</label>
-                <input
-                  type="date"
-                  value={dateRange.end}
-                  onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-                  className="px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
-                />
-              </div>
-              <button
-                onClick={loadHistory}
-                className="px-4 py-1.5 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700"
-              >
-                Load
-              </button>
-              <button
-                onClick={handleExport}
-                className="px-4 py-1.5 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700 flex items-center gap-1"
-              >
-                <Download size={14} />
-                Export
-              </button>
+          {/* Today's Records Table */}
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+              <h3 className="font-semibold text-slate-900 dark:text-white">Today's Attendance ({todayData.date})</h3>
             </div>
-
-            {/* History Table */}
-            {historyData?.records?.length > 0 ? (
-              <div className="overflow-x-auto max-h-96">
-                <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-white dark:bg-slate-800">
-                    <tr className="text-left text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
-                      <th className="pb-2 font-medium">Date</th>
-                      <th className="pb-2 font-medium">Staff</th>
-                      <th className="pb-2 font-medium">Time</th>
-                      <th className="pb-2 font-medium">Status</th>
+            
+            {todayData.records.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full" data-testid="today-attendance-table">
+                  <thead className="bg-slate-50 dark:bg-slate-900">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-slate-700 dark:text-slate-300">Staff</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-slate-700 dark:text-slate-300">Check-in Time</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-slate-700 dark:text-slate-300">Status</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-slate-700 dark:text-slate-300">Late (min)</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                    {historyData.records.map((record, idx) => (
-                      <tr key={idx}>
-                        <td className="py-2 text-slate-600 dark:text-slate-300">{record.date}</td>
-                        <td className="py-2 text-slate-900 dark:text-white">{record.staff_name}</td>
-                        <td className="py-2 text-slate-600 dark:text-slate-300 font-mono">{record.check_in_time}</td>
-                        <td className="py-2">
-                          {record.is_late ? (
-                            <span className="text-amber-600 dark:text-amber-400">Late ({record.late_minutes}m)</span>
-                          ) : (
-                            <span className="text-emerald-600 dark:text-emerald-400">On Time</span>
-                          )}
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                    {todayData.records.map((record, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                        <td className="px-4 py-3 text-slate-900 dark:text-white">{record.staff_name}</td>
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300 font-mono">{record.check_in_time}</td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            record.is_late 
+                              ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' 
+                              : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                          }`}>
+                            {record.is_late ? 'Late' : 'On Time'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                          {record.is_late ? record.late_minutes : '-'}
                         </td>
                       </tr>
                     ))}
@@ -395,13 +237,230 @@ export default function AttendanceAdmin() {
                 </table>
               </div>
             ) : (
-              <p className="text-slate-500 dark:text-slate-400 text-center py-4">
-                {historyData ? 'No records found for selected period' : 'Click "Load" to view history'}
-              </p>
+              <div className="p-8 text-center text-slate-500 dark:text-slate-400">
+                No check-ins recorded today yet
+              </div>
             )}
           </div>
-        )}
-      </div>
+
+          {/* Not Checked In List */}
+          {todayData.not_checked_in.length > 0 && (
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+              <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-red-50 dark:bg-red-900/20">
+                <h3 className="font-semibold text-red-700 dark:text-red-400 flex items-center gap-2">
+                  <AlertTriangle size={18} />
+                  Not Yet Checked In ({todayData.not_checked_in.length})
+                </h3>
+              </div>
+              <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+                {todayData.not_checked_in.map((staff, idx) => (
+                  <div key={idx} className="px-3 py-2 bg-slate-50 dark:bg-slate-700 rounded-lg text-sm text-slate-700 dark:text-slate-300">
+                    {staff.name}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* History Tab */}
+      {activeTab === 'history' && (
+        <div className="space-y-4">
+          {/* Date Filters */}
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
+            <div className="flex flex-wrap gap-4 items-end">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Start Date</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                  data-testid="history-start-date"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">End Date</label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                  data-testid="history-end-date"
+                />
+              </div>
+              <button
+                onClick={fetchHistory}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center gap-2"
+                data-testid="filter-history-btn"
+              >
+                <Search size={18} />
+                Filter
+              </button>
+            </div>
+          </div>
+
+          {/* History Table */}
+          {historyData && (
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+              <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                <h3 className="font-semibold text-slate-900 dark:text-white">
+                  Attendance History ({historyData.total_records} records)
+                </h3>
+                <span className="text-sm text-slate-500 dark:text-slate-400">
+                  {historyData.start_date} to {historyData.end_date}
+                </span>
+              </div>
+              
+              {historyData.records.length > 0 ? (
+                <div className="overflow-x-auto max-h-[500px]">
+                  <table className="w-full" data-testid="history-attendance-table">
+                    <thead className="bg-slate-50 dark:bg-slate-900 sticky top-0">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-slate-700 dark:text-slate-300">Date</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-slate-700 dark:text-slate-300">Staff</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-slate-700 dark:text-slate-300">Check-in</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-slate-700 dark:text-slate-300">Status</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-slate-700 dark:text-slate-300">Late (min)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                      {historyData.records.map((record, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                          <td className="px-4 py-3 text-slate-900 dark:text-white font-mono text-sm">{record.date}</td>
+                          <td className="px-4 py-3 text-slate-900 dark:text-white">{record.staff_name}</td>
+                          <td className="px-4 py-3 text-slate-600 dark:text-slate-300 font-mono">{record.check_in_time}</td>
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              record.is_late 
+                                ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' 
+                                : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                            }`}>
+                              {record.is_late ? 'Late' : 'On Time'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                            {record.is_late ? record.late_minutes : '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="p-8 text-center text-slate-500 dark:text-slate-400">
+                  No records found for selected date range
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TOTP Setup Status Tab */}
+      {activeTab === 'totp-setup' && (
+        <div className="space-y-4">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+            <input
+              type="text"
+              placeholder="Search staff..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+              data-testid="search-staff-input"
+            />
+          </div>
+
+          {/* Staff TOTP Status Cards */}
+          <div className="grid gap-3">
+            {filteredTotpStatus.map((staff) => (
+              <div 
+                key={staff.staff_id} 
+                className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden"
+              >
+                <div 
+                  className="p-4 flex justify-between items-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                  onClick={() => setExpandedStaff(expandedStaff === staff.staff_id ? null : staff.staff_id)}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg ${
+                      staff.is_verified 
+                        ? 'bg-emerald-100 dark:bg-emerald-900/30' 
+                        : staff.is_setup 
+                          ? 'bg-amber-100 dark:bg-amber-900/30'
+                          : 'bg-slate-100 dark:bg-slate-700'
+                    }`}>
+                      {staff.is_verified ? (
+                        <Shield className="text-emerald-600" size={20} />
+                      ) : staff.is_setup ? (
+                        <Key className="text-amber-600" size={20} />
+                      ) : (
+                        <UserX className="text-slate-400" size={20} />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-medium text-slate-900 dark:text-white">{staff.staff_name}</p>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">{staff.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      staff.is_verified 
+                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                        : staff.is_setup 
+                          ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                          : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'
+                    }`}>
+                      {staff.is_verified ? 'Verified' : staff.is_setup ? 'Pending Verify' : 'Not Setup'}
+                    </span>
+                    {expandedStaff === staff.staff_id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                  </div>
+                </div>
+
+                {/* Expanded Details */}
+                {expandedStaff === staff.staff_id && (
+                  <div className="px-4 pb-4 pt-2 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+                    <div className="flex justify-between items-center">
+                      <div className="text-sm text-slate-600 dark:text-slate-400">
+                        {staff.setup_date && (
+                          <span>Setup date: {new Date(staff.setup_date).toLocaleDateString()}</span>
+                        )}
+                      </div>
+                      {staff.is_setup && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleResetTotp(staff.staff_id, staff.staff_name);
+                          }}
+                          disabled={resettingTotp === staff.staff_id}
+                          className="flex items-center gap-2 px-3 py-1.5 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 rounded-lg text-sm"
+                          data-testid={`reset-totp-${staff.staff_id}`}
+                        >
+                          {resettingTotp === staff.staff_id ? (
+                            <RefreshCw className="animate-spin" size={16} />
+                          ) : (
+                            <Trash2 size={16} />
+                          )}
+                          Reset Authenticator
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {filteredTotpStatus.length === 0 && (
+              <div className="text-center py-8 text-slate-500 dark:text-slate-400">
+                {searchQuery ? 'No staff found matching your search' : 'No staff members found'}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
