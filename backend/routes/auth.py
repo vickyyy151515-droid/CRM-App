@@ -190,8 +190,159 @@ async def logout(user: User = Depends(get_current_user)):
     )
     return {'message': 'Logged out successfully'}
 
-class BeaconLogout(BaseModel):
-    token: str
+
+# ==================== USER ACTIVITY TRACKING ====================
+#
+# CRITICAL INDEPENDENCE RULE:
+# - Each user's activity is tracked INDEPENDENTLY
+# - Admin actions NEVER affect staff status
+# - Heartbeat only updates the authenticated user's own timestamp
+# - Activity page is READ-ONLY (no writes)
+
+@router.post("/auth/heartbeat")
+async def heartbeat(user: User = Depends(get_current_user)):
+    """
+    Update the authenticated user's last_activity timestamp.
+    
+    CRITICAL: This ONLY updates the user who sent the request.
+    - Uses JWT token to identify the user
+    - Updates ONLY that specific user's last_activity
+    - Cannot affect any other user's status
+    """
+    db = get_db()
+    now = get_jakarta_now()
+    
+    # Update ONLY this user's activity - filter by their unique ID
+    await db.users.update_one(
+        {'id': user.id},
+        {'$set': {
+            'last_activity': now.isoformat()
+        }}
+    )
+    
+    return {
+        'status': 'ok',
+        'user_id': user.id,
+        'timestamp': now.isoformat()
+    }
+
+
+@router.get("/users/activity")
+async def get_user_activity(admin: User = Depends(get_admin_user)):
+    """
+    Get all users' activity status (Admin/Master Admin only).
+    
+    CRITICAL: This is READ-ONLY.
+    - Only READS timestamps from database
+    - CALCULATES status based on timestamps
+    - NEVER writes to database
+    - Admin viewing this page does NOT affect anyone's status
+    """
+    db = get_db()
+    
+    # Import datetime utilities
+    from datetime import datetime
+    import pytz
+    JAKARTA_TZ = pytz.timezone('Asia/Jakarta')
+    now = datetime.now(JAKARTA_TZ)
+    
+    # Status thresholds (in minutes)
+    ONLINE_THRESHOLD = 5      # Active within 5 minutes = Online
+    IDLE_THRESHOLD = 30       # 5-30 minutes = Idle
+    OFFLINE_THRESHOLD = 60    # 60+ minutes = Offline
+    
+    # Fetch all users (excluding password)
+    users = await db.users.find({}, {'_id': 0, 'password_hash': 0}).to_list(1000)
+    
+    activity_list = []
+    online_count = 0
+    idle_count = 0
+    offline_count = 0
+    
+    for user_doc in users:
+        last_activity_str = user_doc.get('last_activity')
+        last_logout_str = user_doc.get('last_logout')
+        user_role = user_doc.get('role', 'staff')
+        
+        # Default status is offline
+        user_status = 'offline'
+        minutes_since_activity = None
+        
+        # Calculate status based on timestamps
+        if last_activity_str:
+            try:
+                # Parse last_activity timestamp
+                last_activity = datetime.fromisoformat(last_activity_str.replace('Z', '+00:00'))
+                if last_activity.tzinfo is None:
+                    last_activity = JAKARTA_TZ.localize(last_activity)
+                
+                minutes_since_activity = (now - last_activity).total_seconds() / 60
+                
+                # Check if user logged out AFTER their last activity
+                logged_out_after_activity = False
+                if last_logout_str:
+                    try:
+                        last_logout = datetime.fromisoformat(last_logout_str.replace('Z', '+00:00'))
+                        if last_logout.tzinfo is None:
+                            last_logout = JAKARTA_TZ.localize(last_logout)
+                        
+                        # If logout is after activity, user is offline
+                        if last_logout > last_activity:
+                            logged_out_after_activity = True
+                    except Exception:
+                        pass
+                
+                # Determine status
+                if logged_out_after_activity:
+                    user_status = 'offline'
+                elif minutes_since_activity < ONLINE_THRESHOLD:
+                    user_status = 'online'
+                elif minutes_since_activity < IDLE_THRESHOLD:
+                    user_status = 'idle'
+                else:
+                    user_status = 'offline'
+                    
+            except Exception:
+                user_status = 'offline'
+        
+        # Count by status
+        if user_status == 'online':
+            online_count += 1
+        elif user_status == 'idle':
+            idle_count += 1
+        else:
+            offline_count += 1
+        
+        activity_list.append({
+            'id': user_doc.get('id'),
+            'name': user_doc.get('name'),
+            'email': user_doc.get('email'),
+            'role': user_role,
+            'status': user_status,
+            'minutes_since_activity': int(minutes_since_activity) if minutes_since_activity is not None else None,
+            'last_activity': last_activity_str,
+            'last_logout': last_logout_str
+        })
+    
+    # Sort: online first, then idle, then offline
+    status_order = {'online': 0, 'idle': 1, 'offline': 2}
+    activity_list.sort(key=lambda x: (status_order.get(x['status'], 3), x.get('name', '')))
+    
+    return {
+        'users': activity_list,
+        'summary': {
+            'total': len(users),
+            'online': online_count,
+            'idle': idle_count,
+            'offline': offline_count
+        },
+        'thresholds': {
+            'online_minutes': ONLINE_THRESHOLD,
+            'idle_minutes': IDLE_THRESHOLD,
+            'offline_minutes': OFFLINE_THRESHOLD
+        },
+        'server_time': now.isoformat()
+    }
 
 
 # ==================== EMERGENCY PASSWORD RESET ====================
