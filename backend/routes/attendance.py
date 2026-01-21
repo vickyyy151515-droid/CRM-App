@@ -1,15 +1,19 @@
 """
-Attendance System API
-- QR Code based attendance with device registration
-- 1 Staff = 1 Phone (prevents cheating)
-- 1 QR Code = 1 Use (prevents sharing)
+Attendance System API - TOTP Based (Google Authenticator compatible)
+- Staff sets up Google Authenticator ONCE
+- Daily: Staff types 6-digit code to check in
+- Code changes every 60 seconds
 """
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import Response
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime, timezone, timedelta
-import secrets
+import pyotp
+import qrcode
+import io
+import base64
 from routes.deps import get_db
 from routes.auth import get_current_user, User
 
@@ -22,6 +26,10 @@ JAKARTA_TZ = timezone(timedelta(hours=7))
 SHIFT_START_HOUR = 11  # 11:00 AM
 SHIFT_END_HOUR = 23    # 11:00 PM
 
+# TOTP Configuration
+TOTP_INTERVAL = 60  # Code changes every 60 seconds
+TOTP_ISSUER = "CRM Attendance"
+
 def get_jakarta_now():
     """Get current datetime in Jakarta timezone"""
     return datetime.now(JAKARTA_TZ)
@@ -31,136 +39,109 @@ def get_jakarta_date_string():
     return get_jakarta_now().strftime('%Y-%m-%d')
 
 def get_database():
-    """Helper to get database instance"""
     return get_db()
 
 # ==================== MODELS ====================
 
-class DeviceRegistration(BaseModel):
-    device_id: str
-    device_name: Optional[str] = "Mobile Device"
+class TOTPVerifyRequest(BaseModel):
+    code: str
 
-class QRScanRequest(BaseModel):
-    qr_code: str
-    device_id: str
+# ==================== TOTP SETUP ====================
 
-# ==================== QR CODE GENERATION (Computer) ====================
-
-@router.post("/attendance/generate-qr")
-async def generate_qr_code(user: User = Depends(get_current_user)):
-    """Generate a unique QR code for staff to scan. Called from computer."""
+@router.get("/attendance/totp/status")
+async def get_totp_status(user: User = Depends(get_current_user)):
+    """Check if current user has TOTP set up"""
     db = get_database()
     
-    today = get_jakarta_date_string()
+    totp_data = await db.attendance_totp.find_one({'staff_id': user.id})
     
-    # Check if staff already checked in today
-    existing_record = await db.attendance_records.find_one({
-        'staff_id': user.id,
-        'date': today
-    })
-    
-    if existing_record:
+    if totp_data:
         return {
-            'already_checked_in': True,
-            'check_in_time': existing_record.get('check_in_time'),
-            'message': 'You have already checked in today'
+            'is_setup': True,
+            'setup_date': totp_data.get('setup_date')
         }
+    return {'is_setup': False}
+
+@router.post("/attendance/totp/setup")
+async def setup_totp(user: User = Depends(get_current_user)):
+    """Generate TOTP secret and return setup QR code"""
+    db = get_database()
     
-    # Invalidate any existing unused QR codes for this staff
-    await db.attendance_qr_codes.update_many(
-        {'staff_id': user.id, 'used': False},
-        {'$set': {'used': True, 'invalidated': True}}
+    # Check if already set up
+    existing = await db.attendance_totp.find_one({'staff_id': user.id})
+    if existing:
+        # Return existing setup info
+        secret = existing['secret']
+    else:
+        # Generate new secret
+        secret = pyotp.random_base32()
+        
+        await db.attendance_totp.insert_one({
+            'staff_id': user.id,
+            'staff_name': user.name,
+            'secret': secret,
+            'setup_date': get_jakarta_now().isoformat(),
+            'is_verified': False
+        })
+    
+    # Create TOTP object
+    totp = pyotp.TOTP(secret, interval=TOTP_INTERVAL)
+    
+    # Generate provisioning URI for authenticator apps
+    uri = totp.provisioning_uri(
+        name=user.email or user.name,
+        issuer_name=TOTP_ISSUER
     )
     
-    # Generate new unique QR code
-    qr_code = f"ATT-{user.id}-{secrets.token_urlsafe(16)}-{int(datetime.now().timestamp())}"
-    expires_at = get_jakarta_now() + timedelta(seconds=60)  # Valid for 1 minute
+    # Generate QR code as base64
+    qr = qrcode.QRCode(version=1, box_size=10, border=5)
+    qr.add_data(uri)
+    qr.make(fit=True)
     
-    await db.attendance_qr_codes.insert_one({
-        'qr_code': qr_code,
-        'staff_id': user.id,
-        'staff_name': user.name,
-        'created_at': get_jakarta_now().isoformat(),
-        'expires_at': expires_at.isoformat(),
-        'used': False,
-        'used_by': None,
-        'used_at': None
-    })
+    img = qr.make_image(fill_color="black", back_color="white")
+    buffer = io.BytesIO()
+    img.save(buffer, format='PNG')
+    qr_base64 = base64.b64encode(buffer.getvalue()).decode()
     
     return {
-        'qr_code': qr_code,
-        'expires_in_seconds': 60,
-        'staff_name': user.name
+        'qr_code': f"data:image/png;base64,{qr_base64}",
+        'secret': secret,  # For manual entry if QR doesn't work
+        'uri': uri,
+        'message': 'Scan this QR code with Google Authenticator or any TOTP app'
     }
 
-# ==================== DEVICE REGISTRATION (Phone) ====================
-
-@router.get("/attendance/device-status")
-async def get_device_status(user: User = Depends(get_current_user)):
-    """Check if current user has a registered device"""
+@router.post("/attendance/totp/verify-setup")
+async def verify_totp_setup(data: TOTPVerifyRequest, user: User = Depends(get_current_user)):
+    """Verify TOTP setup by checking a code (called during initial setup)"""
     db = get_database()
     
-    device = await db.attendance_devices.find_one({'staff_id': user.id})
+    totp_data = await db.attendance_totp.find_one({'staff_id': user.id})
+    if not totp_data:
+        raise HTTPException(status_code=400, detail="TOTP not set up. Please set up first.")
     
-    return {
-        'has_device': device is not None,
-        'device_name': device.get('device_name') if device else None,
-        'registered_at': device.get('registered_at') if device else None
-    }
-
-@router.post("/attendance/register-device")
-async def register_device(data: DeviceRegistration, user: User = Depends(get_current_user)):
-    """Register a phone for attendance scanning. 1 staff = 1 phone."""
-    db = get_database()
+    secret = totp_data['secret']
+    totp = pyotp.TOTP(secret, interval=TOTP_INTERVAL)
     
-    # Check if staff already has a registered device
-    existing = await db.attendance_devices.find_one({'staff_id': user.id})
-    if existing:
-        raise HTTPException(
-            status_code=400,
-            detail=f"You already have a registered device: {existing.get('device_name')}. Contact admin to change."
+    # Verify with some tolerance (allow previous and next codes)
+    if totp.verify(data.code, valid_window=1):
+        # Mark as verified
+        await db.attendance_totp.update_one(
+            {'staff_id': user.id},
+            {'$set': {'is_verified': True, 'verified_date': get_jakarta_now().isoformat()}}
         )
-    
-    # Check if this device_id is already registered to another staff
-    device_used = await db.attendance_devices.find_one({'device_id': data.device_id})
-    if device_used:
-        raise HTTPException(
-            status_code=400,
-            detail="This device is already registered to another staff member."
-        )
-    
-    # Register the device
-    await db.attendance_devices.insert_one({
-        'staff_id': user.id,
-        'staff_name': user.name,
-        'device_id': data.device_id,
-        'device_name': data.device_name,
-        'registered_at': get_jakarta_now().isoformat()
-    })
-    
-    return {'success': True, 'message': 'Device registered successfully'}
+        return {'success': True, 'message': 'Authenticator setup verified!'}
+    else:
+        raise HTTPException(status_code=400, detail="Invalid code. Please try again.")
 
-# ==================== QR SCANNING (Phone) ====================
+# ==================== DAILY ATTENDANCE ====================
 
-@router.post("/attendance/scan")
-async def scan_qr_code(data: QRScanRequest, user: User = Depends(get_current_user)):
-    """Process scanned QR code and record attendance."""
+@router.post("/attendance/checkin")
+async def check_in_with_totp(data: TOTPVerifyRequest, user: User = Depends(get_current_user)):
+    """Check in using TOTP code"""
     db = get_database()
     
     today = get_jakarta_date_string()
     now = get_jakarta_now()
-    
-    # Verify device is registered to this staff
-    device = await db.attendance_devices.find_one({
-        'staff_id': user.id,
-        'device_id': data.device_id
-    })
-    
-    if not device:
-        raise HTTPException(
-            status_code=403,
-            detail="This device is not registered for your account. Please use your registered phone."
-        )
     
     # Check if already checked in today
     existing_record = await db.attendance_records.find_one({
@@ -174,38 +155,26 @@ async def scan_qr_code(data: QRScanRequest, user: User = Depends(get_current_use
             detail=f"You have already checked in today at {existing_record.get('check_in_time')}"
         )
     
-    # Find and validate QR code
-    qr_record = await db.attendance_qr_codes.find_one({'qr_code': data.qr_code})
-    
-    if not qr_record:
-        raise HTTPException(status_code=400, detail="Invalid QR code")
-    
-    if qr_record.get('used'):
-        raise HTTPException(status_code=400, detail="This QR code has already been used")
-    
-    # Check expiration
-    expires_at = datetime.fromisoformat(qr_record['expires_at'])
-    if now > expires_at:
-        raise HTTPException(status_code=400, detail="This QR code has expired. Please ask for a new one.")
-    
-    # Verify QR belongs to the scanning user
-    if qr_record['staff_id'] != user.id:
+    # Get TOTP secret
+    totp_data = await db.attendance_totp.find_one({'staff_id': user.id})
+    if not totp_data:
         raise HTTPException(
-            status_code=403,
-            detail="This QR code belongs to another staff member"
+            status_code=400,
+            detail="Authenticator not set up. Please set up Google Authenticator first."
         )
     
-    # Mark QR as used (CRITICAL: Single use)
-    await db.attendance_qr_codes.update_one(
-        {'qr_code': data.qr_code},
-        {
-            '$set': {
-                'used': True,
-                'used_by': user.id,
-                'used_at': now.isoformat()
-            }
-        }
-    )
+    if not totp_data.get('is_verified'):
+        raise HTTPException(
+            status_code=400,
+            detail="Authenticator setup not verified. Please complete setup first."
+        )
+    
+    # Verify TOTP code
+    secret = totp_data['secret']
+    totp = pyotp.TOTP(secret, interval=TOTP_INTERVAL)
+    
+    if not totp.verify(data.code, valid_window=1):
+        raise HTTPException(status_code=400, detail="Invalid code. Please check your authenticator app.")
     
     # Calculate lateness
     is_late = now.hour > SHIFT_START_HOUR or (now.hour == SHIFT_START_HOUR and now.minute > 0)
@@ -226,9 +195,7 @@ async def scan_qr_code(data: QRScanRequest, user: User = Depends(get_current_use
         'check_in_datetime': now.isoformat(),
         'is_late': is_late,
         'late_minutes': late_minutes,
-        'device_id': data.device_id,
-        'device_name': device.get('device_name'),
-        'qr_code': data.qr_code
+        'method': 'totp'
     })
     
     return {
@@ -240,8 +207,6 @@ async def scan_qr_code(data: QRScanRequest, user: User = Depends(get_current_use
         'late_minutes': late_minutes,
         'attendance_status': 'Late' if is_late else 'On Time'
     }
-
-# ==================== CHECK STATUS ====================
 
 @router.get("/attendance/check-today")
 async def check_today_attendance(user: User = Depends(get_current_user)):
@@ -282,7 +247,7 @@ async def get_today_attendance(user: User = Depends(get_current_user)):
         {'_id': 0}
     ).sort('check_in_time', 1).to_list(1000)
     
-    # Get all staff to show who hasn't checked in
+    # Get all staff
     all_staff = await db.users.find(
         {'role': 'staff'},
         {'_id': 0, 'id': 1, 'name': 1, 'email': 1}
@@ -310,6 +275,53 @@ async def get_today_attendance(user: User = Depends(get_current_user)):
         'not_checked_in': not_checked_in
     }
 
+@router.get("/attendance/admin/totp-status")
+async def get_all_totp_status(user: User = Depends(get_current_user)):
+    """Get TOTP setup status for all staff (admin only)"""
+    db = get_database()
+    
+    if user.role not in ['admin', 'master_admin']:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Get all staff
+    all_staff = await db.users.find(
+        {'role': 'staff'},
+        {'_id': 0, 'id': 1, 'name': 1, 'email': 1}
+    ).to_list(1000)
+    
+    # Get TOTP setup data
+    totp_data = await db.attendance_totp.find({}, {'_id': 0}).to_list(1000)
+    totp_by_staff = {t['staff_id']: t for t in totp_data}
+    
+    result = []
+    for staff in all_staff:
+        totp = totp_by_staff.get(staff['id'])
+        result.append({
+            'staff_id': staff['id'],
+            'staff_name': staff['name'],
+            'email': staff.get('email'),
+            'is_setup': totp is not None,
+            'is_verified': totp.get('is_verified', False) if totp else False,
+            'setup_date': totp.get('setup_date') if totp else None
+        })
+    
+    return {'staff': result}
+
+@router.delete("/attendance/admin/totp/{staff_id}")
+async def reset_staff_totp(staff_id: str, user: User = Depends(get_current_user)):
+    """Reset TOTP for a staff member (admin only)"""
+    db = get_database()
+    
+    if user.role not in ['admin', 'master_admin']:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    result = await db.attendance_totp.delete_one({'staff_id': staff_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="No TOTP setup found for this staff")
+    
+    return {'success': True, 'message': 'TOTP reset. Staff will need to set up again.'}
+
 @router.get("/attendance/admin/records")
 async def get_attendance_history(
     start_date: Optional[str] = None,
@@ -323,23 +335,16 @@ async def get_attendance_history(
     if user.role not in ['admin', 'master_admin']:
         raise HTTPException(status_code=403, detail="Admin access required")
     
-    # Default to last 30 days
     if not start_date:
         start_date = (get_jakarta_now() - timedelta(days=30)).strftime('%Y-%m-%d')
     if not end_date:
         end_date = get_jakarta_date_string()
     
-    query = {
-        'date': {'$gte': start_date, '$lte': end_date}
-    }
-    
+    query = {'date': {'$gte': start_date, '$lte': end_date}}
     if staff_id:
         query['staff_id'] = staff_id
     
-    records = await db.attendance_records.find(
-        query,
-        {'_id': 0}
-    ).sort('date', -1).to_list(10000)
+    records = await db.attendance_records.find(query, {'_id': 0}).sort('date', -1).to_list(10000)
     
     return {
         'start_date': start_date,
@@ -347,52 +352,3 @@ async def get_attendance_history(
         'total_records': len(records),
         'records': records
     }
-
-@router.get("/attendance/admin/devices")
-async def get_registered_devices(user: User = Depends(get_current_user)):
-    """Get all registered devices (admin only)"""
-    db = get_database()
-    
-    if user.role not in ['admin', 'master_admin']:
-        raise HTTPException(status_code=403, detail="Admin access required")
-    
-    devices = await db.attendance_devices.find(
-        {},
-        {'_id': 0}
-    ).to_list(1000)
-    
-    return {'devices': devices}
-
-@router.delete("/attendance/admin/device/{staff_id}")
-async def delete_device_registration(staff_id: str, user: User = Depends(get_current_user)):
-    """Delete a staff's device registration (admin only)"""
-    db = get_database()
-    
-    if user.role not in ['admin', 'master_admin']:
-        raise HTTPException(status_code=403, detail="Admin access required")
-    
-    result = await db.attendance_devices.delete_one({'staff_id': staff_id})
-    
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="No device found for this staff")
-    
-    return {'success': True, 'message': 'Device registration deleted'}
-
-@router.get("/attendance/admin/export")
-async def export_attendance(
-    start_date: str,
-    end_date: str,
-    user: User = Depends(get_current_user)
-):
-    """Export attendance data (admin only)"""
-    db = get_database()
-    
-    if user.role not in ['admin', 'master_admin']:
-        raise HTTPException(status_code=403, detail="Admin access required")
-    
-    records = await db.attendance_records.find(
-        {'date': {'$gte': start_date, '$lte': end_date}},
-        {'_id': 0, 'qr_code': 0, 'device_id': 0}
-    ).sort([('date', -1), ('check_in_time', 1)]).to_list(50000)
-    
-    return {'records': records}
