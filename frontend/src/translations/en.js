@@ -113,6 +113,7 @@ const en = {
     exportCenter: 'Export Center',
     scheduledReports: 'Scheduled Reports',
     userActivity: 'User Activity',
+    attendance: 'Attendance',
     downloadHistory: 'Download History',
     userManagement: 'Manage Users',
     productManagement: 'Manage Products',
