@@ -72,6 +72,40 @@ export default function AdminDashboard({ user, onLogout }) {
     return () => clearInterval(interval);
   }, [loadStats]);
 
+  // ==================== ACTIVITY TRACKING ====================
+  // Send heartbeat on click - tracks admin/master admin activity
+  // This is INDEPENDENT - only updates THIS user's activity
+  
+  const sendHeartbeat = useCallback(async () => {
+    try {
+      await api.post('/auth/heartbeat');
+    } catch (error) {
+      console.debug('Heartbeat failed:', error.message);
+    }
+  }, []);
+
+  // Track clicks as activity and send heartbeat (debounced)
+  useEffect(() => {
+    let debounceTimer = null;
+    
+    const handleClick = () => {
+      // Debounce heartbeat to avoid flooding server (send max once per 5 seconds)
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(sendHeartbeat, 5000);
+    };
+    
+    // Listen for clicks anywhere in the app
+    document.addEventListener('click', handleClick);
+    
+    // Send initial heartbeat on mount
+    sendHeartbeat();
+    
+    return () => {
+      document.removeEventListener('click', handleClick);
+      if (debounceTimer) clearTimeout(debounceTimer);
+    };
+  }, [sendHeartbeat]);
+
   // Format currency to Indonesian Rupiah
   const formatCurrency = (amount) => {
     if (amount >= 1000000000) {
