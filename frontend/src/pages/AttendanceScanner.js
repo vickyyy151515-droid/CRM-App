@@ -747,9 +747,18 @@ export default function AttendanceScanner() {
             <ol className="text-xs text-slate-400 space-y-1">
               <li>1. Log in on office computer → QR shows</li>
               <li>2. Tap &quot;Start Camera&quot; above</li>
-              <li>3. Point phone at QR code</li>
-              <li>4. Wait for success message</li>
+              <li>3. Hold phone steady, QR inside frame</li>
+              <li>4. Wait for beep/success message</li>
             </ol>
+            <div className="mt-3 pt-3 border-t border-slate-700">
+              <p className="font-medium text-xs text-amber-400 mb-1">Not scanning?</p>
+              <ul className="text-xs text-slate-500 space-y-1">
+                <li>• Make sure QR code is fully visible</li>
+                <li>• Hold phone 15-30 cm from screen</li>
+                <li>• Ensure good lighting on the QR</li>
+                <li>• Try cleaning camera lens</li>
+              </ul>
+            </div>
           </div>
         )}
 
