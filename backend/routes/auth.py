@@ -554,3 +554,131 @@ async def get_staff_users(user: User = Depends(get_current_user)):
     db = get_db()
     staff = await db.users.find({'role': 'staff'}, {'_id': 0, 'password_hash': 0}).to_list(1000)
     return staff
+
+# ==================== DATA CLEANUP ENDPOINTS ====================
+
+@router.get("/admin/orphaned-records")
+async def get_orphaned_records(admin: User = Depends(get_admin_user)):
+    """Get records from users that no longer exist (orphaned data)"""
+    db = get_db()
+    
+    # Get all existing user IDs
+    existing_users = await db.users.find({}, {'id': 1, 'name': 1}).to_list(10000)
+    existing_user_ids = {u['id'] for u in existing_users}
+    existing_user_names = {u['id']: u['name'] for u in existing_users}
+    
+    # Find unique staff in omset_records
+    omset_pipeline = [
+        {"$group": {
+            "_id": {"staff_id": "$staff_id", "staff_name": "$staff_name"},
+            "record_count": {"$sum": 1},
+            "total_nominal": {"$sum": "$nominal"}
+        }},
+        {"$sort": {"record_count": -1}}
+    ]
+    omset_staff = await db.omset_records.aggregate(omset_pipeline).to_list(1000)
+    
+    # Find orphaned (staff_id not in existing users)
+    orphaned = []
+    active = []
+    
+    for doc in omset_staff:
+        staff_id = doc['_id'].get('staff_id')
+        staff_name = doc['_id'].get('staff_name', 'Unknown')
+        
+        entry = {
+            'staff_id': staff_id,
+            'staff_name': staff_name,
+            'record_count': doc['record_count'],
+            'total_nominal': doc['total_nominal'],
+            'is_orphaned': staff_id not in existing_user_ids
+        }
+        
+        if staff_id not in existing_user_ids:
+            orphaned.append(entry)
+        else:
+            entry['current_user_name'] = existing_user_names.get(staff_id, staff_name)
+            active.append(entry)
+    
+    return {
+        'orphaned_staff': orphaned,
+        'active_staff': active,
+        'total_orphaned_records': sum(o['record_count'] for o in orphaned)
+    }
+
+@router.delete("/admin/staff-records/{staff_id}")
+async def delete_staff_records(staff_id: str, admin: User = Depends(get_admin_user)):
+    """Delete ALL records for a specific staff (use with caution!)"""
+    db = get_db()
+    
+    # Count records first
+    omset_count = await db.omset_records.count_documents({'staff_id': staff_id})
+    bonanza_count = await db.bonanza_records.count_documents({'staff_id': staff_id})
+    memberwd_count = await db.memberwd_records.count_documents({'staff_id': staff_id})
+    
+    if omset_count == 0 and bonanza_count == 0 and memberwd_count == 0:
+        raise HTTPException(status_code=404, detail="No records found for this staff")
+    
+    # Delete from all relevant collections
+    omset_result = await db.omset_records.delete_many({'staff_id': staff_id})
+    bonanza_result = await db.bonanza_records.delete_many({'staff_id': staff_id})
+    memberwd_result = await db.memberwd_records.delete_many({'staff_id': staff_id})
+    
+    # Also clean up any attendance records
+    attendance_result = await db.attendance_records.delete_many({'staff_id': staff_id})
+    totp_result = await db.attendance_totp.delete_many({'staff_id': staff_id})
+    
+    return {
+        'success': True,
+        'deleted': {
+            'omset_records': omset_result.deleted_count,
+            'bonanza_records': bonanza_result.deleted_count,
+            'memberwd_records': memberwd_result.deleted_count,
+            'attendance_records': attendance_result.deleted_count,
+            'totp_setup': totp_result.deleted_count
+        },
+        'message': f'Deleted all records for staff_id: {staff_id}'
+    }
+
+@router.get("/admin/staff-record-summary")
+async def get_staff_record_summary(admin: User = Depends(get_admin_user)):
+    """Get summary of all staff records for cleanup review"""
+    db = get_db()
+    
+    # Get all users
+    all_users = await db.users.find({}, {'_id': 0, 'id': 1, 'name': 1, 'email': 1, 'role': 1}).to_list(10000)
+    user_map = {u['id']: u for u in all_users}
+    
+    # Aggregate omset records by staff
+    pipeline = [
+        {"$group": {
+            "_id": {"staff_id": "$staff_id", "staff_name": "$staff_name"},
+            "omset_count": {"$sum": 1},
+            "total_nominal": {"$sum": "$nominal"},
+            "first_record": {"$min": "$record_date"},
+            "last_record": {"$max": "$record_date"}
+        }},
+        {"$sort": {"omset_count": -1}}
+    ]
+    
+    omset_data = await db.omset_records.aggregate(pipeline).to_list(1000)
+    
+    result = []
+    for doc in omset_data:
+        staff_id = doc['_id'].get('staff_id')
+        staff_name = doc['_id'].get('staff_name', 'Unknown')
+        user = user_map.get(staff_id)
+        
+        result.append({
+            'staff_id': staff_id,
+            'staff_name': staff_name,
+            'omset_count': doc['omset_count'],
+            'total_nominal': doc['total_nominal'],
+            'first_record': doc['first_record'],
+            'last_record': doc['last_record'],
+            'user_exists': user is not None,
+            'user_email': user.get('email') if user else None,
+            'user_role': user.get('role') if user else None
+        })
+    
+    return {'staff_records': result}
