@@ -61,14 +61,23 @@ async def get_leaderboard(
     else:  # all time
         query = {}
     
+    def is_tambahan_record(record):
+        """Check if record has 'tambahan' in keterangan field"""
+        keterangan = record.get('keterangan', '') or ''
+        return 'tambahan' in keterangan.lower()
+    
     # Fetch records for calculating unique customers
     records = await db.omset_records.find(query, {'_id': 0}).to_list(100000)
     today_records = await db.omset_records.find({'record_date': today}, {'_id': 0}).to_list(10000)
     
     # Build customer_first_date for NDP detection (need all records for this)
-    all_records = await db.omset_records.find({}, {'_id': 0, 'customer_id': 1, 'customer_id_normalized': 1, 'product_id': 1, 'record_date': 1}).to_list(100000)
+    # IMPORTANT: Exclude records with "tambahan" from first_date calculation
+    all_records = await db.omset_records.find({}, {'_id': 0, 'customer_id': 1, 'customer_id_normalized': 1, 'product_id': 1, 'record_date': 1, 'keterangan': 1}).to_list(100000)
     customer_first_date = {}
     for record in sorted(all_records, key=lambda x: x['record_date']):
+        # Skip "tambahan" records when determining first deposit date
+        if is_tambahan_record(record):
+            continue
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
         key = (cid_normalized, record['product_id'])
         if key not in customer_first_date:
@@ -127,13 +136,19 @@ async def get_leaderboard(
         key = (cid_normalized, record['product_id'])
         first_date = customer_first_date.get(key)
         
-        if first_date == date:
+        # "tambahan" records are always RDP
+        if is_tambahan_record(record):
+            # RDP - count unique per day
+            if cid_normalized not in staff_stats[staff_id]['daily_rdp_customers'][date]:
+                staff_stats[staff_id]['daily_rdp_customers'][date].add(cid_normalized)
+                staff_stats[staff_id]['total_rdp'] += 1
+        elif first_date == date:
             # NDP - count unique per day
             if cid_normalized not in staff_stats[staff_id]['daily_ndp_customers'][date]:
                 staff_stats[staff_id]['daily_ndp_customers'][date].add(cid_normalized)
                 staff_stats[staff_id]['total_ndp'] += 1
         else:
-            # RDP - count unique per day (NEW LOGIC)
+            # RDP - count unique per day
             if cid_normalized not in staff_stats[staff_id]['daily_rdp_customers'][date]:
                 staff_stats[staff_id]['daily_rdp_customers'][date].add(cid_normalized)
                 staff_stats[staff_id]['total_rdp'] += 1
@@ -153,7 +168,13 @@ async def get_leaderboard(
         key = (cid_normalized, record['product_id'])
         first_date = customer_first_date.get(key)
         
-        if first_date == today:
+        # "tambahan" records are always RDP
+        if is_tambahan_record(record):
+            if cid_normalized not in today_rdp_customers[staff_id]:
+                today_rdp_customers[staff_id].add(cid_normalized)
+                if staff_id in staff_stats:
+                    staff_stats[staff_id]['today_rdp'] += 1
+        elif first_date == today:
             if cid_normalized not in today_ndp_customers[staff_id]:
                 today_ndp_customers[staff_id].add(cid_normalized)
                 if staff_id in staff_stats:
