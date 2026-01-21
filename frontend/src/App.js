@@ -5,6 +5,8 @@ import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import StaffDashboard from './pages/StaffDashboard';
 import BatchRecordsView from './components/BatchRecordsView';
+import AttendanceScanner from './pages/AttendanceScanner';
+import AttendanceQRDisplay from './components/AttendanceQRDisplay';
 import { Toaster, toast } from 'sonner';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { LanguageProvider } from './contexts/LanguageContext';
@@ -42,9 +44,12 @@ api.interceptors.response.use(
   }
 );
 
-function App() {
+// Main app content with attendance check for staff
+function MainAppContent() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [attendanceChecked, setAttendanceChecked] = useState(false);
+  const [checkingAttendance, setCheckingAttendance] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -66,6 +71,7 @@ function App() {
   const handleLogin = (userData, token) => {
     localStorage.setItem('token', token);
     setUser(userData);
+    setAttendanceChecked(false); // Reset attendance check on new login
   };
 
   const handleLogout = async () => {
@@ -76,7 +82,31 @@ function App() {
     }
     localStorage.removeItem('token');
     setUser(null);
+    setAttendanceChecked(false);
   };
+
+  // Check attendance status for staff on login
+  useEffect(() => {
+    const checkAttendance = async () => {
+      // Only check for staff users
+      if (!user || user.role !== 'staff' || attendanceChecked) return;
+      
+      setCheckingAttendance(true);
+      try {
+        const response = await api.get('/attendance/check-today');
+        if (response.data.checked_in) {
+          setAttendanceChecked(true);
+        }
+      } catch (error) {
+        // If endpoint fails, allow access anyway
+        setAttendanceChecked(true);
+      } finally {
+        setCheckingAttendance(false);
+      }
+    };
+    
+    checkAttendance();
+  }, [user, attendanceChecked]);
 
   if (loading) {
     return (
@@ -86,6 +116,45 @@ function App() {
     );
   }
 
+  // Show attendance QR for staff who haven't checked in today
+  const shouldShowAttendanceQR = user && user.role === 'staff' && !attendanceChecked && !checkingAttendance;
+
+  return (
+    <Routes>
+      <Route
+        path="/login"
+        element={!user ? <Login onLogin={handleLogin} /> : <Navigate to="/" replace />}
+      />
+      <Route
+        path="/batch/:batchId"
+        element={user ? <BatchRecordsView /> : <Navigate to="/login" replace />}
+      />
+      <Route
+        path="/"
+        element={
+          user ? (
+            (user.role === 'admin' || user.role === 'master_admin') ? (
+              <AdminDashboard user={user} onLogout={handleLogout} />
+            ) : shouldShowAttendanceQR ? (
+              <AttendanceQRDisplay 
+                onComplete={() => setAttendanceChecked(true)} 
+                userName={user.name}
+                onLogout={handleLogout}
+              />
+            ) : (
+              <StaffDashboard user={user} onLogout={handleLogout} />
+            )
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
+function App() {
   return (
     <ThemeProvider>
       <LanguageProvider>
@@ -93,29 +162,11 @@ function App() {
           <Toaster position="top-right" richColors />
           <BrowserRouter>
             <Routes>
-              <Route
-                path="/login"
-                element={!user ? <Login onLogin={handleLogin} /> : <Navigate to="/" replace />}
-              />
-              <Route
-                path="/batch/:batchId"
-                element={user ? <BatchRecordsView /> : <Navigate to="/login" replace />}
-              />
-              <Route
-                path="/"
-                element={
-                  user ? (
-                    (user.role === 'admin' || user.role === 'master_admin') ? (
-                      <AdminDashboard user={user} onLogout={handleLogout} />
-                    ) : (
-                      <StaffDashboard user={user} onLogout={handleLogout} />
-                    )
-                  ) : (
-                    <Navigate to="/login" replace />
-                  )
-                }
-              />
-              <Route path="*" element={<Navigate to="/" replace />} />
+              {/* Scanner page - completely standalone, no auth redirects */}
+              <Route path="/attendance-scanner" element={<AttendanceScanner />} />
+              
+              {/* All other routes */}
+              <Route path="/*" element={<MainAppContent />} />
             </Routes>
           </BrowserRouter>
         </div>
