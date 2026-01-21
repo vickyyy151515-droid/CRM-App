@@ -23,8 +23,10 @@ export default function AdminOmsetCRM() {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [expandedDates, setExpandedDates] = useState({});
+  const [expandedCustomers, setExpandedCustomers] = useState({});
   const [viewMode, setViewMode] = useState('summary');
   const [serverDate, setServerDate] = useState(null); // Jakarta timezone date from server
+  const [deletingRecord, setDeletingRecord] = useState(null);
 
   // Fetch server time (Jakarta timezone) on mount
   useEffect(() => {
