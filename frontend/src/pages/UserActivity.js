@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../App';
-import { useLanguage } from '../contexts/LanguageContext';
 import { Users, RefreshCw, Circle, Clock, Moon } from 'lucide-react';
 
 /**
