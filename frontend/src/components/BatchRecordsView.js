@@ -93,7 +93,21 @@ export default function BatchRecordsView() {
     });
   }, [records, searchTerm]);
 
-  const columns = records.length > 0 ? Object.keys(records[0].row_data) : [];
+  // Filter out sensitive columns (rekening/bank account info)
+  // This applies to all database views EXCEPT Member WD CRM
+  const HIDDEN_COLUMNS = ['rekening', 'rek', 'bank', 'no_rekening', 'norek', 'account'];
+  
+  const columns = useMemo(() => {
+    if (records.length === 0) return [];
+    
+    const allColumns = Object.keys(records[0].row_data);
+    
+    // Filter out hidden columns (rekening, bank, etc.)
+    return allColumns.filter(col => {
+      const colLower = col.toLowerCase().trim();
+      return !HIDDEN_COLUMNS.some(hidden => colLower.includes(hidden));
+    });
+  }, [records]);
 
   if (loading) {
     return (
