@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime, timezone, timedelta
 import secrets
-from routes.deps import get_database
+from routes.deps import get_db
 from routes.auth import get_current_user, User
 
 router = APIRouter(tags=["Attendance"])
@@ -29,6 +29,10 @@ def get_jakarta_now():
 def get_jakarta_date_string():
     """Get current date string in Jakarta timezone (YYYY-MM-DD)"""
     return get_jakarta_now().strftime('%Y-%m-%d')
+
+def get_database():
+    """Helper to get database instance"""
+    return get_db()
 
 # ==================== MODELS ====================
 
