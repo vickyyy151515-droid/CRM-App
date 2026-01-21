@@ -397,39 +397,12 @@ async def get_user_activity(admin: User = Depends(get_admin_user)):
         user_status = 'offline'
         minutes_since_activity = None
         
-        # First check: If user has a recent logout (within 24 hours), prioritize logout time
-        # This fixes the bug where heartbeats might update last_activity after logout
-        has_recent_logout = False
-        if last_logout_str:
-            try:
-                last_logout = datetime.fromisoformat(last_logout_str.replace('Z', '+00:00'))
-                if last_logout.tzinfo is None:
-                    last_logout = JAKARTA_TZ.localize(last_logout)
-                
-                minutes_since_logout = (now - last_logout).total_seconds() / 60
-                
-                # If logout was within the last 24 hours, consider them offline
-                if minutes_since_logout < 24 * 60:  # 24 hours
-                    has_recent_logout = True
-                    # If activity is before or at logout time, definitely offline
-                    if last_activity_str:
-                        try:
-                            last_activity = datetime.fromisoformat(last_activity_str.replace('Z', '+00:00'))
-                            if last_activity.tzinfo is None:
-                                last_activity = JAKARTA_TZ.localize(last_activity)
-                            # Bug fix: If activity is within 1 minute of logout, treat as logged out
-                            # This handles race conditions where heartbeat fires near logout
-                            if abs((last_activity - last_logout).total_seconds()) < 60:
-                                user_status = 'offline'
-                                minutes_since_activity = int(minutes_since_logout)
-                                has_recent_logout = True
-                        except Exception:
-                            pass
-            except Exception:
-                pass
+        # Simple, correct logic:
+        # 1. If no activity at all -> offline
+        # 2. If activity exists, check if logout happened AFTER activity -> offline
+        # 3. If activity is recent and no logout after it -> online/idle based on time
         
-        # If no recent logout, calculate status based on last_activity
-        if last_activity_str and not has_recent_logout:
+        if last_activity_str:
             try:
                 last_activity = datetime.fromisoformat(last_activity_str.replace('Z', '+00:00'))
                 if last_activity.tzinfo is None:
@@ -437,13 +410,15 @@ async def get_user_activity(admin: User = Depends(get_admin_user)):
                 
                 minutes_since_activity = (now - last_activity).total_seconds() / 60
                 
-                # Check if user explicitly logged out after their last activity
+                # Check if user explicitly logged out AFTER their last activity
                 explicitly_logged_out = False
                 if last_logout_str:
                     try:
                         last_logout = datetime.fromisoformat(last_logout_str.replace('Z', '+00:00'))
                         if last_logout.tzinfo is None:
                             last_logout = JAKARTA_TZ.localize(last_logout)
+                        
+                        # User logged out AFTER their last activity = they're offline
                         if last_logout > last_activity:
                             explicitly_logged_out = True
                     except Exception:
@@ -452,7 +427,7 @@ async def get_user_activity(admin: User = Depends(get_admin_user)):
                 # For staff, consider them offline if past auto-logout threshold
                 staff_session_expired = (user_role == 'staff' and minutes_since_activity >= STAFF_AUTO_LOGOUT)
                 
-                # Determine status (READ-ONLY calculation)
+                # Determine status
                 if explicitly_logged_out or staff_session_expired:
                     user_status = 'offline'
                 elif minutes_since_activity < ONLINE_THRESHOLD:
