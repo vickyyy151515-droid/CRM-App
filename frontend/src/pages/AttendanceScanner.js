@@ -402,7 +402,7 @@ export default function AttendanceScanner() {
               <ol className="text-sm text-slate-400 space-y-1">
                 <li>1. Log in to CRM on your computer</li>
                 <li>2. A QR code will appear on screen</li>
-                <li>3. Tap "Open Camera" above</li>
+                <li>3. Tap &quot;Open Camera&quot; above</li>
                 <li>4. Take a clear photo of the QR</li>
                 <li>5. Your attendance will be recorded!</li>
               </ol>
