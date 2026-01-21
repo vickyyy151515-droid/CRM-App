@@ -32,12 +32,85 @@ export default function StaffDashboard({ user, onLogout }) {
     memberwd_new: 0
   });
   
+  // Activity tracking for auto-logout
+  const lastActivityRef = useRef(Date.now());
+  const AUTO_LOGOUT_MS = 60 * 60 * 1000; // 60 minutes in milliseconds
+  const WARNING_BEFORE_MS = 5 * 60 * 1000; // Show warning 5 minutes before
+  
   // Auto-set language to Indonesian for staff users
   useEffect(() => {
     if (user?.role === 'staff') {
       setDefaultLanguageForRole('staff');
     }
   }, [user?.role, setDefaultLanguageForRole]);
+
+  // ==================== ACTIVITY TRACKING ====================
+  // Send heartbeat on click - tracks ONLY this user's activity
+  // This is INDEPENDENT - does not affect any other user
+  
+  const sendHeartbeat = useCallback(async () => {
+    try {
+      await api.post('/auth/heartbeat');
+      lastActivityRef.current = Date.now();
+    } catch (error) {
+      // Silently fail - don't disrupt user experience
+      console.debug('Heartbeat failed:', error.message);
+    }
+  }, []);
+
+  // Track clicks as activity and send heartbeat (debounced)
+  useEffect(() => {
+    let debounceTimer = null;
+    
+    const handleClick = () => {
+      // Update local activity time immediately
+      lastActivityRef.current = Date.now();
+      
+      // Debounce heartbeat to avoid flooding server (send max once per 5 seconds)
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(sendHeartbeat, 5000);
+    };
+    
+    // Listen for clicks anywhere in the app
+    document.addEventListener('click', handleClick);
+    
+    // Send initial heartbeat on mount
+    sendHeartbeat();
+    
+    return () => {
+      document.removeEventListener('click', handleClick);
+      if (debounceTimer) clearTimeout(debounceTimer);
+    };
+  }, [sendHeartbeat]);
+
+  // Auto-logout check - runs every minute
+  useEffect(() => {
+    const checkInactivity = () => {
+      const timeSinceActivity = Date.now() - lastActivityRef.current;
+      
+      // Auto-logout if inactive for 60 minutes
+      if (timeSinceActivity >= AUTO_LOGOUT_MS) {
+        toast.error('Sesi Anda telah berakhir karena tidak ada aktivitas selama 60 menit.');
+        onLogout();
+        return;
+      }
+      
+      // Show warning 5 minutes before auto-logout
+      const timeRemaining = AUTO_LOGOUT_MS - timeSinceActivity;
+      if (timeRemaining <= WARNING_BEFORE_MS && timeRemaining > WARNING_BEFORE_MS - 60000) {
+        const minutesRemaining = Math.ceil(timeRemaining / 60000);
+        toast.warning(`Sesi Anda akan berakhir dalam ${minutesRemaining} menit. Klik di mana saja untuk tetap masuk.`, {
+          duration: 10000,
+          id: 'session-warning'
+        });
+      }
+    };
+    
+    // Check every minute
+    const interval = setInterval(checkInactivity, 60000);
+    
+    return () => clearInterval(interval);
+  }, [onLogout, AUTO_LOGOUT_MS, WARNING_BEFORE_MS]);
 
   // Load notification counts
   const loadNotificationCounts = useCallback(async () => {
