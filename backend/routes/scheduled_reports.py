@@ -120,23 +120,31 @@ async def generate_daily_report(target_date: datetime = None) -> str:
     staff_ndp_customers = {}  # {(product_id, staff_id): set()}
     staff_rdp_customers = {}  # {(product_id, staff_id): set()}
     
-    # Get customer first deposit dates for NDP/RDP calculation
-    all_customer_ids = list(set([r.get('customer_id_normalized') or r.get('customer_id', '').strip().upper() for r in records]))
+    # Helper function to check if record has "tambahan" in notes
+    def is_tambahan_record(record) -> bool:
+        keterangan = record.get('keterangan', '') or ''
+        return 'tambahan' in keterangan.lower()
     
-    # Get first deposit dates
+    # Helper function to normalize customer ID
+    def normalize_customer_id(customer_id: str) -> str:
+        if not customer_id:
+            return ""
+        return customer_id.strip().lower()
+    
+    # Get ALL omset records to build first deposit map properly
+    # We need to exclude "tambahan" records from first deposit calculation
+    all_omset_records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
+    
+    # Build customer first deposit map - EXCLUDE "tambahan" records
     first_deposits = {}
-    for cid in all_customer_ids:
-        first_record = await db.omset_records.find_one(
-            {'$or': [
-                {'customer_id_normalized': cid},
-                {'customer_id': {'$regex': f'^{cid}$', '$options': 'i'}}
-            ]},
-            {'_id': 0, 'record_date': 1, 'product_id': 1},
-            sort=[('record_date', 1)]
-        )
-        if first_record:
-            key = (cid, first_record.get('product_id', ''))
-            first_deposits[key] = first_record['record_date']
+    for record in sorted(all_omset_records, key=lambda x: x['record_date']):
+        # Skip "tambahan" records when determining first deposit date
+        if is_tambahan_record(record):
+            continue
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record.get('customer_id', ''))
+        key = (cid_normalized, record.get('product_id', ''))
+        if key not in first_deposits:
+            first_deposits[key] = record['record_date']
     
     for record in records:
         product_id = record.get('product_id', 'unknown')
@@ -163,10 +171,16 @@ async def generate_daily_report(target_date: datetime = None) -> str:
             staff_rdp_customers[(product_id, staff_id)] = set()
         
         # Calculate NDP/RDP
-        cid_normalized = record.get('customer_id_normalized') or record.get('customer_id', '').strip().upper()
+        # Note: "tambahan" records are always RDP (excluded from first_deposits)
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record.get('customer_id', ''))
         key = (cid_normalized, product_id)
         first_date = first_deposits.get(key)
-        is_ndp = first_date == date_str
+        
+        # If this record has "tambahan", it's always RDP
+        if is_tambahan_record(record):
+            is_ndp = False
+        else:
+            is_ndp = first_date == date_str
         
         nominal = record.get('depo_total', 0) or record.get('nominal', 0) or 0
         
