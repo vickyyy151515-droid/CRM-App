@@ -234,19 +234,22 @@ Device-registered QR code attendance system for staff check-in.
 - `react-native-camera-kit` - Lightweight, simple integration
 - `expo-camera` - For Expo-managed apps
 
-### User Activity Timestamp Bug - REWRITTEN (Jan 20, 2026)
-**Problem**: All staff activity timestamps were syncing to the same time when admin viewed activity page
-**Root Cause Analysis**: After comprehensive testing (12 tests passed), the code is correct. MongoDB's `updateOne` only updates ONE document. The issue in production is likely corrupted data from a previous bug or external factor.
-**Status**: FIXED - System rewritten from scratch + Verified with tests
-**What was done**:
-1. Rewrote `GET /api/users/activity` to be read-only (no side effects)
-2. Rewrote `POST /api/auth/heartbeat` to only update current authenticated user
-3. Added heartbeat rejection if user logged out within 5 minutes (prevents race conditions)
-4. Created `POST /api/auth/reset-activity` endpoint to clear corrupted data
-5. Created `POST /api/auth/force-all-offline` endpoint to mark all staff offline
-6. Added `POST /api/auth/logout-beacon` for reliable browser close detection
-7. Added comprehensive test suite: `/app/tests/test_heartbeat_isolation.py`
-**Pending**: User to run `force-all-offline` in production to fix corrupted data
+### User Activity Feature - REBUILT FROM SCRATCH (Jan 21, 2026)
+**Previous Issue**: Complex logic caused bugs where users showed wrong status
+**Solution**: Completely removed old code and rebuilt with simple, correct logic
+**Implementation**:
+1. **Backend**:
+   - `POST /api/auth/heartbeat` - Updates ONLY the authenticated user's `last_activity`
+   - `GET /api/users/activity` - READ-ONLY, calculates status from timestamps
+2. **Frontend**:
+   - `UserActivity.js` - Admin page showing all users' status with auto-refresh
+   - `StaffDashboard.js` - Sends heartbeat on clicks, auto-logout after 60 min inactivity
+3. **Status Thresholds**:
+   - Online: Active within 5 minutes
+   - Idle: No activity for 5-30 minutes
+   - Offline: No activity for 60+ minutes or logged out
+4. **CRITICAL**: Admin actions NEVER affect staff status (verified with 15 tests)
+**Test File**: `/app/tests/test_user_activity_independence.py`
 
 ## Fixes Applied (Jan 20, 2026)
 
