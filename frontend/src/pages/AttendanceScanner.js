@@ -1,12 +1,11 @@
 /**
  * AttendanceScanner - Phone page to scan QR codes for attendance
- * SIMPLIFIED APPROACH: Since Android cameras auto-detect QR codes,
- * staff can simply copy the QR text and paste it here.
+ * Uses @zxing/library for reliable cross-platform QR scanning
  */
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Camera, CheckCircle, XCircle, Smartphone, AlertTriangle, RefreshCw, LogIn, ClipboardPaste, ScanLine } from 'lucide-react';
-import jsQR from 'jsqr';
+import { Camera, CheckCircle, XCircle, Smartphone, AlertTriangle, RefreshCw, LogIn, StopCircle } from 'lucide-react';
+import { BrowserMultiFormatReader, BarcodeFormat, DecodeHintType } from '@zxing/library';
 
 // Standalone API
 const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
@@ -43,14 +42,16 @@ export default function AttendanceScanner() {
   const [checkingDevice, setCheckingDevice] = useState(true);
   
   // Scanner state
+  const [scanning, setScanning] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
-  const [qrCodeInput, setQrCodeInput] = useState('');
+  const [scanStatus, setScanStatus] = useState('');
   
   // Refs
-  const fileInputRef = useRef(null);
-  const canvasRef = useRef(null);
+  const videoRef = useRef(null);
+  const readerRef = useRef(null);
+  const hasScannedRef = useRef(false);
 
   // Generate unique device ID
   useEffect(() => {
@@ -75,13 +76,20 @@ export default function AttendanceScanner() {
           
           const deviceStatus = await apiCall('GET', '/attendance/device-status', null, savedToken);
           setDeviceRegistered(deviceStatus.has_device);
-        } catch (error) {
+        } catch (err) {
           localStorage.removeItem('scanner_token');
         }
       }
       setCheckingDevice(false);
     };
     checkAuth();
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopScanner();
+    };
   }, []);
 
   // Handle login
@@ -105,8 +113,8 @@ export default function AttendanceScanner() {
       setDeviceRegistered(deviceStatus.has_device);
       
       toast.success('Login successful!');
-    } catch (error) {
-      setLoginError(error.message);
+    } catch (err) {
+      setLoginError(err.message);
     } finally {
       setLoginLoading(false);
     }
@@ -125,40 +133,42 @@ export default function AttendanceScanner() {
       
       setDeviceRegistered(true);
       toast.success('Device registered successfully!');
-    } catch (error) {
-      toast.error(error.message);
+    } catch (err) {
+      toast.error(err.message);
     }
   };
 
-  // Submit QR code (from paste or image scan)
-  const submitQRCode = async (qrCode) => {
-    if (!qrCode || !qrCode.trim()) {
-      toast.error('Please enter a QR code');
-      return;
-    }
+  // Process detected QR code
+  const processQRCode = useCallback(async (qrCode) => {
+    if (hasScannedRef.current || processing) return;
     
-    const code = qrCode.trim();
+    ifoken) headers['Authorization'] = `Bearer ${token}`;
     
-    if (!code.startsWith('ATT-')) {
-      setError('Invalid QR code. Must start with ATT-');
+    // Validate format
+    if (!qrCode.startsWith('ATT-')) {
       toast.error('Invalid QR code format');
       return;
     }
     
+    hasScannedRef.current = true;
     setProcessing(true);
-    setError(null);
+    setScanStatus('Processing...');
+    
+    // Stop camera
+    stopScanner();
+    
+    // Vibrate feedback
+    if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
     
     try {
       toast.loading('Recording attendance...', { id: 'scan-loading' });
       
       const response = await apiCall('POST', '/attendance/scan', {
-        qr_code: code,
+        qr_code: qrCode,
         device_id: deviceId
       }, token);
       
       toast.dismiss('scan-loading');
-      
-      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
       
       setResult({
         success: true,
@@ -170,112 +180,108 @@ export default function AttendanceScanner() {
       });
       
       toast.success('Check-in successful!');
-      setQrCodeInput('');
       
-    } catch (error) {
+    } catch (err) {
       toast.dismiss('scan-loading');
-      setError(error.message);
-      toast.error(error.message);
+      setError(err.message);
+      setResult({ success: false, message: err.message });
+      toast.error(err.message);
+      hasScannedRef.current = false;
     } finally {
       setProcessing(false);
     }
-  };
+  }, [deviceId, token, processing]);
 
-  // Handle paste button
-  const handlePaste = async () => {
-    try {
-      const text = await navigator.clipboard.readText();
-      if (text && text.startsWith('ATT-')) {
-        setQrCodeInput(text);
-        toast.success('QR code pasted!');
-        // Auto-submit after paste
-        submitQRCode(text);
-      } else if (text) {
-        setQrCodeInput(text);
-        toast.info('Text pasted. Tap Submit if this is the QR code.');
-      } else {
-        toast.error('Clipboard is empty');
-      }
-    } catch (error) {
-      toast.error('Could not access clipboard. Please paste manually.');
-    }
-  };
-
-  // Handle form submit
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    submitQRCode(qrCodeInput);
-  };
-
-  // Process captured image (fallback for phones that return images)
-  const processImage = async (file) => {
-    setProcessing(true);
+  // Start scanner
+  const startScanner = async () => {
     setError(null);
+    setScanStatus('Starting camera...');
+    hasScannedRef.current = false;
     
     try {
-      const img = new Image();
-      const imageUrl = URL.createObjectURL(file);
+      // Configure hints for better QR detection
+      const hints = new Map();
+      hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.QR_CODE]);
+      hints.set(DecodeHintType.TRY_HARDER, true);
       
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-        img.src = imageUrl;
-      });
+      const reader = new BrowserMultiFormatReader(hints);
+      readerRef.current = reader;
       
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
+      // Get available cameras
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(d => d.kind === 'videoinput');
       
-      const maxSize = 1024;
-      let width = img.width;
-      let height = img.height;
-      
-      if (width > maxSize || height > maxSize) {
-        if (width > height) {
-          height = (height / width) * maxSize;
-          width = maxSize;
-        } else {
-          width = (width / height) * maxSize;
-          height = maxSize;
+      // Prefer back camera
+      let selectedDeviceId = undefined;
+      for (const device of videoDevices) {
+        const label = device.label.toLowerCase();
+        if (label.includes('back') || label.includes('rear') || label.includes('environment')) {
+          selectedDeviceId = device.deviceId;
+          break;
         }
       }
-      
-      canvas.width = width;
-      canvas.height = height;
-      ctx.drawImage(img, 0, 0, width, height);
-      
-      const imageData = ctx.getImageData(0, 0, width, height);
-      let qrCode = jsQR(imageData.data, width, height, { inversionAttempts: 'attemptBoth' });
-      
-      URL.revokeObjectURL(imageUrl);
-      
-      if (qrCode && qrCode.data) {
-        submitQRCode(qrCode.data);
-      } else {
-        setError('No QR code found in image. Please try the paste method instead.');
-        toast.error('No QR code detected');
-        setProcessing(false);
+      // If no back camera found, use the last one (usually back on phones)
+      if (!selectedDeviceId && videoDevices.length > 0) {
+        selectedDeviceId = videoDevices[videoDevices.length - 1].deviceId;
       }
-    } catch (error) {
-      setError('Failed to process image');
-      toast.error('Image processing failed');
-      setProcessing(false);
+      
+      setScanStatus('Camera starting...');
+      setScanning(true);
+      
+      // Start continuous scanning
+      await reader.decodeFromVideoDevice(
+        selectedDeviceId,
+        videoRef.current,
+        (result, err) => {
+          if (result) {
+            const text = result.getText();
+            console.log('QR Detected:', text);
+            setScanStatus('QR Code found!');
+            processQRCode(text);
+          }
+          if (err && err.name !== 'NotFoundException') {
+            // Only log non-"not found" errors
+            console.debug('Scan error:', err.message);
+          }
+        }
+      );
+      
+      setScanStatus('Point camera at QR code');
+      toast.success('Camera ready!');
+      
+    } catch (err) {
+      console.error('Scanner error:', err);
+      setScanning(false);
+      
+      let errorMsg = 'Could not start camera';
+      if (err.name === 'NotAllowedError') {
+        errorMsg = 'Camera permission denied. Please allow camera access.';
+      } else if (err.name === 'NotFoundError') {
+        errorMsg = 'No camera found on this device.';
+      } else if (err.name === 'NotReadableError') {
+        errorMsg = 'Camera is in use by another app.';
+      }
+      
+      setError(errorMsg);
+      toast.error(errorMsg);
     }
   };
 
-  // Handle file input
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      processImage(file);
+  // Stop scanner
+  const stopScanner = useCallback(() => {
+    if (readerRef.current) {
+      readerRef.current.reset();
+      readerRef.current = null;
     }
-    e.target.value = '';
-  };
+    setScanning(false);
+    setScanStatus('');
+  }, []);
 
-  // Reset
+  // Reset for new scan
   const handleReset = () => {
     setResult(null);
     setError(null);
-    setQrCodeInput('');
+    hasScannedRef.current = false;
   };
 
   // Loading state
@@ -294,21 +300,10 @@ export default function AttendanceScanner() {
     <div className="min-h-screen bg-slate-900 text-white p-4">
       <div className="max-w-md mx-auto">
         {/* Header */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-4">
           <h1 className="text-2xl font-bold mb-1">📱 Attendance Scanner</h1>
           <p className="text-slate-400 text-sm">Scan QR code to check in</p>
         </div>
-
-        {/* Hidden elements */}
-        <canvas ref={canvasRef} style={{ display: 'none' }} />
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          onChange={handleFileChange}
-          style={{ display: 'none' }}
-        />
 
         {/* Login Form */}
         {!isLoggedIn && (
@@ -376,7 +371,7 @@ export default function AttendanceScanner() {
           </div>
         )}
 
-        {/* Main Scanner Interface */}
+        {/* Scanner Interface */}
         {isLoggedIn && deviceRegistered && !result && (
           <div className="space-y-4">
             {/* User Info */}
@@ -387,89 +382,90 @@ export default function AttendanceScanner() {
               </div>
             </div>
 
-            {/* PASTE QR CODE - Primary Method */}
-            <div className="bg-slate-800 rounded-xl p-6">
-              <div className="text-center mb-4">
-                <ScanLine size={48} className="text-indigo-400 mx-auto mb-2" />
-                <h2 className="text-lg font-semibold">Enter QR Code</h2>
-                <p className="text-slate-400 text-sm mt-1">
-                  Scan QR on computer, then paste the code here
+            {/* Video Preview */}
+            <div className="bg-black rounded-xl overflow-hidden relative" style={{ aspectRatio: '4/3' }}>
+              <video
+                ref={videoRef}
+                className="w-full h-full object-cover"
+                playsInline
+                muted
+                autoPlay
+              />
+              
+              {/* Scanning overlay */}
+              {scanning && (
+                <div className="absolute inset-0 pointer-events-none">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-48 h-48 border-2 border-green-400 rounded-lg relative">
+                      <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-green-400" />
+                      <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-green-400" />
+                      <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-green-400" />
+                      <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-green-400" />
+                      <div className="absolute left-2 right-2 h-0.5 bg-red-500 top-1/2 animate-pulse" />
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Not scanning overlay */}
+              {!scanning && (
+                <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
+                  <div className="text-center">
+                    <Camera size={48} className="text-slate-500 mx-auto mb-2" />
+                    <p className="text-slate-400">Tap Start to scan</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Status */}
+            {scanStatus && (
+              <div className="bg-indigo-900/50 border border-indigo-500 rounded-lg p-3 text-center">
+                <p className="text-indigo-200 text-sm flex items-center justify-center gap-2">
+                  {scanning && <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />}
+                  {scanStatus}
                 </p>
               </div>
-
-              <form onSubmit={handleSubmit} className="space-y-3">
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={qrCodeInput}
-                    onChange={(e) => setQrCodeInput(e.target.value)}
-                    placeholder="ATT-xxxxx-xxxxx..."
-                    className="w-full px-4 py-4 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-500 font-mono text-sm"
-                  />
-                </div>
-                
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={handlePaste}
-                    className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 rounded-lg font-medium flex items-center justify-center gap-2"
-                  >
-                    <ClipboardPaste size={18} />
-                    Paste
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={processing || !qrCodeInput.trim()}
-                    className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-700 rounded-lg font-medium flex items-center justify-center gap-2"
-                  >
-                    {processing ? (
-                      <RefreshCw className="animate-spin" size={18} />
-                    ) : (
-                      <CheckCircle size={18} />
-                    )}
-                    Submit
-                  </button>
-                </div>
-              </form>
-            </div>
-
-            {/* Alternative: Camera Capture */}
-            <div className="bg-slate-800/50 rounded-xl p-4">
-              <p className="text-sm text-slate-400 text-center mb-3">
-                Or try taking a photo (works on some phones)
-              </p>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={processing}
-                className="w-full py-3 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm flex items-center justify-center gap-2"
-              >
-                <Camera size={18} />
-                Open Camera
-              </button>
-            </div>
+            )}
 
             {/* Error Display */}
             {error && (
               <div className="bg-red-900/50 border border-red-500 rounded-lg p-4">
                 <div className="flex items-start gap-3">
-                  <AlertTriangle className="text-red-400 shrink-0 mt-0.5" size={20} />
-                  <div>
-                    <p className="text-red-200 font-medium">Error</p>
-                    <p className="text-red-300 text-sm mt-1">{error}</p>
-                  </div>
+                  <AlertTriangle className="text-red-400 shrink-0" size={20} />
+                  <p className="text-red-200 text-sm">{error}</p>
                 </div>
               </div>
             )}
 
+            {/* Action Button */}
+            {!scanning ? (
+              <button
+                onClick={startScanner}
+                disabled={processing}
+                className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-700 rounded-xl font-bold text-lg flex items-center justify-center gap-3"
+              >
+                <Camera size={24} />
+                Start Camera
+              </button>
+            ) : (
+              <button
+                onClick={stopScanner}
+                className="w-full py-4 bg-red-600 hover:bg-red-700 rounded-xl font-bold text-lg flex items-center justify-center gap-3"
+              >
+                <StopCircle size={24} />
+                Stop Camera
+              </button>
+            )}
+
             {/* Instructions */}
-            <div className="bg-blue-900/30 border border-blue-700 rounded-xl p-4">
-              <h3 className="font-semibold text-blue-200 mb-2">📋 How to check in:</h3>
-              <ol className="text-sm text-blue-100 space-y-2">
-                <li><span className="text-blue-400 font-bold">1.</span> Open CRM on computer → QR code appears</li>
-                <li><span className="text-blue-400 font-bold">2.</span> Use your phone camera to scan the QR</li>
-                <li><span className="text-blue-400 font-bold">3.</span> Your phone will show the QR text (starts with ATT-)</li>
-                <li><span className="text-blue-400 font-bold">4.</span> Tap <span className="bg-blue-800 px-1 rounded">&quot;Copy text&quot;</span> on that screen</li>
-                <li><span className="text-blue-400 font-bold">5.</span> Come back here → Tap <span className="bg-emerald-800 px-1 rounded">Paste</span></li>
+            <div className="bg-slate-800 rounded-xl p-4 text-sm">
+              <h3 className="font-semibold mb-2">Instructions:</h3>
+              <ol className="text-slate-400 space-y-1">
+                <li>1. Login to CRM on computer → QR appears</li>
+                <li>2. Tap &quot;Start Camera&quot; above</li>
+                <li>3. Point phone at QR code on screen</li>
+                <li>4. Hold steady until detected</li>
               </ol>
             </div>
           </div>
@@ -513,7 +509,7 @@ export default function AttendanceScanner() {
 
         {/* Footer */}
         <div className="text-center mt-6 text-xs text-slate-600">
-          <p>Scanner v3.1</p>
+          <p>Scanner v4.0 (ZXing)</p>
         </div>
       </div>
     </div>
