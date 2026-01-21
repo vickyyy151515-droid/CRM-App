@@ -176,6 +176,7 @@ const id = {
     myAssignedCustomers: 'Pelanggan Saya',
     offDaySakit: 'Off Day / Sakit',
     izin: 'Izin',
+    dataCleanup: 'Bersihkan Data',
   },
 
   // Dashboard
