@@ -16,6 +16,12 @@ def normalize_customer_id(customer_id: str) -> str:
         return ""
     return customer_id.strip().lower()
 
+# Helper function to check if record has "tambahan" in notes
+def is_tambahan_record(record) -> bool:
+    """Check if record has 'tambahan' in keterangan field"""
+    keterangan = record.get('keterangan', '') or ''
+    return 'tambahan' in keterangan.lower()
+
 # ==================== HELPER FUNCTIONS ====================
 
 async def generate_daily_summary(date_str: str = None):
@@ -39,8 +45,12 @@ async def generate_daily_summary(date_str: str = None):
     all_records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
     
     # Build customer first deposit date map (using normalized customer_id)
+    # IMPORTANT: Exclude records with "tambahan" in notes from first_date calculation
     customer_first_date = {}
     for record in sorted(all_records, key=lambda x: x['record_date']):
+        # Skip "tambahan" records when determining first deposit date
+        if is_tambahan_record(record):
+            continue
         # Use normalized customer_id for comparison
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
         key = (cid_normalized, record['product_id'])
@@ -53,7 +63,7 @@ async def generate_daily_summary(date_str: str = None):
     total_rdp = 0
     total_forms = len(records)
     
-    # Track unique customers per day for NDP/RDP (NEW LOGIC)
+    # Track unique customers per day for NDP/RDP
     daily_ndp_customers = set()  # Track unique NDP customers for the day
     daily_rdp_customers = set()  # Track unique RDP customers for the day
     
@@ -78,7 +88,14 @@ async def generate_daily_summary(date_str: str = None):
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
         key = (cid_normalized, record['product_id'])
         first_date = customer_first_date.get(key)
-        is_ndp = first_date == date_str
+        
+        # Determine NDP/RDP:
+        # 1. If notes contain "tambahan" (case-insensitive), always RDP
+        # 2. Otherwise, NDP if this is the first deposit date for this customer
+        if is_tambahan_record(record):
+            is_ndp = False  # "tambahan" records are always RDP
+        else:
+            is_ndp = first_date == date_str
         
         total_omset += depo_total
         
