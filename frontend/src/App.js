@@ -115,8 +115,8 @@ function MainAppContent() {
     );
   }
 
-  // Show attendance QR for staff who haven't checked in today
-  const shouldShowAttendanceQR = user && user.role === 'staff' && !attendanceChecked && !checkingAttendance;
+  // Show TOTP attendance screen for staff who haven't checked in today
+  const shouldShowAttendance = user && user.role === 'staff' && !attendanceChecked && !checkingAttendance;
 
   return (
     <Routes>
@@ -134,8 +134,8 @@ function MainAppContent() {
           user ? (
             (user.role === 'admin' || user.role === 'master_admin') ? (
               <AdminDashboard user={user} onLogout={handleLogout} />
-            ) : shouldShowAttendanceQR ? (
-              <AttendanceQRDisplay 
+            ) : shouldShowAttendance ? (
+              <AttendanceCodeEntry 
                 onComplete={() => setAttendanceChecked(true)} 
                 userName={user.name}
                 onLogout={handleLogout}
@@ -160,13 +160,7 @@ function App() {
         <div className="App min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors">
           <Toaster position="top-right" richColors />
           <BrowserRouter>
-            <Routes>
-              {/* Scanner page - completely standalone, no auth redirects */}
-              <Route path="/attendance-scanner" element={<AttendanceScanner />} />
-              
-              {/* All other routes */}
-              <Route path="/*" element={<MainAppContent />} />
-            </Routes>
+            <MainAppContent />
           </BrowserRouter>
         </div>
       </LanguageProvider>
