@@ -602,24 +602,27 @@ export default function AdminOmsetCRM() {
                 // Get NDP/RDP stats for this date from summary
                 const daySummary = summary?.daily.find(d => d.date === date);
                 
-                // Aggregate records by customer
-                const customerTotals = {};
+                // Aggregate records by customer, but keep individual records for expansion
+                const customerData = {};
                 dateRecords.forEach(record => {
-                  const key = `${record.customer_id}_${record.staff_id}_${record.product_id}`;
-                  if (!customerTotals[key]) {
-                    customerTotals[key] = {
+                  const key = `${date}_${record.customer_id}_${record.staff_id}_${record.product_id}`;
+                  if (!customerData[key]) {
+                    customerData[key] = {
+                      key,
                       customer_id: record.customer_id,
                       staff_name: record.staff_name,
+                      staff_id: record.staff_id,
                       product_name: record.product_name,
+                      product_id: record.product_id,
                       total_depo: 0,
-                      record_count: 0
+                      records: []
                     };
                   }
-                  customerTotals[key].total_depo += record.depo_total || 0;
-                  customerTotals[key].record_count += 1;
+                  customerData[key].total_depo += record.depo_total || 0;
+                  customerData[key].records.push(record);
                 });
                 
-                const aggregatedCustomers = Object.values(customerTotals).sort((a, b) => b.total_depo - a.total_depo);
+                const aggregatedCustomers = Object.values(customerData).sort((a, b) => b.total_depo - a.total_depo);
 
                 return (
                   <div key={date} className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
@@ -658,35 +661,149 @@ export default function AdminOmsetCRM() {
                     </button>
 
                     {isExpanded && (
-                      <div className="overflow-x-auto">
+                      <div className="border-t border-slate-200">
                         <table className="w-full">
-                          <thead className="bg-slate-50 border-t border-slate-200">
+                          <thead className="bg-slate-50">
                             <tr>
+                              <th className="px-4 py-2 text-left text-xs font-semibold text-slate-700 w-8"></th>
                               <th className="px-4 py-2 text-left text-xs font-semibold text-slate-700">No</th>
                               <th className="px-4 py-2 text-left text-xs font-semibold text-slate-700">Staff</th>
                               <th className="px-4 py-2 text-left text-xs font-semibold text-slate-700">Product</th>
                               <th className="px-4 py-2 text-left text-xs font-semibold text-slate-700">Customer ID</th>
+                              <th className="px-4 py-2 text-center text-xs font-semibold text-slate-700">Deposits</th>
                               <th className="px-4 py-2 text-right text-xs font-semibold text-slate-700">Total OMSET</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100">
-                            {aggregatedCustomers.map((customer, idx) => (
-                              <tr key={`${customer.customer_id}_${idx}`} className="hover:bg-slate-50">
-                                <td className="px-4 py-2 text-sm text-slate-600">{idx + 1}</td>
-                                <td className="px-4 py-2 text-sm font-medium text-slate-900">{customer.staff_name}</td>
-                                <td className="px-4 py-2">
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
-                                    {customer.product_name}
-                                  </span>
-                                </td>
-                                <td className="px-4 py-2 text-sm text-slate-900">{customer.customer_id}</td>
-                                <td className="px-4 py-2 text-sm text-right font-semibold text-emerald-600">Rp {formatCurrency(customer.total_depo)}</td>
-                              </tr>
-                            ))}
+                            {aggregatedCustomers.map((customer, idx) => {
+                              const isCustomerExpanded = expandedCustomers[customer.key];
+                              return (
+                                <React.Fragment key={customer.key}>
+                                  {/* Customer Row */}
+                                  <tr 
+                                    className={`hover:bg-slate-50 cursor-pointer ${isCustomerExpanded ? 'bg-indigo-50' : ''}`}
+                                    onClick={() => toggleCustomerExpand(customer.key)}
+                                  >
+                                    <td className="px-4 py-2 text-center">
+                                      {customer.records.length > 1 ? (
+                                        isCustomerExpanded ? 
+                                          <ChevronUp size={16} className="text-indigo-600" /> : 
+                                          <ChevronDown size={16} className="text-slate-400" />
+                                      ) : (
+                                        <span className="text-slate-300">-</span>
+                                      )}
+                                    </td>
+                                    <td className="px-4 py-2 text-sm text-slate-600">{idx + 1}</td>
+                                    <td className="px-4 py-2 text-sm font-medium text-slate-900">{customer.staff_name}</td>
+                                    <td className="px-4 py-2">
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
+                                        {customer.product_name}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-2 text-sm text-slate-900 font-mono">{customer.customer_id}</td>
+                                    <td className="px-4 py-2 text-center">
+                                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                        customer.records.length > 1 
+                                          ? 'bg-amber-100 text-amber-800' 
+                                          : 'bg-slate-100 text-slate-600'
+                                      }`}>
+                                        {customer.records.length}x
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-2 text-sm text-right font-semibold text-emerald-600">
+                                      Rp {formatCurrency(customer.total_depo)}
+                                    </td>
+                                  </tr>
+                                  
+                                  {/* Expanded Individual Records */}
+                                  {isCustomerExpanded && (
+                                    <tr>
+                                      <td colSpan={7} className="p-0">
+                                        <div className="bg-slate-50 border-y border-slate-200">
+                                          <div className="px-6 py-2 bg-slate-100 border-b border-slate-200">
+                                            <span className="text-xs font-semibold text-slate-600">
+                                              Individual Deposits for {customer.customer_id}
+                                            </span>
+                                          </div>
+                                          <table className="w-full">
+                                            <thead className="bg-slate-100/50">
+                                              <tr>
+                                                <th className="px-6 py-1.5 text-left text-xs font-medium text-slate-500">Time</th>
+                                                <th className="px-4 py-1.5 text-left text-xs font-medium text-slate-500">Customer Name</th>
+                                                <th className="px-4 py-1.5 text-right text-xs font-medium text-slate-500">Nominal</th>
+                                                <th className="px-4 py-1.5 text-center text-xs font-medium text-slate-500">Multiplier</th>
+                                                <th className="px-4 py-1.5 text-right text-xs font-medium text-slate-500">Total</th>
+                                                <th className="px-4 py-1.5 text-left text-xs font-medium text-slate-500">Notes</th>
+                                                <th className="px-4 py-1.5 text-center text-xs font-medium text-slate-500 w-16">Action</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                              {customer.records
+                                                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                                                .map((record, rIdx) => (
+                                                  <tr key={record.id} className="hover:bg-white">
+                                                    <td className="px-6 py-2 text-sm text-slate-600">
+                                                      <span className="inline-flex items-center gap-1">
+                                                        <Clock size={12} className="text-slate-400" />
+                                                        {new Date(record.created_at).toLocaleTimeString('id-ID', { 
+                                                          hour: '2-digit', 
+                                                          minute: '2-digit' 
+                                                        })}
+                                                      </span>
+                                                    </td>
+                                                    <td className="px-4 py-2 text-sm text-slate-700">{record.customer_name}</td>
+                                                    <td className="px-4 py-2 text-sm text-right text-slate-900">
+                                                      Rp {formatCurrency(record.nominal)}
+                                                    </td>
+                                                    <td className="px-4 py-2 text-sm text-center text-slate-600">
+                                                      {record.depo_kelipatan}x
+                                                    </td>
+                                                    <td className="px-4 py-2 text-sm text-right font-medium text-emerald-600">
+                                                      Rp {formatCurrency(record.depo_total)}
+                                                    </td>
+                                                    <td className="px-4 py-2 text-sm text-slate-500 max-w-[150px] truncate">
+                                                      {record.keterangan || '-'}
+                                                    </td>
+                                                    <td className="px-4 py-2 text-center">
+                                                      <button
+                                                        onClick={(e) => {
+                                                          e.stopPropagation();
+                                                          handleDeleteOmsetRecord(record.id, {
+                                                            customer_id: record.customer_id,
+                                                            amount: record.depo_total,
+                                                            time: new Date(record.created_at).toLocaleTimeString('id-ID', { 
+                                                              hour: '2-digit', 
+                                                              minute: '2-digit' 
+                                                            })
+                                                          });
+                                                        }}
+                                                        disabled={deletingRecord === record.id}
+                                                        className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
+                                                        title="Delete this OMSET record"
+                                                        data-testid={`delete-omset-${record.id}`}
+                                                      >
+                                                        {deletingRecord === record.id ? (
+                                                          <RefreshCw size={16} className="animate-spin" />
+                                                        ) : (
+                                                          <Trash2 size={16} />
+                                                        )}
+                                                      </button>
+                                                    </td>
+                                                  </tr>
+                                                ))}
+                                            </tbody>
+                                          </table>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  )}
+                                </React.Fragment>
+                              );
+                            })}
                           </tbody>
                           <tfoot className="bg-slate-50 border-t border-slate-200">
                             <tr>
-                              <td colSpan={4} className="px-4 py-2 text-sm font-semibold text-slate-900">DAY TOTAL</td>
+                              <td colSpan={6} className="px-4 py-2 text-sm font-semibold text-slate-900">DAY TOTAL</td>
                               <td className="px-4 py-2 text-sm text-right font-bold text-emerald-600">Rp {formatCurrency(dayTotal)}</td>
                             </tr>
                           </tfoot>
