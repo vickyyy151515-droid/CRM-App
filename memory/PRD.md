@@ -234,6 +234,19 @@ Device-registered QR code attendance system for staff check-in.
 - `react-native-camera-kit` - Lightweight, simple integration
 - `expo-camera` - For Expo-managed apps
 
+### NDP/RDP "Tambahan" Logic Unification - COMPLETED (Jan 21, 2026)
+**Issue**: NDP/RDP counts were inconsistent between different reporting pages
+**Root Cause**: Not all modules applied the "tambahan" rule correctly
+**Rule Applied Globally**:
+1. Records with "tambahan" (case-insensitive) in `keterangan` field are ALWAYS classified as RDP
+2. "Tambahan" records are EXCLUDED from customer first-deposit date calculation
+**Files Updated**:
+- analytics.py, bonus.py, leaderboard.py, report.py, retention.py, scheduled_reports.py
+**Testing**: 30 tests passed (13 unit tests + 17 API tests)
+**Test Files**: 
+- `/app/backend/tests/test_tambahan_ndp_rdp_logic.py`
+- `/app/tests/test_tambahan_api_endpoints.py`
+
 ### User Activity Feature - REBUILT FROM SCRATCH (Jan 21, 2026)
 **Previous Issue**: Complex logic caused bugs where users showed wrong status
 **Solution**: Completely removed old code and rebuilt with simple, correct logic
