@@ -692,9 +692,10 @@ export default function AttendanceScanner() {
           </div>
         )}
 
-        {/* Footer */}
+        {/* Footer with version */}
         <div className="text-center mt-4 text-xs text-slate-600">
           <p>Device: {deviceToken?.substring(0, 12)}...</p>
+          <p className="text-slate-500 mt-1">Scanner v2.1 (jsQR)</p>
         </div>
       </div>
     </div>
