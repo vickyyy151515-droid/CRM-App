@@ -206,8 +206,6 @@ export default function AdminDashboard({ user, onLogout }) {
         return <CustomerRetention isAdmin={true} />;
       case 'scheduled-reports':
         return <ScheduledReports />;
-      case 'user-activity':
-        return <UserActivity />;
       case 'attendance':
         return <AttendanceAdmin />;
       case 'inventory':
