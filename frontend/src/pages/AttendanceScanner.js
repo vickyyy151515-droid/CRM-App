@@ -599,20 +599,23 @@ export default function AttendanceScanner() {
               )}
             </div>
 
-            {/* Scanning indicator with scan count */}
+            {/* Scanning indicator with frame count */}
             {scanning && (
               <div className="bg-indigo-900/50 border border-indigo-500 rounded-lg p-3 mb-4">
                 <div className="flex items-center justify-center gap-2">
                   <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
                   <span className="text-indigo-200 text-sm">
-                    {scannerStatus === 'processing' ? 'Processing QR code...' : 'Camera active - point at QR code'}
+                    {scannerStatus === 'processing' ? 'Processing QR code...' : 'Scanning... Hold steady'}
                   </span>
                 </div>
-                {scanCount > 0 && (
-                  <p className="text-center text-xs text-slate-400 mt-1">
-                    Detected: {scanCount} QR code(s)
+                <div className="text-center mt-2">
+                  <p className="text-xs text-slate-400">
+                    Frames analyzed: <span className="text-green-400 font-mono">{scanCount}</span>
                   </p>
-                )}
+                  <p className="text-xs text-slate-500 mt-1">
+                    Position QR code inside the square frame
+                  </p>
+                </div>
               </div>
             )}
 
