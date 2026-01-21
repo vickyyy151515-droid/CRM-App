@@ -368,7 +368,15 @@ export default function AttendanceScanner() {
       setScanning(true);
       setScannerStatus('scanning');
       setDebugInfo('Camera active - point at QR code');
-      toast.success('Camera ready! Point at QR code.');
+      toast.success('Camera ready! Watch frame counter below.', { duration: 3000 });
+      
+      // Show a reminder after 5 seconds if no QR detected
+      setTimeout(() => {
+        if (mountedRef.current && scannerRef.current && !hasScannedRef.current) {
+          addDebugLog('5 seconds passed, no QR detected yet');
+          toast.info('Make sure QR code is fully inside the frame', { duration: 3000 });
+        }
+      }, 5000);
       
     } catch (err) {
       addDebugLog(`Scanner error: ${err.name} - ${err.message}`);
