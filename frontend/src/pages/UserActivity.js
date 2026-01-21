@@ -10,7 +10,6 @@ import { Users, RefreshCw, Circle, Clock, Moon } from 'lucide-react';
  * - All status calculations happen on the backend based on timestamps
  */
 export default function UserActivity() {
-  const { t } = useLanguage();
   const [users, setUsers] = useState([]);
   const [summary, setSummary] = useState({ total: 0, online: 0, idle: 0, offline: 0 });
   const [loading, setLoading] = useState(true);
