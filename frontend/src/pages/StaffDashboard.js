@@ -33,9 +33,14 @@ export default function StaffDashboard({ user, onLogout }) {
   });
   
   // Activity tracking for auto-logout
-  const lastActivityRef = useRef(Date.now());
+  const lastActivityRef = useRef(null);
   const AUTO_LOGOUT_MS = 60 * 60 * 1000; // 60 minutes in milliseconds
   const WARNING_BEFORE_MS = 5 * 60 * 1000; // Show warning 5 minutes before
+  
+  // Initialize lastActivityRef on mount
+  useEffect(() => {
+    lastActivityRef.current = Date.now();
+  }, []);
   
   // Auto-set language to Indonesian for staff users
   useEffect(() => {
