@@ -578,16 +578,35 @@ export default function AttendanceScanner() {
             </div>
 
             {/* Scanner Container */}
-            <div className="bg-slate-800 rounded-xl overflow-hidden mb-4 relative" style={{ minHeight: '300px' }}>
+            <div className="bg-slate-800 rounded-xl overflow-hidden mb-4 relative" style={{ minHeight: '320px' }}>
               {/* Scanner element - ALWAYS visible with fixed dimensions */}
               <div 
                 id="qr-reader-box" 
                 style={{ 
                   width: '100%', 
-                  minHeight: '300px',
+                  minHeight: '320px',
                   background: '#000'
                 }}
               />
+              
+              {/* Scanning frame indicator - shows when camera is active */}
+              {scanning && (
+                <div 
+                  className="absolute inset-0 pointer-events-none flex items-center justify-center"
+                  style={{ zIndex: 5 }}
+                >
+                  <div 
+                    className="border-2 border-green-400 rounded-lg animate-pulse"
+                    style={{ width: '250px', height: '250px', boxShadow: '0 0 20px rgba(74, 222, 128, 0.3)' }}
+                  >
+                    {/* Corner indicators */}
+                    <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-green-400 rounded-tl"></div>
+                    <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-green-400 rounded-tr"></div>
+                    <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-green-400 rounded-bl"></div>
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-green-400 rounded-br"></div>
+                  </div>
+                </div>
+              )}
               
               {/* Overlay when not scanning - covers the scanner element */}
               {!scanning && scannerStatus !== 'starting' && (
