@@ -2,7 +2,7 @@
 Attendance System API - TOTP Based (Google Authenticator compatible)
 - Staff sets up Google Authenticator ONCE
 - Daily: Staff types 6-digit code to check in
-- Code changes every 60 seconds
+- Code changes every 30 seconds (standard TOTP interval)
 """
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -27,7 +27,7 @@ SHIFT_START_HOUR = 11  # 11:00 AM
 SHIFT_END_HOUR = 23    # 11:00 PM
 
 # TOTP Configuration
-TOTP_INTERVAL = 60  # Code changes every 60 seconds
+TOTP_INTERVAL = 30  # Code changes every 30 seconds (Google Authenticator standard)
 TOTP_ISSUER = "CRM Attendance"
 
 def get_jakarta_now():

@@ -17,7 +17,7 @@ export default function AttendanceCodeEntry({ onComplete, userName, onLogout }) 
   const [verifyCode, setVerifyCode] = useState('');
   const [alreadyCheckedIn, setAlreadyCheckedIn] = useState(false);
   const [checkInTime, setCheckInTime] = useState(null);
-  const [timeLeft, setTimeLeft] = useState(60);
+  const [timeLeft, setTimeLeft] = useState(30);
 
   // Check TOTP status and attendance status
   const checkStatus = useCallback(async () => {
@@ -62,12 +62,12 @@ export default function AttendanceCodeEntry({ onComplete, userName, onLogout }) 
     checkStatus();
   }, [checkStatus]);
 
-  // Countdown timer for code expiry hint
+  // Countdown timer for code expiry hint (30 second standard TOTP)
   useEffect(() => {
     const timer = setInterval(() => {
       const now = new Date();
       const seconds = now.getSeconds();
-      setTimeLeft(60 - (seconds % 60));
+      setTimeLeft(30 - (seconds % 30));
     }, 1000);
     return () => clearInterval(timer);
   }, []);
