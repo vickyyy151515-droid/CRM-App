@@ -209,6 +209,11 @@ Device-registered QR code attendance system for staff check-in.
 ## Known Issues
 - WebSocket connection fails in preview environment (infrastructure limitation)
 
+### PRODUCTION DEPLOYMENT FIX - CRITICAL (Jan 21, 2026)
+**Problem**: Production app showing "Service temporarily unavailable" after every deployment
+**Root Cause**: `.gitignore` file had duplicate entries (lines 100-105) blocking all `.env` and `.env.*` files from being committed to the repository. This prevented environment files from being deployed to production.
+**Fix Applied**: Removed duplicate entries from `.gitignore`. Now only `.env.local` and `.env.*.local` are ignored (local development files), while `.env` files are committed for deployment.
+
 ### QR Scanner Black Screen Issue - RESEARCH & FIX (Jan 20, 2026)
 **Problem**: Camera opens but shows black screen on some mobile devices
 **Root Cause Identified**: The `html5-qrcode` library has a known bug with the native `BarcodeDetector` API on certain iOS/Android devices. The camera feed fails to display visually, yet QR code detection may continue functioning in the background.
