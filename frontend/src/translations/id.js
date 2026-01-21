@@ -149,6 +149,7 @@ const id = {
     exportCenter: 'Pusat Ekspor',
     scheduledReports: 'Laporan Terjadwal',
     userActivity: 'Aktivitas Pengguna',
+    attendance: 'Absensi',
     downloadHistory: 'Riwayat Unduhan',
     userManagement: 'Kelola Pengguna',
     productManagement: 'Kelola Produk',
