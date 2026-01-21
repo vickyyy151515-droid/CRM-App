@@ -140,6 +140,7 @@ const en = {
     myAssignedCustomers: 'My Assigned Customers',
     offDaySakit: 'Off Day / Sakit',
     izin: 'Izin',
+    dataCleanup: 'Data Cleanup',
   },
 
   // Dashboard
