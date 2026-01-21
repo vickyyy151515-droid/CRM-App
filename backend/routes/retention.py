@@ -56,12 +56,21 @@ async def get_retention_overview(
             return ""
         return customer_id.strip().lower()
     
+    # Helper function to check if record has "tambahan" in notes
+    def is_tambahan_record(record) -> bool:
+        keterangan = record.get('keterangan', '') or ''
+        return 'tambahan' in keterangan.lower()
+    
     # Get ALL omset records to determine first deposit dates
     all_records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
     
     # Build customer first deposit map - USE NORMALIZED CUSTOMER ID
+    # IMPORTANT: Exclude records with "tambahan" in notes from first_date calculation
     customer_first_date = {}
     for record in sorted(all_records, key=lambda x: x['record_date']):
+        # Skip "tambahan" records when determining first deposit date
+        if is_tambahan_record(record):
+            continue
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
         key = (cid_normalized, record.get('product_id'))
         if key not in customer_first_date:
@@ -106,6 +115,8 @@ async def get_retention_overview(
             customer['last_deposit'] = record['record_date']
         
         # Check if NDP (first deposit is within date range)
+        # Note: Records with "tambahan" in notes are always RDP and excluded from first_date calc
+        # So is_ndp will correctly be False for tambahan records
         first_ever = customer_first_date.get(key)
         if first_ever and start_date <= first_ever <= end_date:
             customer['is_ndp'] = True
@@ -187,9 +198,25 @@ async def get_retention_customers(
     # Get all records to determine first deposits
     all_records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
     
+    # Helper function to normalize customer ID
+    def normalize_customer_id(customer_id: str) -> str:
+        if not customer_id:
+            return ""
+        return customer_id.strip().lower()
+    
+    # Helper function to check if record has "tambahan" in notes
+    def is_tambahan_record(record) -> bool:
+        keterangan = record.get('keterangan', '') or ''
+        return 'tambahan' in keterangan.lower()
+    
+    # Build customer first deposit map - EXCLUDE "tambahan" records
     customer_first_date = {}
     for record in sorted(all_records, key=lambda x: x['record_date']):
-        key = (record['customer_id'], record.get('product_id'))
+        # Skip "tambahan" records when determining first deposit date
+        if is_tambahan_record(record):
+            continue
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (cid_normalized, record.get('product_id'))
         if key not in customer_first_date:
             customer_first_date[key] = record['record_date']
     
@@ -209,7 +236,8 @@ async def get_retention_customers(
     })
     
     for record in records:
-        key = (record['customer_id'], record.get('product_id'))
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (cid_normalized, record.get('product_id'))
         customer = customer_stats[key]
         
         customer['customer_id'] = record['customer_id']
@@ -226,6 +254,7 @@ async def get_retention_customers(
         if customer['last_deposit'] is None or record['record_date'] > customer['last_deposit']:
             customer['last_deposit'] = record['record_date']
         
+        # Check if NDP - "tambahan" records are excluded from first_date so they won't match
         first_ever = customer_first_date.get(key)
         if first_ever and start_date <= first_ever <= end_date:
             customer['is_ndp'] = True
@@ -297,10 +326,25 @@ async def get_retention_trend(
     if not all_records:
         return {'trend': [], 'summary': {'total_ndp': 0, 'total_rdp': 0}}
     
-    # Build customer first deposit map
+    # Helper function to normalize customer ID
+    def normalize_customer_id(customer_id: str) -> str:
+        if not customer_id:
+            return ""
+        return customer_id.strip().lower()
+    
+    # Helper function to check if record has "tambahan" in notes
+    def is_tambahan_record(record) -> bool:
+        keterangan = record.get('keterangan', '') or ''
+        return 'tambahan' in keterangan.lower()
+    
+    # Build customer first deposit map - EXCLUDE "tambahan" records
     customer_first_date = {}
     for record in sorted(all_records, key=lambda x: x['record_date']):
-        key = (record['customer_id'], record.get('product_id'))
+        # Skip "tambahan" records when determining first deposit date
+        if is_tambahan_record(record):
+            continue
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (cid_normalized, record.get('product_id'))
         if key not in customer_first_date:
             customer_first_date[key] = record['record_date']
     
@@ -321,10 +365,12 @@ async def get_retention_trend(
         seen_customers = set()
         
         for record in day_records:
-            key = (record['customer_id'], record.get('product_id'))
+            cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+            key = (cid_normalized, record.get('product_id'))
             if key not in seen_customers:
                 seen_customers.add(key)
                 first_date = customer_first_date.get(key)
+                # "tambahan" records are excluded from first_date, so they will be RDP
                 if first_date == date:
                     day_ndp += 1
                 else:
@@ -383,9 +429,25 @@ async def get_retention_by_product(
     # Get all records for first deposit calculation
     all_records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
     
+    # Helper function to normalize customer ID
+    def normalize_customer_id(customer_id: str) -> str:
+        if not customer_id:
+            return ""
+        return customer_id.strip().lower()
+    
+    # Helper function to check if record has "tambahan" in notes
+    def is_tambahan_record(record) -> bool:
+        keterangan = record.get('keterangan', '') or ''
+        return 'tambahan' in keterangan.lower()
+    
+    # Build customer first deposit map - EXCLUDE "tambahan" records
     customer_first_date = {}
     for record in sorted(all_records, key=lambda x: x['record_date']):
-        key = (record['customer_id'], record.get('product_id'))
+        # Skip "tambahan" records when determining first deposit date
+        if is_tambahan_record(record):
+            continue
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (cid_normalized, record.get('product_id'))
         if key not in customer_first_date:
             customer_first_date[key] = record['record_date']
     
@@ -406,16 +468,19 @@ async def get_retention_by_product(
         
         prod['product_id'] = prod_id
         prod['product_name'] = record.get('product_name', 'Unknown')
-        prod['total_customers'].add(record['customer_id'])
+        
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        prod['total_customers'].add(cid_normalized)
         prod['total_deposits'] += 1
         prod['total_omset'] += record.get('depo_total', 0) or 0
         
-        key = (record['customer_id'], prod_id)
+        key = (cid_normalized, prod_id)
         first_date = customer_first_date.get(key)
+        # "tambahan" records are excluded from first_date calculation, so they will be RDP
         if first_date and start_date <= first_date <= end_date:
-            prod['ndp_customers'].add(record['customer_id'])
+            prod['ndp_customers'].add(cid_normalized)
         else:
-            prod['rdp_customers'].add(record['customer_id'])
+            prod['rdp_customers'].add(cid_normalized)
     
     # Format result
     result = []
@@ -472,9 +537,25 @@ async def get_retention_by_staff(
     # Get all records for first deposit calculation
     all_records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
     
+    # Helper function to normalize customer ID
+    def normalize_customer_id(customer_id: str) -> str:
+        if not customer_id:
+            return ""
+        return customer_id.strip().lower()
+    
+    # Helper function to check if record has "tambahan" in notes
+    def is_tambahan_record(record) -> bool:
+        keterangan = record.get('keterangan', '') or ''
+        return 'tambahan' in keterangan.lower()
+    
+    # Build customer first deposit map - EXCLUDE "tambahan" records
     customer_first_date = {}
     for record in sorted(all_records, key=lambda x: x['record_date']):
-        key = (record['customer_id'], record.get('product_id'))
+        # Skip "tambahan" records when determining first deposit date
+        if is_tambahan_record(record):
+            continue
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (cid_normalized, record.get('product_id'))
         if key not in customer_first_date:
             customer_first_date[key] = record['record_date']
     
@@ -497,17 +578,20 @@ async def get_retention_by_staff(
         
         staff['staff_id'] = staff_id
         staff['staff_name'] = record.get('staff_name', 'Unknown')
-        staff['total_customers'].add(record['customer_id'])
+        
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        staff['total_customers'].add(cid_normalized)
         staff['total_deposits'] += 1
         staff['total_omset'] += record.get('depo_total', 0) or 0
-        staff['customer_deposits'][record['customer_id']] += 1
+        staff['customer_deposits'][cid_normalized] += 1
         
-        key = (record['customer_id'], record.get('product_id'))
+        key = (cid_normalized, record.get('product_id'))
         first_date = customer_first_date.get(key)
+        # "tambahan" records are excluded from first_date calculation, so they will be RDP
         if first_date and start_date <= first_date <= end_date:
-            staff['ndp_customers'].add(record['customer_id'])
+            staff['ndp_customers'].add(cid_normalized)
         else:
-            staff['rdp_customers'].add(record['customer_id'])
+            staff['rdp_customers'].add(cid_normalized)
     
     # Calculate loyal customers
     for staff in staff_data.values():
