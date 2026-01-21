@@ -403,16 +403,3 @@ async def get_staff_users(user: User = Depends(get_current_user)):
     db = get_db()
     staff = await db.users.find({'role': 'staff'}, {'_id': 0, 'password_hash': 0}).to_list(1000)
     return staff
-
-
-@router.get("/auth/debug-env")
-async def debug_env():
-    """Debug endpoint to check environment - temporary for troubleshooting"""
-    import os
-    return {
-        "jwt_secret_set": bool(os.environ.get('JWT_SECRET')),
-        "mongo_url_set": bool(os.environ.get('MONGO_URL')),
-        "db_name_set": bool(os.environ.get('DB_NAME')),
-        "pytz_version": __import__('pytz').__version__,
-        "python_version": __import__('sys').version
-    }
