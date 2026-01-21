@@ -252,20 +252,26 @@ export default function AttendanceScanner() {
       ctx.drawImage(video, 0, 0, width, height);
       const imageData = ctx.getImageData(0, 0, width, height);
       
-      const code = jsQR(imageData.data, width, height, {
-        inversionAttempts: 'dontInvert',
+      // Try with different inversion settings for better detection
+      // 'attemptBoth' tries normal and inverted, which helps with screens
+      let code = jsQR(imageData.data, width, height, {
+        inversionAttempts: 'attemptBoth',
       });
       
       setFrameCount(prev => {
         const newCount = prev + 1;
-        if (newCount % 60 === 0) {
-          addLog(`Scanned ${newCount} frames, video: ${width}x${height}`);
+        if (newCount % 50 === 0) {
+          addLog(`Frames: ${newCount}, res: ${width}x${height}`);
         }
         return newCount;
       });
       
       if (code && code.data) {
         addLog(`FOUND QR: ${code.data}`);
+        // Vibrate on success if supported
+        if (navigator.vibrate) {
+          navigator.vibrate(200);
+        }
         processQRCode(code.data);
       }
     } catch (err) {
