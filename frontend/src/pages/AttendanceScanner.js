@@ -189,9 +189,12 @@ export default function AttendanceScanner() {
       addDebugLog('Sending attendance scan API request...');
       toast.loading('Recording attendance...', { id: 'attendance-loading' });
       
+      const scannerToken = localStorage.getItem('scanner_token');
       const response = await api.post('/attendance/scan', {
         qr_code: decodedText,
         device_token: deviceToken
+      }, {
+        headers: scannerToken ? { Authorization: `Bearer ${scannerToken}` } : {}
       });
 
       toast.dismiss('attendance-loading');
