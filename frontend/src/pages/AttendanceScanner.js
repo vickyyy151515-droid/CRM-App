@@ -142,8 +142,6 @@ export default function AttendanceScanner() {
   const processQRCode = useCallback(async (qrCode) => {
     if (hasScannedRef.current || processing) return;
     
-    ifoken) headers['Authorization'] = `Bearer ${token}`;
-    
     // Validate format
     if (!qrCode.startsWith('ATT-')) {
       toast.error('Invalid QR code format');
