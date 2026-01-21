@@ -294,10 +294,14 @@ export default function AttendanceScanner() {
         addDebugLog(`Found ${cameras.length} cameras: ${cameras.map(c => c.label || c.id).join(', ')}`);
         
         if (cameras && cameras.length > 0) {
-          // Prefer back camera
+          // Prefer back camera - look for various naming patterns
           const backCamera = cameras.find(c => {
             const label = (c.label || '').toLowerCase();
-            return label.includes('back') || label.includes('rear') || label.includes('environment');
+            return label.includes('back') || 
+                   label.includes('rear') || 
+                   label.includes('environment') ||
+                   label.includes('0') ||  // Often back camera is labeled "camera 0"
+                   label.includes('main');
           });
           
           if (backCamera) {
@@ -309,12 +313,15 @@ export default function AttendanceScanner() {
             addDebugLog(`Using camera: ${cameras[cameras.length - 1].label || cameraConfig}`);
           }
         } else {
-          // No cameras enumerated, use facingMode
-          cameraConfig = { facingMode: "environment" };
-          addDebugLog('No cameras enumerated, using facingMode: environment');
+          // No cameras enumerated - try with specific constraints for Android
+          cameraConfig = { 
+            facingMode: { exact: "environment" }  // Force back camera
+          };
+          addDebugLog('No cameras enumerated, using facingMode: environment (exact)');
         }
       } catch (e) {
         addDebugLog(`Camera enumeration failed: ${e.message}, using facingMode`);
+        // Try with flexible facingMode first
         cameraConfig = { facingMode: "environment" };
       }
 
