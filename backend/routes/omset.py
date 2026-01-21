@@ -255,12 +255,13 @@ async def delete_omset_record(record_id: str, user: User = Depends(get_current_u
     if not record:
         raise HTTPException(status_code=404, detail="Record not found")
     
+    # Admins can delete any record, staff can only delete their own
     if user.role == 'staff' and record['staff_id'] != user.id:
         raise HTTPException(status_code=403, detail="You can only delete your own records")
     
     await db.omset_records.delete_one({'id': record_id})
     
-    return {'message': 'Record deleted successfully'}
+    return {'message': 'Record deleted successfully', 'deleted_id': record_id}
 
 @router.get("/omset/summary")
 async def get_omset_summary(
