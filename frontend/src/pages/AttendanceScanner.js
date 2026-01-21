@@ -47,21 +47,34 @@ export default function AttendanceScanner() {
     addDebugLog(`Device token: ${token.slice(-8)}`);
   }, [addDebugLog]);
 
-  // Check auth status
+  // Check auth status - use local token only, don't redirect
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem('token');
-      if (token) {
+      // Use a scanner-specific token to avoid interference with main app
+      const scannerToken = localStorage.getItem('scanner_token');
+      const mainToken = localStorage.getItem('token');
+      const tokenToUse = scannerToken || mainToken;
+      
+      if (tokenToUse) {
         try {
-          const response = await api.get('/auth/me');
+          // Create a temporary api instance with the token
+          const response = await api.get('/auth/me', {
+            headers: { Authorization: `Bearer ${tokenToUse}` }
+          });
           setUser(response.data);
           setIsLoggedIn(true);
+          // Save as scanner token so we're independent of main app
+          localStorage.setItem('scanner_token', tokenToUse);
           addDebugLog(`Logged in as: ${response.data.name}`);
           
-          const deviceResponse = await api.get('/attendance/device-status');
+          const deviceResponse = await api.get('/attendance/device-status', {
+            headers: { Authorization: `Bearer ${tokenToUse}` }
+          });
           setDeviceRegistered(deviceResponse.data.has_device);
           addDebugLog(`Device registered: ${deviceResponse.data.has_device}`);
         } catch (error) {
+          // Token invalid, clear scanner token
+          localStorage.removeItem('scanner_token');
           setIsLoggedIn(false);
           addDebugLog(`Auth check failed: ${error.message}`);
         }
@@ -70,6 +83,43 @@ export default function AttendanceScanner() {
     };
     checkAuth();
   }, [addDebugLog]);
+
+  // Handle login directly on this page (without redirect)
+  const handleScannerLogin = async (e) => {
+    e.preventDefault();
+    setLoginError('');
+    setLoginLoading(true);
+    
+    try {
+      const response = await api.post('/auth/login', {
+        email: loginEmail,
+        password: loginPassword
+      });
+      
+      const { token, user: userData } = response.data;
+      
+      // Store as scanner-specific token (won't affect main app)
+      localStorage.setItem('scanner_token', token);
+      setUser(userData);
+      setIsLoggedIn(true);
+      addDebugLog(`Logged in as: ${userData.name}`);
+      
+      // Check device status
+      const deviceResponse = await api.get('/attendance/device-status', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setDeviceRegistered(deviceResponse.data.has_device);
+      addDebugLog(`Device registered: ${deviceResponse.data.has_device}`);
+      
+      toast.success('Login successful!');
+    } catch (error) {
+      const errMsg = error.response?.data?.detail || 'Login failed';
+      setLoginError(errMsg);
+      addDebugLog(`Login failed: ${errMsg}`);
+    } finally {
+      setLoginLoading(false);
+    }
+  };
 
   // Cleanup on unmount
   useEffect(() => {
