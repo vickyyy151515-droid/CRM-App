@@ -208,6 +208,30 @@ export default function AdminOmsetCRM() {
     setExpandedDates(prev => ({ ...prev, [date]: !prev[date] }));
   };
 
+  const toggleCustomerExpand = (customerKey) => {
+    setExpandedCustomers(prev => ({ ...prev, [customerKey]: !prev[customerKey] }));
+  };
+
+  const handleDeleteOmsetRecord = async (recordId, customerInfo) => {
+    const confirmMsg = `Delete this OMSET record?\n\nCustomer: ${customerInfo.customer_id}\nAmount: Rp ${formatCurrency(customerInfo.amount)}\nTime: ${customerInfo.time}\n\nThis action cannot be undone.`;
+    
+    if (!window.confirm(confirmMsg)) {
+      return;
+    }
+
+    setDeletingRecord(recordId);
+    try {
+      await api.delete(`/omset/${recordId}`);
+      toast.success('OMSET record deleted');
+      // Refresh the data
+      loadData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to delete record');
+    } finally {
+      setDeletingRecord(null);
+    }
+  };
+
   // Group records by date
   const recordsByDate = records.reduce((acc, record) => {
     const date = record.record_date;
