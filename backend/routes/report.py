@@ -55,9 +55,18 @@ async def get_report_crm_data(
             return ""
         return customer_id.strip().lower()
     
+    def is_tambahan_record(record):
+        """Check if record has 'tambahan' in keterangan field"""
+        keterangan = record.get('keterangan', '') or ''
+        return 'tambahan' in keterangan.lower()
+    
     # Rebuild customer_first_date with normalized IDs
+    # IMPORTANT: Exclude records with "tambahan" from first_date calculation
     customer_first_date = {}
     for record in sorted(all_time_records, key=lambda x: x['record_date']):
+        # Skip "tambahan" records when determining first deposit date
+        if is_tambahan_record(record):
+            continue
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
         pid = record['product_id']
         key = (cid_normalized, pid)
@@ -83,13 +92,18 @@ async def get_report_crm_data(
             key = (cid_normalized, record['product_id'])
             first_date = customer_first_date.get(key)
             
-            if first_date and first_date.startswith(month_str) and first_date == record['record_date']:
+            # "tambahan" records are always RDP
+            if is_tambahan_record(record):
+                if cid_normalized not in month_rdp_customers:
+                    month_rdp_customers.add(cid_normalized)
+                    rdp += 1
+            elif first_date and first_date.startswith(month_str) and first_date == record['record_date']:
                 # NDP - count unique customers
                 if cid_normalized not in month_ndp_customers:
                     month_ndp_customers.add(cid_normalized)
                     new_id += 1
             elif first_date and first_date < record['record_date']:
-                # RDP - count unique customers per month (NEW LOGIC)
+                # RDP - count unique customers per month
                 if cid_normalized not in month_rdp_customers:
                     month_rdp_customers.add(cid_normalized)
                     rdp += 1
@@ -120,7 +134,7 @@ async def get_report_crm_data(
             rdp = 0
             nominal = 0
             
-            # Track unique customers per day (NEW LOGIC)
+            # Track unique customers per day
             day_ndp_customers = set()
             day_rdp_customers = set()
             
@@ -129,13 +143,18 @@ async def get_report_crm_data(
                 key = (cid_normalized, record['product_id'])
                 first_date = customer_first_date.get(key)
                 
-                if first_date == date:
+                # "tambahan" records are always RDP
+                if is_tambahan_record(record):
+                    if cid_normalized not in day_rdp_customers:
+                        day_rdp_customers.add(cid_normalized)
+                        rdp += 1
+                elif first_date == date:
                     # NDP - count unique customers per day
                     if cid_normalized not in day_ndp_customers:
                         day_ndp_customers.add(cid_normalized)
                         new_id += 1
                 else:
-                    # RDP - count unique customers per day (NEW LOGIC)
+                    # RDP - count unique customers per day
                     if cid_normalized not in day_rdp_customers:
                         day_rdp_customers.add(cid_normalized)
                         rdp += 1
