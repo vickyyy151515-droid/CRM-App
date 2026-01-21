@@ -199,13 +199,18 @@ async def get_report_crm_data(
             key = (cid_normalized, record['product_id'])
             first_date = customer_first_date.get(key)
             
-            if first_date and first_date.startswith(month_str) and first_date == record['record_date']:
+            # "tambahan" records are always RDP
+            if is_tambahan_record(record):
+                if cid_normalized not in staff_rdp_customers[sid]:
+                    staff_rdp_customers[sid].add(cid_normalized)
+                    staff_month_data[sid]['rdp'] += 1
+            elif first_date and first_date.startswith(month_str) and first_date == record['record_date']:
                 # NDP - count unique customers per staff
                 if cid_normalized not in staff_ndp_customers[sid]:
                     staff_ndp_customers[sid].add(cid_normalized)
                     staff_month_data[sid]['new_id'] += 1
             elif first_date and first_date < record['record_date']:
-                # RDP - count unique customers per staff per month (NEW LOGIC)
+                # RDP - count unique customers per staff per month
                 if cid_normalized not in staff_rdp_customers[sid]:
                     staff_rdp_customers[sid].add(cid_normalized)
                     staff_month_data[sid]['rdp'] += 1
