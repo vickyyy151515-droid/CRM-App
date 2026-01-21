@@ -28,7 +28,7 @@ import DailySummary from '../components/DailySummary';
 import ConversionFunnel from '../components/ConversionFunnel';
 import CustomerRetention from '../components/CustomerRetention';
 import ScheduledReports from './ScheduledReports';
-import UserActivity from './UserActivity';
+// UserActivity removed - will rebuild from scratch
 import OfficeInventory from '../components/OfficeInventory';
 import AttendanceAdmin from './AttendanceAdmin';
 import { useLanguage } from '../contexts/LanguageContext';
