@@ -327,17 +327,21 @@ export default function AttendanceScanner() {
         handleQRDetected(decodedText, decodedResult);
       };
       
-      // Error callback - shows scanning activity
+      // Error callback - shows scanning activity (this fires on every frame without a QR)
       let errorCount = 0;
       let lastStatusTime = Date.now();
       const onScanError = (errorMessage) => {
         errorCount++;
+        // Update frame count in UI every 30 frames to show scanner is working
+        if (errorCount % 30 === 0) {
+          setScanCount(errorCount);  // Show frame count so user knows it's scanning
+        }
         // Log first few errors for debugging
         if (errorCount <= 3) {
           addDebugLog(`Scan attempt ${errorCount}: ${errorMessage.substring(0, 50)}`);
         }
-        // Every 100 attempts (roughly every 10 seconds at 10fps), show activity
-        if (errorCount % 100 === 0) {
+        // Every 150 frames (~10 seconds at 15fps), show activity in logs
+        if (errorCount % 150 === 0) {
           const elapsed = Math.round((Date.now() - lastStatusTime) / 1000);
           addDebugLog(`Still scanning... ${errorCount} frames processed in ${elapsed}s`);
         }
