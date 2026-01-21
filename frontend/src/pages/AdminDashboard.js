@@ -30,9 +30,8 @@ import CustomerRetention from '../components/CustomerRetention';
 import ScheduledReports from './ScheduledReports';
 import UserActivity from './UserActivity';
 import OfficeInventory from '../components/OfficeInventory';
-import AttendanceAdmin from './AttendanceAdmin';
 import { useLanguage } from '../contexts/LanguageContext';
-import { LayoutDashboard, Upload, FileSpreadsheet, Clock, Users, Package, List, BarChart, UserCheck, DollarSign, UserCog, Gift, CreditCard, PieChart, Download, FileText, Calculator, CalendarOff, Calendar, Timer, Trophy, CalendarDays, Filter, Heart, Send, Boxes, CalendarCheck, Activity } from 'lucide-react';
+import { LayoutDashboard, Upload, FileSpreadsheet, Clock, Users, Package, List, BarChart, UserCheck, DollarSign, UserCog, Gift, CreditCard, PieChart, Download, FileText, Calculator, CalendarOff, Calendar, Timer, Trophy, CalendarDays, Filter, Heart, Send, Boxes, Activity } from 'lucide-react';
 
 export default function AdminDashboard({ user, onLogout }) {
   const { t, language } = useLanguage();
