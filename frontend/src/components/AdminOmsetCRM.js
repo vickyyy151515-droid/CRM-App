@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Calendar, Package, DollarSign, TrendingUp, Users, Filter, ChevronDown, ChevronUp, UserPlus, RefreshCw, Download } from 'lucide-react';
+import { Calendar, Package, DollarSign, TrendingUp, Users, Filter, ChevronDown, ChevronUp, UserPlus, RefreshCw, Download, Trash2, Clock } from 'lucide-react';
 
 // Helper function to get local date in YYYY-MM-DD format (fallback only)
 const getLocalDateString = (date = new Date()) => {
