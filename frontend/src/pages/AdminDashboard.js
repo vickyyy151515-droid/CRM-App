@@ -247,6 +247,8 @@ export default function AdminDashboard({ user, onLogout }) {
         return <AttendanceAdmin />;
       case 'inventory':
         return <OfficeInventory />;
+      case 'data-cleanup':
+        return <DataCleanup />;
       default:
         return null;
     }
