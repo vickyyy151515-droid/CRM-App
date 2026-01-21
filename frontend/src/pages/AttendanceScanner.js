@@ -256,23 +256,34 @@ export default function AttendanceScanner() {
     addDebugLog(`Element found, dimensions: ${element.offsetWidth}x${element.offsetHeight}`);
 
     try {
+      // Detect if Android device
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      addDebugLog(`Device type: ${isAndroid ? 'Android' : 'iOS/Other'}`);
+      
+      // Create scanner with format restriction for better performance
       const html5QrCode = new Html5Qrcode("qr-reader-box", { 
         verbose: false,
-        // CRITICAL FIX: Disable native BarcodeDetector API
-        // Research shows this causes black screen on many iOS/Android devices
-        // See: https://github.com/mebjas/html5-qrcode/issues/984
-        useBarCodeDetectorIfSupported: false
+        // Only scan QR codes - improves detection speed significantly
+        formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+        experimentalFeatures: {
+          // On Android, BarcodeDetector API can help performance
+          // On iOS it can cause black screen - so we enable based on device
+          useBarCodeDetectorIfSupported: isAndroid
+        }
       });
       scannerRef.current = html5QrCode;
-      addDebugLog('Html5Qrcode instance created (BarcodeDetector disabled for compatibility)');
+      addDebugLog(`Html5Qrcode instance created (QR_CODE only, BarcodeDetector: ${isAndroid})`);
 
-      // Simpler config for better mobile compatibility
-      // Research: Lower FPS and smaller qrbox improve scanning on older devices
+      // Config optimized for mobile scanning
       const config = { 
-        fps: 10,
-        qrbox: { width: 220, height: 220 },  // Slightly smaller for better fit
+        fps: 15,  // Higher FPS for better detection
+        qrbox: { width: 250, height: 250 },  // Standard size
         aspectRatio: 1.0,
-        disableFlip: false
+        disableFlip: false,
+        // Experimental: scan only visible portion for better performance
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: isAndroid
+        }
       };
 
       // Get available cameras
