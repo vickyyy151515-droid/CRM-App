@@ -439,9 +439,6 @@ async def get_user_activity(admin: User = Depends(get_admin_user)):
                     
             except Exception:
                 user_status = 'offline'
-        elif has_recent_logout:
-            # Already handled above - user is offline due to recent logout
-            pass
         
         # Count by status
         if user_status == 'online':
