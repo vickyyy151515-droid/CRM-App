@@ -95,11 +95,10 @@ export default function BatchRecordsView() {
 
   // Filter out sensitive columns (rekening/bank account info)
   // This applies to all database views EXCEPT Member WD CRM
-  const HIDDEN_COLUMNS = ['rekening', 'rek', 'bank', 'no_rekening', 'norek', 'account'];
-  
   const columns = useMemo(() => {
     if (records.length === 0) return [];
     
+    const HIDDEN_COLUMNS = ['rekening', 'rek', 'bank', 'no_rekening', 'norek', 'account'];
     const allColumns = Object.keys(records[0].row_data);
     
     // Filter out hidden columns (rekening, bank, etc.)
