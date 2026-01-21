@@ -194,7 +194,7 @@ export default function AttendanceAdmin() {
         <div className="p-4 border-b border-slate-200 dark:border-slate-700">
           <h3 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
             <Calendar size={18} />
-            Today's Attendance - {todayData?.date}
+            Today&apos;s Attendance - {todayData?.date}
           </h3>
         </div>
         <div className="p-4">
