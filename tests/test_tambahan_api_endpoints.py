@@ -261,14 +261,15 @@ class TestTambahanAPIEndpoints:
     # ==================== DAILY SUMMARY TESTS ====================
     
     def test_daily_summary_endpoint_accessible(self, admin_headers):
-        """Test /api/daily-summary/summary is accessible"""
-        response = requests.get(f"{BASE_URL}/api/daily-summary/summary", headers=admin_headers)
+        """Test /api/daily-summary is accessible"""
+        response = requests.get(f"{BASE_URL}/api/daily-summary", headers=admin_headers)
         assert response.status_code == 200, f"Daily summary failed: {response.text}"
         
         data = response.json()
-        # Verify response structure
-        assert isinstance(data, dict)
-        print(f"✓ Daily summary endpoint accessible")
+        # Verify response structure has NDP/RDP fields
+        assert 'total_ndp' in data or 'team_total_ndp' in data, "Should have NDP count"
+        assert 'total_rdp' in data or 'team_total_rdp' in data, "Should have RDP count"
+        print(f"✓ Daily summary endpoint accessible with NDP/RDP data")
     
     # ==================== CONSISTENCY TESTS ====================
     
