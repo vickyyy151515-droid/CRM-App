@@ -141,6 +141,7 @@ const en = {
     offDaySakit: 'Off Day / Sakit',
     izin: 'Izin',
     dataCleanup: 'Data Cleanup',
+    messageGenerator: 'Message Variations',
   },
 
   // Dashboard
