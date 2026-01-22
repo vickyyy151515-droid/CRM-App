@@ -199,7 +199,7 @@ async def generate_daily_summary(date_str: str = None):
         product_stats[product_id]['form_count'] += 1
         
         # Count unique customers per product (using global NDP)
-        if is_ndp:
+        if is_global_ndp:
             if cid_normalized not in product_ndp_customers[product_id]:
                 product_ndp_customers[product_id].add(cid_normalized)
                 product_stats[product_id]['ndp_count'] += 1
