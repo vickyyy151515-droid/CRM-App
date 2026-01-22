@@ -367,6 +367,36 @@ Google Authenticator-style TOTP attendance system for staff check-in. Replaced p
 - `atrisk_alert_history` - Tracks at-risk customers shown in alerts (for 3-day rotation)
 - `staff_last_viewed` - Tracks when staff last viewed DB Bonanza/Member WD pages (for notification badges)
 
+### OMSET Record Undo/Restore Feature - COMPLETED (Jan 22, 2026)
+**Feature**: Admins can delete individual OMSET deposit records with undo capability
+**Implementation**: Soft-delete pattern - records moved to `omset_trash` collection instead of permanent deletion
+**UI Flow**:
+1. Admin navigates to OMSET CRM → Detail View
+2. Click on a customer row to expand individual deposits
+3. Click trash icon to delete a specific deposit
+4. Record moves to "Recently Deleted" section
+5. Click "Restore" to recover the record
+**API Endpoints**:
+- `DELETE /api/omset/{record_id}` - Soft delete (moves to trash)
+- `GET /api/omset/trash` - List deleted records (admin only)
+- `POST /api/omset/restore/{record_id}` - Restore from trash
+- `DELETE /api/omset/trash/{record_id}` - Permanent delete
+**Database**: New `omset_trash` collection stores deleted records with `deleted_at`, `deleted_by`, `deleted_by_name` fields
+
+### AI Message Variation Generator - COMPLETED (Jan 22, 2026)
+**Feature**: Staff can generate unique message variations in casual Indonesian using AI
+**Purpose**: Avoid WhatsApp spam detection by creating unique messages
+**Integration**: Uses Gemini Flash via `emergentintegrations` library with Emergent LLM Key
+**API Endpoint**: `POST /api/message-variations/generate`
+**Tone**: Casual Indonesian using "aku/kak" (not "gue/lu")
+
+### Data Cleanup Tool - COMPLETED (Jan 22, 2026)
+**Feature**: Admin tool to delete all OMSET records from specific staff accounts
+**Purpose**: Remove polluted data from fake/deleted staff accounts
+**API Endpoints**:
+- `GET /api/auth/staff-records-summary` - Summary of records per staff
+- `DELETE /api/auth/records/by-staff/{staff_id}` - Delete all records for a staff
+
 ## Third Party Integrations
 - @dnd-kit/core, @dnd-kit/sortable - Sidebar customization
 - xlsx - Excel/CSV export
@@ -374,5 +404,7 @@ Google Authenticator-style TOTP attendance system for staff check-in. Replaced p
 - pytz - Timezone handling
 - python-telegram-bot - Telegram notifications
 - APScheduler - Background jobs
-- emergentintegrations - Telegram helper
+- emergentintegrations - Telegram helper, LLM integration (Gemini Flash)
+- pyotp - TOTP authentication for attendance
+- qrcode - QR code generation for TOTP setup
 
