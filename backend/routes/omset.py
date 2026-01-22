@@ -291,16 +291,6 @@ async def get_omset_summary(
     
     records = await db.omset_records.find(query, {'_id': 0}).to_list(100000)
     
-    all_query = {}
-    if user.role == 'staff':
-        all_query['staff_id'] = user.id
-    elif staff_id:
-        all_query['staff_id'] = staff_id
-    if product_id:
-        all_query['product_id'] = product_id
-    
-    all_records_for_ndp = await db.omset_records.find(all_query, {'_id': 0}).to_list(100000)
-    
     # Helper function to normalize customer ID
     def normalize_customer_id(customer_id: str) -> str:
         if not customer_id:
@@ -312,17 +302,35 @@ async def get_omset_summary(
         keterangan = record.get('keterangan', '') or ''
         return 'tambahan' in keterangan.lower()
     
-    # Build customer_first_date with normalized IDs
-    # IMPORTANT: Exclude records with "tambahan" in notes from first_date calculation
-    customer_first_date = {}
+    # Get ALL records (unfiltered by date) for building customer_first_date maps
+    # We need this to determine if a customer is NDP or RDP for each staff
+    all_query = {}
+    if product_id:
+        all_query['product_id'] = product_id
+    all_records_for_ndp = await db.omset_records.find(all_query, {'_id': 0}).to_list(100000)
+    
+    # Build customer_first_date PER STAFF (for staff-level NDP/RDP calculation)
+    # Key: (staff_id, customer_id_normalized, product_id) -> first_date
+    staff_customer_first_date = {}
     for record in sorted(all_records_for_ndp, key=lambda x: x['record_date']):
-        # Skip "tambahan" records when determining first deposit date
+        if is_tambahan_record(record):
+            continue
+        staff_id_rec = record['staff_id']
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (staff_id_rec, cid_normalized, record['product_id'])
+        if key not in staff_customer_first_date:
+            staff_customer_first_date[key] = record['record_date']
+    
+    # Build global customer_first_date (for daily totals - customer's first deposit ever)
+    # This is for the overall NDP/RDP totals shown in daily view
+    global_customer_first_date = {}
+    for record in sorted(all_records_for_ndp, key=lambda x: x['record_date']):
         if is_tambahan_record(record):
             continue
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
         key = (cid_normalized, record['product_id'])
-        if key not in customer_first_date:
-            customer_first_date[key] = record['record_date']
+        if key not in global_customer_first_date:
+            global_customer_first_date[key] = record['record_date']
     
     daily_summary = {}
     staff_summary = {}
