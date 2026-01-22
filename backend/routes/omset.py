@@ -454,12 +454,12 @@ async def get_omset_summary(
         product_summary[product_id_rec]['total_depo'] += depo_total
         product_summary[product_id_rec]['count'] += 1
         
-        if is_ndp:
+        # Use global NDP/RDP for product summary (consistent with daily totals)
+        if is_global_ndp:
             if cid_normalized not in product_ndp_customers[product_id_rec]:
                 product_ndp_customers[product_id_rec].add(cid_normalized)
                 product_summary[product_id_rec]['ndp_count'] += 1
         else:
-            # RDP - count unique customers per product (NEW LOGIC)
             if cid_normalized not in product_rdp_customers[product_id_rec]:
                 product_rdp_customers[product_id_rec].add(cid_normalized)
                 product_summary[product_id_rec]['rdp_count'] += 1
