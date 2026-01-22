@@ -44,18 +44,28 @@ async def generate_daily_summary(date_str: str = None):
     # Get all records for NDP/RDP calculation
     all_records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
     
-    # Build customer first deposit date map (using normalized customer_id)
+    # Build GLOBAL customer first deposit date map (for daily totals)
     # IMPORTANT: Exclude records with "tambahan" in notes from first_date calculation
-    customer_first_date = {}
+    global_customer_first_date = {}
     for record in sorted(all_records, key=lambda x: x['record_date']):
-        # Skip "tambahan" records when determining first deposit date
         if is_tambahan_record(record):
             continue
-        # Use normalized customer_id for comparison
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
         key = (cid_normalized, record['product_id'])
-        if key not in customer_first_date:
-            customer_first_date[key] = record['record_date']
+        if key not in global_customer_first_date:
+            global_customer_first_date[key] = record['record_date']
+    
+    # Build PER-STAFF customer first deposit date map (for staff breakdown)
+    # Key: (staff_id, customer_id_normalized, product_id) -> first_date
+    staff_customer_first_date = {}
+    for record in sorted(all_records, key=lambda x: x['record_date']):
+        if is_tambahan_record(record):
+            continue
+        staff_id_rec = record['staff_id']
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (staff_id_rec, cid_normalized, record['product_id'])
+        if key not in staff_customer_first_date:
+            staff_customer_first_date[key] = record['record_date']
     
     # Calculate totals
     total_omset = 0
@@ -64,18 +74,18 @@ async def generate_daily_summary(date_str: str = None):
     total_forms = len(records)
     
     # Track unique customers per day for NDP/RDP
-    daily_ndp_customers = set()  # Track unique NDP customers for the day
-    daily_rdp_customers = set()  # Track unique RDP customers for the day
+    daily_ndp_customers = set()
+    daily_rdp_customers = set()
     
     # Staff breakdown
     staff_stats = {}
-    staff_ndp_customers = {}  # Track unique NDP customers per staff
-    staff_rdp_customers = {}  # Track unique RDP customers per staff
+    staff_ndp_customers = {}
+    staff_rdp_customers = {}
     
     # Product breakdown
     product_stats = {}
-    product_ndp_customers = {}  # Track unique NDP customers per product
-    product_rdp_customers = {}  # Track unique RDP customers per product
+    product_ndp_customers = {}
+    product_rdp_customers = {}
     
     for record in records:
         staff_id = record['staff_id']
@@ -84,10 +94,16 @@ async def generate_daily_summary(date_str: str = None):
         product_name = record.get('product_name', 'Unknown Product')
         depo_total = record.get('depo_total', 0) or 0
         
-        # Check if NDP or RDP (using normalized customer_id)
+        # Normalized customer_id
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-        key = (cid_normalized, record['product_id'])
-        first_date = customer_first_date.get(key)
+        
+        # Global key for daily totals
+        global_key = (cid_normalized, record['product_id'])
+        global_first_date = global_customer_first_date.get(global_key)
+        
+        # Staff-specific key for staff breakdown
+        staff_key = (staff_id, cid_normalized, record['product_id'])
+        staff_first_date = staff_customer_first_date.get(staff_key)
         
         # Determine NDP/RDP:
         # 1. If notes contain "tambahan" (case-insensitive), always RDP
