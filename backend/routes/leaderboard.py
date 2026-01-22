@@ -72,16 +72,29 @@ async def get_leaderboard(
     
     # Build customer_first_date for NDP detection (need all records for this)
     # IMPORTANT: Exclude records with "tambahan" from first_date calculation
-    all_records = await db.omset_records.find({}, {'_id': 0, 'customer_id': 1, 'customer_id_normalized': 1, 'product_id': 1, 'record_date': 1, 'keterangan': 1}).to_list(100000)
+    all_records = await db.omset_records.find({}, {'_id': 0, 'customer_id': 1, 'customer_id_normalized': 1, 'product_id': 1, 'record_date': 1, 'keterangan': 1, 'staff_id': 1}).to_list(100000)
+    
+    # Global customer_first_date (for overall totals)
     customer_first_date = {}
     for record in sorted(all_records, key=lambda x: x['record_date']):
-        # Skip "tambahan" records when determining first deposit date
         if is_tambahan_record(record):
             continue
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
         key = (cid_normalized, record['product_id'])
         if key not in customer_first_date:
             customer_first_date[key] = record['record_date']
+    
+    # STAFF-SPECIFIC customer_first_date (for staff-level NDP/RDP)
+    # Key: (staff_id, customer_id_normalized, product_id) -> first_date
+    staff_customer_first_date = {}
+    for record in sorted(all_records, key=lambda x: x['record_date']):
+        if is_tambahan_record(record):
+            continue
+        staff_id_rec = record['staff_id']
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (staff_id_rec, cid_normalized, record['product_id'])
+        if key not in staff_customer_first_date:
+            staff_customer_first_date[key] = record['record_date']
     
     # Get all staff users
     staff_users = await db.users.find({'role': 'staff'}, {'_id': 0}).to_list(100)
