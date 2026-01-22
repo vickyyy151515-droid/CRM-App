@@ -285,6 +285,16 @@ class TestModulesHaveTambahanLogic:
         
         assert 'is_tambahan_record' in content, "scheduled_reports.py should have is_tambahan_record helper"
         assert 'tambahan' in content.lower(), "scheduled_reports.py should have tambahan logic"
+    
+    def test_daily_summary_has_tambahan_logic(self):
+        """Verify daily_summary.py has tambahan logic"""
+        with open('/app/backend/routes/daily_summary.py', 'r') as f:
+            content = f.read()
+        
+        assert 'is_tambahan_record' in content, "daily_summary.py should have is_tambahan_record helper"
+        assert 'tambahan' in content.lower(), "daily_summary.py should have tambahan logic"
+        # Verify the my-performance endpoint also uses tambahan logic
+        assert content.count('is_tambahan_record') >= 2, "daily_summary.py should use is_tambahan_record in multiple places including my-performance"
 
 
 if __name__ == '__main__':
