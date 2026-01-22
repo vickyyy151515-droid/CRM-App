@@ -1,80 +1,41 @@
-<analysis>**original_problem_statement**: The user wants to build a Customer Relationship Management (CRM) application.
+<analysis>**original_problem_statement**: The user wants to build a Customer Relationship Management (CRM) application. The application has grown to include core CRM, sales workflows, admin tooling, reporting, and HR features.
 
-The application has evolved to include:
--   **Core CRM**: Product Categorization, Record-Level Assignment, Reserved Member system, and Customer Status Tracking.
--   **Sales Workflows**: OMSET CRM, DB Bonanza, Member WD.
--   **Admin Tooling**: Dashboards, hierarchical user management, bulk operations, a notification system, a configurable sidebar, and Office Inventory management.
--   **Reporting & Analytics**: CRM Report, CRM Bonus Calculation, a staff leaderboard, and an advanced conversion funnel.
--   **HR Features**: Leave/Break tracking and a Device-Registered QR Code Attendance System.
--   **UI/UX**: Dark mode, global search, internationalization (EN/ID), and a PWA for mobile access.
--   **Real-time Monitoring & Stability**: A user activity page (rebuilt this session), auto-logout, and significant production stability hardening.
+The key requests and fixes addressed in this session were:
+1.  **Build a TOTP Attendance System**: Replace a failed QR-code-based attendance system with a reliable one using Time-based One-Time Passwords (like Google Authenticator).
+2.  **Data Cleanup Tool**: Create a feature for admins to delete all OMSET (sales) records associated with fake or deleted staff accounts that were polluting reports.
+3.  **Specific OMSET Record Management**: Allow admins to view and delete individual sales deposit records from a customer's detailed history in the OMSET CRM page. Subsequently, add an undo feature for these deletions.
+4.  **AI Message Variation Generator**: Implement a tool for staff to generate unique, casual, and persuasive message variations in Indonesian using an AI model (Gemini Flash) to avoid WhatsApp spam detection.
+5.  **Fix NDP/RDP Calculation Bugs**:
+    *   Correct a bug where the Daily Summary's NDP/RDP counts were inconsistent with the OMSET CRM page.
+    *   Fix a critical inconsistency where a staff member's NDP/RDP count was different when viewing reports for all staff versus a filtered view for only that staff member.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack CRM application. This session focused on fixing critical, user-reported bugs. The agent completely rebuilt the User Activity feature from scratch to resolve persistent data-syncing issues. It also investigated and fixed a production deployment crash caused by an incorrect  configuration. Several data and UI consistency bugs were also addressed, including a rekening column appearing incorrectly and a discrepancy in NDP/RDP counts across different reports. The agent is currently in the middle of a system-wide update to ensure all NDP/RDP calculation logic is consistent.
+A comprehensive full-stack CRM application with a React frontend, FastAPI backend, and MongoDB database. The application includes user roles (admin, staff), sales tracking (OMSET), reporting dashboards, and HR features.
+
+Key features implemented in this session include:
+*   A fully functional TOTP-based attendance system.
+*   An admin-only Data Cleanup page to purge records from unwanted users.
+*   Granular control in the OMSET CRM admin page to delete and restore individual sales records.
+*   An AI-powered Message Variation Generator integrated into the staff dashboard, using the Emergent LLM Key with Gemini Flash.
+*   System-wide consistency for the critical NDP/RDP (New/Repeat Deposit) business logic across all relevant reporting modules.
 
 **Last working item**:
--   **Last item agent was working**: Systematically applying the correct NDP/RDP calculation logic (the tambahan rule) to all relevant backend reporting files to ensure data consistency. The agent has fixed , , , and , and was about to fix  and .
--   **Status**: IN PROGRESS
--   **Agent Testing Done**: N
--   **Which testing method agent to use?**: backend testing agent. Create a new test file to verify the tambahan logic across all six modified files (, , , , , ). The test should create records with tambahan in the  field and assert that they are correctly counted as RDP and excluded from first-deposit calculations in each module.
+-   **Last item agent was working**: Implementing an undo feature for deleted OMSET records. The agent modified the delete functionality to be a soft delete by moving records to a  collection. It also built the backend endpoints and frontend UI for admins to view a list of recently deleted items and restore them.
+-   **Status**: USER VERIFICATION PENDING
+-   **Agent Testing Done**: Y
+-   **Which testing method agent to use?**: Frontend testing agent to run an end-to-end test: 1. Delete an OMSET record. 2. Verify it appears in the Recently Deleted UI. 3. Click restore. 4. Verify it's back in the main list and removed from the deleted list.
 -   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
--   **Issue 1**: Ensure NDP/RDP tambahan logic is consistent across all reporting modules. (Priority: P0)
--   **Issue 2**: QR code scanner shows a black screen or doesn't scan on real mobile devices. (Priority: P1)
--   **Issue 3**: Production environment stability after deployment. (Priority: P1)
--   **Issue 4**: WebSocket connection fails in the preview environment. (Priority: P2)
+-   None. All issues raised during this session were resolved.
 
 **Issues Detail**:
--   **Issue 1**: NDP/RDP tambahan logic consistency.
-    -   **Attempted fixes**: The agent identified that  had different logic than . After fixing it, the user requested that all other pages with NDP/RDP counts be checked and fixed. The agent is in the process of updating all affected files.
-    -   **Next debug checklist**:
-        1.  Apply the  logic to the final two files:  and .
-        2.  Create a comprehensive backend test suite to validate the logic across all 6 corrected files.
-    -   **Why fix this issue and what will be achieved with the fix?**: To ensure data consistency and accuracy across all financial and performance reports in the application.
-    -   **Status**: IN PROGRESS
-    -   **Is recurring issue?**: N
-    -   **Should Test frontend/backend/both after fix?**: Backend
-    -   **Blocked on other issue**: None.
-
--   **Issue 2**: QR code scanner for attendance is non-functional on real devices.
-    -   **Attempted fixes**: Based on research into common  bugs, the agent applied a potential fix by setting  and adding an initialization delay in .
-    -   **Next debug checklist**:
-        1.  Ask the user to test the QR scanner on their mobile device again.
-        2.  If it still fails (e.g., black screen), guide the user on how to get mobile browser console logs.
-        3.  The debug panel and verbose toasts added to the scanner page should help diagnose if the scan callback is even firing.
-    -   **Why fix this issue and what will be achieved with the fix?**: The entire new attendance feature is unusable until this is resolved.
-    -   **Status**: USER VERIFICATION PENDING
-    -   **Is recurring issue?**: Y
-    -   **Should Test frontend/backend/both after fix?**: Frontend
-    -   **Blocked on other issue**: None.
-
--   **Issue 3**: Production environment stability.
-    -   **Attempted fixes**: The agent identified that  was incorrectly blocking  files from being deployed, causing the production backend to crash. The  file was corrected.
-    -   **Next debug checklist**:
-        1.  Ask the user to confirm if the Service temporarily unavailable error is resolved after the latest deployment.
-    -   **Why fix this issue and what will be achieved with the fix?**: Ensures application reliability and prevents work interruptions for the entire team.
-    -   **Status**: USER VERIFICATION PENDING
-    -   **Is recurring issue?**: Y
-    -   **Should Test frontend/backend/both after fix?**: Backend (deployment verification).
-
--   **Issue 4**: WebSocket Connection Fails with 1006 Error.
-    -   **Attempted fixes**: None. Known preview environment limitation.
-    -   **Next debug checklist**: Requires infrastructure changes.
-    -   **Status**: BLOCKED
-    -   **Is recurring issue?**: Y
-    -   **Should Test frontend/backend/both after fix?**: N/A
-    -   **Blocked on other issue**: Environment/Infrastructure.
+-   N/A
 
 **In progress Task List**:
--   **Task 1**: Apply tambahan logic to all NDP/RDP calculations.
-    -   **Where to resume**: The agent needs to apply the fix to  and . It has already gathered the list of affected files.
-    -   **What will be achieved with this?**: All reports in the application will show consistent and accurate NDP/RDP counts.
-    -   **Status**: IN PROGRESS
-    -   **Should Test frontend/backend/both after fix?**: Backend
-    -   **Blocked on something**: None.
+-   None.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks**:
@@ -82,112 +43,108 @@ A full-stack CRM application. This session focused on fixing critical, user-repo
     -   Advanced Batch Sorting/Filtering (P2)
     -   WhatsApp Quick Actions (P2)
     -   Email Notifications (P2)
-    -   Scheduled Reports from Export Center (enhancement beyond the bug fix) (P2)
 -   **Future Tasks**:
     -   Quick Actions on Overview (P2)
     -   Financial ROI Tracking (P2)
     -   Izin Analytics (P2)
 
 **Completed work in this session**
--   **User Activity Feature Rebuild**: Completely removed the old feature and rebuilt it from scratch with new requirements. The new system correctly tracks staff and admin activity independently, includes status definitions (Online, Idle, Offline), and implements auto-logout for staff. (DONE)
--   **Production Deployment Crash Fix**: Investigated and fixed a critical issue where the app crashed on deployment due to  blocking  files. (DONE, pending user verification)
--   **QR Scanner Black Screen Fix**: Researched and applied a potential fix for the camera black screen issue by disabling the native BarcodeDetector API in the  library. (DONE, pending user verification)
--   **Rekening Column Visibility Fix**: Fixed a bug where the sensitive rekening (bank account) column was incorrectly displayed on the standalone batch records view page (). (DONE)
--   **NDP/RDP Count Discrepancy Fix**: Fixed the initial discrepancy between Omset CRM and Daily Summary pages by aligning the calculation logic in . (DONE)
+-   **TOTP Attendance System**: Implemented a complete TOTP-based check-in system with a one-time QR code setup for staff and an admin dashboard for monitoring. (DONE)
+-   **Orphaned OMSET Record Cleanup**: Created a Data Cleanup page for admins to remove all sales records from specified user accounts. (DONE)
+-   **OMSET Record Deletion & Undo**: Enhanced the OMSET CRM admin page to allow deletion of individual deposit records and added a Recently Deleted section to restore them. (DONE)
+-   **AI Message Variation Generator**: Integrated an AI-powered tool for staff using Gemini Flash to generate unique WhatsApp messages in casual Indonesian. (DONE)
+-   **NDP/RDP Logic Unification**: Fixed a critical bug causing inconsistent NDP/RDP counts. The logic is now unified across , , , and  to correctly calculate NDP based on a customer's first deposit *per staff member*. (DONE)
 
 **Earlier issues found/mentioned but not fixed**
--   **Issue 1**: The Attendance admin page is not integrated into the dynamic .
-    -   **Debug checklist**: The agent needs to review  and add Attendance to the list of available pages that an admin can enable/disable in their custom sidebar layout.
-    -   **Why to solve this issue and what will be achieved with this?**: This will allow admins to customize their sidebar to include the new Attendance dashboard, completing the feature integration.
-    -   **Should Test frontend/backend/both after fix?**: Frontend.
-    -   **Is recurring issue?**: N
+-   None.
 
 **Known issue recurrence from previous fork**
--   **Issue recurrence in previous fork**: User Activity bug and Production Stability issues.
--   **Recurrence count**: Both have recurred multiple times.
--   **Status**: The User Activity feature was completely rebuilt to prevent recurrence. The production stability issue had its root cause identified () and fixed. Both are pending final user verification.
+-   **Issue recurrence in previous fork**: WebSocket Connection Fails with 1006 Error in the preview environment.
+-   **Recurrence count**: 2+
+-   **Status**: BLOCKED
+    Note: This is a known limitation of the preview environment and does not affect the deployed application. It only prevents real-time features from working during development previews.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Frontend**: React hooks (, , , ), debouncing user interactions (heartbeat),  for polling/auto-logout.
--   **Backend**: FastAPI, Pydantic, JWT for stateless authentication.
--   **Database**: MongoDB.
--   **Development**: Identifying and fixing cross-module data inconsistencies (NDP/RDP logic), debugging production-only issues (), researching external library bugs ().
+-   **Backend**: FastAPI, Pydantic, MongoDB, **TOTP (pyotp library)**.
+-   **Frontend**: React, React Hooks.
+-   **AI Integration**: Used **Gemini Flash** via the  library for natural language generation, with costs billed to the user's .
+-   **Business Logic**: Standardized a complex business rule (NDP/RDP calculation) across multiple reporting endpoints to ensure data consistency.
+-   **Database**: Implemented a soft delete pattern by moving deleted documents to a separate  collection to allow for an undo feature.
 
 **key DB schema**
--   **users**: Utilizes  and  to calculate user status.
+-   **New Collection**:
+    -   : Stores documents moved from  when deleted. Contains the original record data plus a  timestamp.
+-   **Existing Collections (Modified/Used)**:
+    -   :  field was added for the attendance feature.
+    -   : Stores daily check-in data.
+    -   : The primary collection for sales data.
 
 **changes in tech stack**
--   None.
+-   **Added**:  library to facilitate LLM calls using the Emergent Universal Key.
 
 **All files of reference**
--   **/app/backend/routes/scheduled_reports.py**: The next file to fix for the tambahan logic.
--   **/app/backend/routes/omset.py**: The source of truth for the correct tambahan logic.
--   **/app/frontend/src/pages/AttendanceScanner.js**: Contains the fix for the QR scanner black screen, pending user verification.
--   **/app/frontend/src/pages/UserActivity.js**: The newly rebuilt user activity page.
--   **/app/.gitignore**: Contains the fix for the production deployment crash.
+-   : The main source of truth for OMSET CRM logic, including the corrected NDP/RDP calculation and the new undo-delete functionality.
+-   : The corresponding frontend for the OMSET admin page, heavily modified to support individual record deletion and restoration.
+-   : The new backend endpoint for the AI-powered message generator.
+-   : The new staff-facing UI for the message generator.
+-   , , : Other reporting files that were updated to align with the corrected NDP/RDP logic.
 
 **Areas that need refactoring**:
--   Several backend endpoints still load all records into memory at once. These should be reviewed for pagination to improve performance.
--   There are multiple inline  statements inside backend functions. Refactoring these to the top of each module would improve code style and consistency.
+-   The undo feature currently keeps deleted records indefinitely. A cleanup job could be added to the backend to automatically and permanently delete records from the  collection after a set period (e.g., 30 days) to prevent it from growing too large.
 
 **key api endpoints**
--   : Sent by frontend on user interaction to update their  timestamp.
--   : A read-only endpoint for admins to fetch all user statuses.
--   : Backend endpoint for Omset CRM.
--   : Backend endpoint for the Daily Summary report.
+-   : Generates message variations using Gemini Flash.
+-   : (Modified) Moves an OMSET record to a trash collection.
+-   : Restores a soft-deleted OMSET record.
+-   : Lists all soft-deleted OMSET records.
+-   : Provides a summary of records per staff member for the Data Cleanup tool.
+-   : Deletes all OMSET records for a specified staff ID.
+-   The following reporting endpoints were modified to use corrected NDP/RDP logic: , , , .
 
 **Critical Info for New Agent**
--   The user is extremely frustrated with bugs reaching production and the agent making simple mistakes. **Extreme diligence, comprehensive self-testing, and using the testing agent are mandatory before presenting any solution to the user.** Do not ask the user to test until you are highly confident in the fix.
--   Your immediate task is to finish the NDP/RDP logic unification. Fix  and , then create a robust backend test to verify all 6 affected files behave identically.
--   The QR scanner fix is theoretical. The user needs to test it. Be prepared for it to fail and be ready to guide the user on collecting mobile browser console logs for further debugging.
--   The production crash was fixed by editing . Remember this if future deployment issues arise.
+-   **NDP/RDP Logic is Finalized**: The user has confirmed that NDP (New Deposit) should be counted based on a customer's first-ever deposit *with a specific staff member*, not globally. This logic has been implemented across all relevant reporting files. Do not change this without explicit user instruction.
+-   **AI Features Use Universal Key**: The message generator uses the  and the  library. Future AI features should follow this established pattern, using Gemini Flash for cost-effective text generation.
+-   **Soft Delete is the Preferred Pattern**: The implementation of undo for OMSET records sets a precedent. For future features requiring deletion, a soft-delete mechanism (moving to a trash collection) should be the default approach.
 
 **documents and test reports created in this job**
--   /app/memory/PRD.md
--   /app/test_reports/iteration_27.json
--   /app/tests/test_user_activity_independence.py
+-    (updated with completed features)
+-    (from testing the TOTP attendance system)
+-    (updated to include tests for )
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User asks to delete and restart the user activity feature from scratch**, giving up on fixing the old one. (Completed)
-2.  **User provides detailed requirements for the new user activity page**, emphasizing status definitions and what counts as activity. (Completed)
-3.  **User adds clarification about auto-logout**: it must set status to Offline and apply to mobile devices. (Completed)
-4.  **User strongly re-emphasizes the independence rule**: admin actions MUST NOT affect staff status in any way. (Completed)
-5.  **User approves the plan** and tells the agent to proceed carefully and double-check work. (Completed)
-6.  **User reports a critical production crash** (Service temporarily unavailable) after a redeployment. (Completed)
-7.  **User reports a new bug in the rebuilt user activity feature**: the master admin's own activity is not being tracked and status remains Idle. Staff status works correctly. (Completed)
-8.  **User reports another bug**: the rekening (bank account) column is reappearing for staff when they open a batch view in a new tab. (Completed)
-9.  **User reports a data discrepancy**: NDP/RDP counts are different between the Omset CRM page and the Daily Summary page. (Completed)
-10. **User requests a global fix**: asks the agent to ensure the correct tambahan logic for NDP/RDP is applied to **every** page that uses it. (IN PROGRESS)
+1.  **Request**: Asks how to share the application code with a friend so they can have their own independent copy. (Resolved)
+2.  **Feedback**: Reports the NDP/RDP count is wrong in the daily summary page. (Resolved)
+3.  **Clarification**: Provides screenshots showing that NDP/RDP counts are inconsistent between the all staff view and a filtered staff view in OMSET CRM, confirming the filtered view is correct. (Resolved)
+4.  **Request**: Asks to add an undo option for the OMSET deletion feature. (Resolved)
+5.  **Request**: Asks to add a feature for admins to delete specific OMSET records. (Resolved)
+6.  **Request**: Asks to create an AI-powered message variation generator for staff in casual Indonesian. (Resolved)
+7.  **Question**: Asks about the API credit cost for the AI generator. (Answered)
+8.  **Question**: Asks for a comparison of AI models and confirms credits are deducted from the Emergent account. (Answered)
+9.  **Approval**: Approves using Gemini Flash for the generator with specific instructions on the tone (aku/kak, no gue/lu). (Implemented)
+10. **Feedback**: On the OMSET Undo feature, asks to proceed.
 
 **Project Health Check:**
--   **Broken**: None. The QR scanner's functionality on real devices is unconfirmed but not confirmed broken yet.
+-   **Broken**: None.
 -   **Mocked**: None.
 
 **3rd Party Integrations**
--   , , : Used for the QR code attendance feature.
--   : Used for Excel export functionality.
--   , , , , , ,  remain from previous sessions.
+-   ****: Used to integrate **Gemini Flash**, powered by the Emergent LLM Key, for the AI Message Variation Generator.
+-   ****: Used for generating and verifying time-based one-time passwords for the attendance system.
+-   ****: Used for generating the QR code for the initial TOTP secret setup.
 
 **Testing status**
--   **Testing agent used after significant changes**: YES, extensively for the User Activity feature rebuild.
+-   **Testing agent used after significant changes**: YES, for the TOTP attendance system.
 -   **Troubleshoot agent used after agent stuck in loop**: NO
--   **Test files created**:
-    -   
--   **Known regressions**: The agent introduced a critical bug causing all users to show offline and another causing production to crash. Both were fixed, but this has severely damaged user trust.
+-   **Test files created**:  was updated with a new test for the  module.
+-   **Known regressions**: None. The agent ran the existing backend test suite after major logic changes and all tests passed.
 
 **Credentials to test flow:**
--   **Master Admin**:
-    -   Email: 
-    -   Password: 
--   **Admin**:
-    -   Email: 
-    -   Password: 
--   **Staff**:
-    -   Email: 
-    -   Password: 
+-   **Master Admin**:  / 
+-   **Admin**:  / 
+-   **Staff**:  / 
 
 **What agent forgot to execute**
--   From a previous handoff, the Attendance admin page was not integrated into the dynamic . This task remains unaddressed and should be added to the backlog.</analysis>
+-   When implementing the undo feature for OMSET records, the agent's plan included an optional step to auto-expire and permanently delete records from the trash collection after 30 days. This was not implemented. It's a non-critical but useful enhancement to prevent the  collection from growing indefinitely.</analysis>
