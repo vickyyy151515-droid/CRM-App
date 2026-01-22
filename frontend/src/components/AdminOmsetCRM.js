@@ -216,7 +216,7 @@ export default function AdminOmsetCRM() {
   };
 
   const handleDeleteOmsetRecord = async (recordId, customerInfo) => {
-    const confirmMsg = `Delete this OMSET record?\n\nCustomer: ${customerInfo.customer_id}\nAmount: Rp ${formatCurrency(customerInfo.amount)}\nTime: ${customerInfo.time}\n\nThis action cannot be undone.`;
+    const confirmMsg = `Delete this OMSET record?\n\nCustomer: ${customerInfo.customer_id}\nAmount: Rp ${formatCurrency(customerInfo.amount)}\nTime: ${customerInfo.time}\n\nYou can restore it from the Trash.`;
     
     if (!window.confirm(confirmMsg)) {
       return;
@@ -225,13 +225,59 @@ export default function AdminOmsetCRM() {
     setDeletingRecord(recordId);
     try {
       await api.delete(`/omset/${recordId}`);
-      toast.success('OMSET record deleted');
+      toast.success('OMSET record moved to trash - you can restore it if needed');
       // Refresh the data
       loadData();
+      loadTrash(); // Also refresh trash
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to delete record');
     } finally {
       setDeletingRecord(null);
+    }
+  };
+
+  // Load trash records
+  const loadTrash = useCallback(async () => {
+    try {
+      const response = await api.get('/omset/trash?limit=20');
+      setTrashRecords(response.data.records || []);
+    } catch (error) {
+      console.error('Error loading trash:', error);
+    }
+  }, []);
+
+  // Load trash on mount
+  useEffect(() => {
+    loadTrash();
+  }, [loadTrash]);
+
+  // Restore a deleted record
+  const handleRestoreRecord = async (recordId, recordInfo) => {
+    setRestoringRecord(recordId);
+    try {
+      await api.post(`/omset/restore/${recordId}`);
+      toast.success(`Restored OMSET for ${recordInfo.customer_id}`);
+      loadData(); // Refresh main data
+      loadTrash(); // Refresh trash
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to restore record');
+    } finally {
+      setRestoringRecord(null);
+    }
+  };
+
+  // Permanently delete from trash
+  const handlePermanentDelete = async (recordId) => {
+    if (!window.confirm('Permanently delete this record? This cannot be undone!')) {
+      return;
+    }
+    
+    try {
+      await api.delete(`/omset/trash/${recordId}`);
+      toast.success('Record permanently deleted');
+      loadTrash();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to delete');
     }
   };
 
