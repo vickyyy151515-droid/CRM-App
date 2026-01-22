@@ -172,7 +172,8 @@ async def generate_daily_summary(date_str: str = None):
         pb = staff_stats[staff_id]['product_breakdown'][product_id]
         pb['total_omset'] += depo_total
         pb['form_count'] += 1
-        if is_ndp:
+        # Use staff-specific NDP for product breakdown within staff
+        if is_staff_ndp:
             if cid_normalized not in pb['_ndp_customers']:
                 pb['_ndp_customers'].add(cid_normalized)
                 pb['ndp_count'] += 1
@@ -197,7 +198,7 @@ async def generate_daily_summary(date_str: str = None):
         product_stats[product_id]['total_omset'] += depo_total
         product_stats[product_id]['form_count'] += 1
         
-        # Count unique customers per product
+        # Count unique customers per product (using global NDP)
         if is_ndp:
             if cid_normalized not in product_ndp_customers[product_id]:
                 product_ndp_customers[product_id].add(cid_normalized)
