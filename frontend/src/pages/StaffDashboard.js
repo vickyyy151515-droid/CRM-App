@@ -230,6 +230,8 @@ export default function StaffDashboard({ user, onLogout }) {
         return <ConversionFunnel isAdmin={false} />;
       case 'retention':
         return <CustomerRetention isAdmin={false} />;
+      case 'message-generator':
+        return <MessageVariationGenerator />;
       default:
         return null;
     }
@@ -242,6 +244,7 @@ export default function StaffDashboard({ user, onLogout }) {
     { id: 'funnel', label: t('nav.conversionFunnel'), icon: Filter },
     { id: 'retention', label: t('nav.customerRetention'), icon: Heart },
     { id: 'followups', label: t('nav.followUpReminders'), icon: Bell },
+    { id: 'message-generator', label: t('nav.messageGenerator') || 'Variasi Pesan', icon: Sparkles },
     { id: 'requests', label: t('nav.myRequests'), icon: Clock },
     { id: 'assigned', label: t('nav.myAssignedCustomers'), icon: User },
     { id: 'reserved', label: t('nav.reservedMembers'), icon: UserCheck },
