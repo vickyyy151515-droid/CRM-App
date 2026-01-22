@@ -485,6 +485,24 @@ async def get_my_performance_trend(
     db = get_db()
     jakarta_now = get_jakarta_now()
     
+    # Get ALL records for this staff to build customer_first_date map
+    all_records = await db.omset_records.find(
+        {'staff_id': user.id},
+        {'_id': 0}
+    ).to_list(100000)
+    
+    # Build customer first deposit map (using normalized customer_id)
+    # IMPORTANT: Exclude records with "tambahan" from first_date calculation
+    customer_first_date = {}
+    for rec in sorted(all_records, key=lambda x: x['record_date']):
+        # Skip "tambahan" records when determining first deposit date
+        if is_tambahan_record(rec):
+            continue
+        cid_normalized = rec.get('customer_id_normalized') or normalize_customer_id(rec['customer_id'])
+        key = (cid_normalized, rec['product_id'])
+        if key not in customer_first_date:
+            customer_first_date[key] = rec['record_date']
+    
     performance = []
     for i in range(days):
         date = (jakarta_now - timedelta(days=i)).strftime('%Y-%m-%d')
@@ -496,27 +514,35 @@ async def get_my_performance_trend(
         ).to_list(1000)
         
         if records:
-            # Get all records for NDP calculation
-            all_records = await db.omset_records.find(
-                {'staff_id': user.id},
-                {'_id': 0}
-            ).to_list(100000)
-            
-            customer_first_date = {}
-            for rec in sorted(all_records, key=lambda x: x['record_date']):
-                key = (rec['customer_id'], rec['product_id'])
-                if key not in customer_first_date:
-                    customer_first_date[key] = rec['record_date']
-            
             total_omset = sum(r.get('depo_total', 0) or 0 for r in records)
-            ndp_count = sum(1 for r in records if customer_first_date.get((r['customer_id'], r['product_id'])) == date)
-            rdp_count = len(records) - ndp_count
+            
+            # Track unique NDP and RDP customers for this day
+            ndp_customers = set()
+            rdp_customers = set()
+            
+            for r in records:
+                cid_normalized = r.get('customer_id_normalized') or normalize_customer_id(r['customer_id'])
+                key = (cid_normalized, r['product_id'])
+                first_date = customer_first_date.get(key)
+                
+                # Determine NDP/RDP:
+                # 1. If notes contain "tambahan" (case-insensitive), always RDP
+                # 2. Otherwise, NDP if this is the first deposit date for this customer
+                if is_tambahan_record(r):
+                    is_ndp = False
+                else:
+                    is_ndp = first_date == date
+                
+                if is_ndp:
+                    ndp_customers.add(cid_normalized)
+                else:
+                    rdp_customers.add(cid_normalized)
             
             performance.append({
                 'date': date,
                 'total_omset': total_omset,
-                'ndp_count': ndp_count,
-                'rdp_count': rdp_count,
+                'ndp_count': len(ndp_customers),
+                'rdp_count': len(rdp_customers),
                 'form_count': len(records)
             })
     
