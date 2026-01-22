@@ -144,10 +144,10 @@ async def get_leaderboard(
             staff_stats[staff_id]['daily_ndp_customers'][date] = set()
             staff_stats[staff_id]['daily_rdp_customers'][date] = set()
         
-        # Check NDP/RDP
+        # Check NDP/RDP - use STAFF-SPECIFIC first_date
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-        key = (cid_normalized, record['product_id'])
-        first_date = customer_first_date.get(key)
+        staff_key = (staff_id, cid_normalized, record['product_id'])
+        staff_first_date = staff_customer_first_date.get(staff_key)
         
         # "tambahan" records are always RDP
         if is_tambahan_record(record):
@@ -155,7 +155,7 @@ async def get_leaderboard(
             if cid_normalized not in staff_stats[staff_id]['daily_rdp_customers'][date]:
                 staff_stats[staff_id]['daily_rdp_customers'][date].add(cid_normalized)
                 staff_stats[staff_id]['total_rdp'] += 1
-        elif first_date == date:
+        elif staff_first_date == date:
             # NDP - count unique per day
             if cid_normalized not in staff_stats[staff_id]['daily_ndp_customers'][date]:
                 staff_stats[staff_id]['daily_ndp_customers'][date].add(cid_normalized)
@@ -178,8 +178,9 @@ async def get_leaderboard(
             today_rdp_customers[staff_id] = set()
         
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-        key = (cid_normalized, record['product_id'])
-        first_date = customer_first_date.get(key)
+        # Use STAFF-SPECIFIC first_date for today's stats too
+        staff_key = (staff_id, cid_normalized, record['product_id'])
+        staff_first_date = staff_customer_first_date.get(staff_key)
         
         # "tambahan" records are always RDP
         if is_tambahan_record(record):
@@ -187,7 +188,7 @@ async def get_leaderboard(
                 today_rdp_customers[staff_id].add(cid_normalized)
                 if staff_id in staff_stats:
                     staff_stats[staff_id]['today_rdp'] += 1
-        elif first_date == today:
+        elif staff_first_date == today:
             if cid_normalized not in today_ndp_customers[staff_id]:
                 today_ndp_customers[staff_id].add(cid_normalized)
                 if staff_id in staff_stats:
