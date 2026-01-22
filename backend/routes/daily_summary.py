@@ -105,23 +105,26 @@ async def generate_daily_summary(date_str: str = None):
         staff_key = (staff_id, cid_normalized, record['product_id'])
         staff_first_date = staff_customer_first_date.get(staff_key)
         
-        # Determine NDP/RDP:
-        # 1. If notes contain "tambahan" (case-insensitive), always RDP
-        # 2. Otherwise, NDP if this is the first deposit date for this customer
+        # Determine GLOBAL NDP/RDP (for daily totals)
         if is_tambahan_record(record):
-            is_ndp = False  # "tambahan" records are always RDP
+            is_global_ndp = False
         else:
-            is_ndp = first_date == date_str
+            is_global_ndp = global_first_date == date_str
+        
+        # Determine STAFF-SPECIFIC NDP/RDP (for staff breakdown)
+        if is_tambahan_record(record):
+            is_staff_ndp = False
+        else:
+            is_staff_ndp = staff_first_date == date_str
         
         total_omset += depo_total
         
-        # Count unique customers for overall totals
-        if is_ndp:
+        # Count unique customers for overall totals (using global NDP)
+        if is_global_ndp:
             if cid_normalized not in daily_ndp_customers:
                 daily_ndp_customers.add(cid_normalized)
                 total_ndp += 1
         else:
-            # RDP - only count unique customers per day (NEW LOGIC)
             if cid_normalized not in daily_rdp_customers:
                 daily_rdp_customers.add(cid_normalized)
                 total_rdp += 1
@@ -143,13 +146,12 @@ async def generate_daily_summary(date_str: str = None):
         staff_stats[staff_id]['total_omset'] += depo_total
         staff_stats[staff_id]['form_count'] += 1
         
-        # Count unique customers per staff
-        if is_ndp:
+        # Count unique customers per staff (using STAFF-SPECIFIC NDP)
+        if is_staff_ndp:
             if cid_normalized not in staff_ndp_customers[staff_id]:
                 staff_ndp_customers[staff_id].add(cid_normalized)
                 staff_stats[staff_id]['ndp_count'] += 1
         else:
-            # RDP - only count unique customers per day per staff (NEW LOGIC)
             if cid_normalized not in staff_rdp_customers[staff_id]:
                 staff_rdp_customers[staff_id].add(cid_normalized)
                 staff_stats[staff_id]['rdp_count'] += 1
