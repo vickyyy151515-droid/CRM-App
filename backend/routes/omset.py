@@ -250,6 +250,7 @@ async def update_omset_record(record_id: str, update_data: OmsetRecordUpdate, us
 
 @router.delete("/omset/{record_id}")
 async def delete_omset_record(record_id: str, user: User = Depends(get_current_user)):
+    """Soft delete - moves record to trash for potential restore"""
     db = get_db()
     record = await db.omset_records.find_one({'id': record_id})
     if not record:
@@ -259,9 +260,112 @@ async def delete_omset_record(record_id: str, user: User = Depends(get_current_u
     if user.role == 'staff' and record['staff_id'] != user.id:
         raise HTTPException(status_code=403, detail="You can only delete your own records")
     
+    # Move to trash collection instead of permanent delete
+    trash_record = {**record}
+    trash_record.pop('_id', None)  # Remove MongoDB _id
+    trash_record['deleted_at'] = datetime.now(timezone.utc).isoformat()
+    trash_record['deleted_by'] = user.id
+    trash_record['deleted_by_name'] = user.name
+    
+    await db.omset_trash.insert_one(trash_record)
     await db.omset_records.delete_one({'id': record_id})
     
-    return {'message': 'Record deleted successfully', 'deleted_id': record_id}
+    return {
+        'message': 'Record moved to trash',
+        'deleted_id': record_id,
+        'can_restore': True
+    }
+
+@router.post("/omset/restore/{record_id}")
+async def restore_omset_record(record_id: str, user: User = Depends(get_current_user)):
+    """Restore a deleted OMSET record from trash"""
+    db = get_db()
+    
+    # Only admins can restore
+    if user.role not in ['admin', 'master_admin']:
+        raise HTTPException(status_code=403, detail="Only admins can restore records")
+    
+    # Find in trash
+    trash_record = await db.omset_trash.find_one({'id': record_id})
+    if not trash_record:
+        raise HTTPException(status_code=404, detail="Record not found in trash")
+    
+    # Check if already exists in main collection (prevent duplicates)
+    existing = await db.omset_records.find_one({'id': record_id})
+    if existing:
+        # Remove from trash since it's already restored
+        await db.omset_trash.delete_one({'id': record_id})
+        raise HTTPException(status_code=400, detail="Record already exists, removed from trash")
+    
+    # Restore to main collection
+    restored_record = {**trash_record}
+    restored_record.pop('_id', None)
+    restored_record.pop('deleted_at', None)
+    restored_record.pop('deleted_by', None)
+    restored_record.pop('deleted_by_name', None)
+    
+    await db.omset_records.insert_one(restored_record)
+    await db.omset_trash.delete_one({'id': record_id})
+    
+    return {
+        'message': 'Record restored successfully',
+        'restored_id': record_id,
+        'record': {
+            'id': restored_record['id'],
+            'customer_id': restored_record['customer_id'],
+            'staff_name': restored_record['staff_name'],
+            'product_name': restored_record['product_name'],
+            'depo_total': restored_record.get('depo_total', 0),
+            'record_date': restored_record['record_date']
+        }
+    }
+
+@router.get("/omset/trash")
+async def get_omset_trash(
+    limit: int = 50,
+    user: User = Depends(get_current_user)
+):
+    """Get recently deleted OMSET records (admin only)"""
+    if user.role not in ['admin', 'master_admin']:
+        raise HTTPException(status_code=403, detail="Only admins can view trash")
+    
+    db = get_db()
+    
+    # Get recent deletions, sorted by deletion time
+    trash_records = await db.omset_trash.find(
+        {},
+        {'_id': 0}
+    ).sort('deleted_at', -1).limit(limit).to_list(limit)
+    
+    return {
+        'records': trash_records,
+        'count': len(trash_records)
+    }
+
+@router.delete("/omset/trash/{record_id}")
+async def permanently_delete_omset(record_id: str, user: User = Depends(get_current_user)):
+    """Permanently delete a record from trash (cannot be undone)"""
+    if user.role not in ['admin', 'master_admin']:
+        raise HTTPException(status_code=403, detail="Only admins can permanently delete")
+    
+    db = get_db()
+    result = await db.omset_trash.delete_one({'id': record_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Record not found in trash")
+    
+    return {'message': 'Record permanently deleted', 'deleted_id': record_id}
+
+@router.delete("/omset/trash")
+async def empty_omset_trash(user: User = Depends(get_current_user)):
+    """Empty all records from trash (admin only)"""
+    if user.role != 'master_admin':
+        raise HTTPException(status_code=403, detail="Only master admin can empty trash")
+    
+    db = get_db()
+    result = await db.omset_trash.delete_many({})
+    
+    return {'message': f'Trash emptied, {result.deleted_count} records permanently deleted'}
 
 @router.get("/omset/summary")
 async def get_omset_summary(
