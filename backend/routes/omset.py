@@ -358,16 +358,29 @@ async def get_omset_summary(
         
         # Use normalized customer_id
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-        key = (cid_normalized, product_id_rec)
-        first_date = customer_first_date.get(key)
         
-        # Determine NDP/RDP:
-        # 1. If notes contain "tambahan" (case-insensitive), always RDP
-        # 2. Otherwise, NDP if this is the first deposit date for this customer
-        if is_tambahan_record(record):
-            is_ndp = False  # "tambahan" records are always RDP
+        # Determine global NDP/RDP (for daily totals - customer's first deposit EVER)
+        global_key = (cid_normalized, product_id_rec)
+        global_first_date = global_customer_first_date.get(global_key)
+        
+        # Determine staff-specific NDP/RDP (for staff breakdown - customer's first deposit WITH THIS STAFF)
+        staff_key = (staff_id_rec, cid_normalized, product_id_rec)
+        staff_first_date = staff_customer_first_date.get(staff_key)
+        
+        # Check if tambahan record
+        is_tambahan = is_tambahan_record(record)
+        
+        # Global NDP/RDP (for daily summary)
+        if is_tambahan:
+            is_global_ndp = False
         else:
-            is_ndp = first_date == date
+            is_global_ndp = global_first_date == date
+        
+        # Staff-specific NDP/RDP (for staff breakdown)
+        if is_tambahan:
+            is_staff_ndp = False
+        else:
+            is_staff_ndp = staff_first_date == date
         
         total_nominal += nominal
         total_depo += depo_total
@@ -380,7 +393,7 @@ async def get_omset_summary(
                 'total_depo': 0, 
                 'count': 0,
                 'ndp_customers': set(),  # Track unique NDP customers
-                'rdp_customers': set(),  # Track unique RDP customers (NEW)
+                'rdp_customers': set(),  # Track unique RDP customers
                 'ndp_total': 0,
                 'rdp_total': 0
             }
@@ -388,11 +401,10 @@ async def get_omset_summary(
         daily_summary[date]['total_depo'] += depo_total
         daily_summary[date]['count'] += 1
         
-        if is_ndp:
+        if is_global_ndp:
             daily_summary[date]['ndp_customers'].add(cid_normalized)
             daily_summary[date]['ndp_total'] += depo_total
         else:
-            # RDP - only count unique customers per day (NEW LOGIC)
             daily_summary[date]['rdp_customers'].add(cid_normalized)
             daily_summary[date]['rdp_total'] += depo_total
         
@@ -414,12 +426,12 @@ async def get_omset_summary(
         staff_summary[staff_id_rec]['total_depo'] += depo_total
         staff_summary[staff_id_rec]['count'] += 1
         
-        if is_ndp:
+        # Use STAFF-SPECIFIC NDP/RDP for staff breakdown
+        if is_staff_ndp:
             if cid_normalized not in staff_ndp_customers[staff_id_rec]:
                 staff_ndp_customers[staff_id_rec].add(cid_normalized)
                 staff_summary[staff_id_rec]['ndp_count'] += 1
         else:
-            # RDP - count unique customers per staff (NEW LOGIC)
             if cid_normalized not in staff_rdp_customers[staff_id_rec]:
                 staff_rdp_customers[staff_id_rec].add(cid_normalized)
                 staff_summary[staff_id_rec]['rdp_count'] += 1
