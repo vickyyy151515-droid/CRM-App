@@ -358,6 +358,7 @@ Google Authenticator-style TOTP attendance system for staff check-in. Replaced p
 - `products` - Product categories
 - `customer_records` - Main customer database
 - `omset_records` - Daily OMSET tracking
+- `omset_trash` - Soft-deleted OMSET records (for undo feature)
 - `bonanza_records` - DB Bonanza records
 - `memberwd_records` - Member WD records
 - `reserved_members` - Reserved member list (with phone_number)
