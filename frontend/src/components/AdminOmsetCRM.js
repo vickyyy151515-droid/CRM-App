@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Calendar, Package, DollarSign, TrendingUp, Users, Filter, ChevronDown, ChevronUp, UserPlus, RefreshCw, Download, Trash2, Clock } from 'lucide-react';
+import { Calendar, Package, DollarSign, TrendingUp, Users, Filter, ChevronDown, ChevronUp, UserPlus, RefreshCw, Download, Trash2, Clock, RotateCcw, AlertTriangle } from 'lucide-react';
 
 // Helper function to get local date in YYYY-MM-DD format (fallback only)
 const getLocalDateString = (date = new Date()) => {
@@ -27,6 +27,9 @@ export default function AdminOmsetCRM() {
   const [viewMode, setViewMode] = useState('summary');
   const [serverDate, setServerDate] = useState(null); // Jakarta timezone date from server
   const [deletingRecord, setDeletingRecord] = useState(null);
+  const [trashRecords, setTrashRecords] = useState([]);
+  const [showTrash, setShowTrash] = useState(false);
+  const [restoringRecord, setRestoringRecord] = useState(null);
 
   // Fetch server time (Jakarta timezone) on mount
   useEffect(() => {
