@@ -177,6 +177,7 @@ const id = {
     offDaySakit: 'Off Day / Sakit',
     izin: 'Izin',
     dataCleanup: 'Bersihkan Data',
+    messageGenerator: 'Variasi Pesan',
   },
 
   // Dashboard
