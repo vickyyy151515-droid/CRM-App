@@ -68,6 +68,7 @@ from routes.scheduled_reports import router as scheduled_reports_router, init_sc
 from routes.staff_notifications import router as staff_notifications_router
 from routes.inventory import router as inventory_router
 from routes.attendance import router as attendance_router
+from routes.message_variations import router as message_variations_router
 
 # Initialize database connection for all route modules
 set_database(db)
