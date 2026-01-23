@@ -155,7 +155,8 @@ async def get_business_analytics(period: str = 'month', product_id: Optional[str
     db = get_db()
     start_date, end_date = get_date_range(period)
     
-    omset_query = {'date': {'$gte': start_date[:10]}}
+    # FIXED: Use 'record_date' field instead of 'date'
+    omset_query = {'record_date': {'$gte': start_date[:10]}}
     if product_id:
         omset_query['product_id'] = product_id
     
