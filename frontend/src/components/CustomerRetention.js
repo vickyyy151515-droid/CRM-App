@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Users, UserPlus, RefreshCcw, Heart, TrendingUp, DollarSign, Calendar, Award, ChevronDown, ChevronUp, Star, Package, BarChart3, AlertTriangle, Clock, X, Bell, Copy, Phone } from 'lucide-react';
+import { Users, UserPlus, RefreshCcw, Heart, TrendingUp, DollarSign, Calendar, Award, ChevronDown, ChevronUp, Star, Package, BarChart3, AlertTriangle, Clock, X, Bell, Copy, Phone, Filter } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, AreaChart, Area } from 'recharts';
 
 export default function CustomerRetention({ isAdmin = false }) {
@@ -14,6 +14,8 @@ export default function CustomerRetention({ isAdmin = false }) {
   const [loading, setLoading] = useState(true);
   const [activeView, setActiveView] = useState('overview');
   const [dateRange, setDateRange] = useState('90');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
   const [customerFilter, setCustomerFilter] = useState('all');
   const [customerSort, setCustomerSort] = useState('deposits');
   const [products, setProducts] = useState([]);
@@ -21,11 +23,44 @@ export default function CustomerRetention({ isAdmin = false }) {
   const [showTopCustomers, setShowTopCustomers] = useState(true);
   const [alertFilter, setAlertFilter] = useState('all');
 
+  // Helper function to get date range based on selection
+  const getDateRange = useCallback(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const endDate = new Date().toISOString().split('T')[0];
+    
+    switch (dateRange) {
+      case 'today': {
+        const startDate = today.toISOString().split('T')[0];
+        return { startDate, endDate: startDate };
+      }
+      case 'yesterday': {
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const startDate = yesterday.toISOString().split('T')[0];
+        return { startDate, endDate: startDate };
+      }
+      case 'custom': {
+        return { 
+          startDate: customStartDate || endDate, 
+          endDate: customEndDate || endDate 
+        };
+      }
+      case 'all': {
+        // Use a very early date for "all time"
+        return { startDate: '2020-01-01', endDate };
+      }
+      default: {
+        const startDate = new Date(Date.now() - parseInt(dateRange) * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        return { startDate, endDate };
+      }
+    }
+  }, [dateRange, customStartDate, customEndDate]);
+
   const loadOverview = useCallback(async () => {
     try {
       setLoading(true);
-      const endDate = new Date().toISOString().split('T')[0];
-      const startDate = new Date(Date.now() - parseInt(dateRange) * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const { startDate, endDate } = getDateRange();
       
       let url = `/retention/overview?start_date=${startDate}&end_date=${endDate}`;
       if (selectedProduct) url += `&product_id=${selectedProduct}`;
@@ -37,12 +72,11 @@ export default function CustomerRetention({ isAdmin = false }) {
     } finally {
       setLoading(false);
     }
-  }, [dateRange, selectedProduct]);
+  }, [getDateRange, selectedProduct]);
 
   const loadCustomers = useCallback(async () => {
     try {
-      const endDate = new Date().toISOString().split('T')[0];
-      const startDate = new Date(Date.now() - parseInt(dateRange) * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const { startDate, endDate } = getDateRange();
       
       let url = `/retention/customers?start_date=${startDate}&end_date=${endDate}&filter_type=${customerFilter}&sort_by=${customerSort}&limit=100`;
       if (selectedProduct) url += `&product_id=${selectedProduct}`;
@@ -52,11 +86,12 @@ export default function CustomerRetention({ isAdmin = false }) {
     } catch (error) {
       console.error('Failed to load customers');
     }
-  }, [dateRange, selectedProduct, customerFilter, customerSort]);
+  }, [getDateRange, selectedProduct, customerFilter, customerSort]);
 
   const loadTrend = useCallback(async () => {
     try {
-      let url = `/retention/trend?days=${Math.min(parseInt(dateRange), 90)}`;
+      const days = dateRange === 'all' ? 365 : dateRange === 'today' ? 1 : dateRange === 'yesterday' ? 1 : dateRange === 'custom' ? 90 : Math.min(parseInt(dateRange), 90);
+      let url = `/retention/trend?days=${days}`;
       if (selectedProduct) url += `&product_id=${selectedProduct}`;
       
       const response = await api.get(url);
@@ -68,15 +103,14 @@ export default function CustomerRetention({ isAdmin = false }) {
 
   const loadProductBreakdown = useCallback(async () => {
     try {
-      const endDate = new Date().toISOString().split('T')[0];
-      const startDate = new Date(Date.now() - parseInt(dateRange) * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const { startDate, endDate } = getDateRange();
       
       const response = await api.get(`/retention/by-product?start_date=${startDate}&end_date=${endDate}`);
       setProductBreakdown(response.data);
     } catch (error) {
       console.error('Failed to load product breakdown');
     }
-  }, [dateRange]);
+  }, [getDateRange]);
 
   const loadStaffBreakdown = useCallback(async () => {
     if (!isAdmin) return;
