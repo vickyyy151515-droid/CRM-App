@@ -291,7 +291,7 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex transition-colors">
+    <div className="h-screen bg-slate-50 dark:bg-slate-950 flex overflow-hidden transition-colors">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div 
