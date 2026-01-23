@@ -56,11 +56,10 @@ export default function DatabaseList({ onUpdate, isStaff = false }) {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this database?')) return;
-
     try {
       await api.delete(`/databases/${id}`);
       toast.success('Database deleted successfully');
+      setDeleteConfirm(null);
       loadDatabases();
       onUpdate?.();
     } catch (error) {
