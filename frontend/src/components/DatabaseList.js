@@ -267,6 +267,48 @@ export default function DatabaseList({ onUpdate, isStaff = false }) {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50" data-testid="delete-confirm-modal">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center">
+                <AlertTriangle className="text-rose-600 dark:text-rose-400" size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Delete Database</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400">This action cannot be undone</p>
+              </div>
+            </div>
+            
+            <p className="text-slate-600 dark:text-slate-300 mb-2">
+              Are you sure you want to delete this database?
+            </p>
+            <p className="text-sm font-medium text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-700 px-3 py-2 rounded-lg mb-6">
+              {deleteConfirm.filename}
+            </p>
+            
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                data-testid="cancel-delete-btn"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDelete(deleteConfirm.id)}
+                className="px-4 py-2 bg-rose-600 text-white hover:bg-rose-700 rounded-lg transition-colors flex items-center gap-2"
+                data-testid="confirm-delete-btn"
+              >
+                <Trash2 size={16} />
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
