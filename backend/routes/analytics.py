@@ -190,7 +190,7 @@ async def get_business_analytics(period: str = 'month', product_id: Optional[str
     # Calculate daily stats with unique customers
     daily_stats = {}
     for record in records:
-        date = record.get('date') or record.get('record_date')
+        date = record.get('record_date')
         if not date:
             continue
         
@@ -242,7 +242,7 @@ async def get_business_analytics(period: str = 'month', product_id: Optional[str
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
         key = (cid_normalized, record['product_id'])
         first_date = customer_first_date.get(key)
-        date = record.get('date') or record.get('record_date')
+        date = record.get('record_date')
         
         # "tambahan" records are always RDP
         if is_tambahan_record(record):
