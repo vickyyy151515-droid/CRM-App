@@ -810,6 +810,43 @@ async def send_reserved_member_cleanup():
         print(f"Error in reserved member cleanup: {e}")
 
 
+async def cleanup_omset_trash():
+    """
+    Automatically clean up OMSET trash records older than 30 days.
+    This prevents the trash collection from growing indefinitely.
+    Runs daily at 00:05 AM Jakarta time.
+    """
+    db = get_db()
+    
+    try:
+        # Calculate cutoff date (30 days ago)
+        cutoff_date = datetime.now(JAKARTA_TZ) - timedelta(days=30)
+        cutoff_iso = cutoff_date.isoformat()
+        
+        # Find and delete old records
+        result = await db.omset_trash.delete_many({
+            'deleted_at': {'$lt': cutoff_iso}
+        })
+        
+        deleted_count = result.deleted_count
+        
+        if deleted_count > 0:
+            print(f"OMSET trash cleanup: Permanently deleted {deleted_count} records older than 30 days")
+            
+            # Log the cleanup action
+            await db.system_logs.insert_one({
+                'type': 'omset_trash_cleanup',
+                'deleted_count': deleted_count,
+                'cutoff_date': cutoff_iso,
+                'executed_at': datetime.now(JAKARTA_TZ).isoformat()
+            })
+        else:
+            print("OMSET trash cleanup: No records older than 30 days to delete")
+            
+    except Exception as e:
+        print(f"Error in OMSET trash cleanup: {e}")
+
+
 async def send_scheduled_report():
     """Task that runs daily to send the report"""
     db = get_db()
