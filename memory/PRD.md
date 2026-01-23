@@ -384,6 +384,15 @@ Google Authenticator-style TOTP attendance system for staff check-in. Replaced p
 - `DELETE /api/omset/trash/{record_id}` - Permanent delete
 **Database**: New `omset_trash` collection stores deleted records with `deleted_at`, `deleted_by`, `deleted_by_name` fields
 
+### OMSET Trash Auto-Expiration - COMPLETED (Jan 23, 2026)
+**Feature**: Automatically permanently delete OMSET trash records older than 30 days
+**Schedule**: Runs daily at 00:05 AM Jakarta time via APScheduler
+**Purpose**: Prevents trash collection from growing indefinitely while giving admins time to recover
+**API Endpoints**:
+- `GET /api/scheduled-reports/omset-trash-status` - Check trash stats (total, expiring soon, last cleanup)
+- `POST /api/scheduled-reports/omset-trash-cleanup` - Manual trigger for cleanup
+**Logging**: Cleanup actions logged to `system_logs` collection
+
 ### AI Message Variation Generator - COMPLETED (Jan 22, 2026)
 **Feature**: Staff can generate unique message variations in casual Indonesian using AI
 **Purpose**: Avoid WhatsApp spam detection by creating unique messages
