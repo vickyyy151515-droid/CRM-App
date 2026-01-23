@@ -115,15 +115,14 @@ export default function CustomerRetention({ isAdmin = false }) {
   const loadStaffBreakdown = useCallback(async () => {
     if (!isAdmin) return;
     try {
-      const endDate = new Date().toISOString().split('T')[0];
-      const startDate = new Date(Date.now() - parseInt(dateRange) * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const { startDate, endDate } = getDateRange();
       
       const response = await api.get(`/retention/by-staff?start_date=${startDate}&end_date=${endDate}`);
       setStaffBreakdown(response.data);
     } catch (error) {
       console.error('Failed to load staff breakdown');
     }
-  }, [dateRange, isAdmin]);
+  }, [getDateRange, isAdmin]);
 
   const loadAlerts = useCallback(async () => {
     try {
