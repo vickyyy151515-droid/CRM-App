@@ -1571,6 +1571,82 @@ async def update_reserved_member_config(config_update: ReservedMemberConfigUpdat
     }
 
 
+# ==================== OMSET TRASH CLEANUP ENDPOINTS ====================
+
+@router.get("/scheduled-reports/omset-trash-status")
+async def get_omset_trash_status(user: User = Depends(get_admin_user)):
+    """Get OMSET trash cleanup status and statistics"""
+    db = get_db()
+    
+    # Get total count in trash
+    total_in_trash = await db.omset_trash.count_documents({})
+    
+    # Calculate how many are older than 30 days (would be deleted in next cleanup)
+    cutoff_date = datetime.now(JAKARTA_TZ) - timedelta(days=30)
+    cutoff_iso = cutoff_date.isoformat()
+    
+    expiring_count = await db.omset_trash.count_documents({
+        'deleted_at': {'$lt': cutoff_iso}
+    })
+    
+    # Get last cleanup log
+    last_cleanup = await db.system_logs.find_one(
+        {'type': 'omset_trash_cleanup'},
+        {'_id': 0},
+        sort=[('executed_at', -1)]
+    )
+    
+    return {
+        'total_in_trash': total_in_trash,
+        'expiring_soon': expiring_count,
+        'retention_days': 30,
+        'next_cleanup': '00:05 WIB daily',
+        'last_cleanup': last_cleanup
+    }
+
+
+@router.post("/scheduled-reports/omset-trash-cleanup")
+async def manual_omset_trash_cleanup(user: User = Depends(get_admin_user)):
+    """Manually trigger OMSET trash cleanup (removes records older than 30 days)"""
+    db = get_db()
+    
+    # Calculate cutoff date (30 days ago)
+    cutoff_date = datetime.now(JAKARTA_TZ) - timedelta(days=30)
+    cutoff_iso = cutoff_date.isoformat()
+    
+    # Find records that will be deleted (for reporting)
+    to_delete = await db.omset_trash.find(
+        {'deleted_at': {'$lt': cutoff_iso}},
+        {'_id': 0, 'customer_id': 1, 'deleted_at': 1, 'depo_total': 1}
+    ).to_list(1000)
+    
+    # Delete old records
+    result = await db.omset_trash.delete_many({
+        'deleted_at': {'$lt': cutoff_iso}
+    })
+    
+    deleted_count = result.deleted_count
+    
+    # Log the cleanup action
+    if deleted_count > 0:
+        await db.system_logs.insert_one({
+            'type': 'omset_trash_cleanup',
+            'deleted_count': deleted_count,
+            'cutoff_date': cutoff_iso,
+            'triggered_by': user.id,
+            'triggered_by_name': user.name,
+            'manual': True,
+            'executed_at': datetime.now(JAKARTA_TZ).isoformat()
+        })
+    
+    return {
+        'success': True,
+        'deleted_count': deleted_count,
+        'cutoff_date': cutoff_iso,
+        'message': f'Permanently deleted {deleted_count} records older than 30 days' if deleted_count > 0 else 'No records older than 30 days to delete'
+    }
+
+
 # Initialize scheduler on startup
 async def init_scheduler():
     """Initialize scheduler from saved config"""
