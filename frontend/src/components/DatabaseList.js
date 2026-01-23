@@ -203,7 +203,7 @@ export default function DatabaseList({ onUpdate, isStaff = false }) {
                     </button>
                   ) : (
                     <button
-                      onClick={() => handleDelete(db.id)}
+                      onClick={() => setDeleteConfirm(db)}
                       data-testid={`delete-database-${db.id}`}
                       className="text-rose-600 hover:bg-rose-50 px-4 py-2 rounded-md transition-colors flex items-center gap-2"
                     >
