@@ -476,7 +476,7 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {/* Top bar for mobile with role accent */}
         <header className={`lg:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between ${roleTheme.headerAccent}`}>
           <button
