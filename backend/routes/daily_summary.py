@@ -273,16 +273,84 @@ async def save_daily_summary(summary: dict):
 @router.get("/daily-summary")
 async def get_daily_summary(
     date: Optional[str] = None,
+    product_id: Optional[str] = None,
     user: User = Depends(get_current_user)
 ):
-    """Get daily summary for a specific date (defaults to today)"""
+    """Get daily summary for a specific date (defaults to today), optionally filtered by product"""
     db = get_db()
     
     if date is None:
         jakarta_now = get_jakarta_now()
         date = jakarta_now.strftime('%Y-%m-%d')
     
-    # Try to get from database first
+    # If product_id filter is specified, generate fresh filtered summary
+    if product_id:
+        summary = await generate_daily_summary_filtered(date, product_id)
+        if summary is None:
+            if user.role == 'staff':
+                return {
+                    'date': date,
+                    'product_filter': product_id,
+                    'my_stats': {
+                        'staff_id': user.id,
+                        'staff_name': user.name,
+                        'total_omset': 0,
+                        'ndp_count': 0,
+                        'rdp_count': 0,
+                        'form_count': 0,
+                        'product_breakdown': []
+                    },
+                    'my_rank': None,
+                    'total_staff': 0,
+                    'team_total_omset': 0,
+                    'team_total_ndp': 0,
+                    'team_total_rdp': 0,
+                    'top_performer': None,
+                    'product_breakdown': [],
+                    'staff_breakdown': []
+                }
+            return {
+                'date': date,
+                'product_filter': product_id,
+                'total_omset': 0,
+                'total_ndp': 0,
+                'total_rdp': 0,
+                'form_count': 0,
+                'staff_breakdown': [],
+                'product_breakdown': [],
+                'top_performer': None
+            }
+        
+        # For staff, filter to show only their own stats
+        if user.role == 'staff':
+            staff_breakdown = [s for s in summary.get('staff_breakdown', []) if s['staff_id'] == user.id]
+            my_stats = staff_breakdown[0] if staff_breakdown else {
+                'staff_id': user.id,
+                'staff_name': user.name,
+                'total_omset': 0,
+                'ndp_count': 0,
+                'rdp_count': 0,
+                'form_count': 0,
+                'product_breakdown': []
+            }
+            all_staff = summary.get('staff_breakdown', [])
+            my_rank = next((i + 1 for i, s in enumerate(all_staff) if s['staff_id'] == user.id), None)
+            return {
+                'date': date,
+                'product_filter': product_id,
+                'my_stats': my_stats,
+                'my_rank': my_rank,
+                'total_staff': len(all_staff),
+                'team_total_omset': summary.get('total_omset', 0),
+                'team_total_ndp': summary.get('total_ndp', 0),
+                'team_total_rdp': summary.get('total_rdp', 0),
+                'top_performer': summary.get('top_performer'),
+                'product_breakdown': summary.get('product_breakdown', []),
+                'generated_at': summary.get('generated_at')
+            }
+        return summary
+    
+    # Try to get from database first (unfiltered)
     saved_summary = await db.daily_summaries.find_one({'date': date}, {'_id': 0})
     
     if saved_summary:
