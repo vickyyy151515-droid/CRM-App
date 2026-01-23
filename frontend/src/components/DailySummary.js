@@ -179,6 +179,32 @@ export default function DailySummary({ isAdmin = false }) {
         </button>
       </div>
 
+      {/* Product Filter */}
+      <div className="flex items-center justify-center gap-3 mb-6">
+        <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
+          <Filter className="text-slate-400" size={18} />
+          <select
+            value={selectedProduct}
+            onChange={(e) => setSelectedProduct(e.target.value)}
+            className="bg-transparent border-none text-sm font-medium text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
+            data-testid="product-filter-select"
+          >
+            <option value="">All Products</option>
+            {products.map(product => (
+              <option key={product.id} value={product.id}>{product.name}</option>
+            ))}
+          </select>
+        </div>
+        {selectedProduct && (
+          <button
+            onClick={() => setSelectedProduct('')}
+            className="px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition-colors"
+          >
+            Clear Filter
+          </button>
+        )}
+      </div>
+
       {loading ? (
         <div className="text-center py-12 text-slate-600 dark:text-slate-400">Loading summary...</div>
       ) : !summary ? (
