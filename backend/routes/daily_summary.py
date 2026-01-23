@@ -268,6 +268,156 @@ async def save_daily_summary(summary: dict):
     
     return summary
 
+
+async def generate_daily_summary_filtered(date_str: str, filter_product_id: str):
+    """Generate daily summary for a specific date filtered by product"""
+    db = get_db()
+    
+    if date_str is None:
+        jakarta_now = get_jakarta_now()
+        date_str = jakarta_now.strftime('%Y-%m-%d')
+    
+    # Get OMSET records for the date filtered by product
+    records = await db.omset_records.find(
+        {'record_date': date_str, 'product_id': filter_product_id},
+        {'_id': 0}
+    ).to_list(100000)
+    
+    if not records:
+        return None
+    
+    # Get all records for NDP/RDP calculation (for this product only)
+    all_records = await db.omset_records.find(
+        {'product_id': filter_product_id},
+        {'_id': 0}
+    ).to_list(500000)
+    
+    # Build GLOBAL customer first deposit date map
+    global_customer_first_date = {}
+    for record in sorted(all_records, key=lambda x: x['record_date']):
+        if is_tambahan_record(record):
+            continue
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = cid_normalized
+        if key not in global_customer_first_date:
+            global_customer_first_date[key] = record['record_date']
+    
+    # Build PER-STAFF customer first deposit date map
+    staff_customer_first_date = {}
+    for record in sorted(all_records, key=lambda x: x['record_date']):
+        if is_tambahan_record(record):
+            continue
+        staff_id = record['staff_id']
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (staff_id, cid_normalized)
+        if key not in staff_customer_first_date:
+            staff_customer_first_date[key] = record['record_date']
+    
+    # Calculate statistics
+    total_omset = 0
+    total_ndp = 0
+    total_rdp = 0
+    total_forms = len(records)
+    
+    staff_stats = {}
+    staff_ndp_customers = {}
+    staff_rdp_customers = {}
+    
+    global_ndp_customers = set()
+    global_rdp_customers = set()
+    
+    # Get product name
+    product_name = records[0].get('product_name', 'Unknown') if records else 'Unknown'
+    
+    for record in records:
+        staff_id = record['staff_id']
+        staff_name = record['staff_name']
+        depo_total = record.get('depo_total', 0) or 0
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        
+        total_omset += depo_total
+        
+        # Determine NDP/RDP
+        is_tambahan = is_tambahan_record(record)
+        global_first_date = global_customer_first_date.get(cid_normalized)
+        staff_key = (staff_id, cid_normalized)
+        staff_first_date = staff_customer_first_date.get(staff_key)
+        
+        if is_tambahan:
+            is_global_ndp = False
+            is_staff_ndp = False
+        else:
+            is_global_ndp = global_first_date == date_str
+            is_staff_ndp = staff_first_date == date_str
+        
+        # Global NDP/RDP count
+        if is_global_ndp:
+            if cid_normalized not in global_ndp_customers:
+                global_ndp_customers.add(cid_normalized)
+                total_ndp += 1
+        else:
+            if cid_normalized not in global_rdp_customers:
+                global_rdp_customers.add(cid_normalized)
+                total_rdp += 1
+        
+        # Staff stats
+        if staff_id not in staff_stats:
+            staff_stats[staff_id] = {
+                'staff_id': staff_id,
+                'staff_name': staff_name,
+                'total_omset': 0,
+                'ndp_count': 0,
+                'rdp_count': 0,
+                'form_count': 0,
+                'product_breakdown': []
+            }
+            staff_ndp_customers[staff_id] = set()
+            staff_rdp_customers[staff_id] = set()
+        
+        staff_stats[staff_id]['total_omset'] += depo_total
+        staff_stats[staff_id]['form_count'] += 1
+        
+        if is_staff_ndp:
+            if cid_normalized not in staff_ndp_customers[staff_id]:
+                staff_ndp_customers[staff_id].add(cid_normalized)
+                staff_stats[staff_id]['ndp_count'] += 1
+        else:
+            if cid_normalized not in staff_rdp_customers[staff_id]:
+                staff_rdp_customers[staff_id].add(cid_normalized)
+                staff_stats[staff_id]['rdp_count'] += 1
+    
+    staff_list = sorted(staff_stats.values(), key=lambda x: x['total_omset'], reverse=True)
+    top_performer = staff_list[0] if staff_list else None
+    
+    summary = {
+        'date': date_str,
+        'product_filter': filter_product_id,
+        'product_name': product_name,
+        'total_omset': total_omset,
+        'total_ndp': total_ndp,
+        'total_rdp': total_rdp,
+        'total_forms': total_forms,
+        'top_performer': {
+            'staff_id': top_performer['staff_id'],
+            'staff_name': top_performer['staff_name'],
+            'omset': top_performer['total_omset'],
+            'ndp': top_performer['ndp_count'],
+            'rdp': top_performer['rdp_count']
+        } if top_performer else None,
+        'staff_breakdown': staff_list,
+        'product_breakdown': [{
+            'product_id': filter_product_id,
+            'product_name': product_name,
+            'total_omset': total_omset,
+            'ndp_count': total_ndp,
+            'rdp_count': total_rdp,
+            'form_count': total_forms
+        }],
+        'generated_at': get_jakarta_now().isoformat()
+    }
+    
+    return summary
+
 # ==================== DAILY SUMMARY ENDPOINTS ====================
 
 @router.get("/daily-summary")
