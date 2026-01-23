@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Calendar, Trophy, TrendingUp, Users, DollarSign, UserPlus, RefreshCcw, ChevronLeft, ChevronRight, Award, Target, Package, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar, Trophy, TrendingUp, Users, DollarSign, UserPlus, RefreshCcw, ChevronLeft, ChevronRight, Award, Target, Package, ChevronDown, ChevronUp, Filter } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 export default function DailySummary({ isAdmin = false }) {
@@ -13,18 +13,37 @@ export default function DailySummary({ isAdmin = false }) {
   const [showHistory, setShowHistory] = useState(false);
   const [showProductBreakdown, setShowProductBreakdown] = useState(true);
   const [expandedStaff, setExpandedStaff] = useState({});
+  const [products, setProducts] = useState([]);
+  const [selectedProduct, setSelectedProduct] = useState('');
+
+  // Load products for filter
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const response = await api.get('/products');
+        setProducts(response.data || []);
+      } catch (error) {
+        console.error('Failed to load products');
+      }
+    };
+    loadProducts();
+  }, []);
 
   const loadSummary = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/daily-summary?date=${selectedDate}`);
+      const params = new URLSearchParams({ date: selectedDate });
+      if (selectedProduct) {
+        params.append('product_id', selectedProduct);
+      }
+      const response = await api.get(`/daily-summary?${params.toString()}`);
       setSummary(response.data);
     } catch (error) {
       toast.error(t('messages.somethingWrong'));
     } finally {
       setLoading(false);
     }
-  }, [selectedDate, t]);
+  }, [selectedDate, selectedProduct, t]);
 
   const loadHistory = useCallback(async () => {
     try {
