@@ -384,6 +384,15 @@ Google Authenticator-style TOTP attendance system for staff check-in. Replaced p
 - `DELETE /api/omset/trash/{record_id}` - Permanent delete
 **Database**: New `omset_trash` collection stores deleted records with `deleted_at`, `deleted_by`, `deleted_by_name` fields
 
+### Advanced Analytics Empty Charts Bug Fix - COMPLETED (Jan 23, 2026)
+**Problem**: Advanced Analytics page showed "OMSET trends will appear after daily records are added" even though staff had added records
+**Root Cause**: The `/api/analytics/business` endpoint was querying with wrong field name `date` instead of `record_date`
+**Fix**: Changed line 158 in `analytics.py` from `{'date': ...}` to `{'record_date': ...}`
+**Result**: All charts now display correctly:
+- OMSET Trends (line chart)
+- OMSET by Product (bar chart)
+- NDP vs RDP Analysis (donut chart with OMSET values)
+
 ### OMSET Trash Auto-Expiration - COMPLETED (Jan 23, 2026)
 **Feature**: Automatically permanently delete OMSET trash records older than 30 days
 **Schedule**: Runs daily at 00:05 AM Jakarta time via APScheduler
