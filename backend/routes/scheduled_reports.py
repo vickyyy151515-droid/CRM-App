@@ -936,6 +936,16 @@ def start_scheduler(report_hour: int = 1, report_minute: int = 0,
     )
     print("Reserved member cleanup scheduled at 00:01 WIB daily")
     
+    # Schedule OMSET trash cleanup at 00:05 AM daily (always enabled)
+    # Removes records older than 30 days from the trash
+    scheduler.add_job(
+        cleanup_omset_trash,
+        CronTrigger(hour=0, minute=5, timezone=JAKARTA_TZ),
+        id='omset_trash_cleanup',
+        replace_existing=True
+    )
+    print("OMSET trash cleanup scheduled at 00:05 WIB daily (30-day retention)")
+    
     scheduler.start()
     print("Scheduler started successfully")
 
