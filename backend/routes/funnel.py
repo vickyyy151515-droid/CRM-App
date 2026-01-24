@@ -9,25 +9,31 @@ router = APIRouter(tags=["Conversion Funnel"])
 
 # ==================== HELPER FUNCTIONS ====================
 
-# Extended list of possible username fields in row_data
+# IMPORTANT: These are the ONLY keys that should be used to extract customer USERNAME
+# The customer's actual "name" field is NOT included - it's only for display/info
+# username = Customer ID (in OMSET) = customer_name (in Reserved Member)
 USERNAME_KEYS = [
-    'username', 'Username', 'USERNAME', 'USER', 'user', 
-    'name', 'Name', 'NAME',
-    'customer_id', 'customer', 'Customer', 'CUSTOMER',
+    'username', 'Username', 'USERNAME', 'USER', 'user', 'user_name', 'user_Name', 'User_Name',
     'id', 'ID', 'Id',
-    'userid', 'UserId', 'user_id', 'UserID',
+    'userid', 'UserId', 'user_id', 'UserID', 'USER_ID',
+    'customer_id', 'Customer_id', 'Customer_ID', 'CUSTOMER_ID',
     'member', 'Member', 'MEMBER',
     'account', 'Account', 'ACCOUNT'
 ]
+# NOTE: 'name', 'Name', 'NAME' are intentionally EXCLUDED as per user requirement
+# The customer's actual name is only for display, not for workflow logic
 
 def extract_username(record: dict) -> tuple:
     """
     Extract username from a customer record.
     Returns (normalized_username, original_username) or (None, None) if not found.
+    
+    IMPORTANT: This extracts the USERNAME field, NOT the customer's actual name.
+    Username = Customer ID = customer_name in Reserved Member
     """
     row_data = record.get('row_data', {})
     
-    # Try to get username from row_data
+    # Try to get username from row_data using allowed keys only
     for key in USERNAME_KEYS:
         if key in row_data and row_data[key]:
             val = row_data[key]
@@ -36,7 +42,7 @@ def extract_username(record: dict) -> tuple:
                 if original:
                     return (original.upper(), original)
     
-    # Fallback to record's customer_id
+    # Fallback to record's customer_id field
     if record.get('customer_id'):
         original = str(record['customer_id']).strip()
         if original:
