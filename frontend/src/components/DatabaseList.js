@@ -106,12 +106,52 @@ export default function DatabaseList({ onUpdate, isStaff = false }) {
     return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
   };
 
+  const checkFixStatus = async () => {
+    try {
+      setFixingData(true);
+      const response = await api.get('/records/fix-requested-status');
+      setFixCheckResult(response.data);
+      setShowFixModal(true);
+    } catch (error) {
+      toast.error('Failed to check data status');
+    } finally {
+      setFixingData(false);
+    }
+  };
+
+  const runDataFix = async () => {
+    try {
+      setFixingData(true);
+      const response = await api.post('/records/fix-requested-status');
+      toast.success(`Fixed ${response.data.total_processed} records: ${response.data.fixed_to_assigned} assigned, ${response.data.fixed_to_available} returned to available`);
+      setShowFixModal(false);
+      setFixCheckResult(null);
+      loadDatabases();
+      onUpdate?.();
+    } catch (error) {
+      toast.error('Failed to fix data');
+    } finally {
+      setFixingData(false);
+    }
+  };
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-3xl font-semibold tracking-tight text-slate-900">
+        <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">
           {isStaff ? 'Available Databases' : 'Manage Databases'}
         </h2>
+        {!isStaff && (
+          <button
+            onClick={checkFixStatus}
+            disabled={fixingData}
+            className="flex items-center gap-2 px-4 py-2 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors text-sm font-medium disabled:opacity-50"
+            data-testid="fix-data-btn"
+          >
+            <Wrench size={16} />
+            {fixingData ? 'Checking...' : 'Fix Stuck Records'}
+          </button>
+        )}
       </div>
 
       <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
