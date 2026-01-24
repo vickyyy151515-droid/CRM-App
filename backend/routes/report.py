@@ -96,29 +96,37 @@ async def get_report_crm_data(
         total_form = len(month_records)
         nominal = 0
         
-        # Track unique NDP/RDP customers per month
-        month_ndp_customers = set()
-        month_rdp_customers = set()
+        # Track unique NDP/RDP customers per DAY (to match daily report logic)
+        # Key: (date) -> set of customer_ids
+        daily_ndp_customers = {}
+        daily_rdp_customers = {}
         
         for record in month_records:
             cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+            date = record['record_date']
             key = (cid_normalized, record['product_id'])
             first_date = customer_first_date.get(key)
             
+            # Initialize daily sets if not exist
+            if date not in daily_ndp_customers:
+                daily_ndp_customers[date] = set()
+            if date not in daily_rdp_customers:
+                daily_rdp_customers[date] = set()
+            
             # "tambahan" records are always RDP
             if is_tambahan_record(record):
-                if cid_normalized not in month_rdp_customers:
-                    month_rdp_customers.add(cid_normalized)
+                if cid_normalized not in daily_rdp_customers[date]:
+                    daily_rdp_customers[date].add(cid_normalized)
                     rdp += 1
-            elif first_date and first_date.startswith(month_str) and first_date == record['record_date']:
-                # NDP - count unique customers
-                if cid_normalized not in month_ndp_customers:
-                    month_ndp_customers.add(cid_normalized)
+            elif first_date and first_date == record['record_date']:
+                # NDP - count unique customers per day
+                if cid_normalized not in daily_ndp_customers[date]:
+                    daily_ndp_customers[date].add(cid_normalized)
                     new_id += 1
             elif first_date and first_date < record['record_date']:
-                # RDP - count unique customers per month
-                if cid_normalized not in month_rdp_customers:
-                    month_rdp_customers.add(cid_normalized)
+                # RDP - count unique customers per day (sum of daily counts)
+                if cid_normalized not in daily_rdp_customers[date]:
+                    daily_rdp_customers[date].add(cid_normalized)
                     rdp += 1
             nominal += record.get('depo_total', 0) or record.get('nominal', 0) or 0
         
