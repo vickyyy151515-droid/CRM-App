@@ -665,6 +665,89 @@ export default function DatabaseList({ onUpdate, isStaff = false }) {
           </div>
         </div>
       )}
+
+      {/* Auto-Approve Settings Modal */}
+      {showAutoApproveSettings && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50" data-testid="auto-approve-settings-modal">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                <Settings className="text-indigo-600 dark:text-indigo-400" size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Auto-Approve Settings</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Configure automatic approval behavior</p>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                <div>
+                  <p className="font-medium text-slate-900 dark:text-white">Enable Auto-Approve</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Automatically approve staff requests</p>
+                </div>
+                <button
+                  onClick={() => setAutoApproveEnabled(!autoApproveEnabled)}
+                  className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors ${
+                    autoApproveEnabled ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-600'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform ${
+                      autoApproveEnabled ? 'translate-x-8' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+              
+              <div className="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                <label className="block font-medium text-slate-900 dark:text-white mb-2">
+                  Max Records Per Request (Optional)
+                </label>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">
+                  Leave empty for no limit. If set, requests exceeding this will require manual approval.
+                </p>
+                <input
+                  type="number"
+                  value={maxRecordsLimit}
+                  onChange={(e) => setMaxRecordsLimit(e.target.value)}
+                  placeholder="No limit"
+                  min="1"
+                  className="w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                />
+              </div>
+              
+              {autoApproveEnabled && (
+                <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                  <p className="text-sm text-amber-800 dark:text-amber-300">
+                    <strong>Note:</strong> When enabled, staff database requests will be automatically approved without admin review.
+                    {maxRecordsLimit && ` Requests for more than ${maxRecordsLimit} records will still require manual approval.`}
+                  </p>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex gap-3 justify-end mt-6">
+              <button
+                onClick={() => {
+                  setShowAutoApproveSettings(false);
+                  loadAutoApproveSettings(); // Reset to saved values
+                }}
+                className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveAutoApproveSettings}
+                disabled={autoApproveLoading}
+                className="px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+              >
+                {autoApproveLoading ? 'Saving...' : 'Save Settings'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
