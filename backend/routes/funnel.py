@@ -116,11 +116,12 @@ async def get_conversion_funnel(
         {'_id': 0, 'customer_id': 1, 'customer_id_normalized': 1, 'product_id': 1}
     ).to_list(500000)
     
-    # Create set of deposited customer identifiers (normalized username)
+    # Create set of deposited customer identifiers (normalized username - ALWAYS uppercase)
     deposited_customers = set()
     for omset in omset_records:
-        # Use normalized customer_id (uppercase username)
-        cust_id = omset.get('customer_id_normalized') or omset.get('customer_id', '').strip().upper()
+        # Get customer_id and ALWAYS convert to uppercase for case-insensitive matching
+        raw_cust_id = omset.get('customer_id_normalized') or omset.get('customer_id', '')
+        cust_id = str(raw_cust_id).strip().upper() if raw_cust_id else None
         prod_id = omset.get('product_id')
         if cust_id:
             deposited_customers.add((cust_id, prod_id))
