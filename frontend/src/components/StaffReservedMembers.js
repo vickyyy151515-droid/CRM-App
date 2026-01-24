@@ -136,15 +136,15 @@ export default function StaffReservedMembers() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                Customer Name <span className="text-red-500">*</span>
+                Customer ID <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
-                placeholder="Enter customer name"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
+                placeholder="Enter customer ID"
+                value={customerId}
+                onChange={(e) => setCustomerId(e.target.value)}
                 className="w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                data-testid="input-customer-name"
+                data-testid="input-customer-id"
               />
             </div>
             <div>
