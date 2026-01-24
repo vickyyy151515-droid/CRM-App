@@ -242,7 +242,7 @@ async def get_funnel_by_product(
     """Get conversion funnel breakdown by product"""
     db = get_db()
     
-    # Default date range
+    # Default date range (for display purposes only)
     jakarta_now = get_jakarta_now()
     if not end_date:
         end_date = jakarta_now.strftime('%Y-%m-%d')
@@ -259,28 +259,28 @@ async def get_funnel_by_product(
         query,
         {'_id': 0, 'id': 1, 'customer_id': 1, 'product_id': 1, 'product_name': 1,
          'whatsapp_status': 1, 'respond_status': 1, 'row_data': 1}
-    ).to_list(100000)
+    ).to_list(500000)
     
-    # Get OMSET records
-    omset_query = {
-        'record_date': {'$gte': start_date, '$lte': end_date}
-    }
+    # Get ALL OMSET records (no date filter - check if customer ever deposited)
+    omset_query = {}
     if user.role == 'staff':
         omset_query['staff_id'] = user.id
     
     omset_records = await db.omset_records.find(
         omset_query,
         {'_id': 0, 'customer_id': 1, 'customer_id_normalized': 1, 'product_id': 1}
-    ).to_list(100000)
+    ).to_list(500000)
     
-    # Create set of deposited customers by product
+    # Create set of ALL deposited customers (regardless of product for matching)
+    all_deposited = set()
     deposited_by_product = {}  # product_id -> set of usernames
     for omset in omset_records:
         cust_id = omset.get('customer_id_normalized') or omset.get('customer_id', '').strip().upper()
         prod_id = omset.get('product_id')
-        if prod_id not in deposited_by_product:
-            deposited_by_product[prod_id] = set()
         if cust_id:
+            all_deposited.add(cust_id)
+            if prod_id not in deposited_by_product:
+                deposited_by_product[prod_id] = set()
             deposited_by_product[prod_id].add(cust_id)
     
     # Group by product
@@ -297,7 +297,7 @@ async def get_funnel_by_product(
                 'wa_reached': 0,
                 'responded': 0,
                 'deposited': 0,
-                'deposited_customers': []  # Track deposited customer usernames
+                'deposited_customers': []
             }
         
         products[prod_id]['assigned'] += 1
@@ -308,19 +308,14 @@ async def get_funnel_by_product(
         if record.get('respond_status') == 'ya':
             products[prod_id]['responded'] += 1
         
-        # Check if deposited by matching username from row_data
-        row_data = record.get('row_data', {})
-        username = None
-        original_username = None
-        for key in ['username', 'Username', 'USER', 'user', 'name', 'Name', 'customer_id', 'id']:
-            if key in row_data and row_data[key]:
-                original_username = str(row_data[key]).strip()
-                username = original_username.upper()
-                break
+        # Check if deposited using helper function
+        username, original_username = extract_username(record)
         
-        if username and prod_id in deposited_by_product and username in deposited_by_product[prod_id]:
+        # Match: customer deposited with same product OR deposited at all
+        if username and (username in deposited_by_product.get(prod_id, set()) or username in all_deposited):
             products[prod_id]['deposited'] += 1
-            products[prod_id]['deposited_customers'].append(original_username)
+            if original_username:
+                products[prod_id]['deposited_customers'].append(original_username)
     
     # Calculate conversion rates
     result = []
@@ -339,7 +334,7 @@ async def get_funnel_by_product(
                 'responded': responded,
                 'deposited': deposited
             },
-            'deposited_customers': prod['deposited_customers'],  # Include customer usernames
+            'deposited_customers': prod['deposited_customers'][:50],  # Limit for performance
             'conversion_rates': {
                 'assigned_to_wa': round((wa_reached / assigned * 100), 1) if assigned > 0 else 0,
                 'wa_to_responded': round((responded / wa_reached * 100), 1) if wa_reached > 0 else 0,
@@ -353,7 +348,11 @@ async def get_funnel_by_product(
     
     return {
         'date_range': {'start': start_date, 'end': end_date},
-        'products': result
+        'products': result,
+        'debug': {
+            'total_omset_records': len(omset_records),
+            'unique_depositors': len(all_deposited)
+        }
     }
 
 
