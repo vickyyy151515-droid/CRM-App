@@ -46,7 +46,7 @@ export default function ReservedMemberCRM({ isStaff = false }) {
     e.preventDefault();
     
     if (!newMemberName.trim()) {
-      toast.error('Please enter customer name');
+      toast.error('Please enter customer ID');
       return;
     }
 
@@ -57,7 +57,7 @@ export default function ReservedMemberCRM({ isStaff = false }) {
 
     try {
       await api.post('/reserved-members', {
-        customer_name: newMemberName.trim(),
+        customer_id: newMemberName.trim(),
         staff_id: isStaff ? undefined : selectedStaff
       });
       
@@ -107,10 +107,12 @@ export default function ReservedMemberCRM({ isStaff = false }) {
     }
   };
 
-  const filteredMembers = members.filter(m => 
-    m.customer_name.toLowerCase().includes(search.toLowerCase()) ||
-    m.staff_name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredMembers = members.filter(m => {
+    // Support both customer_id (new) and customer_name (legacy data)
+    const customerIdentifier = m.customer_id || m.customer_name || '';
+    return customerIdentifier.toLowerCase().includes(search.toLowerCase()) ||
+           m.staff_name.toLowerCase().includes(search.toLowerCase());
+  });
 
   // Group by staff
   const membersByStaff = filteredMembers.reduce((acc, member) => {
@@ -185,7 +187,7 @@ export default function ReservedMemberCRM({ isStaff = false }) {
             {pendingRequests.map((request) => (
               <div key={request.id} className="bg-white rounded-lg p-4 flex items-center justify-between">
                 <div>
-                  <p className="font-semibold text-slate-900">{request.customer_name}</p>
+                  <p className="font-semibold text-slate-900">{request.customer_id || request.customer_name}</p>
                   <p className="text-sm text-slate-600">Requested by: {request.staff_name}</p>
                 </div>
                 <div className="flex gap-2">
@@ -254,7 +256,7 @@ export default function ReservedMemberCRM({ isStaff = false }) {
                     key={member.id}
                     className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors"
                   >
-                    <span className="font-medium text-slate-900">{member.customer_name}</span>
+                    <span className="font-medium text-slate-900">{member.customer_id || member.customer_name}</span>
                     {!isStaff && (
                       <button
                         onClick={() => handleDelete(member.id)}

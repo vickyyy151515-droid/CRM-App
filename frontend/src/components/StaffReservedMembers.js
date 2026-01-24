@@ -9,7 +9,7 @@ export default function StaffReservedMembers() {
   const [members, setMembers] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [customerName, setCustomerName] = useState('');
+  const [customerId, setCustomerId] = useState('');  // Renamed from customerName
   const [phoneNumber, setPhoneNumber] = useState('');
   const [selectedProduct, setSelectedProduct] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -38,8 +38,8 @@ export default function StaffReservedMembers() {
 
   const handleRequestReservation = async (e) => {
     e.preventDefault();
-    if (!customerName.trim()) {
-      toast.error('Please enter a customer name');
+    if (!customerId.trim()) {
+      toast.error('Please enter a customer ID');
       return;
     }
     if (!selectedProduct) {
@@ -54,12 +54,12 @@ export default function StaffReservedMembers() {
     setSubmitting(true);
     try {
       await api.post('/reserved-members', {
-        customer_name: customerName.trim(),
+        customer_id: customerId.trim(),
         phone_number: phoneNumber.trim(),
         product_id: selectedProduct
       });
       toast.success('Reservation request submitted! Waiting for admin approval.');
-      setCustomerName('');
+      setCustomerId('');
       setPhoneNumber('');
       setSelectedProduct('');
       loadData();
@@ -75,7 +75,9 @@ export default function StaffReservedMembers() {
   const pendingMembers = members.filter(m => m.status === 'pending');
 
   const displayMembers = filter === 'my-requests' ? pendingMembers : approvedMembers.filter(m => {
-    const matchesSearch = m.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    // Support both customer_id (new) and customer_name (legacy data)
+    const customerIdentifier = m.customer_id || m.customer_name || '';
+    const matchesSearch = customerIdentifier.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           m.staff_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           (m.product_name || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesProduct = !productFilter || m.product_id === productFilter;
@@ -262,7 +264,7 @@ export default function StaffReservedMembers() {
             ) : (
               displayMembers.map(member => (
                 <tr key={member.id} className="hover:bg-slate-50 dark:hover:bg-slate-700" data-testid={`reservation-row-${member.id}`}>
-                  <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">{member.customer_name}</td>
+                  <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">{member.customer_id || member.customer_name}</td>
                   <td className="px-6 py-4">
                     {member.phone_number ? (
                       <div className="flex items-center gap-2">
