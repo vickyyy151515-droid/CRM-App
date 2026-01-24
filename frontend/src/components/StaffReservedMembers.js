@@ -246,7 +246,7 @@ export default function StaffReservedMembers() {
         <table className="w-full" data-testid="reservations-table">
           <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
             <tr>
-              <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">Customer Name</th>
+              <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">Customer ID</th>
               <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">Phone</th>
               <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">Product</th>
               <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">Reserved By</th>
