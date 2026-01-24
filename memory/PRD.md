@@ -484,6 +484,20 @@ Google Authenticator-style TOTP attendance system for staff check-in. Replaced p
 - "Recover Staff Records" button (green) - Re-assigns records from approved requests
 - "Fix Stuck Records" button (amber) - Fixes records stuck in "requested" status
 
+### Auto-Approve Database Requests - NEW FEATURE (Jan 24, 2026)
+**Feature**: Admin can toggle automatic approval for staff database requests
+**Purpose**: Allow staff to get records without waiting for admin approval when admin is unavailable
+**Settings**:
+- Enable/Disable toggle for auto-approve
+- Optional max records per request limit (requests exceeding this still require manual approval)
+**Implementation**:
+- Backend: New `system_settings` collection stores auto-approve config
+- API endpoints: `GET/PUT /api/settings/auto-approve`
+- When enabled: Staff requests are instantly approved and records assigned
+- Request marked with `auto_approved: true` and `reviewed_by_name: "Auto-Approved"`
+- Staff receives notification: "Your request has been automatically approved"
+**Frontend**: Toggle switch on Manage Databases page with settings modal for configuring limits
+
 
 ## Third Party Integrations
 - @dnd-kit/core, @dnd-kit/sortable - Sidebar customization
