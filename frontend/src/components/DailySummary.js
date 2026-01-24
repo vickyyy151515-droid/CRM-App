@@ -165,7 +165,14 @@ export default function DailySummary({ isAdmin = false }) {
         </button>
         <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
           <Calendar className="text-indigo-600" size={20} />
-          <span className="font-semibold text-slate-900 dark:text-white">{formatDate(selectedDate)}</span>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            max={new Date().toISOString().split('T')[0]}
+            className="bg-transparent border-none font-semibold text-slate-900 dark:text-white focus:outline-none cursor-pointer"
+            data-testid="date-picker"
+          />
           {isToday && (
             <span className="px-2 py-0.5 text-xs font-medium bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-full">Today</span>
           )}
