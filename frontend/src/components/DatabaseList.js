@@ -181,15 +181,26 @@ export default function DatabaseList({ onUpdate, isStaff = false }) {
           {isStaff ? 'Available Databases' : 'Manage Databases'}
         </h2>
         {!isStaff && (
-          <button
-            onClick={checkFixStatus}
-            disabled={fixingData}
-            className="flex items-center gap-2 px-4 py-2 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors text-sm font-medium disabled:opacity-50"
-            data-testid="fix-data-btn"
-          >
-            <Wrench size={16} />
-            {fixingData ? 'Checking...' : 'Fix Stuck Records'}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={checkRecoveryNeeded}
+              disabled={recovering}
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors text-sm font-medium disabled:opacity-50"
+              data-testid="recover-data-btn"
+            >
+              <RefreshCw size={16} className={recovering ? 'animate-spin' : ''} />
+              {recovering ? 'Checking...' : 'Recover Staff Records'}
+            </button>
+            <button
+              onClick={checkFixStatus}
+              disabled={fixingData}
+              className="flex items-center gap-2 px-4 py-2 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors text-sm font-medium disabled:opacity-50"
+              data-testid="fix-data-btn"
+            >
+              <Wrench size={16} />
+              {fixingData ? 'Checking...' : 'Fix Stuck Records'}
+            </button>
+          </div>
         )}
       </div>
 
