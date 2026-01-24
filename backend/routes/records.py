@@ -65,7 +65,7 @@ class RespondStatusUpdate(BaseModel):
 class ReservedMember(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    customer_name: str
+    customer_id: str  # Renamed from customer_name for consistency
     phone_number: Optional[str] = None
     product_id: str
     product_name: str
@@ -80,13 +80,13 @@ class ReservedMember(BaseModel):
     approved_by_name: Optional[str] = None
 
 class ReservedMemberCreate(BaseModel):
-    customer_name: str
+    customer_id: str  # Renamed from customer_name for consistency
     phone_number: Optional[str] = None
     product_id: str
     staff_id: Optional[str] = None
 
 class BulkReservedMemberCreate(BaseModel):
-    customer_names: List[str]  # List of customer names (one per line)
+    customer_ids: List[str]  # List of customer IDs (one per line) - renamed from customer_names
     product_id: str
     staff_id: str
 
@@ -376,19 +376,19 @@ async def create_download_request(request_data: DownloadRequestCreate, user: Use
     if request_data.record_count <= 0:
         raise HTTPException(status_code=400, detail="Record count must be greater than 0")
     
-    # Get all reserved member names for this product (case-insensitive)
+    # Get all reserved member IDs for this product (case-insensitive)
     product_id = database.get('product_id')
     reserved_members = await db.reserved_members.find(
         {'product_id': product_id, 'status': {'$in': ['pending', 'approved']}},
-        {'_id': 0, 'customer_name': 1}
+        {'_id': 0, 'customer_id': 1}
     ).to_list(10000)
     
-    # Create a set of reserved names (normalized to uppercase for case-insensitive comparison)
-    reserved_names = set()
+    # Create a set of reserved IDs (normalized to uppercase for case-insensitive comparison)
+    reserved_ids = set()
     for member in reserved_members:
-        name = member.get('customer_name', '').strip().upper()
-        if name:
-            reserved_names.add(name)
+        cid = member.get('customer_id', '').strip().upper()
+        if cid:
+            reserved_ids.add(cid)
     
     # Get all available records from the database (get more than needed to account for duplicates)
     # Fetch up to 3x the requested amount to have enough replacements
@@ -401,7 +401,7 @@ async def create_download_request(request_data: DownloadRequestCreate, user: Use
     if len(all_available_records) == 0:
         raise HTTPException(status_code=400, detail="No available records in this database")
     
-    # Filter out records that have usernames matching Reserved Members' customer_name
+    # Filter out records that have usernames matching Reserved Members' customer_id
     valid_records = []
     skipped_records = []
     
@@ -411,19 +411,19 @@ async def create_download_request(request_data: DownloadRequestCreate, user: Use
         
         # Check for username field using standardized keys
         # IMPORTANT: 'name' field is NOT checked - it's the customer's actual name, not username
-        # Username = Customer ID = customer_name in Reserved Member
+        # Username = Customer ID = customer_id in Reserved Member
         username_keys_lower = ['username', 'user_name', 'user', 'id', 'userid', 'user_id', 'customer_id', 'member', 'account']
         for key in row_data:
             if key.lower() in username_keys_lower:
                 username = row_data[key]
                 break
         
-        # Normalize username for comparison against reserved customer_name
+        # Normalize username for comparison against reserved customer_id
         if username:
             normalized_username = str(username).strip().upper()
             
-            if normalized_username in reserved_names:
-                # This record's username matches a reserved customer_name, skip it
+            if normalized_username in reserved_ids:
+                # This record's username matches a reserved customer_id, skip it
                 skipped_records.append({
                     'record_id': record['id'],
                     'username': username,
@@ -980,7 +980,7 @@ async def create_reserved_member(member_data: ReservedMemberCreate, user: User =
         raise HTTPException(status_code=404, detail="Product not found")
     
     existing = await db.reserved_members.find_one({
-        'customer_name': {'$regex': f'^{member_data.customer_name}$', '$options': 'i'},
+        'customer_id': {'$regex': f'^{member_data.customer_id}$', '$options': 'i'},
         'product_id': member_data.product_id,
         'status': {'$in': ['pending', 'approved']}
     })
@@ -990,7 +990,7 @@ async def create_reserved_member(member_data: ReservedMemberCreate, user: User =
         owner_name = owner['name'] if owner else 'Unknown'
         raise HTTPException(
             status_code=409, 
-            detail=f"Customer '{member_data.customer_name}' is already reserved by {owner_name} in {product['name']}"
+            detail=f"Customer '{member_data.customer_id}' is already reserved by {owner_name} in {product['name']}"
         )
     
     if user.role == 'admin' or user.role == 'master_admin':
@@ -1002,7 +1002,7 @@ async def create_reserved_member(member_data: ReservedMemberCreate, user: User =
             raise HTTPException(status_code=404, detail="Staff not found")
         
         member = ReservedMember(
-            customer_name=member_data.customer_name,
+            customer_id=member_data.customer_id,
             phone_number=member_data.phone_number,
             product_id=member_data.product_id,
             product_name=product['name'],
@@ -1017,7 +1017,7 @@ async def create_reserved_member(member_data: ReservedMemberCreate, user: User =
         )
     else:
         member = ReservedMember(
-            customer_name=member_data.customer_name,
+            customer_id=member_data.customer_id,
             phone_number=member_data.phone_number,
             product_id=member_data.product_id,
             product_name=product['name'],
@@ -1034,8 +1034,8 @@ async def create_reserved_member(member_data: ReservedMemberCreate, user: User =
                 user_id=admin['id'],
                 type='new_reserved_request',
                 title='New Reservation Request',
-                message=f'{user.name} requested to reserve "{member_data.customer_name}" in {product["name"]}',
-                data={'customer_name': member_data.customer_name, 'staff_name': user.name, 'product_name': product['name']}
+                message=f'{user.name} requested to reserve "{member_data.customer_id}" in {product["name"]}',
+                data={'customer_id': member_data.customer_id, 'staff_name': user.name, 'product_name': product['name']}
             )
     
     doc = member.model_dump()
@@ -1066,24 +1066,24 @@ async def bulk_create_reserved_members(bulk_data: BulkReservedMemberCreate, user
     if not staff:
         raise HTTPException(status_code=404, detail="Staff not found")
     
-    # Clean and deduplicate customer names
-    customer_names = []
-    for name in bulk_data.customer_names:
-        cleaned = name.strip()
-        if cleaned and cleaned not in customer_names:
-            customer_names.append(cleaned)
+    # Clean and deduplicate customer IDs
+    customer_ids = []
+    for cid in bulk_data.customer_ids:
+        cleaned = cid.strip()
+        if cleaned and cleaned not in customer_ids:
+            customer_ids.append(cleaned)
     
-    if not customer_names:
-        raise HTTPException(status_code=400, detail="No valid customer names provided")
+    if not customer_ids:
+        raise HTTPException(status_code=400, detail="No valid customer IDs provided")
     
-    # Process each customer name
+    # Process each customer ID
     added = []
     skipped = []
     
-    for customer_name in customer_names:
+    for customer_id in customer_ids:
         # Check for existing reservation (case-insensitive)
         existing = await db.reserved_members.find_one({
-            'customer_name': {'$regex': f'^{customer_name}$', '$options': 'i'},
+            'customer_id': {'$regex': f'^{customer_id}$', '$options': 'i'},
             'product_id': bulk_data.product_id,
             'status': {'$in': ['pending', 'approved']}
         })
@@ -1092,14 +1092,14 @@ async def bulk_create_reserved_members(bulk_data: BulkReservedMemberCreate, user
             owner = await db.users.find_one({'id': existing['staff_id']})
             owner_name = owner['name'] if owner else 'Unknown'
             skipped.append({
-                'customer_name': customer_name,
+                'customer_id': customer_id,
                 'reason': f"Already reserved by {owner_name}"
             })
             continue
         
         # Create the reservation
         member = ReservedMember(
-            customer_name=customer_name,
+            customer_id=customer_id,
             product_id=bulk_data.product_id,
             product_name=product['name'],
             staff_id=bulk_data.staff_id,
@@ -1117,11 +1117,11 @@ async def bulk_create_reserved_members(bulk_data: BulkReservedMemberCreate, user
         doc['approved_at'] = doc['approved_at'].isoformat()
         
         await db.reserved_members.insert_one(doc)
-        added.append(customer_name)
+        added.append(customer_id)
     
     return {
         'success': True,
-        'total_processed': len(customer_names),
+        'total_processed': len(customer_ids),
         'added_count': len(added),
         'skipped_count': len(skipped),
         'added': added,
@@ -1177,8 +1177,8 @@ async def approve_reserved_member(member_id: str, user: User = Depends(get_admin
         user_id=member['staff_id'],
         type='reserved_approved',
         title='Reservation Approved',
-        message=f'Your reservation for "{member["customer_name"]}" in {member.get("product_name", "Unknown")} has been approved',
-        data={'member_id': member_id, 'customer_name': member['customer_name']}
+        message=f'Your reservation for "{member["customer_id"]}" in {member.get("product_name", "Unknown")} has been approved',
+        data={'member_id': member_id, 'customer_id': member['customer_id']}
     )
     
     return {'message': 'Reserved member approved'}
@@ -1197,8 +1197,8 @@ async def reject_reserved_member(member_id: str, user: User = Depends(get_admin_
         user_id=member['staff_id'],
         type='reserved_rejected',
         title='Reservation Rejected',
-        message=f'Your reservation for "{member["customer_name"]}" in {member.get("product_name", "Unknown")} has been rejected',
-        data={'customer_name': member['customer_name']}
+        message=f'Your reservation for "{member["customer_id"]}" in {member.get("product_name", "Unknown")} has been rejected',
+        data={'customer_id': member['customer_id']}
     )
     
     await db.reserved_members.delete_one({'id': member_id})

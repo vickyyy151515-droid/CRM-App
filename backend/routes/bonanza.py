@@ -159,8 +159,8 @@ async def assign_random_bonanza_records(assignment: RandomBonanzaAssignment, use
         raise HTTPException(status_code=404, detail="Staff not found")
     
     # Get reserved members and normalize to UPPERCASE for case-insensitive comparison
-    reserved_members = await db.reserved_members.find({}, {'_id': 0, 'customer_name': 1}).to_list(100000)
-    reserved_names = set(str(m['customer_name']).strip().upper() for m in reserved_members if m.get('customer_name'))
+    reserved_members = await db.reserved_members.find({}, {'_id': 0, 'customer_id': 1}).to_list(100000)
+    reserved_ids = set(str(m['customer_id']).strip().upper() for m in reserved_members if m.get('customer_id'))
     
     available_records = await db.bonanza_records.find(
         {'database_id': assignment.database_id, 'status': 'available'},
@@ -173,7 +173,7 @@ async def assign_random_bonanza_records(assignment: RandomBonanzaAssignment, use
         username = record.get('row_data', {}).get(assignment.username_field, '')
         # Normalize to UPPERCASE for case-insensitive comparison
         username_str = str(username).strip().upper() if username else ''
-        if username_str and username_str in reserved_names:
+        if username_str and username_str in reserved_ids:
             skipped_count += 1
             continue
         eligible_records.append(record)
