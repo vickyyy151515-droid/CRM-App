@@ -456,13 +456,22 @@ async def create_download_request(request_data: DownloadRequestCreate, user: Use
     selected_records = valid_records[:request_data.record_count]
     record_ids = [record['id'] for record in selected_records]
     
+    # Check if auto-approve is enabled
+    auto_approve_settings = await db.system_settings.find_one({'key': 'auto_approve_requests'}, {'_id': 0})
+    auto_approve_enabled = auto_approve_settings.get('enabled', False) if auto_approve_settings else False
+    max_records = auto_approve_settings.get('max_records_per_request') if auto_approve_settings else None
+    
+    # Determine if this request should be auto-approved
+    should_auto_approve = auto_approve_enabled and (max_records is None or len(record_ids) <= max_records)
+    
     request = DownloadRequest(
         database_id=request_data.database_id,
         database_name=database['filename'],
         record_ids=record_ids,
         record_count=len(record_ids),
         requested_by=user.id,
-        requested_by_name=user.name
+        requested_by_name=user.name,
+        status='approved' if should_auto_approve else 'pending'
     )
     
     doc = request.model_dump()
@@ -470,28 +479,58 @@ async def create_download_request(request_data: DownloadRequestCreate, user: Use
     # Store info about skipped records for transparency
     doc['skipped_reserved_count'] = len(skipped_records)
     
+    if should_auto_approve:
+        # Add approval info for auto-approved requests
+        doc['reviewed_at'] = get_jakarta_now().isoformat()
+        doc['reviewed_by'] = 'system'
+        doc['reviewed_by_name'] = 'Auto-Approved'
+        doc['auto_approved'] = True
+    
     await db.download_requests.insert_one(doc)
     
-    # CRITICAL: Set both status AND request_id on each record
-    for record_id in record_ids:
-        await db.customer_records.update_one(
-            {'id': record_id},
-            {'$set': {
-                'status': 'requested',
-                'request_id': request.id  # Link record to the request
-            }}
-        )
-    
-    # Notify all admins about the new request
-    admins = await db.users.find({'role': {'$in': ['admin', 'master_admin']}}, {'_id': 0, 'id': 1}).to_list(100)
-    for admin in admins:
+    if should_auto_approve:
+        # Auto-approve: Set records to assigned directly
+        for record_id in record_ids:
+            await db.customer_records.update_one(
+                {'id': record_id},
+                {'$set': {
+                    'status': 'assigned',
+                    'request_id': request.id,
+                    'assigned_to': user.id,
+                    'assigned_to_name': user.name,
+                    'assigned_at': get_jakarta_now().isoformat()
+                }}
+            )
+        
+        # Notify staff that their request was auto-approved
         await create_notification(
-            user_id=admin['id'],
-            type='new_download_request',
-            title='New Download Request',
-            message=f'{user.name} requested {len(record_ids)} records from {database["filename"]}',
-            data={'request_id': request.id, 'staff_name': user.name, 'database_name': database['filename'], 'record_count': len(record_ids)}
+            user_id=user.id,
+            type='request_auto_approved',
+            title='Request Auto-Approved',
+            message=f'Your request for {len(record_ids)} records from {database["filename"]} has been automatically approved',
+            data={'request_id': request.id, 'record_count': len(record_ids), 'database_name': database['filename']}
         )
+    else:
+        # Manual approval required: Set records to requested
+        for record_id in record_ids:
+            await db.customer_records.update_one(
+                {'id': record_id},
+                {'$set': {
+                    'status': 'requested',
+                    'request_id': request.id
+                }}
+            )
+        
+        # Notify all admins about the new request
+        admins = await db.users.find({'role': {'$in': ['admin', 'master_admin']}}, {'_id': 0, 'id': 1}).to_list(100)
+        for admin in admins:
+            await create_notification(
+                user_id=admin['id'],
+                type='new_download_request',
+                title='New Download Request',
+                message=f'{user.name} requested {len(record_ids)} records from {database["filename"]}',
+                data={'request_id': request.id, 'staff_name': user.name, 'database_name': database['filename'], 'record_count': len(record_ids)}
+            )
     
     return request
 
