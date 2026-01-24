@@ -352,6 +352,88 @@ export default function DatabaseList({ onUpdate, isStaff = false }) {
           </div>
         </div>
       )}
+
+      {/* Fix Stuck Records Modal */}
+      {showFixModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50" data-testid="fix-data-modal">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-lg w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                <Wrench className="text-amber-600 dark:text-amber-400" size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Fix Stuck Records</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Records stuck in "requested" status</p>
+              </div>
+            </div>
+            
+            {fixCheckResult && (
+              <div className="mb-6">
+                {fixCheckResult.total_requested_records === 0 || fixCheckResult.count === 0 ? (
+                  <div className="flex items-center gap-3 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
+                    <CheckCircle className="text-emerald-600 dark:text-emerald-400" size={24} />
+                    <div>
+                      <p className="font-medium text-emerald-800 dark:text-emerald-300">All Clear!</p>
+                      <p className="text-sm text-emerald-600 dark:text-emerald-400">No records are stuck in "requested" status.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                      <p className="font-medium text-amber-800 dark:text-amber-300 mb-2">
+                        Found {fixCheckResult.total_requested_records} stuck records
+                      </p>
+                      {fixCheckResult.orphan_records_no_request_id > 0 && (
+                        <p className="text-sm text-amber-600 dark:text-amber-400">
+                          • {fixCheckResult.orphan_records_no_request_id} orphan records (no request ID)
+                        </p>
+                      )}
+                      {fixCheckResult.related_requests?.length > 0 && (
+                        <div className="text-sm text-amber-600 dark:text-amber-400 mt-2">
+                          <p className="font-medium">Related requests:</p>
+                          {fixCheckResult.related_requests.map((req, i) => (
+                            <p key={i}>• {req.requested_by_name}: {req.status}</p>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                      Click "Fix Now" to:
+                    </p>
+                    <ul className="text-sm text-slate-600 dark:text-slate-400 list-disc list-inside space-y-1">
+                      <li>Move approved requests → <span className="text-emerald-600 font-medium">Assigned</span></li>
+                      <li>Return rejected/orphan → <span className="text-blue-600 font-medium">Available</span></li>
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowFixModal(false);
+                  setFixCheckResult(null);
+                }}
+                className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                Close
+              </button>
+              {fixCheckResult && (fixCheckResult.total_requested_records > 0 || fixCheckResult.count > 0) && (
+                <button
+                  onClick={runDataFix}
+                  disabled={fixingData}
+                  className="px-4 py-2 bg-amber-600 text-white hover:bg-amber-700 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+                  data-testid="confirm-fix-btn"
+                >
+                  <Wrench size={16} />
+                  {fixingData ? 'Fixing...' : 'Fix Now'}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
