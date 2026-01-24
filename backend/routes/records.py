@@ -472,10 +472,14 @@ async def create_download_request(request_data: DownloadRequestCreate, user: Use
     
     await db.download_requests.insert_one(doc)
     
+    # CRITICAL: Set both status AND request_id on each record
     for record_id in record_ids:
         await db.customer_records.update_one(
             {'id': record_id},
-            {'$set': {'status': 'requested'}}
+            {'$set': {
+                'status': 'requested',
+                'request_id': request.id  # Link record to the request
+            }}
         )
     
     # Notify all admins about the new request
