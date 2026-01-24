@@ -867,6 +867,106 @@ async def update_respond_status(record_id: str, status_update: RespondStatusUpda
     
     return {'message': 'Respond status updated successfully'}
 
+
+# ==================== DATA FIX ENDPOINTS ====================
+
+@router.get("/records/fix-requested-status")
+async def check_requested_status(user: User = Depends(get_admin_user)):
+    """Check for records stuck in 'requested' status and identify the issue"""
+    db = get_db()
+    
+    # Find all records with 'requested' status
+    requested_records = await db.customer_records.find(
+        {'status': 'requested'},
+        {'_id': 0, 'id': 1, 'database_id': 1, 'request_id': 1}
+    ).to_list(10000)
+    
+    if not requested_records:
+        return {'message': 'No records in requested status', 'count': 0}
+    
+    # Check which requests these belong to
+    request_ids = set(r.get('request_id') for r in requested_records if r.get('request_id'))
+    orphan_count = sum(1 for r in requested_records if not r.get('request_id'))
+    
+    # Get the status of those requests
+    requests_info = []
+    for req_id in request_ids:
+        req = await db.download_requests.find_one({'id': req_id}, {'_id': 0, 'id': 1, 'status': 1, 'requested_by_name': 1})
+        if req:
+            requests_info.append(req)
+    
+    return {
+        'total_requested_records': len(requested_records),
+        'orphan_records_no_request_id': orphan_count,
+        'related_requests': requests_info,
+        'sample_records': requested_records[:10]
+    }
+
+
+@router.post("/records/fix-requested-status")
+async def fix_requested_status(user: User = Depends(get_admin_user)):
+    """
+    Fix records stuck in 'requested' status by:
+    1. If request is approved -> change to 'assigned'
+    2. If request is rejected or doesn't exist -> change to 'available'
+    """
+    db = get_db()
+    
+    # Find all records with 'requested' status
+    requested_records = await db.customer_records.find(
+        {'status': 'requested'},
+        {'_id': 0, 'id': 1, 'database_id': 1, 'request_id': 1}
+    ).to_list(100000)
+    
+    if not requested_records:
+        return {'message': 'No records to fix', 'fixed': 0}
+    
+    fixed_to_assigned = 0
+    fixed_to_available = 0
+    
+    for record in requested_records:
+        request_id = record.get('request_id')
+        
+        if request_id:
+            # Check the request status
+            req = await db.download_requests.find_one({'id': request_id})
+            
+            if req and req.get('status') == 'approved':
+                # Request was approved, should be assigned
+                await db.customer_records.update_one(
+                    {'id': record['id']},
+                    {'$set': {
+                        'status': 'assigned',
+                        'assigned_to': req['requested_by'],
+                        'assigned_to_name': req.get('requested_by_name', 'Unknown'),
+                        'assigned_at': req.get('reviewed_at', get_jakarta_now().isoformat())
+                    }}
+                )
+                fixed_to_assigned += 1
+            else:
+                # Request rejected, not found, or still pending - return to available
+                await db.customer_records.update_one(
+                    {'id': record['id']},
+                    {'$set': {'status': 'available'},
+                     '$unset': {'request_id': '', 'assigned_to': '', 'assigned_to_name': '', 'assigned_at': ''}}
+                )
+                fixed_to_available += 1
+        else:
+            # No request_id - orphan record, return to available
+            await db.customer_records.update_one(
+                {'id': record['id']},
+                {'$set': {'status': 'available'}}
+            )
+            fixed_to_available += 1
+    
+    return {
+        'message': 'Records fixed successfully',
+        'total_processed': len(requested_records),
+        'fixed_to_assigned': fixed_to_assigned,
+        'fixed_to_available': fixed_to_available
+    }
+
+
 # ==================== RESERVED MEMBERS ENDPOINTS ====================
 
 @router.post("/reserved-members", response_model=ReservedMember)
