@@ -65,7 +65,8 @@ class RespondStatusUpdate(BaseModel):
 class ReservedMember(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    customer_id: str  # Renamed from customer_name for consistency
+    customer_id: Optional[str] = None  # New field name
+    customer_name: Optional[str] = None  # Legacy field name - kept for backward compatibility
     phone_number: Optional[str] = None
     product_id: str
     product_name: str
@@ -78,15 +79,20 @@ class ReservedMember(BaseModel):
     approved_at: Optional[datetime] = None
     approved_by: Optional[str] = None
     approved_by_name: Optional[str] = None
+    
+    @property
+    def customer_identifier(self) -> str:
+        """Return customer_id if available, otherwise fall back to customer_name"""
+        return self.customer_id or self.customer_name or ""
 
 class ReservedMemberCreate(BaseModel):
-    customer_id: str  # Renamed from customer_name for consistency
+    customer_id: str  # Primary field for new reservations
     phone_number: Optional[str] = None
     product_id: str
     staff_id: Optional[str] = None
 
 class BulkReservedMemberCreate(BaseModel):
-    customer_ids: List[str]  # List of customer IDs (one per line) - renamed from customer_names
+    customer_ids: List[str]  # List of customer IDs (one per line)
     product_id: str
     staff_id: str
 
