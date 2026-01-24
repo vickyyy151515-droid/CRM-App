@@ -707,7 +707,7 @@ async def process_reserved_member_cleanup():
     
     for member in reserved_members:
         member_id = member.get('id')
-        customer_name = member.get('customer_name', '')
+        customer_id = member.get('customer_id', '')  # Renamed from customer_name
         staff_id = member.get('staff_id')
         staff_name = member.get('staff_name', 'Unknown')
         product_id = member.get('product_id', '')
@@ -734,12 +734,9 @@ async def process_reserved_member_cleanup():
         days_remaining = grace_days - days_since_reservation
         
         # Check if there's any OMSET from this customer since reservation
-        # Match by customer_name (username) - case insensitive
+        # Match by customer_id - case insensitive
         omset_query = {
-            '$or': [
-                {'customer_id': {'$regex': f'^{customer_name}$', '$options': 'i'}},
-                {'customer_name': {'$regex': f'^{customer_name}$', '$options': 'i'}}
-            ],
+            'customer_id': {'$regex': f'^{customer_id}$', '$options': 'i'},
             'staff_id': staff_id,
             'created_at': {'$gte': reserved_at_str}
         }
@@ -761,15 +758,15 @@ async def process_reserved_member_cleanup():
                 user_id=staff_id,
                 type='reserved_member_expired',
                 title='Reserved Member Removed',
-                message=f'Your reservation for "{customer_name}" ({product_name}) has been removed due to no OMSET in {grace_days} days.',
+                message=f'Your reservation for "{customer_id}" ({product_name}) has been removed due to no OMSET in {grace_days} days.',
                 data={
-                    'customer_name': customer_name,
+                    'customer_id': customer_id,
                     'product_name': product_name,
                     'grace_days': grace_days,
                     'reason': 'no_omset_grace_period'
                 }
             )
-            print(f"Deleted expired reservation: {customer_name} (staff: {staff_name}, grace: {grace_days} days)")
+            print(f"Deleted expired reservation: {customer_id} (staff: {staff_name}, grace: {grace_days} days)")
             
         elif days_remaining <= warning_days:
             # Send warning notification (within warning period)
@@ -787,17 +784,17 @@ async def process_reserved_member_cleanup():
                     user_id=staff_id,
                     type='reserved_member_expiring',
                     title='Reserved Member Expiring Soon',
-                    message=f'Your reservation for "{customer_name}" ({product_name}) will expire in {days_remaining} day(s) if no OMSET is recorded.',
+                    message=f'Your reservation for "{customer_id}" ({product_name}) will expire in {days_remaining} day(s) if no OMSET is recorded.',
                     data={
                         'member_id': member_id,
-                        'customer_name': customer_name,
+                        'customer_id': customer_id,
                         'product_name': product_name,
                         'days_remaining': days_remaining,
                         'grace_days': grace_days
                     }
                 )
                 notifications_sent += 1
-                print(f"Sent expiry warning for: {customer_name} (staff: {staff_name}, {days_remaining} days left)")
+                print(f"Sent expiry warning for: {customer_id} (staff: {staff_name}, {days_remaining} days left)")
     
     print(f"Reserved member cleanup completed: {notifications_sent} warnings sent, {members_deleted} members removed")
 
@@ -1401,7 +1398,7 @@ async def preview_reserved_member_cleanup(user: User = Depends(get_admin_user)):
     
     for member in reserved_members:
         member_id = member.get('id')
-        customer_name = member.get('customer_name', '')
+        customer_id = member.get('customer_id', '')  # Renamed from customer_name
         staff_id = member.get('staff_id')
         staff_name = member.get('staff_name', 'Unknown')
         product_id = member.get('product_id', '')
@@ -1427,10 +1424,7 @@ async def preview_reserved_member_cleanup(user: User = Depends(get_admin_user)):
         
         # Check if there's any OMSET from this customer since reservation
         omset_query = {
-            '$or': [
-                {'customer_id': {'$regex': f'^{customer_name}$', '$options': 'i'}},
-                {'customer_name': {'$regex': f'^{customer_name}$', '$options': 'i'}}
-            ],
+            'customer_id': {'$regex': f'^{customer_id}$', '$options': 'i'},
             'staff_id': staff_id,
             'created_at': {'$gte': reserved_at_str}
         }
@@ -1439,7 +1433,7 @@ async def preview_reserved_member_cleanup(user: User = Depends(get_admin_user)):
         
         member_info = {
             'id': member_id,
-            'customer_name': customer_name,
+            'customer_id': customer_id,  # Renamed from customer_name
             'staff_name': staff_name,
             'product_id': product_id,
             'product_name': product_name,
