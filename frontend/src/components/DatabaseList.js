@@ -257,6 +257,51 @@ export default function DatabaseList({ onUpdate, isStaff = false }) {
         )}
       </div>
 
+      {/* Auto-Approve Toggle - Admin Only */}
+      {!isStaff && (
+        <div className="mb-6 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl border border-indigo-100 dark:border-indigo-800">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${autoApproveEnabled ? 'bg-indigo-100 dark:bg-indigo-900/50' : 'bg-slate-100 dark:bg-slate-700'}`}>
+                <Zap size={20} className={autoApproveEnabled ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'} />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900 dark:text-white">Auto-Approve Requests</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  {autoApproveEnabled 
+                    ? `Staff requests are automatically approved${maxRecordsLimit ? ` (up to ${maxRecordsLimit} records)` : ''}`
+                    : 'Staff requests require manual admin approval'
+                  }
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowAutoApproveSettings(true)}
+                className="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
+                title="Settings"
+              >
+                <Settings size={18} />
+              </button>
+              <button
+                onClick={toggleAutoApprove}
+                disabled={autoApproveLoading}
+                className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 ${
+                  autoApproveEnabled ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-600'
+                }`}
+                data-testid="auto-approve-toggle"
+              >
+                <span
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform ${
+                    autoApproveEnabled ? 'translate-x-8' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
