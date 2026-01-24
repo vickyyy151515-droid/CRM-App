@@ -1082,6 +1082,60 @@ async def recover_approved_requests(user: User = Depends(get_admin_user)):
     }
 
 
+# ==================== AUTO-APPROVE SETTINGS ====================
+
+class AutoApproveSettings(BaseModel):
+    enabled: bool = False
+    max_records_per_request: Optional[int] = None  # None means no limit
+
+@router.get("/settings/auto-approve")
+async def get_auto_approve_settings(user: User = Depends(get_admin_user)):
+    """Get current auto-approve settings for database requests"""
+    db = get_db()
+    
+    settings = await db.system_settings.find_one({'key': 'auto_approve_requests'}, {'_id': 0})
+    
+    if not settings:
+        return {
+            'enabled': False,
+            'max_records_per_request': None,
+            'updated_at': None,
+            'updated_by': None
+        }
+    
+    return {
+        'enabled': settings.get('enabled', False),
+        'max_records_per_request': settings.get('max_records_per_request'),
+        'updated_at': settings.get('updated_at'),
+        'updated_by': settings.get('updated_by_name')
+    }
+
+@router.put("/settings/auto-approve")
+async def update_auto_approve_settings(settings: AutoApproveSettings, user: User = Depends(get_admin_user)):
+    """Update auto-approve settings for database requests"""
+    db = get_db()
+    
+    await db.system_settings.update_one(
+        {'key': 'auto_approve_requests'},
+        {'$set': {
+            'key': 'auto_approve_requests',
+            'enabled': settings.enabled,
+            'max_records_per_request': settings.max_records_per_request,
+            'updated_at': get_jakarta_now().isoformat(),
+            'updated_by': user.id,
+            'updated_by_name': user.name
+        }},
+        upsert=True
+    )
+    
+    status = "enabled" if settings.enabled else "disabled"
+    return {
+        'message': f'Auto-approve {status} successfully',
+        'enabled': settings.enabled,
+        'max_records_per_request': settings.max_records_per_request
+    }
+
+
 # ==================== RESERVED MEMBERS ENDPOINTS ====================
 
 @router.post("/reserved-members", response_model=ReservedMember)
