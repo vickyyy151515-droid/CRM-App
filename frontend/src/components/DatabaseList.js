@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Search, Eye, Trash2, FileSpreadsheet, Users, AlertTriangle, X } from 'lucide-react';
+import { Search, Eye, Trash2, FileSpreadsheet, Users, AlertTriangle, X, Wrench, CheckCircle } from 'lucide-react';
 import DatabasePreview from './DatabasePreview';
 import DatabaseRecords from './DatabaseRecords';
 
@@ -15,6 +15,9 @@ export default function DatabaseList({ onUpdate, isStaff = false }) {
   const [showPreview, setShowPreview] = useState(false);
   const [showRecords, setShowRecords] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null); // For custom confirm modal
+  const [fixingData, setFixingData] = useState(false);
+  const [showFixModal, setShowFixModal] = useState(false);
+  const [fixCheckResult, setFixCheckResult] = useState(null);
 
   useEffect(() => {
     loadProducts();
