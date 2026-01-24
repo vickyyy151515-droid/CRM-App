@@ -133,34 +133,8 @@ async def get_conversion_funnel(
     deposited_customer_list = []  # Track deposited customers with details
     
     for record in assigned_records:
-        row_data = record.get('row_data', {})
-        # Try to get username from row_data (could be various field names)
-        username = None
-        original_username = None
-        
-        # Extended list of possible username fields
-        username_keys = [
-            'username', 'Username', 'USERNAME', 'USER', 'user', 
-            'name', 'Name', 'NAME',
-            'customer_id', 'customer', 'Customer', 'CUSTOMER',
-            'id', 'ID', 'Id',
-            'userid', 'UserId', 'user_id', 'UserID',
-            'member', 'Member', 'MEMBER',
-            'account', 'Account', 'ACCOUNT'
-        ]
-        
-        for key in username_keys:
-            if key in row_data and row_data[key]:
-                val = row_data[key]
-                if isinstance(val, (str, int, float)):
-                    original_username = str(val).strip()
-                    username = original_username.upper()
-                    break
-        
-        # Also try the record's customer_id field directly
-        if not username and record.get('customer_id'):
-            original_username = str(record['customer_id']).strip()
-            username = original_username.upper()
+        # Use helper function to extract username
+        username, original_username = extract_username(record)
         
         if not username:
             continue
