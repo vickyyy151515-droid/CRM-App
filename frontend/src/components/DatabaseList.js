@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Search, Eye, Trash2, FileSpreadsheet, Users, AlertTriangle, X, Wrench, CheckCircle, RefreshCw } from 'lucide-react';
+import { Search, Eye, Trash2, FileSpreadsheet, Users, AlertTriangle, X, Wrench, CheckCircle, RefreshCw, Zap, Settings } from 'lucide-react';
 import DatabasePreview from './DatabasePreview';
 import DatabaseRecords from './DatabaseRecords';
 
@@ -23,10 +23,19 @@ export default function DatabaseList({ onUpdate, isStaff = false }) {
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
   const [recoveryCheckResult, setRecoveryCheckResult] = useState(null);
   const [recovering, setRecovering] = useState(false);
+  
+  // Auto-approve settings state
+  const [autoApproveEnabled, setAutoApproveEnabled] = useState(false);
+  const [autoApproveLoading, setAutoApproveLoading] = useState(false);
+  const [showAutoApproveSettings, setShowAutoApproveSettings] = useState(false);
+  const [maxRecordsLimit, setMaxRecordsLimit] = useState('');
 
   useEffect(() => {
     loadProducts();
-  }, []);
+    if (!isStaff) {
+      loadAutoApproveSettings();
+    }
+  }, [isStaff]);
 
   useEffect(() => {
     loadDatabases();
