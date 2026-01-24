@@ -183,6 +183,50 @@ export default function DatabaseList({ onUpdate, isStaff = false }) {
     }
   };
 
+  // Auto-approve functions
+  const loadAutoApproveSettings = async () => {
+    try {
+      const response = await api.get('/settings/auto-approve');
+      setAutoApproveEnabled(response.data.enabled);
+      setMaxRecordsLimit(response.data.max_records_per_request?.toString() || '');
+    } catch (error) {
+      console.error('Failed to load auto-approve settings');
+    }
+  };
+
+  const toggleAutoApprove = async () => {
+    try {
+      setAutoApproveLoading(true);
+      const newValue = !autoApproveEnabled;
+      await api.put('/settings/auto-approve', {
+        enabled: newValue,
+        max_records_per_request: maxRecordsLimit ? parseInt(maxRecordsLimit) : null
+      });
+      setAutoApproveEnabled(newValue);
+      toast.success(`Auto-approve ${newValue ? 'enabled' : 'disabled'}`);
+    } catch (error) {
+      toast.error('Failed to update auto-approve setting');
+    } finally {
+      setAutoApproveLoading(false);
+    }
+  };
+
+  const saveAutoApproveSettings = async () => {
+    try {
+      setAutoApproveLoading(true);
+      await api.put('/settings/auto-approve', {
+        enabled: autoApproveEnabled,
+        max_records_per_request: maxRecordsLimit ? parseInt(maxRecordsLimit) : null
+      });
+      toast.success('Auto-approve settings saved');
+      setShowAutoApproveSettings(false);
+    } catch (error) {
+      toast.error('Failed to save settings');
+    } finally {
+      setAutoApproveLoading(false);
+    }
+  };
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
