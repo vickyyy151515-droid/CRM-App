@@ -1156,6 +1156,9 @@ async def get_reserved_members(status: Optional[str] = None, product_id: Optiona
         if 'product_id' not in member:
             member['product_id'] = ''
             member['product_name'] = 'Unknown'
+        # Ensure customer_id is populated (migrate from customer_name if needed)
+        if not member.get('customer_id') and member.get('customer_name'):
+            member['customer_id'] = member['customer_name']
     
     return members
 
