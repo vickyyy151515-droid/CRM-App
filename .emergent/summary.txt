@@ -1,38 +1,56 @@
-<analysis>**original_problem_statement**: The user wants to build a Customer Relationship Management (CRM) application. The application has grown to include core CRM, sales workflows, admin tooling, reporting, and HR features.
+<analysis>**original_problem_statement**: The user wants to build a Customer Relationship Management (CRM) application.
 
-The key requests and fixes addressed in this session were:
-1.  **Build a TOTP Attendance System**: Replace a failed QR-code-based attendance system with a reliable one using Time-based One-Time Passwords (like Google Authenticator).
-2.  **Data Cleanup Tool**: Create a feature for admins to delete all OMSET (sales) records associated with fake or deleted staff accounts that were polluting reports.
-3.  **Specific OMSET Record Management**: Allow admins to view and delete individual sales deposit records from a customer's detailed history in the OMSET CRM page. Subsequently, add an undo feature for these deletions.
-4.  **AI Message Variation Generator**: Implement a tool for staff to generate unique, casual, and persuasive message variations in Indonesian using an AI model (Gemini Flash) to avoid WhatsApp spam detection.
-5.  **Fix NDP/RDP Calculation Bugs**:
-    *   Correct a bug where the Daily Summary's NDP/RDP counts were inconsistent with the OMSET CRM page.
-    *   Fix a critical inconsistency where a staff member's NDP/RDP count was different when viewing reports for all staff versus a filtered view for only that staff member.
+The latest session focused on a comprehensive audit, standardization of business logic, and fixing numerous bugs and inconsistencies across the application. Key requests included:
+1.  **System-Wide Logic Audit**: A request to audit and standardize the entire codebase to ensure universal application of:
+    *   The tambahan rule (records with tambahan are always RDP).
+    *   Case-insensitive matching for all customer identifiers.
+    *   Correct and consistent duplicate checking for Reserved Members.
+    *   The universal use of the customer's  (from uploaded files) as the primary identifier, and explicitly ignoring the  field for all logic.
+2.  **Bug Fixes**:
+    *   Fixing empty charts on the Advanced Analytics dashboard.
+    *   Fixing a non-functional Delete button on the Manage Database page by replacing .
+    *   Fixing a data integrity bug where requested records were not being updated to assigned status after approval.
+    *   Fixing inconsistent RDP (Return Deposit) counts between the Monthly and Daily reports.
+    *   Fixing inconsistent deposited counts across different views of the Conversion Funnel.
+3.  **UI/UX Improvements**:
+    *   Fixing layout issues on the main dashboard and Reserved Members page that prevented scrolling on vertical monitors.
+    *   Adding a product filter and a date picker to the Daily Summary page.
+    *   Adding more detailed date range filters (Today, Yesterday, Custom) to the Customer Retention page.
+4.  **Clarity & Consistency**:
+    *   A request to rename the Customer Name field to Customer ID in the Reserved Member feature to align with the rest of the app.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A comprehensive full-stack CRM application with a React frontend, FastAPI backend, and MongoDB database. The application includes user roles (admin, staff), sales tracking (OMSET), reporting dashboards, and HR features.
-
-Key features implemented in this session include:
-*   A fully functional TOTP-based attendance system.
-*   An admin-only Data Cleanup page to purge records from unwanted users.
-*   Granular control in the OMSET CRM admin page to delete and restore individual sales records.
-*   An AI-powered Message Variation Generator integrated into the staff dashboard, using the Emergent LLM Key with Gemini Flash.
-*   System-wide consistency for the critical NDP/RDP (New/Repeat Deposit) business logic across all relevant reporting modules.
+A comprehensive full-stack CRM application with a React frontend, FastAPI backend, and MongoDB database. The agent has just completed a major session focused on bug fixing, UI enhancements, and a system-wide audit to standardize core business logic ( rule, case-insensitivity, primary customer identifier) across all features, including Analytics, Reports, Conversion Funnel, and Retention.
 
 **Last working item**:
--   **Last item agent was working**: Implementing an undo feature for deleted OMSET records. The agent modified the delete functionality to be a soft delete by moving records to a  collection. It also built the backend endpoints and frontend UI for admins to view a list of recently deleted items and restore them.
--   **Status**: USER VERIFICATION PENDING
--   **Agent Testing Done**: Y
--   **Which testing method agent to use?**: Frontend testing agent to run an end-to-end test: 1. Delete an OMSET record. 2. Verify it appears in the Recently Deleted UI. 3. Click restore. 4. Verify it's back in the main list and removed from the deleted list.
+-   **Last item agent was working**: Renaming the  field to  within the Reserved Members feature for application-wide consistency. This is a refactoring task that impacts both backend models/APIs and frontend components. The agent had identified all relevant files and was about to begin the code modifications.
+-   **Status**: IN PROGRESS
+-   **Agent Testing Done**: N
+-   **Which testing method agent to use?**: both
+    -   **Backend**: Test the updated  endpoints via  to ensure creating, moving, and checking for duplicate reservations works with the new  field.
+    -   **Frontend**: Use the screenshot tool to verify the UI on the Reserved Members page. Confirm the input label is Customer ID and that the core functionality (adding/moving a reservation) remains intact.
 -   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
--   None. All issues raised during this session were resolved.
+-   **Issue 1**: Complete the refactoring of Reserved Members to use  instead of . (P0)
 
 **Issues Detail**:
--   N/A
+-   **Issue 1**:
+    -   **Attempted fixes**: The agent successfully identified all backend and frontend files that use the  field in the context of the Reserved Members feature.
+    -   **Next debug checklist**:
+        1.  **Backend Refactor**:
+            -   In  and other related files (, ), replace all instances of  with  in Pydantic models, API logic, and database queries related to .
+        2.  **Frontend Refactor**:
+            -   In , update the input label, state variables, and API request payloads from  to .
+        3.  **Testing**:
+            -   Thoroughly test the reservation workflow: adding a new reservation, ensuring duplicate checks work, and moving/transferring a reservation.
+    -   **Why fix this issue and what will be achieved with the fix?**: This will standardize the primary customer identifier across the entire application, eliminating confusion and potential bugs arising from inconsistent field names ( vs. ).
+    -   **Status**: IN PROGRESS
+    -   **Is recurring issue?**: N
+    -   **Should Test frontend/backend/both after fix?**: Both
+    -   **Blocked on other issue**: None
 
 **In progress Task List**:
 -   None.
@@ -45,15 +63,22 @@ Key features implemented in this session include:
     -   Email Notifications (P2)
 -   **Future Tasks**:
     -   Quick Actions on Overview (P2)
-    -   Financial ROI Tracking (P2)
+    -   Financial ROI Tracking (P2, deferred by user)
     -   Izin Analytics (P2)
 
 **Completed work in this session**
--   **TOTP Attendance System**: Implemented a complete TOTP-based check-in system with a one-time QR code setup for staff and an admin dashboard for monitoring. (DONE)
--   **Orphaned OMSET Record Cleanup**: Created a Data Cleanup page for admins to remove all sales records from specified user accounts. (DONE)
--   **OMSET Record Deletion & Undo**: Enhanced the OMSET CRM admin page to allow deletion of individual deposit records and added a Recently Deleted section to restore them. (DONE)
--   **AI Message Variation Generator**: Integrated an AI-powered tool for staff using Gemini Flash to generate unique WhatsApp messages in casual Indonesian. (DONE)
--   **NDP/RDP Logic Unification**: Fixed a critical bug causing inconsistent NDP/RDP counts. The logic is now unified across , , , and  to correctly calculate NDP based on a customer's first deposit *per staff member*. (DONE)
+-   **System-Wide Logic Audit**: Verified and enforced consistent application of tambahan logic, case-insensitive matching, and the use of  as the primary customer ID across all backend routes. Removed  from username detection keys to prevent incorrect data matching. (DONE)
+-   **Data Integrity Tool**: Created an admin tool (Fix Stuck Records) with a backend endpoint and UI button to resolve a bug where customer records were stuck in requested status after approval. (DONE)
+-   **Report & Funnel Inconsistency Fixes**:
+    -   Synchronized RDP calculation logic between Monthly and Daily reports. (DONE)
+    -   Unified conversion logic across all views (Overview, By Product, By Staff) of the Conversion Funnel. (DONE)
+-   **Bug Fixes**:
+    -   Fixed empty charts in Advanced Analytics by correcting the database query field from Sat Jan 24 21:23:48 UTC 2026 to . (DONE)
+    -   Fixed the non-functional Delete button on the database management page by implementing a custom confirmation modal. (DONE)
+-   **UI/UX Enhancements**:
+    -   Resolved horizontal scrolling issues on the main dashboard and Reserved Members page. (DONE)
+    -   Added a product filter and a date-picker to the Daily Summary page. (DONE)
+    -   Enhanced the Customer Retention page with more detailed date filter options (Today, Yesterday, Custom Range). (DONE)
 
 **Earlier issues found/mentioned but not fixed**
 -   None.
@@ -68,78 +93,64 @@ Key features implemented in this session include:
 
 
 **Key Technical Concepts**
--   **Backend**: FastAPI, Pydantic, MongoDB, **TOTP (pyotp library)**.
--   **Frontend**: React, React Hooks.
--   **AI Integration**: Used **Gemini Flash** via the  library for natural language generation, with costs billed to the user's .
--   **Business Logic**: Standardized a complex business rule (NDP/RDP calculation) across multiple reporting endpoints to ensure data consistency.
--   **Database**: Implemented a soft delete pattern by moving deleted documents to a separate  collection to allow for an undo feature.
+-   **Business Logic Standardization**: The primary focus was a system-wide audit to unify critical business rules (NDP/RDP, tambahan logic, case-insensitivity, primary identifier) across all reporting and analytics modules.
+-   **Data Integrity & Tooling**: Created a specific admin tool () to correct data inconsistencies caused by a previous bug, demonstrating a pattern for building self-healing capabilities into the admin panel.
+-   **Refactoring for Consistency**: The current task involves a cross-cutting refactor (renaming  to ) to improve code clarity and reduce future bugs.
+-   **Backend**: FastAPI, APScheduler for background jobs.
+-   **Frontend**: React, Shadcn UI.
 
 **key DB schema**
--   **New Collection**:
-    -   : Stores documents moved from  when deleted. Contains the original record data plus a  timestamp.
--   **Existing Collections (Modified/Used)**:
-    -   :  field was added for the attendance feature.
-    -   : Stores daily check-in data.
-    -   : The primary collection for sales data.
+-   ****: This collection is currently being refactored. The  field is being renamed to  to align with other collections.
 
 **changes in tech stack**
--   **Added**:  library to facilitate LLM calls using the Emergent Universal Key.
+-   None.
 
 **All files of reference**
--   : The main source of truth for OMSET CRM logic, including the corrected NDP/RDP calculation and the new undo-delete functionality.
--   : The corresponding frontend for the OMSET admin page, heavily modified to support individual record deletion and restoration.
--   : The new backend endpoint for the AI-powered message generator.
--   : The new staff-facing UI for the message generator.
--   , , : Other reporting files that were updated to align with the corrected NDP/RDP logic.
+-   : The core logic for reservations, which is the main target of the current refactoring.
+-   : Was heavily modified to standardize conversion logic.
+-   : The frontend component for the feature currently being refactored.
+-   : Contains the new Fix Stuck Records tool and the custom delete modal.
+-   : Updated to document the newly standardized system-wide logic rules.
 
 **Areas that need refactoring**:
--   The undo feature currently keeps deleted records indefinitely. A cleanup job could be added to the backend to automatically and permanently delete records from the  collection after a set period (e.g., 30 days) to prevent it from growing too large.
+-   The Reserved Member feature is currently being refactored to use .
+-   **Opportunity**: Centralize shared helper functions like , , and  into a  file to reduce code duplication across route files.
 
 **key api endpoints**
--   : Generates message variations using Gemini Flash.
--   : (Modified) Moves an OMSET record to a trash collection.
--   : Restores a soft-deleted OMSET record.
--   : Lists all soft-deleted OMSET records.
--   : Provides a summary of records per staff member for the Data Cleanup tool.
--   : Deletes all OMSET records for a specified staff ID.
--   The following reporting endpoints were modified to use corrected NDP/RDP logic: , , , .
+-   : A new admin tool to fix records stuck in the requested state.
+-   , , : All endpoints were updated to use consistent, non-date-filtered logic for counting deposited customers.
+-   : The endpoints for this feature are the target of the current refactoring task.
 
 **Critical Info for New Agent**
--   **NDP/RDP Logic is Finalized**: The user has confirmed that NDP (New Deposit) should be counted based on a customer's first-ever deposit *with a specific staff member*, not globally. This logic has been implemented across all relevant reporting files. Do not change this without explicit user instruction.
--   **AI Features Use Universal Key**: The message generator uses the  and the  library. Future AI features should follow this established pattern, using Gemini Flash for cost-effective text generation.
--   **Soft Delete is the Preferred Pattern**: The implementation of undo for OMSET records sets a precedent. For future features requiring deletion, a soft-delete mechanism (moving to a trash collection) should be the default approach.
+-   **System-Wide Logic Rules are Finalized and CRITICAL**: A comprehensive audit was just completed. Adhere strictly to these rules documented in :
+    1.  **Tambahan Logic**: Records with tambahan in the notes are always RDP and are excluded from first-deposit date calculations.
+    2.  **Case-Insensitive Matching**: All customer identifier comparisons must be case-insensitive, typically by converting both sides to .
+    3.  ** is the Primary Identifier**: The  from uploaded files is the key customer identifier. It's used as  in  and should be used consistently everywhere. The  field from uploads is for display only and must be ignored in all workflow logic.
 
 **documents and test reports created in this job**
--    (updated with completed features)
--    (from testing the TOTP attendance system)
--    (updated to include tests for )
+-   : Updated with the standardized business logic rules.
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **Request**: Asks how to share the application code with a friend so they can have their own independent copy. (Resolved)
-2.  **Feedback**: Reports the NDP/RDP count is wrong in the daily summary page. (Resolved)
-3.  **Clarification**: Provides screenshots showing that NDP/RDP counts are inconsistent between the all staff view and a filtered staff view in OMSET CRM, confirming the filtered view is correct. (Resolved)
-4.  **Request**: Asks to add an undo option for the OMSET deletion feature. (Resolved)
-5.  **Request**: Asks to add a feature for admins to delete specific OMSET records. (Resolved)
-6.  **Request**: Asks to create an AI-powered message variation generator for staff in casual Indonesian. (Resolved)
-7.  **Question**: Asks about the API credit cost for the AI generator. (Answered)
-8.  **Question**: Asks for a comparison of AI models and confirms credits are deducted from the Emergent account. (Answered)
-9.  **Approval**: Approves using Gemini Flash for the generator with specific instructions on the tone (aku/kak, no gue/lu). (Implemented)
-10. **Feedback**: On the OMSET Undo feature, asks to proceed.
+1.  **Bug Report**: RDP count is different in Monthly vs. Daily reports. (Resolved)
+2.  **Request (MAJOR)**: Audit the entire system to enforce tambahan logic, case-insensitivity, and consistent use of  as the primary identifier. (Resolved)
+3.  **Question**: Asks for a breakdown of where  is used across the app. (Answered)
+4.  **Request**: Change customer name to Customer ID in the Reserved Member feature for consistency. (IN PROGRESS)
 
 **Project Health Check:**
--   **Broken**: None.
--   **Mocked**: None.
+-   **Broken**: None
+-   **Mocked**: None
 
 **3rd Party Integrations**
--   ****: Used to integrate **Gemini Flash**, powered by the Emergent LLM Key, for the AI Message Variation Generator.
--   ****: Used for generating and verifying time-based one-time passwords for the attendance system.
--   ****: Used for generating the QR code for the initial TOTP secret setup.
+-   ****: For Gemini Flash (AI Message Variation Generator).
+-   ****: For TOTP attendance system.
+-   ****: For generating the initial TOTP secret QR code.
+-   ****: For the daily OMSET trash cleanup job.
 
 **Testing status**
--   **Testing agent used after significant changes**: YES, for the TOTP attendance system.
+-   **Testing agent used after significant changes**: NO
 -   **Troubleshoot agent used after agent stuck in loop**: NO
--   **Test files created**:  was updated with a new test for the  module.
--   **Known regressions**: None. The agent ran the existing backend test suite after major logic changes and all tests passed.
+-   **Test files created**: None in this session.
+-   **Known regressions**: None.
 
 **Credentials to test flow:**
 -   **Master Admin**:  / 
@@ -147,4 +158,4 @@ Key features implemented in this session include:
 -   **Staff**:  / 
 
 **What agent forgot to execute**
--   When implementing the undo feature for OMSET records, the agent's plan included an optional step to auto-expire and permanently delete records from the trash collection after 30 days. This was not implemented. It's a non-critical but useful enhancement to prevent the  collection from growing indefinitely.</analysis>
+-   The previous agent was in the middle of executing the user's request to rename  to . It identified the files but did not perform the code edits. This task needs to be completed.</analysis>
