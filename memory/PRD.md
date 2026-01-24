@@ -3,6 +3,41 @@
 ## Original Problem Statement
 Build a sophisticated CRM (Customer Relationship Management) application for managing customer records, sales workflows, staff performance tracking, and HR features.
 
+## CRITICAL SYSTEM RULES (Must Follow Everywhere)
+
+### 1. "Tambahan" Logic
+- Records with "tambahan" in the `keterangan` field are ALWAYS counted as RDP (not NDP)
+- "Tambahan" records are EXCLUDED when calculating first-deposit dates
+- Check is case-insensitive: `'tambahan' in keterangan.lower()`
+
+### 2. Case-Insensitive Matching
+- ALL customer ID/username matching MUST be case-insensitive
+- Normalize using `.strip().upper()` or `.strip().lower()` consistently
+- Compare normalized values: `"ABC" == "abc".upper()`
+
+### 3. Reserved Member Duplicate Logic
+- Check for existing reserved member by `customer_name` (case-insensitive)
+- Prevent duplicate reservations across all products
+
+### 4. Customer Identifier Field Mapping
+| Context | Field Name | Description |
+|---------|------------|-------------|
+| Database Upload | `username` column | Customer's unique identifier |
+| OMSET CRM | `Customer ID` | Same as username |
+| Reserved Member | `customer_name` | Same as username |
+
+**IMPORTANT**: These are ALL the same value, just named differently!
+- The customer's actual "name" column (their real name) is ONLY for display
+- NEVER use the "name" field for workflow logic, matching, or deduplication
+
+### 5. Username Field Detection
+When extracting username from uploaded database `row_data`, check these keys ONLY:
+- username, Username, USERNAME, USER, user, user_name
+- id, ID, userid, user_id, customer_id
+- member, Member, account, Account
+
+**EXCLUDED**: `name`, `Name`, `NAME` (these contain the customer's actual name, not their identifier)
+
 ## Core Architecture
 - **Frontend**: React with TailwindCSS, Shadcn/UI components
 - **Backend**: FastAPI (Python)
