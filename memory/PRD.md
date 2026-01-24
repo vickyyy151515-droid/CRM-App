@@ -465,6 +465,26 @@ Google Authenticator-style TOTP attendance system for staff check-in. Replaced p
 **Testing**: All 13 backend tests + full frontend UI verification passed (100%)
 **Test File**: `/app/tests/test_reserved_members_customer_id.py`
 
+### Database Request Bug Fix - CRITICAL FIX (Jan 24, 2026)
+**Problem**: When staff requested database records, the records were marked as "requested" but:
+1. `request_id` was NOT saved on the customer_records
+2. `record_ids` was NOT saved in the download_request
+
+**Impact**: When "Fix Stuck Records" tool ran, it found records without `request_id` and treated them as "orphans", returning them to "available" status even though requests were approved.
+
+**Root Cause**: Line 478 in `records.py` only set `status: 'requested'` but didn't set `request_id`.
+
+**Fix Applied**:
+1. When creating a download request, now sets BOTH `status: 'requested'` AND `request_id` on each record
+2. Added new "Recover Staff Records" tool (`/api/records/recover-approved-requests`) to re-assign records from approved requests
+
+**Note for Lost Data**: The existing approved requests had empty `record_ids` arrays, so automatic recovery wasn't possible. Staff need to re-request records. Future requests will work correctly.
+
+**New Admin Tools**:
+- "Recover Staff Records" button (green) - Re-assigns records from approved requests
+- "Fix Stuck Records" button (amber) - Fixes records stuck in "requested" status
+
+
 ## Third Party Integrations
 - @dnd-kit/core, @dnd-kit/sortable - Sidebar customization
 - xlsx - Excel/CSV export
