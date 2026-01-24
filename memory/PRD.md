@@ -16,7 +16,7 @@ Build a sophisticated CRM (Customer Relationship Management) application for man
 - Compare normalized values: `"ABC" == "abc".upper()`
 
 ### 3. Reserved Member Duplicate Logic
-- Check for existing reserved member by `customer_name` (case-insensitive)
+- Check for existing reserved member by `customer_id` (case-insensitive)
 - Prevent duplicate reservations across all products
 
 ### 4. Customer Identifier Field Mapping
@@ -24,7 +24,7 @@ Build a sophisticated CRM (Customer Relationship Management) application for man
 |---------|------------|-------------|
 | Database Upload | `username` column | Customer's unique identifier |
 | OMSET CRM | `Customer ID` | Same as username |
-| Reserved Member | `customer_name` | Same as username |
+| Reserved Member | `customer_id` | Same as username (renamed from `customer_name` on Jan 24, 2026) |
 
 **IMPORTANT**: These are ALL the same value, just named differently!
 - The customer's actual "name" column (their real name) is ONLY for display
