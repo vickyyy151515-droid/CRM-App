@@ -176,7 +176,7 @@ async def get_conversion_funnel(
                 'count': total_deposited,
                 'rate': calc_rate(total_deposited, total_responded),
                 'color': '#10b981',
-                'customers': deposited_customer_list  # Include deposited customer details
+                'customers': deposited_customer_list[:50]  # Limit to first 50 for performance
             }
         ],
         'overall_conversion': calc_rate(total_deposited, total_assigned),
@@ -184,6 +184,11 @@ async def get_conversion_funnel(
             'product_id': product_id,
             'staff_id': staff_id,
             'database_id': database_id
+        },
+        'debug': {
+            'total_omset_records': len(omset_records),
+            'unique_depositors_in_omset': len(deposited_customers),
+            'assigned_records_with_username': sum(1 for r in assigned_records if r.get('row_data') or r.get('customer_id'))
         }
     }
     
