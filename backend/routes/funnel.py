@@ -365,7 +365,7 @@ async def get_funnel_by_staff(
     """Get conversion funnel breakdown by staff (Admin only)"""
     db = get_db()
     
-    # Default date range
+    # Default date range (for display purposes only)
     jakarta_now = get_jakarta_now()
     if not end_date:
         end_date = jakarta_now.strftime('%Y-%m-%d')
@@ -377,7 +377,7 @@ async def get_funnel_by_staff(
         {'status': 'assigned'},
         {'_id': 0, 'id': 1, 'customer_id': 1, 'product_id': 1, 'assigned_to': 1,
          'whatsapp_status': 1, 'respond_status': 1, 'row_data': 1}
-    ).to_list(100000)
+    ).to_list(500000)
     
     # Get staff info
     all_staff = await db.users.find(
@@ -386,22 +386,18 @@ async def get_funnel_by_staff(
     ).to_list(1000)
     staff_map = {s['id']: s['name'] for s in all_staff}
     
-    # Get OMSET records
+    # Get ALL OMSET records (no date filter - check if customer ever deposited)
     omset_records = await db.omset_records.find(
-        {'record_date': {'$gte': start_date, '$lte': end_date}},
+        {},
         {'_id': 0, 'customer_id': 1, 'customer_id_normalized': 1, 'product_id': 1, 'staff_id': 1}
-    ).to_list(100000)
+    ).to_list(500000)
     
-    # Build deposited map per staff - using normalized username
-    deposited_by_staff = {}  # staff_id -> set of normalized usernames
+    # Build set of ALL deposited customers (regardless of which staff)
+    all_deposited = set()
     for omset in omset_records:
-        staff_id = omset.get('staff_id')
-        if staff_id not in deposited_by_staff:
-            deposited_by_staff[staff_id] = set()
-        # Use normalized customer_id (uppercase username)
         cust_id = omset.get('customer_id_normalized') or omset.get('customer_id', '').strip().upper()
         if cust_id:
-            deposited_by_staff[staff_id].add(cust_id)
+            all_deposited.add(cust_id)
     
     # Group by staff
     staff_data = {}
@@ -420,7 +416,7 @@ async def get_funnel_by_staff(
                 'wa_reached': 0,
                 'responded': 0,
                 'deposited': 0,
-                'deposited_customers': []  # Track deposited customer usernames
+                'deposited_customers': []
             }
         
         staff_data[staff_id]['assigned'] += 1
@@ -431,19 +427,14 @@ async def get_funnel_by_staff(
         if record.get('respond_status') == 'ya':
             staff_data[staff_id]['responded'] += 1
         
-        # Check if deposited by matching username from row_data
-        row_data = record.get('row_data', {})
-        username = None
-        original_username = None
-        for key in ['username', 'Username', 'USER', 'user', 'name', 'Name', 'customer_id', 'id']:
-            if key in row_data and row_data[key]:
-                original_username = str(row_data[key]).strip()
-                username = original_username.upper()
-                break
+        # Check if deposited using helper function
+        username, original_username = extract_username(record)
         
-        if username and username in deposited_by_staff.get(staff_id, set()):
+        # Match: customer deposited with ANY staff (not just this staff)
+        if username and username in all_deposited:
             staff_data[staff_id]['deposited'] += 1
-            staff_data[staff_id]['deposited_customers'].append(original_username)
+            if original_username:
+                staff_data[staff_id]['deposited_customers'].append(original_username)
     
     # Calculate conversion rates
     result = []
@@ -462,7 +453,7 @@ async def get_funnel_by_staff(
                 'responded': responded,
                 'deposited': deposited
             },
-            'deposited_customers': staff['deposited_customers'],  # Include customer usernames
+            'deposited_customers': staff['deposited_customers'][:50],  # Limit for performance
             'conversion_rates': {
                 'assigned_to_wa': round((wa_reached / assigned * 100), 1) if assigned > 0 else 0,
                 'wa_to_responded': round((responded / wa_reached * 100), 1) if wa_reached > 0 else 0,
@@ -476,7 +467,11 @@ async def get_funnel_by_staff(
     
     return {
         'date_range': {'start': start_date, 'end': end_date},
-        'staff': result
+        'staff': result,
+        'debug': {
+            'total_omset_records': len(omset_records),
+            'unique_depositors': len(all_deposited)
+        }
     }
 
 
