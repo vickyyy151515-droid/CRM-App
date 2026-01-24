@@ -370,9 +370,11 @@ async def get_funnel_by_staff(
     ).to_list(500000)
     
     # Build set of ALL deposited customers (regardless of which staff)
+    # ALWAYS convert to uppercase for case-insensitive matching
     all_deposited = set()
     for omset in omset_records:
-        cust_id = omset.get('customer_id_normalized') or omset.get('customer_id', '').strip().upper()
+        raw_cust_id = omset.get('customer_id_normalized') or omset.get('customer_id', '')
+        cust_id = str(raw_cust_id).strip().upper() if raw_cust_id else None
         if cust_id:
             all_deposited.add(cust_id)
     
