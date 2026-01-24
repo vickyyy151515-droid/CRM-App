@@ -302,6 +302,16 @@ Google Authenticator-style TOTP attendance system for staff check-in. Replaced p
 - `/app/backend/tests/test_tambahan_ndp_rdp_logic.py`
 - `/app/tests/test_tambahan_api_endpoints.py`
 
+### RDP Count Inconsistency Fix - COMPLETED (Jan 24, 2026)
+**Issue**: Monthly Detail showed different RDP count than Daily Report for the same staff member
+- Example: vera showed RDP: 35 in Monthly Detail but RDP: 159 in Daily Report
+**Root Cause**: Monthly Detail counted unique RDP customers **per month** (each customer counted once), while Daily Report counted unique RDP customers **per day** (then summed all days)
+**Correct Logic**: RDP should be the **sum of daily unique customers** (same as Daily Report)
+**Fix Applied**:
+- Changed `yearly_data` and `monthly_by_staff` sections in `report.py` to track unique customers **per day** instead of per month
+- Now both Monthly Detail and Daily Report show matching NDP/RDP counts
+**Files Updated**: `/app/backend/routes/report.py`
+
 ### User Activity Feature - REBUILT FROM SCRATCH (Jan 21, 2026)
 **Previous Issue**: Complex logic caused bugs where users showed wrong status
 **Solution**: Completely removed old code and rebuilt with simple, correct logic
