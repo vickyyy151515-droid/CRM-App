@@ -8,7 +8,7 @@ export default function AdminReservedMembers({ onUpdate }) {
   const [staffList, setStaffList] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [customerName, setCustomerName] = useState('');
+  const [customerId, setCustomerId] = useState('');  // Renamed from customerName
   const [phoneNumber, setPhoneNumber] = useState('');
   const [selectedStaff, setSelectedStaff] = useState('');
   const [selectedProduct, setSelectedProduct] = useState('');
@@ -21,7 +21,7 @@ export default function AdminReservedMembers({ onUpdate }) {
   
   // Bulk add state
   const [showBulkAdd, setShowBulkAdd] = useState(false);
-  const [bulkCustomerNames, setBulkCustomerNames] = useState('');
+  const [bulkCustomerIds, setBulkCustomerIds] = useState('');  // Renamed from bulkCustomerNames
   const [bulkStaff, setBulkStaff] = useState('');
   const [bulkProduct, setBulkProduct] = useState('');
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
@@ -50,7 +50,7 @@ export default function AdminReservedMembers({ onUpdate }) {
 
   const handleAddMember = async (e) => {
     e.preventDefault();
-    if (!customerName.trim() || !selectedStaff || !selectedProduct) {
+    if (!customerId.trim() || !selectedStaff || !selectedProduct) {
       toast.error('Please fill all fields');
       return;
     }
@@ -58,13 +58,13 @@ export default function AdminReservedMembers({ onUpdate }) {
     setSubmitting(true);
     try {
       await api.post('/reserved-members', {
-        customer_name: customerName.trim(),
+        customer_id: customerId.trim(),
         phone_number: phoneNumber.trim() || null,
         staff_id: selectedStaff,
         product_id: selectedProduct
       });
       toast.success('Customer reserved successfully');
-      setCustomerName('');
+      setCustomerId('');
       setPhoneNumber('');
       setSelectedStaff('');
       setSelectedProduct('');
@@ -79,19 +79,19 @@ export default function AdminReservedMembers({ onUpdate }) {
 
   const handleBulkAdd = async (e) => {
     e.preventDefault();
-    if (!bulkCustomerNames.trim() || !bulkStaff || !bulkProduct) {
+    if (!bulkCustomerIds.trim() || !bulkStaff || !bulkProduct) {
       toast.error('Please fill all fields');
       return;
     }
 
-    // Parse customer names (one per line)
-    const names = bulkCustomerNames
+    // Parse customer IDs (one per line)
+    const ids = bulkCustomerIds
       .split('\n')
-      .map(name => name.trim())
-      .filter(name => name.length > 0);
+      .map(id => id.trim())
+      .filter(id => id.length > 0);
 
-    if (names.length === 0) {
-      toast.error('Please enter at least one customer name');
+    if (ids.length === 0) {
+      toast.error('Please enter at least one customer ID');
       return;
     }
 
@@ -99,7 +99,7 @@ export default function AdminReservedMembers({ onUpdate }) {
     setBulkResult(null);
     try {
       const response = await api.post('/reserved-members/bulk', {
-        customer_names: names,
+        customer_ids: ids,
         staff_id: bulkStaff,
         product_id: bulkProduct
       });
@@ -113,12 +113,12 @@ export default function AdminReservedMembers({ onUpdate }) {
       }
       
       if (response.data.skipped_count > 0) {
-        toast.warning(`${response.data.skipped_count} names were skipped (duplicates)`);
+        toast.warning(`${response.data.skipped_count} IDs were skipped (duplicates)`);
       }
       
       // Clear the form on success
       if (response.data.added_count > 0) {
-        setBulkCustomerNames('');
+        setBulkCustomerIds('');
       }
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to bulk add members');
@@ -182,7 +182,9 @@ export default function AdminReservedMembers({ onUpdate }) {
   const filteredMembers = members.filter(m => {
     const matchesFilter = filter === 'all' || m.status === filter;
     const matchesProduct = !productFilter || m.product_id === productFilter;
-    const matchesSearch = m.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    // Support both customer_id (new) and customer_name (legacy data)
+    const customerIdentifier = m.customer_id || m.customer_name || '';
+    const matchesSearch = customerIdentifier.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           m.staff_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           (m.product_name || '').toLowerCase().includes(searchTerm.toLowerCase());
     return matchesFilter && matchesProduct && matchesSearch;
@@ -237,11 +239,11 @@ export default function AdminReservedMembers({ onUpdate }) {
         <form onSubmit={handleAddMember} className="grid grid-cols-1 md:grid-cols-6 gap-4">
           <input
             type="text"
-            placeholder="Customer Name *"
-            value={customerName}
-            onChange={(e) => setCustomerName(e.target.value)}
+            placeholder="Customer ID *"
+            value={customerId}
+            onChange={(e) => setCustomerId(e.target.value)}
             className="px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-            data-testid="input-customer-name"
+            data-testid="input-customer-id"
           />
           <input
             type="text"
@@ -345,25 +347,25 @@ export default function AdminReservedMembers({ onUpdate }) {
                 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Customer Names <span className="text-slate-400 font-normal">(one per line)</span>
+                    Customer IDs <span className="text-slate-400 font-normal">(one per line)</span>
                   </label>
                   <textarea
-                    value={bulkCustomerNames}
-                    onChange={(e) => setBulkCustomerNames(e.target.value)}
-                    placeholder="John Doe&#10;Jane Smith&#10;Michael Johnson&#10;..."
+                    value={bulkCustomerIds}
+                    onChange={(e) => setBulkCustomerIds(e.target.value)}
+                    placeholder="user123&#10;user456&#10;user789&#10;..."
                     rows={8}
                     className="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white font-mono text-sm resize-y"
-                    data-testid="bulk-textarea-names"
+                    data-testid="bulk-textarea-ids"
                   />
                   <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                    {bulkCustomerNames.split('\n').filter(n => n.trim()).length} customer name(s) entered
+                    {bulkCustomerIds.split('\n').filter(n => n.trim()).length} customer ID(s) entered
                   </p>
                 </div>
                 
                 <div className="flex items-center gap-4">
                   <button
                     type="submit"
-                    disabled={bulkSubmitting || !bulkProduct || !bulkStaff || !bulkCustomerNames.trim()}
+                    disabled={bulkSubmitting || !bulkProduct || !bulkStaff || !bulkCustomerIds.trim()}
                     className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
                     data-testid="btn-bulk-add"
                   >
@@ -373,7 +375,7 @@ export default function AdminReservedMembers({ onUpdate }) {
                   <button
                     type="button"
                     onClick={() => {
-                      setBulkCustomerNames('');
+                      setBulkCustomerIds('');
                       setBulkResult(null);
                     }}
                     className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
@@ -411,11 +413,11 @@ export default function AdminReservedMembers({ onUpdate }) {
                   
                   {bulkResult.skipped?.length > 0 && (
                     <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
-                      <p className="text-xs font-medium text-amber-600 mb-2">Skipped Names (already reserved):</p>
+                      <p className="text-xs font-medium text-amber-600 mb-2">Skipped IDs (already reserved):</p>
                       <div className="max-h-32 overflow-y-auto">
                         {bulkResult.skipped.map((item, idx) => (
                           <p key={idx} className="text-xs text-slate-600 dark:text-slate-400">
-                            • {item.customer_name} - <span className="text-slate-400">{item.reason}</span>
+                            • {item.customer_id} - <span className="text-slate-400">{item.reason}</span>
                           </p>
                         ))}
                       </div>
@@ -475,7 +477,7 @@ export default function AdminReservedMembers({ onUpdate }) {
         <table className="w-full min-w-[900px]" data-testid="reservations-table">
           <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
             <tr>
-              <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">Customer Name</th>
+              <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">Customer ID</th>
               <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">Phone</th>
               <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">Product</th>
               <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">Staff</th>
@@ -495,7 +497,7 @@ export default function AdminReservedMembers({ onUpdate }) {
             ) : (
               filteredMembers.map(member => (
                 <tr key={member.id} className="hover:bg-slate-50 dark:hover:bg-slate-700" data-testid={`reservation-row-${member.id}`}>
-                  <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">{member.customer_name}</td>
+                  <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">{member.customer_id || member.customer_name}</td>
                   <td className="px-6 py-4">
                     {member.phone_number ? (
                       <div className="flex items-center gap-2">
@@ -601,7 +603,7 @@ export default function AdminReservedMembers({ onUpdate }) {
           <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
             <h3 className="text-lg font-semibold text-slate-900 mb-4">Move Reservation</h3>
             <p className="text-slate-600 mb-4">
-              Move <span className="font-medium">{moveModal.member?.customer_name}</span> to another staff member.
+              Move <span className="font-medium">{moveModal.member?.customer_id || moveModal.member?.customer_name}</span> to another staff member.
             </p>
             <select
               value={newStaffId}
