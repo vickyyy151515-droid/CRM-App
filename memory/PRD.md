@@ -451,6 +451,20 @@ Google Authenticator-style TOTP attendance system for staff check-in. Replaced p
 - `GET /api/auth/staff-records-summary` - Summary of records per staff
 - `DELETE /api/auth/records/by-staff/{staff_id}` - Delete all records for a staff
 
+
+### Reserved Member customer_name to customer_id Refactoring - COMPLETED (Jan 24, 2026)
+**Change**: Renamed `customer_name` field to `customer_id` in the Reserved Members feature for consistency with the rest of the application
+**Affected Areas**:
+- Backend Pydantic models: `ReservedMember`, `ReservedMemberCreate`, `BulkReservedMemberCreate`
+- Backend API routes: `records.py`, `bonanza.py`, `scheduled_reports.py`
+- Frontend components: `AdminReservedMembers.js`, `StaffReservedMembers.js`, `ReservedMemberCRM.js`
+**Backward Compatibility**: 
+- The `ReservedMember` model supports both `customer_id` and `customer_name` fields
+- Legacy data with `customer_name` is automatically migrated to `customer_id` on fetch
+- Frontend displays `customer_id || customer_name` for compatibility with existing data
+**Testing**: All 13 backend tests + full frontend UI verification passed (100%)
+**Test File**: `/app/tests/test_reserved_members_customer_id.py`
+
 ## Third Party Integrations
 - @dnd-kit/core, @dnd-kit/sortable - Sidebar customization
 - xlsx - Excel/CSV export
