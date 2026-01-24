@@ -7,6 +7,44 @@ from .deps import get_db, get_current_user, get_admin_user, get_jakarta_now, Use
 
 router = APIRouter(tags=["Conversion Funnel"])
 
+# ==================== HELPER FUNCTIONS ====================
+
+# Extended list of possible username fields in row_data
+USERNAME_KEYS = [
+    'username', 'Username', 'USERNAME', 'USER', 'user', 
+    'name', 'Name', 'NAME',
+    'customer_id', 'customer', 'Customer', 'CUSTOMER',
+    'id', 'ID', 'Id',
+    'userid', 'UserId', 'user_id', 'UserID',
+    'member', 'Member', 'MEMBER',
+    'account', 'Account', 'ACCOUNT'
+]
+
+def extract_username(record: dict) -> tuple:
+    """
+    Extract username from a customer record.
+    Returns (normalized_username, original_username) or (None, None) if not found.
+    """
+    row_data = record.get('row_data', {})
+    
+    # Try to get username from row_data
+    for key in USERNAME_KEYS:
+        if key in row_data and row_data[key]:
+            val = row_data[key]
+            if isinstance(val, (str, int, float)):
+                original = str(val).strip()
+                if original:
+                    return (original.upper(), original)
+    
+    # Fallback to record's customer_id
+    if record.get('customer_id'):
+        original = str(record['customer_id']).strip()
+        if original:
+            return (original.upper(), original)
+    
+    return (None, None)
+
+
 # ==================== CONVERSION FUNNEL ENDPOINTS ====================
 
 @router.get("/funnel")
