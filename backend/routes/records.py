@@ -409,10 +409,12 @@ async def create_download_request(request_data: DownloadRequestCreate, user: Use
         row_data = record.get('row_data', {})
         username = None
         
-        # Check for username field (case-insensitive keys)
+        # Check for username field using standardized keys
+        # IMPORTANT: 'name' field is NOT checked - it's the customer's actual name, not username
+        # Username = Customer ID = customer_name in Reserved Member
+        username_keys_lower = ['username', 'user_name', 'user', 'id', 'userid', 'user_id', 'customer_id', 'member', 'account']
         for key in row_data:
-            key_lower = key.lower()
-            if key_lower in ['username', 'user_name', 'user', 'id', 'userid', 'user_id']:
+            if key.lower() in username_keys_lower:
                 username = row_data[key]
                 break
         
