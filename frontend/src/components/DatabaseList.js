@@ -140,6 +140,40 @@ export default function DatabaseList({ onUpdate, isStaff = false }) {
     }
   };
 
+  // Recovery functions for wrongly available records
+  const checkRecoveryNeeded = async () => {
+    try {
+      setRecovering(true);
+      const response = await api.get('/records/recover-approved-requests');
+      setRecoveryCheckResult(response.data);
+      setShowRecoveryModal(true);
+    } catch (error) {
+      toast.error('Failed to check recovery status');
+    } finally {
+      setRecovering(false);
+    }
+  };
+
+  const runRecovery = async () => {
+    try {
+      setRecovering(true);
+      const response = await api.post('/records/recover-approved-requests');
+      if (response.data.total_recovered > 0) {
+        toast.success(`Recovered ${response.data.total_recovered} records for ${response.data.requests_processed} staff members`);
+      } else {
+        toast.info('No records needed recovery');
+      }
+      setShowRecoveryModal(false);
+      setRecoveryCheckResult(null);
+      loadDatabases();
+      onUpdate?.();
+    } catch (error) {
+      toast.error('Failed to recover records');
+    } finally {
+      setRecovering(false);
+    }
+  };
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
