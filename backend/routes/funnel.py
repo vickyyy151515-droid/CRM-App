@@ -65,10 +65,9 @@ async def get_conversion_funnel(
     total_responded = len(responded)
     
     # Stage 4: Deposited - get customer_ids that have OMSET records
-    # OMSET records use the username from row_data, not the record ID
-    omset_query = {
-        'record_date': {'$gte': start_date, '$lte': end_date}
-    }
+    # IMPORTANT: Don't filter by date here - we want to check if assigned customers
+    # have EVER deposited, not just within the date range
+    omset_query = {}
     if staff_id:
         omset_query['staff_id'] = staff_id
     if product_id:
@@ -77,7 +76,7 @@ async def get_conversion_funnel(
     omset_records = await db.omset_records.find(
         omset_query,
         {'_id': 0, 'customer_id': 1, 'customer_id_normalized': 1, 'product_id': 1}
-    ).to_list(100000)
+    ).to_list(500000)
     
     # Create set of deposited customer identifiers (normalized username)
     deposited_customers = set()
