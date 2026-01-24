@@ -560,16 +560,17 @@ async def get_retention_by_staff(
             customer_first_date[key] = record['record_date']
     
     # Group by staff
+    # IMPORTANT: Track customers per (customer_id, product_id) to match Overview logic
     staff_data = defaultdict(lambda: {
         'staff_id': '',
         'staff_name': '',
-        'total_customers': set(),
-        'ndp_customers': set(),
-        'rdp_customers': set(),
-        'loyal_customers': set(),  # 3+ deposits
+        'total_customers': set(),  # (customer_id, product_id) pairs
+        'ndp_customers': set(),    # (customer_id, product_id) pairs  
+        'rdp_customers': set(),    # (customer_id, product_id) pairs
+        'loyal_customers': set(),  # customer_ids with 3+ deposits
         'total_deposits': 0,
         'total_omset': 0,
-        'customer_deposits': defaultdict(int)
+        'customer_deposits': defaultdict(int)  # customer_id -> deposit count
     })
     
     for record in records:
@@ -580,18 +581,21 @@ async def get_retention_by_staff(
         staff['staff_name'] = record.get('staff_name', 'Unknown')
         
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-        staff['total_customers'].add(cid_normalized)
+        prod_id = record.get('product_id')
+        
+        # Use (customer_id, product_id) as key to match Overview logic
+        customer_key = (cid_normalized, prod_id)
+        staff['total_customers'].add(customer_key)
         staff['total_deposits'] += 1
         staff['total_omset'] += record.get('depo_total', 0) or 0
         staff['customer_deposits'][cid_normalized] += 1
         
-        key = (cid_normalized, record.get('product_id'))
-        first_date = customer_first_date.get(key)
+        first_date = customer_first_date.get(customer_key)
         # "tambahan" records are excluded from first_date calculation, so they will be RDP
         if first_date and start_date <= first_date <= end_date:
-            staff['ndp_customers'].add(cid_normalized)
+            staff['ndp_customers'].add(customer_key)
         else:
-            staff['rdp_customers'].add(cid_normalized)
+            staff['rdp_customers'].add(customer_key)
     
     # Calculate loyal customers
     for staff in staff_data.values():
