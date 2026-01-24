@@ -484,6 +484,89 @@ export default function DatabaseList({ onUpdate, isStaff = false }) {
           </div>
         </div>
       )}
+
+      {/* Recovery Modal for wrongly available records */}
+      {showRecoveryModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50" data-testid="recovery-modal">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-2xl w-full p-6 max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                <RefreshCw className="text-emerald-600 dark:text-emerald-400" size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Recover Staff Records</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Re-assign records from approved requests</p>
+              </div>
+            </div>
+            
+            {recoveryCheckResult && (
+              <div className="mb-6">
+                {recoveryCheckResult.requests_needing_recovery === 0 ? (
+                  <div className="flex items-center gap-3 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
+                    <CheckCircle className="text-emerald-600 dark:text-emerald-400" size={24} />
+                    <div>
+                      <p className="font-medium text-emerald-800 dark:text-emerald-300">All Clear!</p>
+                      <p className="text-sm text-emerald-600 dark:text-emerald-400">
+                        All {recoveryCheckResult.total_approved_requests} approved requests have their records properly assigned.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
+                      <p className="font-medium text-emerald-800 dark:text-emerald-300 mb-2">
+                        Found {recoveryCheckResult.requests_needing_recovery} requests needing recovery
+                      </p>
+                      <p className="text-sm text-emerald-600 dark:text-emerald-400 mb-3">
+                        These staff members have approved requests but their records are not properly assigned:
+                      </p>
+                      <div className="max-h-48 overflow-y-auto space-y-2">
+                        {recoveryCheckResult.details.map((detail, i) => (
+                          <div key={i} className="text-sm bg-white dark:bg-slate-700 p-2 rounded border border-emerald-100 dark:border-slate-600">
+                            <p className="font-medium text-slate-900 dark:text-white">{detail.staff_name}</p>
+                            <p className="text-slate-600 dark:text-slate-400">
+                              {detail.database_name}: {detail.not_assigned_count}/{detail.total_records} records need recovery
+                            </p>
+                            <p className="text-xs text-slate-500 dark:text-slate-500">
+                              Current statuses: {detail.sample_statuses.join(', ')}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                      Click "Recover Now" to re-assign these records to the staff who had their requests approved.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowRecoveryModal(false);
+                  setRecoveryCheckResult(null);
+                }}
+                className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                Close
+              </button>
+              {recoveryCheckResult && recoveryCheckResult.requests_needing_recovery > 0 && (
+                <button
+                  onClick={runRecovery}
+                  disabled={recovering}
+                  className="px-4 py-2 bg-emerald-600 text-white hover:bg-emerald-700 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+                  data-testid="confirm-recover-btn"
+                >
+                  <RefreshCw size={16} className={recovering ? 'animate-spin' : ''} />
+                  {recovering ? 'Recovering...' : 'Recover Now'}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
