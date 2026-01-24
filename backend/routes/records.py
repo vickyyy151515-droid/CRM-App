@@ -979,6 +979,109 @@ async def fix_requested_status(user: User = Depends(get_admin_user)):
     }
 
 
+@router.get("/records/recover-approved-requests")
+async def check_recovery_needed(user: User = Depends(get_admin_user)):
+    """
+    Check for approved requests where records are incorrectly in 'available' status.
+    This helps recover data after the fix-requested-status bug.
+    """
+    db = get_db()
+    
+    # Find all approved requests
+    approved_requests = await db.download_requests.find(
+        {'status': 'approved'},
+        {'_id': 0, 'id': 1, 'record_ids': 1, 'requested_by': 1, 'requested_by_name': 1, 'database_name': 1, 'reviewed_at': 1}
+    ).to_list(10000)
+    
+    recovery_needed = []
+    
+    for req in approved_requests:
+        record_ids = req.get('record_ids', [])
+        if not record_ids:
+            continue
+        
+        # Check how many records are NOT in assigned status for this request
+        records = await db.customer_records.find(
+            {'id': {'$in': record_ids}},
+            {'_id': 0, 'id': 1, 'status': 1, 'assigned_to': 1}
+        ).to_list(len(record_ids))
+        
+        not_assigned = [r for r in records if r.get('status') != 'assigned' or r.get('assigned_to') != req['requested_by']]
+        
+        if not_assigned:
+            recovery_needed.append({
+                'request_id': req['id'],
+                'staff_name': req.get('requested_by_name', 'Unknown'),
+                'database_name': req.get('database_name', 'Unknown'),
+                'total_records': len(record_ids),
+                'not_assigned_count': len(not_assigned),
+                'sample_statuses': [r.get('status') for r in not_assigned[:5]]
+            })
+    
+    return {
+        'total_approved_requests': len(approved_requests),
+        'requests_needing_recovery': len(recovery_needed),
+        'details': recovery_needed
+    }
+
+
+@router.post("/records/recover-approved-requests")
+async def recover_approved_requests(user: User = Depends(get_admin_user)):
+    """
+    Recover records from approved requests that were wrongly returned to 'available'.
+    This re-assigns records to the staff who had their request approved.
+    """
+    db = get_db()
+    
+    # Find all approved requests
+    approved_requests = await db.download_requests.find(
+        {'status': 'approved'},
+        {'_id': 0}
+    ).to_list(10000)
+    
+    total_recovered = 0
+    recovery_details = []
+    
+    for req in approved_requests:
+        record_ids = req.get('record_ids', [])
+        if not record_ids:
+            continue
+        
+        # Update all records for this approved request to assigned status
+        result = await db.customer_records.update_many(
+            {
+                'id': {'$in': record_ids},
+                '$or': [
+                    {'status': {'$ne': 'assigned'}},
+                    {'assigned_to': {'$ne': req['requested_by']}}
+                ]
+            },
+            {'$set': {
+                'status': 'assigned',
+                'request_id': req['id'],
+                'assigned_to': req['requested_by'],
+                'assigned_to_name': req.get('requested_by_name', 'Unknown'),
+                'assigned_at': req.get('reviewed_at', get_jakarta_now().isoformat())
+            }}
+        )
+        
+        if result.modified_count > 0:
+            total_recovered += result.modified_count
+            recovery_details.append({
+                'request_id': req['id'],
+                'staff_name': req.get('requested_by_name', 'Unknown'),
+                'database_name': req.get('database_name', 'Unknown'),
+                'recovered_count': result.modified_count
+            })
+    
+    return {
+        'message': 'Recovery completed',
+        'total_recovered': total_recovered,
+        'requests_processed': len(recovery_details),
+        'details': recovery_details
+    }
+
+
 # ==================== RESERVED MEMBERS ENDPOINTS ====================
 
 @router.post("/reserved-members", response_model=ReservedMember)
