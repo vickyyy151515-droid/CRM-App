@@ -101,9 +101,13 @@ export default function MyAssignedRecords() {
         whatsapp_status: newStatus
       });
       toast.success(newStatus ? t('myRecords.whatsappStatusUpdated') : t('myRecords.whatsappStatusCleared'));
-      if (selectedBatch) {
-        loadBatchRecords(selectedBatch.id);
-      }
+      
+      // Update record locally instead of reloading all records (prevents scroll reset)
+      setRecords(prevRecords => prevRecords.map(r => 
+        r.id === recordId 
+          ? { ...r, whatsapp_status: newStatus, whatsapp_status_updated_at: new Date().toISOString() }
+          : r
+      ));
     } catch (error) {
       toast.error(t('messages.saveFailed'));
     }
@@ -119,9 +123,13 @@ export default function MyAssignedRecords() {
         respond_status: newStatus
       });
       toast.success(newStatus ? t('myRecords.respondStatusUpdated') : t('myRecords.respondStatusCleared'));
-      if (selectedBatch) {
-        loadBatchRecords(selectedBatch.id);
-      }
+      
+      // Update record locally instead of reloading all records (prevents scroll reset)
+      setRecords(prevRecords => prevRecords.map(r => 
+        r.id === recordId 
+          ? { ...r, respond_status: newStatus, respond_status_updated_at: new Date().toISOString() }
+          : r
+      ));
     } catch (error) {
       toast.error(t('messages.saveFailed'));
     }
