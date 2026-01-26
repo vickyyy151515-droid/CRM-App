@@ -49,84 +49,102 @@ async def get_report_crm_data(
         all_time_query['product_id'] = product_id
     all_time_records = await db.omset_records.find(all_time_query, {'_id': 0}).to_list(500000)
     
-    # Helper function to normalize customer ID for consistent NDP/RDP comparison
+    # ==================== HELPER FUNCTIONS ====================
+    
     def normalize_customer_id(customer_id: str) -> str:
+        """Normalize customer ID for consistent comparison"""
         if not customer_id:
             return ""
-        return customer_id.strip().lower()
+        return str(customer_id).strip().lower()
+    
+    def get_normalized_cid(record):
+        """Get normalized customer ID from record - handles both stored and computed"""
+        stored = record.get('customer_id_normalized')
+        if stored and str(stored).strip():  # Must be non-empty string
+            return str(stored).strip().lower()
+        return normalize_customer_id(record.get('customer_id', ''))
     
     def is_tambahan_record(record):
         """Check if record has 'tambahan' in keterangan field"""
         keterangan = record.get('keterangan', '') or ''
         return 'tambahan' in keterangan.lower()
     
-    # Rebuild customer_first_date with normalized IDs
-    # IMPORTANT: Exclude records with "tambahan" from first_date calculation
-    # GLOBAL customer_first_date (used for ALL calculations for consistency)
-    # Key: (customer_id_normalized, product_id) -> first deposit date for that customer-product combo
+    # ==================== BUILD CUSTOMER FIRST DATE LOOKUP ====================
+    # Key: (customer_id_normalized, product_id) -> first deposit date
+    # IMPORTANT: Exclude "tambahan" records from first_date calculation
+    
     customer_first_date = {}
     for record in sorted(all_time_records, key=lambda x: x['record_date']):
         if is_tambahan_record(record):
             continue
-        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        cid_normalized = get_normalized_cid(record)
         pid = record['product_id']
         key = (cid_normalized, pid)
         if key not in customer_first_date:
             customer_first_date[key] = record['record_date']
     
-    # ==================== UNIFIED CALCULATION LOGIC ====================
-    # ALL sections use the SAME logic:
-    # 1. Use GLOBAL customer_first_date for NDP/RDP determination (per customer-product)
-    # 2. Count unique customers per (PRODUCT, DATE) - if customer deposits to 2 products = 2 counts
-    # 3. "Tambahan" records are ALWAYS RDP (excluded from first_date calculation)
-    #
-    # NDP = Customer's first deposit for THIS PRODUCT matches record_date (AND not tambahan)
-    # RDP = Not first deposit for this product OR tambahan
-    # ==================================================================
+    # ==================== UNIFIED NDP/RDP DETERMINATION ====================
+    # NDP = Customer's FIRST deposit for THIS PRODUCT matches record_date (AND not tambahan)
+    # RDP = Not first deposit for this product OR is tambahan
     
-    # Helper function to determine if record is NDP
-    def is_ndp_record(record, cid_normalized):
+    def is_ndp_record(record):
+        """Determine if record counts as NDP"""
         if is_tambahan_record(record):
             return False
+        cid_normalized = get_normalized_cid(record)
         key = (cid_normalized, record['product_id'])
         first_date = customer_first_date.get(key)
         return first_date == record['record_date']
     
+    # ==================== PRE-COMPUTE NDP/RDP FOR EACH RECORD ====================
+    # This ensures ALL sections use EXACTLY the same determination
+    # Also compute unique tracking to count each (customer, product, date) only ONCE
+    
+    # Tracking: (product_id, date, customer_id_normalized) -> is_ndp (True/False)
+    # This ensures if same customer deposits to same product on same date multiple times,
+    # they are only counted ONCE (and consistently as either NDP or RDP)
+    
+    unique_deposits = {}  # key: (pid, date, cid_normalized) -> {'is_ndp': bool, 'records': [record, ...]}
+    
+    for record in all_records:
+        cid_normalized = get_normalized_cid(record)
+        pid = record['product_id']
+        date = record['record_date']
+        key = (pid, date, cid_normalized)
+        
+        if key not in unique_deposits:
+            unique_deposits[key] = {
+                'is_ndp': is_ndp_record(record),
+                'records': []
+            }
+        unique_deposits[key]['records'].append(record)
+    
+    # ==================== BUILD ALL REPORT SECTIONS ====================
+    # ALL sections will use the same unique_deposits lookup for consistency
+    
+    # --- YEARLY DATA ---
     yearly_data = []
     for m in range(1, 13):
         month_str = f"{year}-{str(m).zfill(2)}"
-        month_records = [r for r in all_records if r['record_date'].startswith(month_str)]
         
         new_id = 0
         rdp = 0
-        total_form = len(month_records)
+        total_form = 0
         nominal = 0
         
-        # Track unique customers per (PRODUCT, DATE) - same customer to 2 products = 2 counts
-        daily_ndp_customers = {}  # {(product_id, date): set of customer_ids}
-        daily_rdp_customers = {}  # {(product_id, date): set of customer_ids}
-        
-        for record in month_records:
-            cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-            date = record['record_date']
-            pid = record['product_id']
+        for (pid, date, cid), deposit_info in unique_deposits.items():
+            if not date.startswith(month_str):
+                continue
             
-            tracking_key = (pid, date)
-            if tracking_key not in daily_ndp_customers:
-                daily_ndp_customers[tracking_key] = set()
-            if tracking_key not in daily_rdp_customers:
-                daily_rdp_customers[tracking_key] = set()
-            
-            if is_ndp_record(record, cid_normalized):
-                if cid_normalized not in daily_ndp_customers[tracking_key]:
-                    daily_ndp_customers[tracking_key].add(cid_normalized)
-                    new_id += 1
+            if deposit_info['is_ndp']:
+                new_id += 1
             else:
-                if cid_normalized not in daily_rdp_customers[tracking_key]:
-                    daily_rdp_customers[tracking_key].add(cid_normalized)
-                    rdp += 1
+                rdp += 1
             
-            nominal += record.get('depo_total', 0) or record.get('nominal', 0) or 0
+            # Sum nominal from all records in this unique deposit
+            for record in deposit_info['records']:
+                total_form += 1
+                nominal += record.get('depo_total', 0) or record.get('nominal', 0) or 0
         
         yearly_data.append({
             'month': m,
@@ -136,74 +154,60 @@ async def get_report_crm_data(
             'nominal': nominal
         })
     
+    # --- MONTHLY DATA (daily breakdown for all months) ---
     monthly_data = []
     for m in range(1, 13):
         month_str = f"{year}-{str(m).zfill(2)}"
-        month_records = [r for r in all_records if r['record_date'].startswith(month_str)]
         
-        daily_groups = {}
-        for record in month_records:
-            date = record['record_date']
-            if date not in daily_groups:
-                daily_groups[date] = []
-            daily_groups[date].append(record)
+        # Group by date within this month
+        date_data = {}
+        for (pid, date, cid), deposit_info in unique_deposits.items():
+            if not date.startswith(month_str):
+                continue
+            
+            if date not in date_data:
+                date_data[date] = {'new_id': 0, 'rdp': 0, 'total_form': 0, 'nominal': 0}
+            
+            if deposit_info['is_ndp']:
+                date_data[date]['new_id'] += 1
+            else:
+                date_data[date]['rdp'] += 1
+            
+            for record in deposit_info['records']:
+                date_data[date]['total_form'] += 1
+                date_data[date]['nominal'] += record.get('depo_total', 0) or record.get('nominal', 0) or 0
         
-        for date, records in sorted(daily_groups.items()):
-            new_id = 0
-            rdp = 0
-            nominal = 0
-            
-            # Track unique customers per (PRODUCT, DATE) - same customer to 2 products = 2 counts
-            day_ndp_customers = {}  # {product_id: set of customer_ids}
-            day_rdp_customers = {}  # {product_id: set of customer_ids}
-            
-            for record in records:
-                cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-                pid = record['product_id']
-                
-                if pid not in day_ndp_customers:
-                    day_ndp_customers[pid] = set()
-                if pid not in day_rdp_customers:
-                    day_rdp_customers[pid] = set()
-                
-                if is_ndp_record(record, cid_normalized):
-                    if cid_normalized not in day_ndp_customers[pid]:
-                        day_ndp_customers[pid].add(cid_normalized)
-                        new_id += 1
-                else:
-                    if cid_normalized not in day_rdp_customers[pid]:
-                        day_rdp_customers[pid].add(cid_normalized)
-                        rdp += 1
-                nominal += record.get('depo_total', 0) or record.get('nominal', 0) or 0
-            
+        for date, data in sorted(date_data.items()):
             monthly_data.append({
                 'month': m,
                 'date': date,
-                'new_id': new_id,
-                'rdp': rdp,
-                'total_form': len(records),
-                'nominal': nominal
+                'new_id': data['new_id'],
+                'rdp': data['rdp'],
+                'total_form': data['total_form'],
+                'nominal': data['nominal']
             })
     
+    # --- MONTHLY BY STAFF ---
     CRM_EFFICIENCY_TARGET = 278000000
     monthly_by_staff = []
+    
     for m in range(1, 13):
         month_str = f"{year}-{str(m).zfill(2)}"
-        month_records = [r for r in all_records if r['record_date'].startswith(month_str)]
         
-        staff_month_data = {}
-        # Track unique NDP/RDP customers per (STAFF, PRODUCT, DATE) - same customer to 2 products = 2 counts
-        staff_daily_ndp_customers = {}  # {(staff_id, product_id, date): set of customer_ids}
-        staff_daily_rdp_customers = {}  # {(staff_id, product_id, date): set of customer_ids}
+        staff_data = {}
         
-        for record in month_records:
-            sid = record['staff_id']
-            sname = record['staff_name']
-            date = record['record_date']
-            pid = record['product_id']
+        for (pid, date, cid), deposit_info in unique_deposits.items():
+            if not date.startswith(month_str):
+                continue
             
-            if sid not in staff_month_data:
-                staff_month_data[sid] = {
+            # For staff attribution, use the FIRST record's staff_id
+            # (in case of duplicates, attribute to whoever entered it first)
+            first_record = deposit_info['records'][0]
+            sid = first_record['staff_id']
+            sname = first_record['staff_name']
+            
+            if sid not in staff_data:
+                staff_data[sid] = {
                     'staff_id': sid,
                     'staff_name': sname,
                     'new_id': 0,
@@ -212,29 +216,17 @@ async def get_report_crm_data(
                     'nominal': 0
                 }
             
-            cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-            
-            # Track unique customers per (staff, product, date) - same customer to 2 products = 2 counts
-            tracking_key = (sid, pid, date)
-            if tracking_key not in staff_daily_ndp_customers:
-                staff_daily_ndp_customers[tracking_key] = set()
-            if tracking_key not in staff_daily_rdp_customers:
-                staff_daily_rdp_customers[tracking_key] = set()
-            
-            if is_ndp_record(record, cid_normalized):
-                if cid_normalized not in staff_daily_ndp_customers[tracking_key]:
-                    staff_daily_ndp_customers[tracking_key].add(cid_normalized)
-                    staff_month_data[sid]['new_id'] += 1
+            if deposit_info['is_ndp']:
+                staff_data[sid]['new_id'] += 1
             else:
-                if cid_normalized not in staff_daily_rdp_customers[tracking_key]:
-                    staff_daily_rdp_customers[tracking_key].add(cid_normalized)
-                    staff_month_data[sid]['rdp'] += 1
+                staff_data[sid]['rdp'] += 1
             
-            staff_month_data[sid]['total_form'] += 1
-            staff_month_data[sid]['nominal'] += record.get('depo_total', 0) or record.get('nominal', 0) or 0
+            for record in deposit_info['records']:
+                staff_data[sid]['total_form'] += 1
+                staff_data[sid]['nominal'] += record.get('depo_total', 0) or record.get('nominal', 0) or 0
         
         staff_list = []
-        for sid, data in staff_month_data.items():
+        for sid, data in staff_data.items():
             efficiency = (data['nominal'] / CRM_EFFICIENCY_TARGET) * 100 if CRM_EFFICIENCY_TARGET > 0 else 0
             staff_list.append({
                 **data,
@@ -257,20 +249,20 @@ async def get_report_crm_data(
             'totals': month_totals
         })
     
+    # --- DAILY BY STAFF (for selected month) ---
     selected_month_str = f"{year}-{str(month).zfill(2)}"
-    selected_month_records = [r for r in all_records if r['record_date'].startswith(selected_month_str)]
     
+    # Build nested structure: staff -> products -> daily
     staff_daily_data = {}
-    # Track unique customers per (STAFF, PRODUCT, DATE) - same customer to 2 products = 2 counts
-    staff_daily_ndp_customers = {}  # {(staff_id, product_id, date): set of customer_ids}
-    staff_daily_rdp_customers = {}  # {(staff_id, product_id, date): set of customer_ids}
     
-    for record in selected_month_records:
-        sid = record['staff_id']
-        sname = record['staff_name']
-        pid = record['product_id']
-        pname = record['product_name']
-        date = record['record_date']
+    for (pid, date, cid), deposit_info in unique_deposits.items():
+        if not date.startswith(selected_month_str):
+            continue
+        
+        first_record = deposit_info['records'][0]
+        sid = first_record['staff_id']
+        sname = first_record['staff_name']
+        pname = first_record['product_name']
         
         if sid not in staff_daily_data:
             staff_daily_data[sid] = {
@@ -297,40 +289,27 @@ async def get_report_crm_data(
                 'nominal': 0
             }
         
-        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-        nom = record.get('depo_total', 0) or record.get('nominal', 0) or 0
-        
-        # Determine if NDP or RDP using helper function
-        is_ndp = is_ndp_record(record, cid_normalized)
-        
-        # Track unique customers per (STAFF, PRODUCT, DATE) - same customer to 2 products = 2 counts
-        tracking_key = (sid, pid, date)
-        if tracking_key not in staff_daily_ndp_customers:
-            staff_daily_ndp_customers[tracking_key] = set()
-        if tracking_key not in staff_daily_rdp_customers:
-            staff_daily_rdp_customers[tracking_key] = set()
-        
-        # Update counts - same customer to 2 products = 2 counts for staff totals
-        if is_ndp:
-            if cid_normalized not in staff_daily_ndp_customers[tracking_key]:
-                staff_daily_ndp_customers[tracking_key].add(cid_normalized)
-                staff_daily_data[sid]['totals']['new_id'] += 1
-                staff_daily_data[sid]['products'][pid]['daily'][date]['new_id'] += 1
-                staff_daily_data[sid]['products'][pid]['totals']['new_id'] += 1
+        # Update counts
+        if deposit_info['is_ndp']:
+            staff_daily_data[sid]['totals']['new_id'] += 1
+            staff_daily_data[sid]['products'][pid]['totals']['new_id'] += 1
+            staff_daily_data[sid]['products'][pid]['daily'][date]['new_id'] += 1
         else:
-            if cid_normalized not in staff_daily_rdp_customers[tracking_key]:
-                staff_daily_rdp_customers[tracking_key].add(cid_normalized)
-                staff_daily_data[sid]['totals']['rdp'] += 1
-                staff_daily_data[sid]['products'][pid]['daily'][date]['rdp'] += 1
-                staff_daily_data[sid]['products'][pid]['totals']['rdp'] += 1
+            staff_daily_data[sid]['totals']['rdp'] += 1
+            staff_daily_data[sid]['products'][pid]['totals']['rdp'] += 1
+            staff_daily_data[sid]['products'][pid]['daily'][date]['rdp'] += 1
         
-        staff_daily_data[sid]['products'][pid]['daily'][date]['total_form'] += 1
-        staff_daily_data[sid]['products'][pid]['daily'][date]['nominal'] += nom
-        staff_daily_data[sid]['products'][pid]['totals']['total_form'] += 1
-        staff_daily_data[sid]['products'][pid]['totals']['nominal'] += nom
-        staff_daily_data[sid]['totals']['total_form'] += 1
-        staff_daily_data[sid]['totals']['nominal'] += nom
+        # Sum nominal from all records
+        for record in deposit_info['records']:
+            nom = record.get('depo_total', 0) or record.get('nominal', 0) or 0
+            staff_daily_data[sid]['totals']['total_form'] += 1
+            staff_daily_data[sid]['totals']['nominal'] += nom
+            staff_daily_data[sid]['products'][pid]['totals']['total_form'] += 1
+            staff_daily_data[sid]['products'][pid]['totals']['nominal'] += nom
+            staff_daily_data[sid]['products'][pid]['daily'][date]['total_form'] += 1
+            staff_daily_data[sid]['products'][pid]['daily'][date]['nominal'] += nom
     
+    # Convert to list format
     daily_by_staff = []
     for sid, staff_data in staff_daily_data.items():
         products_list = []
@@ -353,92 +332,65 @@ async def get_report_crm_data(
     
     daily_by_staff.sort(key=lambda x: x['totals']['nominal'], reverse=True)
     
-    daily_groups = {}
-    for record in selected_month_records:
-        date = record['record_date']
-        if date not in daily_groups:
-            daily_groups[date] = []
-        daily_groups[date].append(record)
-    
+    # --- DAILY DATA (simple date list for selected month) ---
     daily_data = []
-    for date, records in sorted(daily_groups.items()):
-        new_id = 0
-        rdp = 0
-        nominal = 0
+    date_totals = {}
+    
+    for (pid, date, cid), deposit_info in unique_deposits.items():
+        if not date.startswith(selected_month_str):
+            continue
         
-        # Track unique customers per (PRODUCT, DATE) - same customer to 2 products = 2 counts
-        day_ndp_customers = {}  # {product_id: set of customer_ids}
-        day_rdp_customers = {}  # {product_id: set of customer_ids}
+        if date not in date_totals:
+            date_totals[date] = {'new_id': 0, 'rdp': 0, 'total_form': 0, 'nominal': 0}
         
-        for record in records:
-            cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-            pid = record['product_id']
-            
-            if pid not in day_ndp_customers:
-                day_ndp_customers[pid] = set()
-            if pid not in day_rdp_customers:
-                day_rdp_customers[pid] = set()
-            
-            if is_ndp_record(record, cid_normalized):
-                if cid_normalized not in day_ndp_customers[pid]:
-                    day_ndp_customers[pid].add(cid_normalized)
-                    new_id += 1
-            else:
-                if cid_normalized not in day_rdp_customers[pid]:
-                    day_rdp_customers[pid].add(cid_normalized)
-                    rdp += 1
-            nominal += record.get('depo_total', 0) or record.get('nominal', 0) or 0
+        if deposit_info['is_ndp']:
+            date_totals[date]['new_id'] += 1
+        else:
+            date_totals[date]['rdp'] += 1
         
+        for record in deposit_info['records']:
+            date_totals[date]['total_form'] += 1
+            date_totals[date]['nominal'] += record.get('depo_total', 0) or record.get('nominal', 0) or 0
+    
+    for date, data in sorted(date_totals.items()):
         daily_data.append({
             'date': date,
-            'new_id': new_id,
-            'rdp': rdp,
-            'total_form': len(records),
-            'nominal': nominal
+            'new_id': data['new_id'],
+            'rdp': data['rdp'],
+            'total_form': data['total_form'],
+            'nominal': data['nominal']
         })
     
-    staff_groups = {}
-    # Track unique customers per (STAFF, PRODUCT, DATE) - same customer to 2 products = 2 counts
-    staff_daily_ndp_perf = {}  # {(staff_id, product_id, date): set of customer_ids}
-    staff_daily_rdp_perf = {}  # {(staff_id, product_id, date): set of customer_ids}
+    # --- STAFF PERFORMANCE (yearly totals per staff) ---
+    staff_perf_data = {}
     
-    for record in all_records:
-        sid = record['staff_id']
-        date = record['record_date']
-        pid = record['product_id']
+    for (pid, date, cid), deposit_info in unique_deposits.items():
+        first_record = deposit_info['records'][0]
+        sid = first_record['staff_id']
+        sname = first_record['staff_name']
         
-        if sid not in staff_groups:
-            staff_groups[sid] = {
+        if sid not in staff_perf_data:
+            staff_perf_data[sid] = {
                 'staff_id': sid,
-                'staff_name': record['staff_name'],
+                'staff_name': sname,
                 'new_id': 0,
                 'rdp': 0,
                 'total_form': 0,
                 'nominal': 0
             }
         
-        tracking_key = (sid, pid, date)
-        if tracking_key not in staff_daily_ndp_perf:
-            staff_daily_ndp_perf[tracking_key] = set()
-        if tracking_key not in staff_daily_rdp_perf:
-            staff_daily_rdp_perf[tracking_key] = set()
-        
-        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-        
-        if is_ndp_record(record, cid_normalized):
-            if cid_normalized not in staff_daily_ndp_perf[tracking_key]:
-                staff_daily_ndp_perf[tracking_key].add(cid_normalized)
-                staff_groups[sid]['new_id'] += 1
+        if deposit_info['is_ndp']:
+            staff_perf_data[sid]['new_id'] += 1
         else:
-            if cid_normalized not in staff_daily_rdp_perf[tracking_key]:
-                staff_daily_rdp_perf[tracking_key].add(cid_normalized)
-                staff_groups[sid]['rdp'] += 1
+            staff_perf_data[sid]['rdp'] += 1
         
-        staff_groups[sid]['total_form'] += 1
-        staff_groups[sid]['nominal'] += record.get('depo_total', 0) or record.get('nominal', 0) or 0
+        for record in deposit_info['records']:
+            staff_perf_data[sid]['total_form'] += 1
+            staff_perf_data[sid]['nominal'] += record.get('depo_total', 0) or record.get('nominal', 0) or 0
     
-    staff_performance = sorted(staff_groups.values(), key=lambda x: x['nominal'], reverse=True)
+    staff_performance = sorted(staff_perf_data.values(), key=lambda x: x['nominal'], reverse=True)
     
+    # --- DEPOSIT TIERS ---
     customer_deposit_counts = {}
     for record in all_records:
         cid = record['customer_id']
