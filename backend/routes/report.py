@@ -310,13 +310,13 @@ async def get_report_crm_data(
         
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
         
-        # Use STAFF-SPECIFIC first_date for consistent NDP/RDP calculation
-        staff_key = (sid, cid_normalized, pid)
-        staff_first_date = staff_customer_first_date.get(staff_key)
+        # Use GLOBAL first_date for consistent NDP/RDP calculation
+        key = (cid_normalized, pid)
+        first_date = customer_first_date.get(key)
         
         # "tambahan" records are always RDP
         is_tambahan = is_tambahan_record(record)
-        is_ndp = not is_tambahan and staff_first_date == date
+        is_ndp = not is_tambahan and first_date == date
         
         nom = record.get('depo_total', 0) or record.get('nominal', 0) or 0
         
@@ -335,7 +335,7 @@ async def get_report_crm_data(
                 staff_daily_data[sid]['products'][pid]['totals']['new_id'] += 1
                 staff_daily_data[sid]['totals']['new_id'] += 1
         else:
-            # Count unique RDP customers per day (using staff-specific logic)
+            # Count unique RDP customers per day
             if cid_normalized not in staff_daily_rdp_customers[tracking_key]:
                 staff_daily_rdp_customers[tracking_key].add(cid_normalized)
                 staff_daily_data[sid]['products'][pid]['daily'][date]['rdp'] += 1
