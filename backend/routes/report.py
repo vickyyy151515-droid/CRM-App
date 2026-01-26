@@ -153,20 +153,26 @@ async def get_report_crm_data(
             rdp = 0
             nominal = 0
             
-            # Track unique customers per day
-            day_ndp_customers = set()
-            day_rdp_customers = set()
+            # Track unique customers per (PRODUCT, DATE) - same customer to 2 products = 2 counts
+            day_ndp_customers = {}  # {product_id: set of customer_ids}
+            day_rdp_customers = {}  # {product_id: set of customer_ids}
             
             for record in records:
                 cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+                pid = record['product_id']
+                
+                if pid not in day_ndp_customers:
+                    day_ndp_customers[pid] = set()
+                if pid not in day_rdp_customers:
+                    day_rdp_customers[pid] = set()
                 
                 if is_ndp_record(record, cid_normalized):
-                    if cid_normalized not in day_ndp_customers:
-                        day_ndp_customers.add(cid_normalized)
+                    if cid_normalized not in day_ndp_customers[pid]:
+                        day_ndp_customers[pid].add(cid_normalized)
                         new_id += 1
                 else:
-                    if cid_normalized not in day_rdp_customers:
-                        day_rdp_customers.add(cid_normalized)
+                    if cid_normalized not in day_rdp_customers[pid]:
+                        day_rdp_customers[pid].add(cid_normalized)
                         rdp += 1
                 nominal += record.get('depo_total', 0) or record.get('nominal', 0) or 0
             
@@ -186,9 +192,9 @@ async def get_report_crm_data(
         month_records = [r for r in all_records if r['record_date'].startswith(month_str)]
         
         staff_month_data = {}
-        # Track unique NDP/RDP customers per STAFF PER DAY
-        staff_daily_ndp_customers = {}  # {(staff_id, date): set of customer_ids}
-        staff_daily_rdp_customers = {}  # {(staff_id, date): set of customer_ids}
+        # Track unique NDP/RDP customers per (STAFF, PRODUCT, DATE) - same customer to 2 products = 2 counts
+        staff_daily_ndp_customers = {}  # {(staff_id, product_id, date): set of customer_ids}
+        staff_daily_rdp_customers = {}  # {(staff_id, product_id, date): set of customer_ids}
         
         for record in month_records:
             sid = record['staff_id']
