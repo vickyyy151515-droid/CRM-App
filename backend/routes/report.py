@@ -200,6 +200,7 @@ async def get_report_crm_data(
             sid = record['staff_id']
             sname = record['staff_name']
             date = record['record_date']
+            pid = record['product_id']
             
             if sid not in staff_month_data:
                 staff_month_data[sid] = {
@@ -213,20 +214,20 @@ async def get_report_crm_data(
             
             cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
             
-            # Track unique customers per staff-date
-            daily_key = (sid, date)
-            if daily_key not in staff_daily_ndp_customers:
-                staff_daily_ndp_customers[daily_key] = set()
-            if daily_key not in staff_daily_rdp_customers:
-                staff_daily_rdp_customers[daily_key] = set()
+            # Track unique customers per (staff, product, date) - same customer to 2 products = 2 counts
+            tracking_key = (sid, pid, date)
+            if tracking_key not in staff_daily_ndp_customers:
+                staff_daily_ndp_customers[tracking_key] = set()
+            if tracking_key not in staff_daily_rdp_customers:
+                staff_daily_rdp_customers[tracking_key] = set()
             
             if is_ndp_record(record, cid_normalized):
-                if cid_normalized not in staff_daily_ndp_customers[daily_key]:
-                    staff_daily_ndp_customers[daily_key].add(cid_normalized)
+                if cid_normalized not in staff_daily_ndp_customers[tracking_key]:
+                    staff_daily_ndp_customers[tracking_key].add(cid_normalized)
                     staff_month_data[sid]['new_id'] += 1
             else:
-                if cid_normalized not in staff_daily_rdp_customers[daily_key]:
-                    staff_daily_rdp_customers[daily_key].add(cid_normalized)
+                if cid_normalized not in staff_daily_rdp_customers[tracking_key]:
+                    staff_daily_rdp_customers[tracking_key].add(cid_normalized)
                     staff_month_data[sid]['rdp'] += 1
             
             staff_month_data[sid]['total_form'] += 1
