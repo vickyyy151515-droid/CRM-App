@@ -62,7 +62,7 @@ async def get_report_crm_data(
     
     # Rebuild customer_first_date with normalized IDs
     # IMPORTANT: Exclude records with "tambahan" from first_date calculation
-    # GLOBAL customer_first_date (for overall monthly/daily totals)
+    # GLOBAL customer_first_date (used for ALL calculations for consistency)
     customer_first_date = {}
     for record in sorted(all_time_records, key=lambda x: x['record_date']):
         if is_tambahan_record(record):
@@ -73,18 +73,15 @@ async def get_report_crm_data(
         if key not in customer_first_date:
             customer_first_date[key] = record['record_date']
     
-    # STAFF-SPECIFIC customer_first_date (for staff breakdown)
-    # Key: (staff_id, customer_id_normalized, product_id) -> first_date
-    staff_customer_first_date = {}
-    for record in sorted(all_time_records, key=lambda x: x['record_date']):
-        if is_tambahan_record(record):
-            continue
-        staff_id = record['staff_id']
-        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-        pid = record['product_id']
-        key = (staff_id, cid_normalized, pid)
-        if key not in staff_customer_first_date:
-            staff_customer_first_date[key] = record['record_date']
+    # ==================== UNIFIED CALCULATION LOGIC ====================
+    # ALL sections will use the SAME logic:
+    # 1. Use GLOBAL customer_first_date for NDP/RDP determination
+    # 2. Count unique customers PER DAY
+    # 3. Sum daily counts for totals
+    #
+    # NDP = Customer's first deposit date matches record_date (AND not tambahan)
+    # RDP = Customer's first deposit date is BEFORE record_date OR tambahan
+    # ==================================================================
     
     yearly_data = []
     for m in range(1, 13):
