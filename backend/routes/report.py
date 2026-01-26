@@ -366,20 +366,26 @@ async def get_report_crm_data(
         rdp = 0
         nominal = 0
         
-        # Track unique customers per day
-        day_ndp_customers = set()
-        day_rdp_customers = set()
+        # Track unique customers per (PRODUCT, DATE) - same customer to 2 products = 2 counts
+        day_ndp_customers = {}  # {product_id: set of customer_ids}
+        day_rdp_customers = {}  # {product_id: set of customer_ids}
         
         for record in records:
             cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+            pid = record['product_id']
+            
+            if pid not in day_ndp_customers:
+                day_ndp_customers[pid] = set()
+            if pid not in day_rdp_customers:
+                day_rdp_customers[pid] = set()
             
             if is_ndp_record(record, cid_normalized):
-                if cid_normalized not in day_ndp_customers:
-                    day_ndp_customers.add(cid_normalized)
+                if cid_normalized not in day_ndp_customers[pid]:
+                    day_ndp_customers[pid].add(cid_normalized)
                     new_id += 1
             else:
-                if cid_normalized not in day_rdp_customers:
-                    day_rdp_customers.add(cid_normalized)
+                if cid_normalized not in day_rdp_customers[pid]:
+                    day_rdp_customers[pid].add(cid_normalized)
                     rdp += 1
             nominal += record.get('depo_total', 0) or record.get('nominal', 0) or 0
         
@@ -392,13 +398,14 @@ async def get_report_crm_data(
         })
     
     staff_groups = {}
-    # Track unique NDP and RDP customers per staff PER DAY (then sum for year total)
-    staff_daily_ndp_perf = {}  # {(staff_id, date): set of customer_ids}
-    staff_daily_rdp_perf = {}  # {(staff_id, date): set of customer_ids}
+    # Track unique customers per (STAFF, PRODUCT, DATE) - same customer to 2 products = 2 counts
+    staff_daily_ndp_perf = {}  # {(staff_id, product_id, date): set of customer_ids}
+    staff_daily_rdp_perf = {}  # {(staff_id, product_id, date): set of customer_ids}
     
     for record in all_records:
         sid = record['staff_id']
         date = record['record_date']
+        pid = record['product_id']
         
         if sid not in staff_groups:
             staff_groups[sid] = {
@@ -410,21 +417,21 @@ async def get_report_crm_data(
                 'nominal': 0
             }
         
-        daily_key = (sid, date)
-        if daily_key not in staff_daily_ndp_perf:
-            staff_daily_ndp_perf[daily_key] = set()
-        if daily_key not in staff_daily_rdp_perf:
-            staff_daily_rdp_perf[daily_key] = set()
+        tracking_key = (sid, pid, date)
+        if tracking_key not in staff_daily_ndp_perf:
+            staff_daily_ndp_perf[tracking_key] = set()
+        if tracking_key not in staff_daily_rdp_perf:
+            staff_daily_rdp_perf[tracking_key] = set()
         
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
         
         if is_ndp_record(record, cid_normalized):
-            if cid_normalized not in staff_daily_ndp_perf[daily_key]:
-                staff_daily_ndp_perf[daily_key].add(cid_normalized)
+            if cid_normalized not in staff_daily_ndp_perf[tracking_key]:
+                staff_daily_ndp_perf[tracking_key].add(cid_normalized)
                 staff_groups[sid]['new_id'] += 1
         else:
-            if cid_normalized not in staff_daily_rdp_perf[daily_key]:
-                staff_daily_rdp_perf[daily_key].add(cid_normalized)
+            if cid_normalized not in staff_daily_rdp_perf[tracking_key]:
+                staff_daily_rdp_perf[tracking_key].add(cid_normalized)
                 staff_groups[sid]['rdp'] += 1
         
         staff_groups[sid]['total_form'] += 1
