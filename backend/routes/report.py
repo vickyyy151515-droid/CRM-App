@@ -76,12 +76,21 @@ async def get_report_crm_data(
     # ==================== UNIFIED CALCULATION LOGIC ====================
     # ALL sections will use the SAME logic:
     # 1. Use GLOBAL customer_first_date for NDP/RDP determination
-    # 2. Count unique customers PER DAY
-    # 3. Sum daily counts for totals
+    # 2. For GLOBAL totals: count unique customers per DATE
+    # 3. For STAFF totals: count unique customers per (STAFF, DATE)
+    # 4. Product breakdown is for display only - staff totals don't double-count products
     #
     # NDP = Customer's first deposit date matches record_date (AND not tambahan)
-    # RDP = Customer's first deposit date is BEFORE record_date OR tambahan
+    # RDP = Everything else (first deposit is before OR tambahan OR no first_date found)
     # ==================================================================
+    
+    # Helper function to determine if record is NDP
+    def is_ndp_record(record, cid_normalized):
+        if is_tambahan_record(record):
+            return False
+        key = (cid_normalized, record['product_id'])
+        first_date = customer_first_date.get(key)
+        return first_date == record['record_date']
     
     yearly_data = []
     for m in range(1, 13):
@@ -93,38 +102,28 @@ async def get_report_crm_data(
         total_form = len(month_records)
         nominal = 0
         
-        # Track unique NDP/RDP customers per DAY (to match daily report logic)
-        # Key: (date) -> set of customer_ids
-        daily_ndp_customers = {}
-        daily_rdp_customers = {}
+        # Track unique customers per DATE only (global view)
+        daily_ndp_customers = {}  # {date: set of customer_ids}
+        daily_rdp_customers = {}  # {date: set of customer_ids}
         
         for record in month_records:
             cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
             date = record['record_date']
-            key = (cid_normalized, record['product_id'])
-            first_date = customer_first_date.get(key)
             
-            # Initialize daily sets if not exist
             if date not in daily_ndp_customers:
                 daily_ndp_customers[date] = set()
             if date not in daily_rdp_customers:
                 daily_rdp_customers[date] = set()
             
-            # "tambahan" records are always RDP
-            if is_tambahan_record(record):
-                if cid_normalized not in daily_rdp_customers[date]:
-                    daily_rdp_customers[date].add(cid_normalized)
-                    rdp += 1
-            elif first_date and first_date == record['record_date']:
-                # NDP - count unique customers per day
+            if is_ndp_record(record, cid_normalized):
                 if cid_normalized not in daily_ndp_customers[date]:
                     daily_ndp_customers[date].add(cid_normalized)
                     new_id += 1
-            elif first_date and first_date < record['record_date']:
-                # RDP - count unique customers per day (sum of daily counts)
+            else:
                 if cid_normalized not in daily_rdp_customers[date]:
                     daily_rdp_customers[date].add(cid_normalized)
                     rdp += 1
+            
             nominal += record.get('depo_total', 0) or record.get('nominal', 0) or 0
         
         yearly_data.append({
