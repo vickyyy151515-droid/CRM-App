@@ -194,7 +194,7 @@ async def get_report_crm_data(
         month_records = [r for r in all_records if r['record_date'].startswith(month_str)]
         
         staff_month_data = {}
-        # Track unique NDP/RDP customers per staff PER DAY (to match daily report logic)
+        # Track unique NDP/RDP customers per staff PER DAY (using GLOBAL first_date)
         staff_daily_ndp_customers = {}  # {(staff_id, date): set of customer_ids}
         staff_daily_rdp_customers = {}  # {(staff_id, date): set of customer_ids}
         
@@ -214,11 +214,11 @@ async def get_report_crm_data(
                 }
             
             cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-            # Use STAFF-SPECIFIC first_date for staff breakdown
-            staff_key = (sid, cid_normalized, record['product_id'])
-            staff_first_date = staff_customer_first_date.get(staff_key)
+            # Use GLOBAL first_date for consistency across all views
+            key = (cid_normalized, record['product_id'])
+            first_date = customer_first_date.get(key)
             
-            # Track unique customers per staff-date (same as daily report)
+            # Track unique customers per staff-date
             daily_key = (sid, date)
             if daily_key not in staff_daily_ndp_customers:
                 staff_daily_ndp_customers[daily_key] = set()
@@ -230,12 +230,12 @@ async def get_report_crm_data(
                 if cid_normalized not in staff_daily_rdp_customers[daily_key]:
                     staff_daily_rdp_customers[daily_key].add(cid_normalized)
                     staff_month_data[sid]['rdp'] += 1
-            elif staff_first_date and staff_first_date == record['record_date']:
+            elif first_date and first_date == record['record_date']:
                 # NDP - count unique customers per staff per day
                 if cid_normalized not in staff_daily_ndp_customers[daily_key]:
                     staff_daily_ndp_customers[daily_key].add(cid_normalized)
                     staff_month_data[sid]['new_id'] += 1
-            elif staff_first_date and staff_first_date < record['record_date']:
+            else:
                 # RDP - count unique customers per staff per day (sum of daily counts)
                 if cid_normalized not in staff_daily_rdp_customers[daily_key]:
                     staff_daily_rdp_customers[daily_key].add(cid_normalized)
