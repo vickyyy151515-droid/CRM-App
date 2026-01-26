@@ -1,5 +1,21 @@
 # CRM Pro - Product Requirements Document
 
+## Latest Update: January 26, 2026
+
+### Critical Bug Fix: NDP/RDP Report Consistency (3rd Fix)
+**Status**: DEPLOYED - Awaiting User Verification
+
+**Root Cause**: Different report sections used different tracking granularity
+- Yearly tracked by `(product_id, date)`
+- Staff sections tracked by `(staff_id, product_id, date)`
+
+**Solution**: Complete rewrite of `/app/backend/routes/report.py`
+- Created unified `unique_deposits` dictionary keyed by `(product_id, date, customer_id_normalized)`
+- All 4 report sections now iterate over the same pre-computed data
+- Fixed customer ID normalization for consistent comparison
+
+---
+
 ## Original Problem Statement
 Build a sophisticated CRM (Customer Relationship Management) application for managing customer records, sales workflows, staff performance tracking, and HR features.
 
