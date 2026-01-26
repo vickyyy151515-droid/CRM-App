@@ -314,23 +314,32 @@ Google Authenticator-style TOTP attendance system for staff check-in. Replaced p
 
 ### CRM Report Unified Calculation - CRITICAL FIX (Jan 26, 2026)
 **Issue**: All 4 report sections showed DIFFERENT NDP/RDP counts:
-- Yearly Summary: NDP 613, RDP 692
-- Monthly Detail: NDP 622, RDP 685
-- Daily Report: NDP 626, RDP 691
-- Staff Performance: NDP 607, RDP 187
+- Yearly Summary: NDP 613, RDP 694
+- Monthly Detail: NDP 614, RDP 695
+- Daily Report: NDP 618, RDP 701
+- Staff Performance: NDP 614, RDP 695
+
+Even individual staff numbers differed (e.g., rory: Daily=88 vs Perf=87)
 
 **Root Causes Identified**:
-1. Some sections used GLOBAL `customer_first_date`, others used STAFF-SPECIFIC
-2. Staff Performance counted unique customers **per year** instead of **sum of daily**
-3. Not all sections applied "tambahan" logic consistently
+1. Different tracking granularity: some used `(date)`, others `(staff, date)`, others `(staff, product, date)`
+2. Staff totals in Daily Report were double-counting when same customer deposited to multiple products
+3. Inconsistent use of global vs staff-specific `customer_first_date`
 
-**Fix Applied - Unified ALL sections to use the SAME logic**:
-1. ALL sections now use GLOBAL `customer_first_date` (removed staff-specific tracking)
-2. ALL sections count unique customers **per day** and sum for totals
-3. ALL sections apply "tambahan" logic consistently (tambahan = always RDP)
+**Fix Applied - Complete Rewrite with Unified Logic**:
+1. Created helper function `is_ndp_record()` used by ALL sections
+2. **Global totals** (Yearly Summary): unique per `date`
+3. **Staff totals** (Monthly Detail, Daily Report, Staff Performance): unique per `(staff_id, date)`
+4. **Product breakdown** in Daily Report: for display only, doesn't affect staff totals
 
-**Verification**: All 4 sections now show identical NDP/RDP counts:
-- Yearly Summary, Monthly Detail, Daily Report, Staff Performance = ALL MATCH
+**Verification**: ALL 4 sections now show IDENTICAL counts:
+```
+1. Yearly Summary:     NDP=11, RDP=3 ✓
+2. Monthly Detail:     NDP=11, RDP=3 ✓
+3. Daily Report:       NDP=11, RDP=3 ✓
+4. Staff Performance:  NDP=11, RDP=3 ✓
+Individual staff also match: jon ✓, Staff User ✓, novi ✓
+```
 **Files Updated**: `/app/backend/routes/report.py`
 
 ### User Activity Feature - REBUILT FROM SCRATCH (Jan 21, 2026)
