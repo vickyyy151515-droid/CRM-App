@@ -312,6 +312,27 @@ Google Authenticator-style TOTP attendance system for staff check-in. Replaced p
 - Now both Monthly Detail and Daily Report show matching NDP/RDP counts
 **Files Updated**: `/app/backend/routes/report.py`
 
+### CRM Report Unified Calculation - CRITICAL FIX (Jan 26, 2026)
+**Issue**: All 4 report sections showed DIFFERENT NDP/RDP counts:
+- Yearly Summary: NDP 613, RDP 692
+- Monthly Detail: NDP 622, RDP 685
+- Daily Report: NDP 626, RDP 691
+- Staff Performance: NDP 607, RDP 187
+
+**Root Causes Identified**:
+1. Some sections used GLOBAL `customer_first_date`, others used STAFF-SPECIFIC
+2. Staff Performance counted unique customers **per year** instead of **sum of daily**
+3. Not all sections applied "tambahan" logic consistently
+
+**Fix Applied - Unified ALL sections to use the SAME logic**:
+1. ALL sections now use GLOBAL `customer_first_date` (removed staff-specific tracking)
+2. ALL sections count unique customers **per day** and sum for totals
+3. ALL sections apply "tambahan" logic consistently (tambahan = always RDP)
+
+**Verification**: All 4 sections now show identical NDP/RDP counts:
+- Yearly Summary, Monthly Detail, Daily Report, Staff Performance = ALL MATCH
+**Files Updated**: `/app/backend/routes/report.py`
+
 ### User Activity Feature - REBUILT FROM SCRATCH (Jan 21, 2026)
 **Previous Issue**: Complex logic caused bugs where users showed wrong status
 **Solution**: Completely removed old code and rebuilt with simple, correct logic
