@@ -63,6 +63,7 @@ async def get_report_crm_data(
     # Rebuild customer_first_date with normalized IDs
     # IMPORTANT: Exclude records with "tambahan" from first_date calculation
     # GLOBAL customer_first_date (used for ALL calculations for consistency)
+    # Key: (customer_id_normalized, product_id) -> first deposit date for that customer-product combo
     customer_first_date = {}
     for record in sorted(all_time_records, key=lambda x: x['record_date']):
         if is_tambahan_record(record):
@@ -74,14 +75,13 @@ async def get_report_crm_data(
             customer_first_date[key] = record['record_date']
     
     # ==================== UNIFIED CALCULATION LOGIC ====================
-    # ALL sections will use the SAME logic:
-    # 1. Use GLOBAL customer_first_date for NDP/RDP determination
-    # 2. For GLOBAL totals: count unique customers per DATE
-    # 3. For STAFF totals: count unique customers per (STAFF, DATE)
-    # 4. Product breakdown is for display only - staff totals don't double-count products
+    # ALL sections use the SAME logic:
+    # 1. Use GLOBAL customer_first_date for NDP/RDP determination (per customer-product)
+    # 2. Count unique customers per (PRODUCT, DATE) - if customer deposits to 2 products = 2 counts
+    # 3. "Tambahan" records are ALWAYS RDP (excluded from first_date calculation)
     #
-    # NDP = Customer's first deposit date matches record_date (AND not tambahan)
-    # RDP = Everything else (first deposit is before OR tambahan OR no first_date found)
+    # NDP = Customer's first deposit for THIS PRODUCT matches record_date (AND not tambahan)
+    # RDP = Not first deposit for this product OR tambahan
     # ==================================================================
     
     # Helper function to determine if record is NDP
@@ -102,26 +102,28 @@ async def get_report_crm_data(
         total_form = len(month_records)
         nominal = 0
         
-        # Track unique customers per DATE only (global view)
-        daily_ndp_customers = {}  # {date: set of customer_ids}
-        daily_rdp_customers = {}  # {date: set of customer_ids}
+        # Track unique customers per (PRODUCT, DATE) - same customer to 2 products = 2 counts
+        daily_ndp_customers = {}  # {(product_id, date): set of customer_ids}
+        daily_rdp_customers = {}  # {(product_id, date): set of customer_ids}
         
         for record in month_records:
             cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
             date = record['record_date']
+            pid = record['product_id']
             
-            if date not in daily_ndp_customers:
-                daily_ndp_customers[date] = set()
-            if date not in daily_rdp_customers:
-                daily_rdp_customers[date] = set()
+            tracking_key = (pid, date)
+            if tracking_key not in daily_ndp_customers:
+                daily_ndp_customers[tracking_key] = set()
+            if tracking_key not in daily_rdp_customers:
+                daily_rdp_customers[tracking_key] = set()
             
             if is_ndp_record(record, cid_normalized):
-                if cid_normalized not in daily_ndp_customers[date]:
-                    daily_ndp_customers[date].add(cid_normalized)
+                if cid_normalized not in daily_ndp_customers[tracking_key]:
+                    daily_ndp_customers[tracking_key].add(cid_normalized)
                     new_id += 1
             else:
-                if cid_normalized not in daily_rdp_customers[date]:
-                    daily_rdp_customers[date].add(cid_normalized)
+                if cid_normalized not in daily_rdp_customers[tracking_key]:
+                    daily_rdp_customers[tracking_key].add(cid_normalized)
                     rdp += 1
             
             nominal += record.get('depo_total', 0) or record.get('nominal', 0) or 0
