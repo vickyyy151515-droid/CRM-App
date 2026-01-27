@@ -513,6 +513,17 @@ Google Authenticator-style TOTP attendance system for staff check-in. Replaced p
 **Testing**: All 13 backend tests + full frontend UI verification passed (100%)
 **Test File**: `/app/tests/test_reserved_members_customer_id.py`
 
+### Reserved Member Duplicate Bug Fix - CRITICAL FIX (Jan 27, 2026)
+**Problem**: Same customer could be reserved multiple times for the same product
+**Root Cause**: Duplicate check only queried `customer_id` field, but legacy data used `customer_name` field
+**Fix Applied**:
+1. Updated duplicate check queries to use `$or` to check BOTH `customer_id` AND `customer_name` fields
+2. Fixed in both `create_reserved_member()` and `bulk_create_reserved_members()` endpoints
+**New Admin Tools**:
+- `GET /api/reserved-members/duplicates` - Find existing duplicates in database
+- `DELETE /api/reserved-members/duplicates/cleanup` - Remove duplicate entries (keeps oldest)
+**Files Updated**: `/app/backend/routes/records.py`
+
 ### Database Request Bug Fix - CRITICAL FIX (Jan 24, 2026)
 **Problem**: When staff requested database records, the records were marked as "requested" but:
 1. `request_id` was NOT saved on the customer_records
