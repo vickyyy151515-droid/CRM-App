@@ -1453,6 +1453,91 @@ async def move_reserved_member(member_id: str, new_staff_id: str, user: User = D
     
     return {'message': f"Reserved member moved to {staff['name']}"}
 
+@router.get("/reserved-members/duplicates")
+async def find_reserved_member_duplicates(user: User = Depends(get_admin_user)):
+    """Find duplicate reserved members (same customer + product)"""
+    db = get_db()
+    
+    # Get all reserved members
+    members = await db.reserved_members.find(
+        {'status': {'$in': ['pending', 'approved']}},
+        {'_id': 0}
+    ).to_list(100000)
+    
+    # Build a map of (customer_id_normalized, product_id) -> list of members
+    seen = {}
+    for m in members:
+        # Get customer identifier (support both customer_id and legacy customer_name)
+        cid = (m.get('customer_id') or m.get('customer_name') or '').strip().lower()
+        pid = m.get('product_id', '')
+        key = (cid, pid)
+        
+        if key not in seen:
+            seen[key] = []
+        seen[key].append(m)
+    
+    # Find duplicates
+    duplicates = []
+    for key, members_list in seen.items():
+        if len(members_list) > 1:
+            duplicates.append({
+                'customer_id': key[0],
+                'product_id': key[1],
+                'count': len(members_list),
+                'members': members_list
+            })
+    
+    return {
+        'total_duplicates': len(duplicates),
+        'duplicates': duplicates
+    }
+
+@router.delete("/reserved-members/duplicates/cleanup")
+async def cleanup_reserved_member_duplicates(user: User = Depends(get_admin_user)):
+    """Remove duplicate reserved members, keeping the oldest one"""
+    db = get_db()
+    
+    # Get all reserved members
+    members = await db.reserved_members.find(
+        {'status': {'$in': ['pending', 'approved']}},
+        {'_id': 0}
+    ).to_list(100000)
+    
+    # Build a map of (customer_id_normalized, product_id) -> list of members
+    seen = {}
+    for m in members:
+        cid = (m.get('customer_id') or m.get('customer_name') or '').strip().lower()
+        pid = m.get('product_id', '')
+        key = (cid, pid)
+        
+        if key not in seen:
+            seen[key] = []
+        seen[key].append(m)
+    
+    # Delete duplicates (keep oldest by created_at)
+    deleted_count = 0
+    deleted_ids = []
+    
+    for key, members_list in seen.items():
+        if len(members_list) > 1:
+            # Sort by created_at, keep the oldest
+            sorted_members = sorted(members_list, key=lambda x: x.get('created_at', ''))
+            
+            # Delete all except the first (oldest)
+            for m in sorted_members[1:]:
+                await db.reserved_members.delete_one({'id': m['id']})
+                deleted_count += 1
+                deleted_ids.append({
+                    'id': m['id'],
+                    'customer_id': m.get('customer_id') or m.get('customer_name'),
+                    'product_id': m.get('product_id')
+                })
+    
+    return {
+        'deleted_count': deleted_count,
+        'deleted': deleted_ids
+    }
+
 # ==================== DOWNLOAD HISTORY ====================
 
 @router.get("/download-history", response_model=List[DownloadHistory])
