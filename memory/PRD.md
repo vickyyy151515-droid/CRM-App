@@ -1,9 +1,21 @@
 # CRM Pro - Product Requirements Document
 
-## Latest Update: January 26, 2026
+## Latest Update: January 27, 2026
+
+## ⚠️ MANDATORY: PRE-SESSION CHECKLIST
+**EVERY new session MUST run this before any work:**
+```bash
+/app/scripts/pre_deploy_check.sh
+```
+This catches recurring issues like:
+- .gitignore corruption (has happened 3+ times)
+- Missing .env files
+- Missing dependencies
+
+---
 
 ### Critical Bug Fix: NDP/RDP Report Consistency (3rd Fix)
-**Status**: DEPLOYED - Awaiting User Verification
+**Status**: VERIFIED - Ready for deployment
 
 **Root Cause**: Different report sections used different tracking granularity
 - Yearly tracked by `(product_id, date)`
