@@ -92,7 +92,11 @@ frontend/node_modules/.cache/default-development/2.pack
 frontend/node_modules/.cache/default-development/4.pack
 frontend/node_modules/.cache/default-development/8.pack
 # Local environment files only (keep .env files for deployment)
+# IMPORTANT: Do NOT add *.env or *.env.* patterns here - they break deployment!
+# Only .env.local files should be ignored
 .env.local
 .env.*.local
 frontend/node_modules/.cache/default-development/2.pack_
 frontend/node_modules/.cache/default-development/13.pack
+
+# END OF FILE - DO NOT APPEND BELOW THIS LINE
