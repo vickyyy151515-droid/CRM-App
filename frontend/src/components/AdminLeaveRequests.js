@@ -152,7 +152,9 @@ export default function AdminLeaveRequests() {
                 <option key={idx} value={idx + 1}>{name}</option>
               ))}
             </select>
-          </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
