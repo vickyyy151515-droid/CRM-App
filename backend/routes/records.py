@@ -1185,8 +1185,12 @@ async def create_reserved_member(member_data: ReservedMemberCreate, user: User =
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     
+    # Check both customer_id (new field) and customer_name (legacy field) for duplicates
     existing = await db.reserved_members.find_one({
-        'customer_id': {'$regex': f'^{member_data.customer_id}$', '$options': 'i'},
+        '$or': [
+            {'customer_id': {'$regex': f'^{member_data.customer_id}$', '$options': 'i'}},
+            {'customer_name': {'$regex': f'^{member_data.customer_id}$', '$options': 'i'}}
+        ],
         'product_id': member_data.product_id,
         'status': {'$in': ['pending', 'approved']}
     })
@@ -1287,9 +1291,12 @@ async def bulk_create_reserved_members(bulk_data: BulkReservedMemberCreate, user
     skipped = []
     
     for customer_id in customer_ids:
-        # Check for existing reservation (case-insensitive)
+        # Check for existing reservation (case-insensitive) - check both customer_id and legacy customer_name
         existing = await db.reserved_members.find_one({
-            'customer_id': {'$regex': f'^{customer_id}$', '$options': 'i'},
+            '$or': [
+                {'customer_id': {'$regex': f'^{customer_id}$', '$options': 'i'}},
+                {'customer_name': {'$regex': f'^{customer_id}$', '$options': 'i'}}
+            ],
             'product_id': bulk_data.product_id,
             'status': {'$in': ['pending', 'approved']}
         })
