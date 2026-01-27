@@ -270,6 +270,16 @@ Google Authenticator-style TOTP attendance system for staff check-in. Replaced p
 ## Known Issues
 - WebSocket connection fails in preview environment (infrastructure limitation)
 
+### RECURRING: .gitignore Corruption Issue (CRITICAL)
+**Problem**: The `.gitignore` file gets corrupted with duplicate `*.env` entries and malformed `-e` lines
+**Root Cause**: Some process (possibly platform or shell commands) appends entries using `echo -e` which incorrectly writes `-e` as text
+**Impact**: Blocks deployment because `.env` files are excluded from the build
+**Prevention**:
+1. Added comments in `.gitignore` warning NOT to add `*.env` patterns
+2. Added "END OF FILE" marker to prevent appending
+3. Only `.env.local` files should be ignored (for local development)
+**If this happens again**: Check `/app/.gitignore` for duplicate `*.env` entries and `-e` lines, remove them
+
 ### PRODUCTION DEPLOYMENT FIX - CRITICAL (Jan 21, 2026)
 **Problem**: Production app showing "Service temporarily unavailable" after every deployment
 **Root Cause**: `.gitignore` file had duplicate entries (lines 100-105) blocking all `.env` and `.env.*` files from being committed to the repository. This prevented environment files from being deployed to production.
