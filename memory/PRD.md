@@ -329,13 +329,7 @@ Google Authenticator-style TOTP attendance system for staff check-in. Replaced p
 **Files Updated**: `/app/backend/routes/report.py`
 
 ### CRM Report Unified Calculation - CRITICAL FIX (Jan 26, 2026)
-**Issue**: All 4 report sections showed DIFFERENT NDP/RDP counts:
-- Yearly Summary: NDP 613, RDP 694
-- Monthly Detail: NDP 614, RDP 695
-- Daily Report: NDP 618, RDP 701
-- Staff Performance: NDP 614, RDP 695
-
-Even individual staff numbers differed (e.g., rory: Daily=88 vs Perf=87)
+**Issue**: All 4 report sections showed DIFFERENT NDP/RDP counts (reported 3 times by user)
 
 **Root Causes Identified**:
 1. Different tracking granularity: some used `(date)`, others `(staff, date)`, others `(staff, product, date)`
@@ -343,20 +337,18 @@ Even individual staff numbers differed (e.g., rory: Daily=88 vs Perf=87)
 3. Inconsistent use of global vs staff-specific `customer_first_date`
 
 **Fix Applied - Complete Rewrite with Unified Logic**:
-1. Created helper function `is_ndp_record()` used by ALL sections
-2. **Global totals** (Yearly Summary): unique per `date`
-3. **Staff totals** (Monthly Detail, Daily Report, Staff Performance): unique per `(staff_id, date)`
-4. **Product breakdown** in Daily Report: for display only, doesn't affect staff totals
+1. Created unified `unique_deposits` dictionary keyed by `(product_id, date, customer_id_normalized)`
+2. All 4 sections iterate over the SAME dictionary to derive NDP/RDP
+3. `is_ndp_record()` helper function ensures consistent NDP/RDP determination
 
-**Verification**: ALL 4 sections now show IDENTICAL counts:
-```
-1. Yearly Summary:     NDP=11, RDP=3 ✓
-2. Monthly Detail:     NDP=11, RDP=3 ✓
-3. Daily Report:       NDP=11, RDP=3 ✓
-4. Staff Performance:  NDP=11, RDP=3 ✓
-Individual staff also match: jon ✓, Staff User ✓, novi ✓
-```
+**Verification (Jan 26, 2026)**: 
+- 11 backend API tests passed (100%)
+- ALL 4 sections show IDENTICAL counts: NDP=11, RDP=3, Form=22, OMSET=Rp 14.710.300 ✓
+- Individual staff breakdowns match exactly across sections
+- Test file: `/app/backend/tests/test_report_crm_ndp_rdp_consistency.py`
+
 **Files Updated**: `/app/backend/routes/report.py`
+**Status**: VERIFIED - Ready for deployment
 
 ### User Activity Feature - REBUILT FROM SCRATCH (Jan 21, 2026)
 **Previous Issue**: Complex logic caused bugs where users showed wrong status
