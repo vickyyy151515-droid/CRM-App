@@ -132,8 +132,12 @@ async def get_all_leave_requests(status: Optional[str] = None, year: int = None,
     query = {}
     if status:
         query['status'] = status
-    if year and month:
+    
+    # Don't filter by date when viewing pending requests - show all pending
+    # Only apply date filter for approved/rejected/all statuses
+    if year and month and status != 'pending':
         query['date'] = {'$regex': f'^{year}-{str(month).zfill(2)}'}
+    
     requests = await db.leave_requests.find(query, {'_id': 0}).sort('created_at', -1).to_list(1000)
     pending_count = await db.leave_requests.count_documents({'status': 'pending'})
     return {'requests': requests, 'pending_count': pending_count}
