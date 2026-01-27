@@ -127,22 +127,24 @@ export default function AdminLeaveRequests() {
               <option value="all">All</option>
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-600 mb-1">Year</label>
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              {years.map(year => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-600 mb-1">Month</label>
-            <select
-              value={selectedMonth}
+          {statusFilter !== 'pending' && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-1">Year</label>
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(Number(e.target.value))}
+                  className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  {years.map(year => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-1">Month</label>
+                <select
+                  value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
               className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
