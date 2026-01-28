@@ -269,6 +269,175 @@ export default function StaffProgress() {
     }
   };
 
+  const monthNames = isIndonesian ? MONTH_NAMES_ID : MONTH_NAMES_EN;
+
+  // Render Target Progress View
+  const renderTargetProgressView = () => {
+    if (targetLoading) {
+      return (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        </div>
+      );
+    }
+
+    if (!targetProgress) {
+      return <div className="text-center py-12 text-slate-500">{isIndonesian ? 'Gagal memuat data' : 'Failed to load data'}</div>;
+    }
+
+    const { summary, staff_progress } = targetProgress;
+
+    return (
+      <div className="space-y-6">
+        {/* Summary Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                <Users className="text-blue-600" size={24} />
+              </div>
+              <div>
+                <p className="text-sm text-slate-600 dark:text-slate-400">{isIndonesian ? 'Total Staff' : 'Total Staff'}</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">{summary.total_staff}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+                <Trophy className="text-emerald-600" size={24} />
+              </div>
+              <div>
+                <p className="text-sm text-slate-600 dark:text-slate-400">{isIndonesian ? 'Target Tercapai' : 'Target Achieved'}</p>
+                <p className="text-2xl font-bold text-emerald-600">{summary.success_staff}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                <AlertTriangle className="text-orange-600" size={24} />
+              </div>
+              <div>
+                <p className="text-sm text-slate-600 dark:text-slate-400">{isIndonesian ? 'Peringatan' : 'Warning'}</p>
+                <p className="text-2xl font-bold text-orange-600">{summary.warning_staff}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                <AlertOctagon className="text-red-600" size={24} />
+              </div>
+              <div>
+                <p className="text-sm text-slate-600 dark:text-slate-400">{isIndonesian ? 'Kritis' : 'Critical'}</p>
+                <p className="text-2xl font-bold text-red-600">{summary.critical_staff}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Info Bar */}
+        <div className="bg-slate-100 dark:bg-slate-700/50 rounded-lg p-3 flex flex-wrap items-center justify-between gap-2 text-sm">
+          <span className="text-slate-600 dark:text-slate-300">
+            📅 {monthNames[targetProgress.month - 1]} {targetProgress.year} • {targetProgress.days_remaining} {isIndonesian ? 'hari tersisa' : 'days remaining'}
+          </span>
+          <span className="text-slate-600 dark:text-slate-300">
+            🎯 {isIndonesian ? 'Target Harian' : 'Daily Target'}: {targetProgress.daily_ndp_target} NDP {isIndonesian ? 'atau' : 'or'} {targetProgress.daily_rdp_target} RDP • {isIndonesian ? 'Target Bulanan' : 'Monthly'}: {targetProgress.required_success_days} {isIndonesian ? 'hari' : 'days'}
+          </span>
+        </div>
+
+        {/* Staff Progress Cards */}
+        <div className="grid gap-4">
+          {staff_progress.map((staff) => {
+            const progress = Math.min(100, (staff.success_days / targetProgress.required_success_days) * 100);
+            
+            // Determine card style based on warning level
+            let cardStyle = 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800';
+            let progressBarColor = 'bg-blue-500';
+            
+            if (staff.warning_level === 3) {
+              cardStyle = 'border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/20';
+              progressBarColor = 'bg-red-500';
+            } else if (staff.warning_level === 2) {
+              cardStyle = 'border-orange-300 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/20';
+              progressBarColor = 'bg-orange-500';
+            } else if (staff.success_days >= targetProgress.required_success_days) {
+              cardStyle = 'border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20';
+              progressBarColor = 'bg-emerald-500';
+            }
+
+            return (
+              <div key={staff.staff_id} className={`rounded-xl border p-4 shadow-sm ${cardStyle}`}>
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  {/* Staff Info */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{staff.status_symbol}</span>
+                    <div>
+                      <p className="font-semibold text-slate-900 dark:text-white">{staff.staff_name}</p>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        {isIndonesian ? 'Hari Ini' : 'Today'}: NDP {staff.today_ndp}/{targetProgress.daily_ndp_target} • RDP {staff.today_rdp}/{targetProgress.daily_rdp_target}
+                        {staff.today_target_reached && <CheckCircle size={14} className="inline ml-1 text-emerald-500" />}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Stats */}
+                  <div className="flex items-center gap-6">
+                    <div className="text-center">
+                      <p className="text-xl font-bold text-slate-900 dark:text-white">{staff.success_days}<span className="text-sm font-normal text-slate-500">/{targetProgress.required_success_days}</span></p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{isIndonesian ? 'Hari Sukses' : 'Success Days'}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xl font-bold text-slate-900 dark:text-white">{staff.projected_success}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{isIndonesian ? 'Proyeksi' : 'Projected'}</p>
+                    </div>
+                    {staff.warning_level >= 2 && (
+                      <div className="text-center">
+                        <p className="text-sm text-slate-500 dark:text-slate-400">{isIndonesian ? 'Bulan Lalu' : 'Last Month'}</p>
+                        <p className={`font-bold ${staff.prev_month_1_success < targetProgress.required_success_days ? 'text-red-500' : 'text-emerald-500'}`}>
+                          {staff.prev_month_1_success}/{targetProgress.required_success_days}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="mt-3">
+                  <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full transition-all duration-500 ${progressBarColor}`}
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    <span>{Math.round(progress)}% {isIndonesian ? 'tercapai' : 'achieved'}</span>
+                    {staff.success_days < targetProgress.required_success_days && (
+                      <span>{isIndonesian ? `Butuh ${targetProgress.required_success_days - staff.success_days} hari lagi` : `Need ${targetProgress.required_success_days - staff.success_days} more`}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Legend */}
+        <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 text-sm">
+          <p className="font-medium text-slate-700 dark:text-slate-300 mb-2">{isIndonesian ? 'Keterangan Status:' : 'Status Legend:'}</p>
+          <div className="flex flex-wrap gap-4">
+            <span className="flex items-center gap-1"><span>🏆</span> {isIndonesian ? 'Target Tercapai' : 'Target Achieved'}</span>
+            <span className="flex items-center gap-1"><span>✓</span> {isIndonesian ? 'Di Jalur Yang Benar' : 'On Track'}</span>
+            <span className="flex items-center gap-1"><span>📊</span> {isIndonesian ? 'Dalam Proses' : 'In Progress'}</span>
+            <span className="flex items-center gap-1"><span>⚠️</span> {isIndonesian ? 'Gagal Bulan Lalu (1x)' : 'Failed Last Month (1x)'}</span>
+            <span className="flex items-center gap-1"><span>🚨</span> {isIndonesian ? 'Gagal 2 Bulan Berturut' : '2 Consecutive Months Failed'}</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return <div className="text-center py-12 text-slate-600 dark:text-slate-400">{t('staffProgress.loadingStats')}</div>;
   }
@@ -277,7 +446,43 @@ export default function StaffProgress() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">{t('staffProgress.title')}</h2>
-        <div className="flex gap-3">
+      </div>
+
+      {/* View Toggle Tabs */}
+      <div className="flex border-b border-slate-200 dark:border-slate-700 mb-6">
+        <button
+          onClick={() => setActiveView('quality')}
+          className={`px-4 py-2 font-medium text-sm transition-colors ${
+            activeView === 'quality'
+              ? 'text-indigo-600 border-b-2 border-indigo-600'
+              : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600'
+          }`}
+        >
+          {isIndonesian ? 'Kualitas Database' : 'Database Quality'}
+        </button>
+        <button
+          onClick={() => setActiveView('targets')}
+          className={`px-4 py-2 font-medium text-sm transition-colors flex items-center gap-2 ${
+            activeView === 'targets'
+              ? 'text-indigo-600 border-b-2 border-indigo-600'
+              : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600'
+          }`}
+        >
+          <Target size={16} />
+          {isIndonesian ? 'Target NDP/RDP' : 'NDP/RDP Targets'}
+          {targetProgress?.summary?.critical_staff > 0 && (
+            <span className="px-1.5 py-0.5 bg-red-500 text-white rounded-full text-xs">{targetProgress.summary.critical_staff}</span>
+          )}
+        </button>
+      </div>
+
+      {/* Conditional Rendering Based on Active View */}
+      {activeView === 'targets' ? (
+        renderTargetProgressView()
+      ) : (
+        <>
+          {/* Original Quality View with Filters */}
+          <div className="flex gap-3 mb-6">
           <select
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
