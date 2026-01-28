@@ -150,7 +150,7 @@ async def get_staff_performance_analytics(
     }
 
 @router.get("/analytics/business")
-async def get_business_analytics(period: str = 'month', product_id: Optional[str] = None, user: User = Depends(get_admin_user)):
+async def get_business_analytics(period: str = 'month', product_id: Optional[str] = None, staff_id: Optional[str] = None, user: User = Depends(get_admin_user)):
     """Get business analytics including OMSET trends"""
     db = get_db()
     start_date, end_date = get_date_range(period)
@@ -159,6 +159,8 @@ async def get_business_analytics(period: str = 'month', product_id: Optional[str
     omset_query = {'record_date': {'$gte': start_date[:10]}}
     if product_id:
         omset_query['product_id'] = product_id
+    if staff_id:
+        omset_query['staff_id'] = staff_id
     
     # Helper function to normalize customer ID
     def normalize_customer_id(customer_id: str) -> str:
