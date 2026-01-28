@@ -348,7 +348,7 @@ async def generate_atrisk_alert(inactive_days: int = 14) -> str:
         return f"Rp {amount:,.0f}".replace(',', '.')
     
     # Count total at-risk (including those not shown today)
-    total_at_risk_count = len(at_risk_customers) + len(recently_alerted_ids)
+    total_at_risk_count = len(at_risk_customers) + len(recently_alerted_keys)
     
     alert_lines = [
         f"🚨 <b>AT-RISK CUSTOMER ALERT</b>",
