@@ -89,6 +89,7 @@ export default function AdvancedAnalytics() {
   
   const [widgetOrder, setWidgetOrder] = useState(DEFAULT_WIDGET_ORDER);
   const [visibleWidgets, setVisibleWidgets] = useState({
+    staffCompare: true,
     staffComparison: true,
     dailyTrends: true,
     whatsappDistribution: true,
@@ -98,6 +99,12 @@ export default function AdvancedAnalytics() {
     ndpRdp: true,
     databaseUtilization: true
   });
+  
+  // Compare Staff feature state
+  const [compareMode, setCompareMode] = useState(false);
+  const [compareStaff, setCompareStaff] = useState([]);
+  const [compareData, setCompareData] = useState(null);
+  const [loadingCompare, setLoadingCompare] = useState(false);
   
   const [showWidgetSettings, setShowWidgetSettings] = useState(false);
   const [activeId, setActiveId] = useState(null);
