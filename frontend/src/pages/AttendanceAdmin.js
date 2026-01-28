@@ -21,6 +21,17 @@ export default function AttendanceAdmin() {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedStaff, setExpandedStaff] = useState(null);
   const [resettingTotp, setResettingTotp] = useState(null);
+  
+  // Fee & Payment state
+  const [feeData, setFeeData] = useState(null);
+  const [feeYear, setFeeYear] = useState(new Date().getFullYear());
+  const [feeMonth, setFeeMonth] = useState(new Date().getMonth() + 1);
+  const [expandedFeeStaff, setExpandedFeeStaff] = useState(null);
+  const [processingFee, setProcessingFee] = useState(null);
+  const [waiveModal, setWaiveModal] = useState(null);
+  const [waiveReason, setWaiveReason] = useState('');
+  const [installmentModal, setInstallmentModal] = useState(null);
+  const [installmentMonths, setInstallmentMonths] = useState(2);
 
   // Fetch today's attendance
   const fetchTodayAttendance = useCallback(async () => {
