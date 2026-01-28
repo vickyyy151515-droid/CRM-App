@@ -3,7 +3,7 @@ import { api } from '../App';
 import { toast } from 'sonner';
 import { 
   BarChart3, TrendingUp, Users, Package, Database, PieChart, 
-  Eye, EyeOff, RefreshCw, Filter, GripVertical, Save
+  Eye, EyeOff, RefreshCw, Filter, GripVertical, Save, GitCompare, X, Plus
 } from 'lucide-react';
 import {
   LineChart, Line, BarChart, Bar, PieChart as RechartsPie, Pie, Cell,
@@ -28,6 +28,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899'];
+const COMPARISON_COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
 const DEFAULT_WIDGET_ORDER = [
   'staffComparison',
