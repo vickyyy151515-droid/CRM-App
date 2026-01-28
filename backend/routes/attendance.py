@@ -441,6 +441,9 @@ async def get_fees_summary(
     year = year or now.year
     month = month or now.month
     
+    # Get currency rates
+    currency_rates = await get_currency_rates(db)
+    
     # Build date filter for the month
     date_prefix = f"{year}-{str(month).zfill(2)}"
     
@@ -451,11 +454,31 @@ async def get_fees_summary(
         'late_minutes': {'$gt': 0}
     }, {'_id': 0}).to_list(100000)
     
-    # Get existing fee waivers and payments
+    # Get existing fee waivers
     fee_waivers = await db.lateness_fee_waivers.find({
         'year': year, 'month': month
     }, {'_id': 0}).to_list(10000)
     waiver_map = {(w['staff_id'], w.get('date', '')): w for w in fee_waivers}
+    
+    # Get manual fees for the month
+    manual_fees = await db.lateness_manual_fees.find({
+        'year': year, 'month': month
+    }, {'_id': 0}).to_list(10000)
+    manual_fee_map = {}
+    for mf in manual_fees:
+        if mf['staff_id'] not in manual_fee_map:
+            manual_fee_map[mf['staff_id']] = []
+        manual_fee_map[mf['staff_id']].append(mf)
+    
+    # Get partial payments for the month
+    partial_payments = await db.lateness_partial_payments.find({
+        'year': year, 'month': month
+    }, {'_id': 0}).to_list(10000)
+    payment_map = {}
+    for p in partial_payments:
+        if p['staff_id'] not in payment_map:
+            payment_map[p['staff_id']] = []
+        payment_map[p['staff_id']].append(p)
     
     # Get installment plans
     installments = await db.lateness_fee_installments.find({
@@ -463,11 +486,17 @@ async def get_fees_summary(
     }, {'_id': 0}).to_list(1000)
     installment_map = {i['staff_id']: i for i in installments}
     
+    # Get all staff
+    all_staff = await db.users.find({'role': 'staff'}, {'_id': 0, 'id': 1, 'name': 1}).to_list(1000)
+    staff_name_map = {s['id']: s['name'] for s in all_staff}
+    
     # Calculate fees per staff
     staff_fees = {}
+    
+    # Process attendance-based fees
     for record in attendance_records:
         staff_id = record['staff_id']
-        staff_name = record.get('staff_name', 'Unknown')
+        staff_name = record.get('staff_name', staff_name_map.get(staff_id, 'Unknown'))
         late_minutes = record.get('late_minutes', 0)
         record_date = record.get('date', '')
         
@@ -482,8 +511,12 @@ async def get_fees_summary(
                 'staff_name': staff_name,
                 'total_late_minutes': 0,
                 'total_fee': 0,
+                'total_paid': 0,
+                'remaining_fee': 0,
                 'late_days': 0,
-                'records': []
+                'records': [],
+                'manual_fees': [],
+                'payments': []
             }
         
         fee = late_minutes * LATENESS_FEE_PER_MINUTE
@@ -494,11 +527,67 @@ async def get_fees_summary(
             'date': record_date,
             'late_minutes': late_minutes,
             'fee': fee,
-            'check_in_time': record.get('check_in_time')
+            'check_in_time': record.get('check_in_time'),
+            'type': 'attendance'
         })
     
-    # Add installment info
+    # Add manual fees
+    for staff_id, fees in manual_fee_map.items():
+        staff_name = staff_name_map.get(staff_id, 'Unknown')
+        if staff_id not in staff_fees:
+            staff_fees[staff_id] = {
+                'staff_id': staff_id,
+                'staff_name': staff_name,
+                'total_late_minutes': 0,
+                'total_fee': 0,
+                'total_paid': 0,
+                'remaining_fee': 0,
+                'late_days': 0,
+                'records': [],
+                'manual_fees': [],
+                'payments': []
+            }
+        
+        for mf in fees:
+            staff_fees[staff_id]['total_fee'] += mf['amount_usd']
+            staff_fees[staff_id]['manual_fees'].append({
+                'id': mf.get('id'),
+                'date': mf.get('date'),
+                'amount_usd': mf['amount_usd'],
+                'reason': mf.get('reason'),
+                'added_by': mf.get('added_by_name'),
+                'added_at': mf.get('added_at'),
+                'type': 'manual'
+            })
+    
+    # Add partial payments and calculate remaining
+    for staff_id, payments in payment_map.items():
+        if staff_id in staff_fees:
+            for p in payments:
+                staff_fees[staff_id]['total_paid'] += p['amount_usd']
+                staff_fees[staff_id]['payments'].append({
+                    'id': p.get('id'),
+                    'date': p.get('paid_at'),
+                    'amount_usd': p['amount_usd'],
+                    'original_amount': p.get('original_amount'),
+                    'original_currency': p.get('original_currency'),
+                    'note': p.get('note'),
+                    'recorded_by': p.get('recorded_by_name')
+                })
+    
+    # Calculate remaining fees and add installment info
     for staff_id, data in staff_fees.items():
+        data['remaining_fee'] = max(0, data['total_fee'] - data['total_paid'])
+        
+        # Add currency conversions
+        data['total_fee_thb'] = data['total_fee'] * currency_rates['THB']
+        data['total_fee_idr'] = data['total_fee'] * currency_rates['IDR']
+        data['remaining_fee_thb'] = data['remaining_fee'] * currency_rates['THB']
+        data['remaining_fee_idr'] = data['remaining_fee'] * currency_rates['IDR']
+        data['total_paid_thb'] = data['total_paid'] * currency_rates['THB']
+        data['total_paid_idr'] = data['total_paid'] * currency_rates['IDR']
+        
+        # Installment info
         installment = installment_map.get(staff_id)
         if installment:
             data['installment'] = {
@@ -512,19 +601,28 @@ async def get_fees_summary(
     
     # Calculate global totals
     total_fees = sum(d['total_fee'] for d in staff_fees.values())
+    total_paid = sum(d['total_paid'] for d in staff_fees.values())
+    total_remaining = sum(d['remaining_fee'] for d in staff_fees.values())
     total_late_minutes = sum(d['total_late_minutes'] for d in staff_fees.values())
     
-    # Get historical payments (for accumulated total)
-    all_installment_payments = await db.lateness_fee_payments.find({}, {'_id': 0}).to_list(100000)
-    total_collected = sum(p.get('amount', 0) for p in all_installment_payments)
+    # Get all-time collected (from partial payments)
+    all_payments = await db.lateness_partial_payments.find({}, {'_id': 0}).to_list(100000)
+    total_collected_all_time = sum(p.get('amount_usd', 0) for p in all_payments)
     
     return {
         'year': year,
         'month': month,
         'fee_per_minute': LATENESS_FEE_PER_MINUTE,
+        'currency_rates': currency_rates,
         'total_fees_this_month': total_fees,
+        'total_fees_this_month_thb': total_fees * currency_rates['THB'],
+        'total_fees_this_month_idr': total_fees * currency_rates['IDR'],
+        'total_paid_this_month': total_paid,
+        'total_remaining_this_month': total_remaining,
         'total_late_minutes': total_late_minutes,
-        'total_collected_all_time': total_collected,
+        'total_collected_all_time': total_collected_all_time,
+        'total_collected_all_time_thb': total_collected_all_time * currency_rates['THB'],
+        'total_collected_all_time_idr': total_collected_all_time * currency_rates['IDR'],
         'staff_count_with_fees': len(staff_fees),
         'staff_fees': list(staff_fees.values())
     }
