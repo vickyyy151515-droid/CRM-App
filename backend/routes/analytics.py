@@ -178,7 +178,12 @@ async def get_business_analytics(period: str = 'month', product_id: Optional[str
     
     # Build customer_first_date for NDP detection
     # IMPORTANT: Exclude records with "tambahan" from first_date calculation
-    all_records = await db.omset_records.find({}, {'_id': 0, 'customer_id': 1, 'customer_id_normalized': 1, 'product_id': 1, 'record_date': 1, 'keterangan': 1}).to_list(100000)
+    # When filtering by staff_id, still need global first_date to determine NDP/RDP correctly
+    # But for the omset totals, we only show the selected staff's records
+    all_records_query = {}
+    if product_id:
+        all_records_query['product_id'] = product_id
+    all_records = await db.omset_records.find(all_records_query, {'_id': 0, 'customer_id': 1, 'customer_id_normalized': 1, 'product_id': 1, 'record_date': 1, 'keterangan': 1}).to_list(100000)
     customer_first_date = {}
     for record in sorted(all_records, key=lambda x: x['record_date']):
         # Skip "tambahan" records when determining first deposit date
