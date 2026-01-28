@@ -9,6 +9,8 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime, timezone, timedelta
 import uuid
+from routes.deps import get_db
+from routes.auth import get_current_user, User
 
 router = APIRouter(tags=["Lateness Fees"])
 
@@ -32,27 +34,6 @@ def get_jakarta_now():
 def get_jakarta_date_string():
     """Get current date string in Jakarta timezone (YYYY-MM-DD)"""
     return get_jakarta_now().strftime('%Y-%m-%d')
-
-# Import dependencies - will be set by main app
-_get_db = None
-_get_current_user = None
-_User = None
-
-def init_dependencies(get_db_func, get_current_user_func, user_class):
-    """Initialize dependencies from main app"""
-    global _get_db, _get_current_user, _User
-    _get_db = get_db_func
-    _get_current_user = get_current_user_func
-    _User = user_class
-
-def get_database():
-    return _get_db()
-
-def get_current_user():
-    return _get_current_user
-
-def User():
-    return _User
 
 # ==================== MODELS ====================
 
@@ -85,21 +66,13 @@ async def get_currency_rates(db):
         return settings['rates']
     return DEFAULT_CURRENCY_RATES
 
-async def require_admin(user):
-    """Check if user is admin"""
-    if user.role not in ['admin', 'master_admin']:
-        raise HTTPException(status_code=403, detail="Admin access required")
-
 # ==================== CURRENCY ENDPOINTS ====================
 
 @router.get("/attendance/admin/fees/currency-rates")
-async def get_currency_rates_endpoint(user = Depends(lambda: _get_current_user)):
+async def get_currency_rates_endpoint(user: User = Depends(get_current_user)):
     """Get current currency rates"""
-    from routes.deps import get_db
-    from routes.auth import get_current_user
     db = get_db()
     
-    # Re-fetch user with proper dependency
     if user.role not in ['admin', 'master_admin']:
         raise HTTPException(status_code=403, detail="Admin access required")
     
@@ -107,9 +80,8 @@ async def get_currency_rates_endpoint(user = Depends(lambda: _get_current_user))
     return {'rates': rates}
 
 @router.put("/attendance/admin/fees/currency-rates")
-async def update_currency_rates(data: CurrencyRateUpdate, user = Depends(lambda: _get_current_user)):
+async def update_currency_rates(data: CurrencyRateUpdate, user: User = Depends(get_current_user)):
     """Update currency rates"""
-    from routes.deps import get_db
     db = get_db()
     
     if user.role not in ['admin', 'master_admin']:
@@ -135,10 +107,9 @@ async def update_currency_rates(data: CurrencyRateUpdate, user = Depends(lambda:
 async def get_fees_summary(
     year: Optional[int] = None,
     month: Optional[int] = None,
-    user = Depends(lambda: _get_current_user)
+    user: User = Depends(get_current_user)
 ):
     """Get lateness fee summary for all staff"""
-    from routes.deps import get_db
     db = get_db()
     
     if user.role not in ['admin', 'master_admin']:
@@ -341,10 +312,9 @@ async def waive_fee(
     staff_id: str,
     date: str,
     data: WaiveFeeRequest,
-    user = Depends(lambda: _get_current_user)
+    user: User = Depends(get_current_user)
 ):
     """Waive/cancel lateness fee for a specific date"""
-    from routes.deps import get_db
     db = get_db()
     
     if user.role not in ['admin', 'master_admin']:
@@ -395,10 +365,9 @@ async def waive_fee(
 async def remove_waiver(
     staff_id: str,
     date: str,
-    user = Depends(lambda: _get_current_user)
+    user: User = Depends(get_current_user)
 ):
     """Remove a fee waiver (reinstate the fee)"""
-    from routes.deps import get_db
     db = get_db()
     
     if user.role not in ['admin', 'master_admin']:
@@ -418,10 +387,9 @@ async def remove_waiver(
 async def get_all_waivers(
     year: Optional[int] = None,
     month: Optional[int] = None,
-    user = Depends(lambda: _get_current_user)
+    user: User = Depends(get_current_user)
 ):
     """Get all fee waivers for a month"""
-    from routes.deps import get_db
     db = get_db()
     
     if user.role not in ['admin', 'master_admin']:
@@ -445,10 +413,9 @@ async def setup_installment(
     year: int,
     month: int,
     data: InstallmentRequest,
-    user = Depends(lambda: _get_current_user)
+    user: User = Depends(get_current_user)
 ):
     """Set up installment plan for staff's lateness fees (max 2 months)"""
-    from routes.deps import get_db
     db = get_db()
     
     if user.role not in ['admin', 'master_admin']:
@@ -520,10 +487,9 @@ async def cancel_installment(
     staff_id: str,
     year: int,
     month: int,
-    user = Depends(lambda: _get_current_user)
+    user: User = Depends(get_current_user)
 ):
     """Cancel installment plan"""
-    from routes.deps import get_db
     db = get_db()
     
     if user.role not in ['admin', 'master_admin']:
@@ -546,10 +512,9 @@ async def record_installment_payment(
     year: int,
     month: int,
     payment_month: int,
-    user = Depends(lambda: _get_current_user)
+    user: User = Depends(get_current_user)
 ):
     """Record a payment for an installment"""
-    from routes.deps import get_db
     db = get_db()
     
     if user.role not in ['admin', 'master_admin']:
@@ -606,10 +571,9 @@ async def add_manual_fee(
     year: int,
     month: int,
     data: ManualFeeRequest,
-    user = Depends(lambda: _get_current_user)
+    user: User = Depends(get_current_user)
 ):
     """Manually add a lateness fee for a staff member"""
-    from routes.deps import get_db
     db = get_db()
     
     if user.role not in ['admin', 'master_admin']:
@@ -647,10 +611,9 @@ async def add_manual_fee(
 @router.delete("/attendance/admin/fees/manual/{fee_id}")
 async def delete_manual_fee(
     fee_id: str,
-    user = Depends(lambda: _get_current_user)
+    user: User = Depends(get_current_user)
 ):
     """Delete a manual fee"""
-    from routes.deps import get_db
     db = get_db()
     
     if user.role not in ['admin', 'master_admin']:
@@ -671,10 +634,9 @@ async def record_partial_payment(
     year: int,
     month: int,
     data: PaymentRequest,
-    user = Depends(lambda: _get_current_user)
+    user: User = Depends(get_current_user)
 ):
     """Record a partial payment from staff (supports multiple currencies)"""
-    from routes.deps import get_db
     db = get_db()
     
     if user.role not in ['admin', 'master_admin']:
@@ -725,10 +687,9 @@ async def record_partial_payment(
 @router.delete("/attendance/admin/fees/payment/{payment_id}")
 async def delete_payment(
     payment_id: str,
-    user = Depends(lambda: _get_current_user)
+    user: User = Depends(get_current_user)
 ):
     """Delete a payment record"""
-    from routes.deps import get_db
     db = get_db()
     
     if user.role not in ['admin', 'master_admin']:
@@ -744,9 +705,8 @@ async def delete_payment(
 # ==================== STAFF LIST ====================
 
 @router.get("/attendance/admin/fees/staff-list")
-async def get_staff_list_for_fees(user = Depends(lambda: _get_current_user)):
+async def get_staff_list_for_fees(user: User = Depends(get_current_user)):
     """Get list of all staff for manual fee assignment"""
-    from routes.deps import get_db
     db = get_db()
     
     if user.role not in ['admin', 'master_admin']:
