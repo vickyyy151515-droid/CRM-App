@@ -316,6 +316,197 @@ export default function AdvancedAnalytics() {
 
   const renderWidget = (widgetId) => {
     switch (widgetId) {
+      case 'staffCompare':
+        return (
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 sm:p-6 shadow-sm" data-testid="staff-compare-widget">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                <GitCompare size={20} className="text-purple-600" />
+                Staff Comparison (Side-by-Side)
+              </h3>
+              <button
+                onClick={toggleCompareMode}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  compareMode 
+                    ? 'bg-purple-600 text-white' 
+                    : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+                }`}
+                data-testid="toggle-compare-mode"
+              >
+                {compareMode ? 'Exit Compare Mode' : 'Enable Compare Mode'}
+              </button>
+            </div>
+
+            {!compareMode ? (
+              <div className="text-center py-8 text-slate-500 dark:text-slate-400">
+                <GitCompare size={48} className="mx-auto mb-3 opacity-30" />
+                <p className="font-medium">Enable Compare Mode to compare staff performance</p>
+                <p className="text-sm mt-1">Select 2-6 staff members to see side-by-side charts</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Staff Selection */}
+                <div className="flex flex-wrap gap-2 items-center">
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Select staff to compare:</span>
+                  <select
+                    onChange={(e) => e.target.value && addToCompare(e.target.value)}
+                    value=""
+                    className="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    disabled={compareStaff.length >= 6}
+                    data-testid="compare-staff-select"
+                  >
+                    <option value="">+ Add staff...</option>
+                    {staff.filter(s => !compareStaff.includes(s.id)).map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Selected Staff Chips */}
+                {compareStaff.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {compareStaff.map((staffId, idx) => {
+                      const staffMember = staff.find(s => s.id === staffId);
+                      return (
+                        <span 
+                          key={staffId}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium text-white"
+                          style={{ backgroundColor: COMPARISON_COLORS[idx % COMPARISON_COLORS.length] }}
+                          data-testid={`compare-chip-${staffId}`}
+                        >
+                          {staffMember?.name}
+                          <button 
+                            onClick={() => removeFromCompare(staffId)}
+                            className="hover:bg-white/20 rounded-full p-0.5"
+                          >
+                            <X size={14} />
+                          </button>
+                        </span>
+                      );
+                    })}
+                    {compareStaff.length < 2 && (
+                      <span className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                        <Plus size={14} /> Select at least 2 staff to compare
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Comparison Charts */}
+                {loadingCompare ? (
+                  <div className="text-center py-8 text-slate-500 dark:text-slate-400">
+                    <RefreshCw size={24} className="mx-auto mb-2 animate-spin" />
+                    <p>Loading comparison data...</p>
+                  </div>
+                ) : compareData && compareStaff.length >= 2 ? (
+                  <div className="space-y-6">
+                    {/* Summary Comparison Cards */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                      {compareData.staff.map((s, idx) => (
+                        <div 
+                          key={s.staff_id}
+                          className="p-3 rounded-lg border-2"
+                          style={{ borderColor: s.color, backgroundColor: `${s.color}10` }}
+                        >
+                          <p className="text-xs font-medium truncate" style={{ color: s.color }}>{s.staff_name}</p>
+                          <p className="text-lg font-bold text-slate-900 dark:text-white mt-1">
+                            {formatNumber(s.data.summary?.total_omset)}
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            NDP: {s.data.summary?.ndp_count || 0} • RDP: {s.data.summary?.rdp_count || 0}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* OMSET Comparison Bar Chart */}
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Total OMSET Comparison</h4>
+                      <div className="h-64">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={compareData.staff.map(s => ({
+                            name: s.staff_name,
+                            total_omset: s.data.summary?.total_omset || 0,
+                            ndp_omset: s.data.summary?.ndp_omset || 0,
+                            rdp_omset: s.data.summary?.rdp_omset || 0,
+                            color: s.color
+                          }))}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                            <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                            <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => formatNumber(v)} />
+                            <Tooltip formatter={(value) => formatNumber(value)} />
+                            <Legend />
+                            <Bar dataKey="total_omset" name="Total OMSET" fill="#8b5cf6">
+                              {compareData.staff.map((s, idx) => (
+                                <Cell key={`cell-${idx}`} fill={s.color} />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+
+                    {/* NDP vs RDP Comparison */}
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">NDP vs RDP Comparison</h4>
+                      <div className="h-64">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={compareData.staff.map(s => ({
+                            name: s.staff_name,
+                            ndp: s.data.summary?.ndp_count || 0,
+                            rdp: s.data.summary?.rdp_count || 0
+                          }))}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                            <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                            <YAxis tick={{ fontSize: 12 }} />
+                            <Tooltip />
+                            <Legend />
+                            <Bar dataKey="ndp" name="NDP (New)" fill="#6366f1" />
+                            <Bar dataKey="rdp" name="RDP (Return)" fill="#22c55e" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+
+                    {/* Trends Line Chart */}
+                    {compareData.trendChart.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">OMSET Trends Over Time</h4>
+                        <div className="h-64 sm:h-80">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={compareData.trendChart}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                              <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                              <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => formatNumber(v)} />
+                              <Tooltip formatter={(value) => formatNumber(value)} />
+                              <Legend />
+                              {compareData.staff.map((s, idx) => (
+                                <Line 
+                                  key={s.staff_id}
+                                  type="monotone" 
+                                  dataKey={`omset_${s.staff_id}`} 
+                                  name={s.staff_name}
+                                  stroke={s.color} 
+                                  strokeWidth={2} 
+                                  dot={false} 
+                                />
+                              ))}
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : compareStaff.length >= 2 ? (
+                  <div className="text-center py-8 text-slate-500 dark:text-slate-400">
+                    <p>No comparison data available</p>
+                  </div>
+                ) : null}
+              </div>
+            )}
+          </div>
+        );
+
       case 'staffComparison':
         return staffData?.staff_metrics?.length > 0 && (
           <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
