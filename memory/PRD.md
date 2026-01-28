@@ -535,6 +535,17 @@ Google Authenticator-style TOTP attendance system for staff check-in. Replaced p
 **Testing**: All 13 backend tests + full frontend UI verification passed (100%)
 **Test File**: `/app/tests/test_reserved_members_customer_id.py`
 
+### Advanced Analytics Staff Filter Bug Fix - COMPLETED (Jan 28, 2026)
+**Problem**: On the Advanced Analytics page, when a user selected a staff member from the filter dropdown, the charts (OMSET Trends, OMSET by Product, NDP vs RDP Analysis) did not update. They continued to show aggregated data for all staff.
+**Root Cause**: The backend endpoint `GET /api/analytics/business` did not accept or apply the `staff_id` query parameter. The frontend was correctly sending the parameter, but the backend ignored it.
+**Fix Applied**:
+1. Added `staff_id: Optional[str] = None` parameter to the endpoint function signature
+2. Added filter condition `if staff_id: omset_query['staff_id'] = staff_id` to apply the filter
+3. Updated the `all_records_query` to also respect `product_id` when building customer first-date mappings
+**Files Updated**: `/app/backend/routes/analytics.py`
+**Verification**: Tested via curl - "All Staff" shows 22 records/14.7M OMSET, "Staff User" filter shows 13 records/5.7M OMSET
+**Status**: COMPLETED - Verified working
+
 ### Reserved Member Duplicate Bug Fix - CRITICAL FIX (Jan 27, 2026)
 **Problem**: Same customer could be reserved multiple times for the same product
 **Root Cause**: Duplicate check only queried `customer_id` field, but legacy data used `customer_name` field
