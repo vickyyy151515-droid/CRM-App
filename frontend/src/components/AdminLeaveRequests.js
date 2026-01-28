@@ -143,6 +143,7 @@ export default function AdminLeaveRequests() {
               <option value="pending">Pending</option>
               <option value="approved">Approved</option>
               <option value="rejected">Rejected</option>
+              <option value="cancelled">Cancelled</option>
               <option value="all">All</option>
             </select>
           </div>
