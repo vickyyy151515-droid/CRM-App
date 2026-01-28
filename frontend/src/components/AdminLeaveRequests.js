@@ -64,6 +64,23 @@ export default function AdminLeaveRequests() {
     }
   };
 
+  const cancelApprovedRequest = async (requestId) => {
+    if (!window.confirm('Are you sure you want to cancel this approved leave request? The hours will be returned to the staff member.')) {
+      return;
+    }
+    setProcessingId(requestId);
+    try {
+      const response = await api.put(`/leave/request/${requestId}/cancel`);
+      toast.success(`Leave cancelled. ${response.data.hours_returned} hour(s) returned to ${response.data.staff_name}`);
+      loadData();
+    } catch (error) {
+      console.error('Failed to cancel request:', error);
+      toast.error(error.response?.data?.detail || 'Failed to cancel request');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   const openNoteModal = (requestId, action) => {
     setShowNoteModal({ requestId, action });
     setAdminNote('');
