@@ -217,6 +217,113 @@ export default function AttendanceAdmin() {
     }
   };
 
+  // Add manual fee
+  const handleAddManualFee = async () => {
+    if (!manualFeeStaffId || !manualFeeAmount || !manualFeeReason) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+    setProcessingFee('manual-fee');
+    try {
+      await api.post(`/attendance/admin/fees/${manualFeeStaffId}/manual?year=${feeYear}&month=${feeMonth}`, {
+        amount_usd: parseFloat(manualFeeAmount),
+        reason: manualFeeReason
+      });
+      toast.success('Manual fee added successfully');
+      setManualFeeModal(false);
+      setManualFeeStaffId('');
+      setManualFeeAmount('');
+      setManualFeeReason('');
+      fetchFees();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to add manual fee');
+    } finally {
+      setProcessingFee(null);
+    }
+  };
+
+  // Delete manual fee
+  const handleDeleteManualFee = async (feeId) => {
+    if (!window.confirm('Delete this manual fee?')) return;
+    setProcessingFee(`delete-manual-${feeId}`);
+    try {
+      await api.delete(`/attendance/admin/fees/manual/${feeId}`);
+      toast.success('Manual fee deleted');
+      fetchFees();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to delete manual fee');
+    } finally {
+      setProcessingFee(null);
+    }
+  };
+
+  // Record partial payment
+  const handleRecordPartialPayment = async () => {
+    if (!paymentAmount) {
+      toast.error('Please enter payment amount');
+      return;
+    }
+    setProcessingFee(`partial-payment-${paymentModal.staff_id}`);
+    try {
+      await api.post(`/attendance/admin/fees/${paymentModal.staff_id}/payment?year=${feeYear}&month=${feeMonth}`, {
+        amount: parseFloat(paymentAmount),
+        currency: paymentCurrency,
+        note: paymentNote || null
+      });
+      toast.success('Payment recorded successfully');
+      setPaymentModal(null);
+      setPaymentAmount('');
+      setPaymentCurrency('USD');
+      setPaymentNote('');
+      fetchFees();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to record payment');
+    } finally {
+      setProcessingFee(null);
+    }
+  };
+
+  // Delete payment
+  const handleDeletePayment = async (paymentId) => {
+    if (!window.confirm('Delete this payment record?')) return;
+    setProcessingFee(`delete-payment-${paymentId}`);
+    try {
+      await api.delete(`/attendance/admin/fees/payment/${paymentId}`);
+      toast.success('Payment deleted');
+      fetchFees();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to delete payment');
+    } finally {
+      setProcessingFee(null);
+    }
+  };
+
+  // Update currency rates
+  const handleUpdateCurrencyRates = async () => {
+    setProcessingFee('currency-rates');
+    try {
+      await api.put('/attendance/admin/fees/currency-rates', {
+        thb_rate: parseFloat(thbRate),
+        idr_rate: parseFloat(idrRate)
+      });
+      toast.success('Currency rates updated');
+      setCurrencyModal(false);
+      fetchFees();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to update currency rates');
+    } finally {
+      setProcessingFee(null);
+    }
+  };
+
+  // Format currency
+  const formatCurrency = (amount, currency = 'USD') => {
+    if (currency === 'USD') return `$${amount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    if (currency === 'THB') return `฿${Math.round(amount).toLocaleString()}`;
+    if (currency === 'IDR') return `Rp ${Math.round(amount).toLocaleString()}`;
+    return amount;
+  };
+
   // Filter staff by search
   const filteredTotpStatus = totpStatus.filter(staff => 
     staff.staff_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
