@@ -729,6 +729,20 @@ export default function AttendanceAdmin() {
               <RefreshCw size={18} />
               Refresh
             </button>
+            <button
+              onClick={() => setManualFeeModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg"
+            >
+              <Plus size={18} />
+              Add Manual Fee
+            </button>
+            <button
+              onClick={() => setCurrencyModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg"
+            >
+              <Settings size={18} />
+              Currency Rates
+            </button>
           </div>
 
           {/* Global Summary Cards */}
@@ -753,7 +767,8 @@ export default function AttendanceAdmin() {
                     </div>
                     <div>
                       <p className="text-sm text-slate-600 dark:text-slate-400">This Month's Fees</p>
-                      <p className="text-2xl font-bold text-slate-900 dark:text-white">${feeData.total_fees_this_month.toLocaleString()}</p>
+                      <p className="text-xl font-bold text-slate-900 dark:text-white">{formatCurrency(feeData.total_fees_this_month, 'USD')}</p>
+                      <p className="text-xs text-slate-500">{formatCurrency(feeData.total_fees_this_month_thb, 'THB')} • {formatCurrency(feeData.total_fees_this_month_idr, 'IDR')}</p>
                     </div>
                   </div>
                 </div>
@@ -764,7 +779,8 @@ export default function AttendanceAdmin() {
                     </div>
                     <div>
                       <p className="text-sm text-slate-600 dark:text-slate-400">Total Collected (All Time)</p>
-                      <p className="text-2xl font-bold text-emerald-600">${feeData.total_collected_all_time.toLocaleString()}</p>
+                      <p className="text-xl font-bold text-emerald-600">{formatCurrency(feeData.total_collected_all_time, 'USD')}</p>
+                      <p className="text-xs text-emerald-500">{formatCurrency(feeData.total_collected_all_time_thb, 'THB')} • {formatCurrency(feeData.total_collected_all_time_idr, 'IDR')}</p>
                     </div>
                   </div>
                 </div>
@@ -781,8 +797,9 @@ export default function AttendanceAdmin() {
                 </div>
               </div>
 
-              <div className="bg-slate-100 dark:bg-slate-700/50 rounded-lg p-3 text-center text-sm text-slate-600 dark:text-slate-300">
-                💰 Fee Rate: <span className="font-bold">${feeData.fee_per_minute}/minute</span> of lateness
+              <div className="bg-slate-100 dark:bg-slate-700/50 rounded-lg p-3 flex flex-wrap justify-center gap-4 text-sm text-slate-600 dark:text-slate-300">
+                <span>💰 Fee Rate: <span className="font-bold">${feeData.fee_per_minute}/minute</span></span>
+                <span>💱 $1 = ฿{thbRate.toLocaleString()} THB = Rp {idrRate.toLocaleString()} IDR</span>
               </div>
 
               {/* Staff Fee Cards */}
