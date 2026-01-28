@@ -899,39 +899,127 @@ export default function AttendanceAdmin() {
                           </div>
 
                           {/* Late Records Table */}
-                          <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Late Records:</p>
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                              <thead className="bg-slate-100 dark:bg-slate-800">
-                                <tr>
-                                  <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Date</th>
-                                  <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Check-in</th>
-                                  <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Late (min)</th>
-                                  <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Fee</th>
-                                  <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Action</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                                {staff.records.map((record, idx) => (
-                                  <tr key={idx}>
-                                    <td className="px-3 py-2 text-slate-900 dark:text-white font-mono">{record.date}</td>
-                                    <td className="px-3 py-2 text-slate-600 dark:text-slate-300 font-mono">{record.check_in_time}</td>
-                                    <td className="px-3 py-2 text-amber-600 font-medium">{record.late_minutes}</td>
-                                    <td className="px-3 py-2 text-red-600 font-medium">${record.fee}</td>
-                                    <td className="px-3 py-2">
-                                      <button
-                                        onClick={() => setWaiveModal({ staffId: staff.staff_id, date: record.date, staffName: staff.staff_name, fee: record.fee })}
-                                        className="flex items-center gap-1 px-2 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-300 rounded text-xs"
-                                      >
-                                        <XCircle size={14} />
-                                        Waive
-                                      </button>
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
+                          {staff.records.length > 0 && (
+                            <>
+                              <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Late Records:</p>
+                              <div className="overflow-x-auto mb-4">
+                                <table className="w-full text-sm">
+                                  <thead className="bg-slate-100 dark:bg-slate-800">
+                                    <tr>
+                                      <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Date</th>
+                                      <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Check-in</th>
+                                      <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Late (min)</th>
+                                      <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Fee</th>
+                                      <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Action</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                                    {staff.records.map((record, idx) => (
+                                      <tr key={idx}>
+                                        <td className="px-3 py-2 text-slate-900 dark:text-white font-mono">{record.date}</td>
+                                        <td className="px-3 py-2 text-slate-600 dark:text-slate-300 font-mono">{record.check_in_time}</td>
+                                        <td className="px-3 py-2 text-amber-600 font-medium">{record.late_minutes}</td>
+                                        <td className="px-3 py-2 text-red-600 font-medium">{formatCurrency(record.fee, 'USD')}</td>
+                                        <td className="px-3 py-2">
+                                          <button
+                                            onClick={() => setWaiveModal({ staffId: staff.staff_id, date: record.date, staffName: staff.staff_name, fee: record.fee })}
+                                            className="flex items-center gap-1 px-2 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-300 rounded text-xs"
+                                          >
+                                            <XCircle size={14} />
+                                            Waive
+                                          </button>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </>
+                          )}
+
+                          {/* Manual Fees Table */}
+                          {staff.manual_fees?.length > 0 && (
+                            <>
+                              <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Manual Fees:</p>
+                              <div className="overflow-x-auto mb-4">
+                                <table className="w-full text-sm">
+                                  <thead className="bg-amber-50 dark:bg-amber-900/20">
+                                    <tr>
+                                      <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Date</th>
+                                      <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Amount</th>
+                                      <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Reason</th>
+                                      <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Added By</th>
+                                      <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Action</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                                    {staff.manual_fees.map((mf, idx) => (
+                                      <tr key={idx}>
+                                        <td className="px-3 py-2 text-slate-900 dark:text-white font-mono">{mf.date}</td>
+                                        <td className="px-3 py-2 text-red-600 font-medium">{formatCurrency(mf.amount_usd, 'USD')}</td>
+                                        <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{mf.reason}</td>
+                                        <td className="px-3 py-2 text-slate-500 dark:text-slate-400">{mf.added_by}</td>
+                                        <td className="px-3 py-2">
+                                          <button
+                                            onClick={() => handleDeleteManualFee(mf.id)}
+                                            disabled={processingFee === `delete-manual-${mf.id}`}
+                                            className="flex items-center gap-1 px-2 py-1 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 rounded text-xs disabled:opacity-50"
+                                          >
+                                            <Trash2 size={14} />
+                                            Delete
+                                          </button>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </>
+                          )}
+
+                          {/* Payments Table */}
+                          {staff.payments?.length > 0 && (
+                            <>
+                              <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Payments Received:</p>
+                              <div className="overflow-x-auto">
+                                <table className="w-full text-sm">
+                                  <thead className="bg-emerald-50 dark:bg-emerald-900/20">
+                                    <tr>
+                                      <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Date</th>
+                                      <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Amount (Original)</th>
+                                      <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Amount (USD)</th>
+                                      <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Note</th>
+                                      <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Action</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                                    {staff.payments.map((p, idx) => (
+                                      <tr key={idx}>
+                                        <td className="px-3 py-2 text-slate-900 dark:text-white font-mono">{p.date?.split('T')[0]}</td>
+                                        <td className="px-3 py-2 text-emerald-600 font-medium">
+                                          {p.original_currency === 'USD' ? formatCurrency(p.original_amount, 'USD') :
+                                           p.original_currency === 'THB' ? formatCurrency(p.original_amount, 'THB') :
+                                           formatCurrency(p.original_amount, 'IDR')}
+                                        </td>
+                                        <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{formatCurrency(p.amount_usd, 'USD')}</td>
+                                        <td className="px-3 py-2 text-slate-500 dark:text-slate-400">{p.note || '-'}</td>
+                                        <td className="px-3 py-2">
+                                          <button
+                                            onClick={() => handleDeletePayment(p.id)}
+                                            disabled={processingFee === `delete-payment-${p.id}`}
+                                            className="flex items-center gap-1 px-2 py-1 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 rounded text-xs disabled:opacity-50"
+                                          >
+                                            <Trash2 size={14} />
+                                            Delete
+                                          </button>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </>
+                          )}
                         </div>
                       )}
                     </div>
