@@ -219,19 +219,19 @@ export default function AttendanceAdmin() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex border-b border-slate-200 dark:border-slate-700">
-        {['today', 'history', 'totp-setup'].map(tab => (
+      <div className="flex border-b border-slate-200 dark:border-slate-700 overflow-x-auto">
+        {['today', 'history', 'totp-setup', 'fee-payment'].map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 font-medium capitalize transition-colors ${
+            className={`px-4 py-2 font-medium capitalize transition-colors whitespace-nowrap ${
               activeTab === tab 
                 ? 'text-indigo-600 border-b-2 border-indigo-600' 
                 : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600'
             }`}
             data-testid={`tab-${tab}`}
           >
-            {tab === 'totp-setup' ? 'TOTP Setup Status' : tab.charAt(0).toUpperCase() + tab.slice(1)}
+            {tab === 'totp-setup' ? 'TOTP Setup Status' : tab === 'fee-payment' ? 'Fee & Payment' : tab.charAt(0).toUpperCase() + tab.slice(1)}
           </button>
         ))}
       </div>
