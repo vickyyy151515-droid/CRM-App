@@ -7,7 +7,8 @@ import { toast } from 'sonner';
 import { 
   Users, Clock, CheckCircle, AlertTriangle, RefreshCw, 
   Calendar, UserX, Shield, Search, ChevronDown,
-  ChevronUp, Key, Trash2, DollarSign, CreditCard, XCircle, Ban
+  ChevronUp, Key, Trash2, DollarSign, CreditCard, XCircle, Ban,
+  Plus, Settings, Edit2
 } from 'lucide-react';
 
 export default function AttendanceAdmin() {
@@ -32,6 +33,20 @@ export default function AttendanceAdmin() {
   const [waiveReason, setWaiveReason] = useState('');
   const [installmentModal, setInstallmentModal] = useState(null);
   const [installmentMonths, setInstallmentMonths] = useState(2);
+  
+  // New: Manual fee & payment state
+  const [staffList, setStaffList] = useState([]);
+  const [manualFeeModal, setManualFeeModal] = useState(false);
+  const [manualFeeStaffId, setManualFeeStaffId] = useState('');
+  const [manualFeeAmount, setManualFeeAmount] = useState('');
+  const [manualFeeReason, setManualFeeReason] = useState('');
+  const [paymentModal, setPaymentModal] = useState(null);
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentCurrency, setPaymentCurrency] = useState('USD');
+  const [paymentNote, setPaymentNote] = useState('');
+  const [currencyModal, setCurrencyModal] = useState(false);
+  const [thbRate, setThbRate] = useState(3100);
+  const [idrRate, setIdrRate] = useState(16700);
 
   // Fetch today's attendance
   const fetchTodayAttendance = useCallback(async () => {
