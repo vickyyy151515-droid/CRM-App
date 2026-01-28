@@ -95,7 +95,10 @@ export default function AttendanceAdmin() {
     if (activeTab === 'history') {
       fetchHistory();
     }
-  }, [activeTab, fetchHistory]);
+    if (activeTab === 'fee-payment') {
+      fetchFees();
+    }
+  }, [activeTab, fetchHistory, fetchFees]);
 
   // Reset staff TOTP
   const handleResetTotp = async (staffId, staffName) => {
