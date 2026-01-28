@@ -284,37 +284,42 @@ async def generate_atrisk_alert(inactive_days: int = 14) -> str:
     staff_list = await db.users.find({'role': 'staff'}, {'_id': 0}).to_list(100)
     staff_map = {s['id']: s['name'] for s in staff_list}
     
-    # Track customer last deposit dates - use normalized IDs
-    customer_data = {}  # {normalized_customer_id: {last_date, last_nominal, product_id, staff_id, customer_name}}
+    # Track customer last deposit dates - use normalized IDs AND product_id
+    # CRITICAL: Must track (customer_id, product_id) pairs, not just customer_id
+    # because a customer can deposit to different products at different times
+    customer_data = {}  # {(normalized_customer_id, product_id): {last_date, ...}}
     
     for record in all_records:
         cid_normalized = record.get('customer_id_normalized') or record.get('customer_id', '').strip().upper()
+        product_id = record.get('product_id', '')
         record_date = record.get('record_date', '')
         
-        if cid_normalized not in customer_data:
-            customer_data[cid_normalized] = {
+        # Key is (customer_id, product_id) to track each customer-product combination
+        key = (cid_normalized, product_id)
+        
+        if key not in customer_data:
+            customer_data[key] = {
                 'last_date': record_date,
                 'total_deposits': 1,
                 'total_nominal': record.get('depo_total', 0) or record.get('nominal', 0) or 0,
-                'product_id': record.get('product_id', ''),
+                'product_id': product_id,
                 'staff_id': record.get('staff_id', ''),
                 'customer_name': record.get('customer_id', cid_normalized),
                 'staff_name': record.get('staff_name', 'Unknown')
             }
         else:
             # Update if this record is more recent
-            if record_date > customer_data[cid_normalized]['last_date']:
-                customer_data[cid_normalized]['last_date'] = record_date
-                customer_data[cid_normalized]['product_id'] = record.get('product_id', '')
-                customer_data[cid_normalized]['staff_id'] = record.get('staff_id', '')
-                customer_data[cid_normalized]['staff_name'] = record.get('staff_name', 'Unknown')
-            customer_data[cid_normalized]['total_deposits'] += 1
-            customer_data[cid_normalized]['total_nominal'] += record.get('depo_total', 0) or record.get('nominal', 0) or 0
+            if record_date > customer_data[key]['last_date']:
+                customer_data[key]['last_date'] = record_date
+                customer_data[key]['staff_id'] = record.get('staff_id', '')
+                customer_data[key]['staff_name'] = record.get('staff_name', 'Unknown')
+            customer_data[key]['total_deposits'] += 1
+            customer_data[key]['total_nominal'] += record.get('depo_total', 0) or record.get('nominal', 0) or 0
     
     # Find at-risk customers (last deposit before cutoff date AND has deposited at least twice)
     # EXCLUDE customers that were alerted in the last 3 days
     at_risk_customers = []
-    for cid, data in customer_data.items():
+    for (cid, product_id), data in customer_data.items():
         if data['last_date'] < cutoff_date and data['total_deposits'] >= 2:
             # Skip if this customer was alerted in the last 3 days
             if cid in recently_alerted_ids:
