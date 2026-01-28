@@ -318,12 +318,12 @@ async def generate_atrisk_alert(inactive_days: int = 14) -> str:
             customer_data[key]['total_nominal'] += record.get('depo_total', 0) or record.get('nominal', 0) or 0
     
     # Find at-risk customers (last deposit before cutoff date AND has deposited at least twice)
-    # EXCLUDE customers that were alerted in the last 3 days
+    # EXCLUDE customers that were alerted in the last 3 days (per customer+product pair)
     at_risk_customers = []
     for (cid, product_id), data in customer_data.items():
         if data['last_date'] < cutoff_date and data['total_deposits'] >= 2:
-            # Skip if this customer was alerted in the last 3 days
-            if cid in recently_alerted_ids:
+            # Skip if this customer+product was alerted in the last 3 days
+            if (cid, product_id) in recently_alerted_keys:
                 continue
                 
             days_since = (jakarta_now - datetime.strptime(data['last_date'], '%Y-%m-%d').replace(tzinfo=JAKARTA_TZ)).days
@@ -334,8 +334,8 @@ async def generate_atrisk_alert(inactive_days: int = 14) -> str:
                 'days_since': days_since,
                 'total_deposits': data['total_deposits'],
                 'total_nominal': data['total_nominal'],
-                'product_id': data['product_id'],
-                'product_name': product_map.get(data['product_id'], data['product_id']),
+                'product_id': product_id,
+                'product_name': product_map.get(product_id, product_id),
                 'staff_id': data['staff_id'],
                 'staff_name': data['staff_name']
             })
