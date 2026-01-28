@@ -69,6 +69,17 @@ export default function AttendanceAdmin() {
     }
   }, [startDate, endDate]);
 
+  // Fetch fee summary
+  const fetchFees = useCallback(async () => {
+    try {
+      const response = await api.get(`/attendance/admin/fees/summary?year=${feeYear}&month=${feeMonth}`);
+      setFeeData(response.data);
+    } catch (error) {
+      console.error('Error fetching fees:', error);
+      toast.error('Failed to load fee data');
+    }
+  }, [feeYear, feeMonth]);
+
   // Initial data fetch
   useEffect(() => {
     const loadData = async () => {
