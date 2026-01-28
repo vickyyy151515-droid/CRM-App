@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Users, TrendingUp, CheckCircle, XCircle, Clock, Package, MessageCircle } from 'lucide-react';
+import { Users, TrendingUp, CheckCircle, XCircle, Clock, Package, MessageCircle, Target, Trophy, AlertTriangle, AlertOctagon, Flame } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
+const MONTH_NAMES_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const MONTH_NAMES_ID = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
 export default function StaffProgress() {
-  const { t } = useLanguage();
+  const { t, isIndonesian } = useLanguage();
   const [databases, setDatabases] = useState([]);
   const [allRecords, setAllRecords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,9 +17,15 @@ export default function StaffProgress() {
   const [dateRange, setDateRange] = useState('all');
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
+  
+  // Target Progress State
+  const [targetProgress, setTargetProgress] = useState(null);
+  const [targetLoading, setTargetLoading] = useState(true);
+  const [activeView, setActiveView] = useState('quality'); // 'quality' or 'targets'
 
   useEffect(() => {
     loadData();
+    loadTargetProgress();
   }, []);
 
   const loadData = async () => {
