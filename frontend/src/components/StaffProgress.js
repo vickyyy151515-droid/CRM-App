@@ -524,7 +524,6 @@ export default function StaffProgress() {
             ))}
           </select>
         </div>
-      </div>
 
       {/* Daily/Period Performance Banner */}
       {dateRange !== 'all' && (
