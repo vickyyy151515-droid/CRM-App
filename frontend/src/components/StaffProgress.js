@@ -52,6 +52,18 @@ export default function StaffProgress() {
     }
   };
 
+  const loadTargetProgress = async () => {
+    setTargetLoading(true);
+    try {
+      const response = await api.get('/admin/staff-target-progress');
+      setTargetProgress(response.data);
+    } catch (error) {
+      console.error('Failed to load target progress:', error);
+    } finally {
+      setTargetLoading(false);
+    }
+  };
+
   // Filter records by product if selected
   const filteredRecords = selectedProduct 
     ? allRecords.filter(r => r.product_id === selectedProduct)
