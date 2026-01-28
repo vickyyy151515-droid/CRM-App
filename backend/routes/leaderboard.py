@@ -540,3 +540,214 @@ async def get_staff_target_progress(user: User = Depends(get_current_user)):
         'status_symbol': status_symbol,
         'status_text': status_text
     }
+
+@router.get("/admin/staff-target-progress")
+async def get_all_staff_target_progress(
+    year: Optional[int] = None,
+    month: Optional[int] = None,
+    user: User = Depends(get_admin_user)
+):
+    """
+    Get target progress for ALL staff members (Admin only).
+    Used for the admin dashboard tracking view.
+    """
+    db = get_db()
+    
+    jakarta_now = get_jakarta_now()
+    current_year = year or jakarta_now.year
+    current_month = month or jakarta_now.month
+    today = jakarta_now.strftime('%Y-%m-%d')
+    current_day = jakarta_now.day
+    days_in_month = 31 if current_month in [1,3,5,7,8,10,12] else 30 if current_month in [4,6,9,11] else 29 if current_year % 4 == 0 else 28
+    days_remaining = days_in_month - current_day
+    
+    # Get targets
+    targets = await get_targets()
+    daily_ndp_target = targets.get('daily_ndp', 10)
+    daily_rdp_target = targets.get('daily_rdp', 15)
+    
+    # Get all staff
+    all_staff = await db.users.find({'role': 'staff'}, {'_id': 0, 'id': 1, 'name': 1}).to_list(1000)
+    
+    def is_tambahan_record(record):
+        keterangan = record.get('keterangan', '') or ''
+        return 'tambahan' in keterangan.lower()
+    
+    # Get all OMSET records
+    all_records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
+    
+    # Build global customer first date
+    global_customer_first_date = {}
+    for record in sorted(all_records, key=lambda x: x['record_date']):
+        if is_tambahan_record(record):
+            continue
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        staff_id = record.get('staff_id', '')
+        key = (staff_id, cid_normalized, record['product_id'])
+        if key not in global_customer_first_date:
+            global_customer_first_date[key] = record['record_date']
+    
+    staff_progress_list = []
+    total_success_staff = 0
+    total_warning_staff = 0
+    total_critical_staff = 0
+    
+    # Calculate for previous months (for warning detection)
+    prev_month_1 = current_month - 1 if current_month > 1 else 12
+    prev_year_1 = current_year if current_month > 1 else current_year - 1
+    prev_month_2 = prev_month_1 - 1 if prev_month_1 > 1 else 12
+    prev_year_2 = prev_year_1 if prev_month_1 > 1 else prev_year_1 - 1
+    
+    for staff in all_staff:
+        staff_id = staff['id']
+        staff_name = staff['name']
+        
+        # Filter records for this staff
+        staff_records = [r for r in all_records if r.get('staff_id') == staff_id]
+        
+        # Current month records
+        month_str = f"{current_year}-{str(current_month).zfill(2)}"
+        month_records = [r for r in staff_records if r['record_date'].startswith(month_str)]
+        
+        # Calculate daily NDP/RDP
+        daily_ndp = {}
+        daily_rdp = {}
+        
+        for record in month_records:
+            date = record['record_date']
+            if date not in daily_ndp:
+                daily_ndp[date] = set()
+                daily_rdp[date] = set()
+            
+            if is_tambahan_record(record):
+                continue
+            
+            cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+            key = (staff_id, cid_normalized, record['product_id'])
+            first_date = global_customer_first_date.get(key)
+            
+            if first_date:
+                unique_key = f"{cid_normalized}_{record['product_id']}"
+                if first_date == date:
+                    daily_ndp[date].add(unique_key)
+                else:
+                    daily_rdp[date].add(unique_key)
+        
+        # Calculate today's progress
+        today_ndp_count = len(daily_ndp.get(today, set()))
+        today_rdp_count = len(daily_rdp.get(today, set()))
+        today_target_reached = today_ndp_count >= daily_ndp_target or today_rdp_count >= daily_rdp_target
+        
+        # Calculate success days this month
+        success_days = 0
+        for date in set(daily_ndp.keys()) | set(daily_rdp.keys()):
+            if len(daily_ndp.get(date, set())) >= daily_ndp_target or len(daily_rdp.get(date, set())) >= daily_rdp_target:
+                success_days += 1
+        
+        # Calculate previous months success
+        def get_month_success_for_staff(year, month):
+            month_str = f"{year}-{str(month).zfill(2)}"
+            month_records = [r for r in staff_records if r['record_date'].startswith(month_str)]
+            
+            daily_ndp_m = {}
+            daily_rdp_m = {}
+            
+            for record in month_records:
+                date = record['record_date']
+                if date not in daily_ndp_m:
+                    daily_ndp_m[date] = set()
+                    daily_rdp_m[date] = set()
+                
+                if is_tambahan_record(record):
+                    continue
+                
+                cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+                key = (staff_id, cid_normalized, record['product_id'])
+                first_date = global_customer_first_date.get(key)
+                
+                if first_date:
+                    unique_key = f"{cid_normalized}_{record['product_id']}"
+                    if first_date == date:
+                        daily_ndp_m[date].add(unique_key)
+                    else:
+                        daily_rdp_m[date].add(unique_key)
+            
+            success = 0
+            for date in set(daily_ndp_m.keys()) | set(daily_rdp_m.keys()):
+                if len(daily_ndp_m.get(date, set())) >= daily_ndp_target or len(daily_rdp_m.get(date, set())) >= daily_rdp_target:
+                    success += 1
+            return success
+        
+        prev_month_1_success = get_month_success_for_staff(prev_year_1, prev_month_1)
+        prev_month_2_success = get_month_success_for_staff(prev_year_2, prev_month_2)
+        
+        prev_month_1_failed = prev_month_1_success < REQUIRED_SUCCESS_DAYS
+        prev_month_2_failed = prev_month_2_success < REQUIRED_SUCCESS_DAYS
+        
+        # Determine warning level
+        warning_level = 0
+        if prev_month_1_failed and prev_month_2_failed:
+            warning_level = 3
+            total_critical_staff += 1
+        elif prev_month_1_failed:
+            warning_level = 2
+            total_warning_staff += 1
+        elif days_remaining <= 10 and success_days < REQUIRED_SUCCESS_DAYS:
+            days_needed = REQUIRED_SUCCESS_DAYS - success_days
+            if days_needed > days_remaining:
+                warning_level = 1
+            elif days_needed > 0:
+                warning_level = 1
+        
+        # Projection
+        if current_day > 0:
+            projected_success = int((success_days / current_day) * days_in_month)
+        else:
+            projected_success = 0
+        
+        # Status
+        if warning_level == 3:
+            status_symbol = '🚨'
+        elif warning_level == 2:
+            status_symbol = '⚠️'
+        elif success_days >= REQUIRED_SUCCESS_DAYS:
+            status_symbol = '🏆'
+            total_success_staff += 1
+        elif projected_success >= REQUIRED_SUCCESS_DAYS:
+            status_symbol = '✓'
+        else:
+            status_symbol = '📊'
+        
+        staff_progress_list.append({
+            'staff_id': staff_id,
+            'staff_name': staff_name,
+            'today_ndp': today_ndp_count,
+            'today_rdp': today_rdp_count,
+            'today_target_reached': today_target_reached,
+            'success_days': success_days,
+            'projected_success': projected_success,
+            'warning_level': warning_level,
+            'prev_month_1_success': prev_month_1_success,
+            'prev_month_2_success': prev_month_2_success,
+            'status_symbol': status_symbol
+        })
+    
+    # Sort by warning level (critical first), then by success days
+    staff_progress_list.sort(key=lambda x: (-x['warning_level'], -x['success_days']))
+    
+    return {
+        'year': current_year,
+        'month': current_month,
+        'today': today,
+        'days_remaining': days_remaining,
+        'required_success_days': REQUIRED_SUCCESS_DAYS,
+        'daily_ndp_target': daily_ndp_target,
+        'daily_rdp_target': daily_rdp_target,
+        'summary': {
+            'total_staff': len(all_staff),
+            'success_staff': total_success_staff,
+            'warning_staff': total_warning_staff,
+            'critical_staff': total_critical_staff
+        },
+        'staff_progress': staff_progress_list
+    }
