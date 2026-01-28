@@ -816,24 +816,27 @@ export default function AttendanceAdmin() {
                         onClick={() => setExpandedFeeStaff(expandedFeeStaff === staff.staff_id ? null : staff.staff_id)}
                       >
                         <div className="flex items-center gap-3">
-                          <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                            <DollarSign className="text-red-600" size={20} />
+                          <div className={`p-2 rounded-lg ${staff.remaining_fee > 0 ? 'bg-red-100 dark:bg-red-900/30' : 'bg-emerald-100 dark:bg-emerald-900/30'}`}>
+                            <DollarSign className={staff.remaining_fee > 0 ? 'text-red-600' : 'text-emerald-600'} size={20} />
                           </div>
                           <div>
                             <p className="font-semibold text-slate-900 dark:text-white">{staff.staff_name}</p>
                             <p className="text-sm text-slate-500 dark:text-slate-400">
-                              {staff.late_days} late day(s) • {staff.total_late_minutes} min total
+                              {staff.late_days > 0 && `${staff.late_days} late day(s) • ${staff.total_late_minutes} min`}
+                              {staff.manual_fees?.length > 0 && ` • ${staff.manual_fees.length} manual fee(s)`}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="text-right">
-                            <p className="text-lg font-bold text-red-600">${staff.total_fee.toLocaleString()}</p>
-                            {staff.installment && (
-                              <p className="text-xs text-emerald-600">
-                                Installment: ${staff.installment.monthly_amount.toFixed(2)}/mo × {staff.installment.num_months}
-                              </p>
-                            )}
+                            <p className="text-sm text-slate-500">Total: {formatCurrency(staff.total_fee, 'USD')}</p>
+                            {staff.total_paid > 0 && <p className="text-sm text-emerald-600">Paid: {formatCurrency(staff.total_paid, 'USD')}</p>}
+                            <p className={`text-lg font-bold ${staff.remaining_fee > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                              {staff.remaining_fee > 0 ? `Remaining: ${formatCurrency(staff.remaining_fee, 'USD')}` : '✓ Fully Paid'}
+                            </p>
+                            <p className="text-xs text-slate-400">
+                              {formatCurrency(staff.remaining_fee_thb, 'THB')} • {formatCurrency(staff.remaining_fee_idr, 'IDR')}
+                            </p>
                           </div>
                           {expandedFeeStaff === staff.staff_id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                         </div>
@@ -844,7 +847,16 @@ export default function AttendanceAdmin() {
                         <div className="border-t border-slate-200 dark:border-slate-700 p-4 bg-slate-50 dark:bg-slate-900/50">
                           {/* Action Buttons */}
                           <div className="flex flex-wrap gap-2 mb-4">
-                            {!staff.installment ? (
+                            {staff.remaining_fee > 0 && (
+                              <button
+                                onClick={() => setPaymentModal(staff)}
+                                className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm"
+                              >
+                                <CreditCard size={16} />
+                                Record Payment
+                              </button>
+                            )}
+                            {!staff.installment && staff.remaining_fee > 0 ? (
                               <button
                                 onClick={() => setInstallmentModal(staff)}
                                 className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm"
@@ -852,7 +864,7 @@ export default function AttendanceAdmin() {
                                 <CreditCard size={16} />
                                 Setup Installment
                               </button>
-                            ) : (
+                            ) : staff.installment && (
                               <>
                                 <button
                                   onClick={() => handleCancelInstallment(staff.staff_id)}
