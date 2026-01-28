@@ -14,6 +14,7 @@ import pyotp
 import qrcode
 import io
 import base64
+import uuid
 from routes.deps import get_db
 from routes.auth import get_current_user, User
 
