@@ -352,3 +352,372 @@ async def get_attendance_history(
         'total_records': len(records),
         'records': records
     }
+
+# ==================== FEE & PAYMENT SYSTEM ====================
+# $5 per minute of lateness
+
+LATENESS_FEE_PER_MINUTE = 5  # $5 per minute
+
+class WaiveFeeRequest(BaseModel):
+    reason: str
+
+class InstallmentRequest(BaseModel):
+    num_months: int  # 1 or 2
+
+@router.get("/attendance/admin/fees/summary")
+async def get_fees_summary(
+    year: Optional[int] = None,
+    month: Optional[int] = None,
+    user: User = Depends(get_current_user)
+):
+    """Get lateness fee summary for all staff"""
+    db = get_database()
+    
+    if user.role not in ['admin', 'master_admin']:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    now = get_jakarta_now()
+    year = year or now.year
+    month = month or now.month
+    
+    # Build date filter for the month
+    date_prefix = f"{year}-{str(month).zfill(2)}"
+    
+    # Get all attendance records with lateness for the month
+    attendance_records = await db.attendance_records.find({
+        'date': {'$regex': f'^{date_prefix}'},
+        'is_late': True,
+        'late_minutes': {'$gt': 0}
+    }, {'_id': 0}).to_list(100000)
+    
+    # Get existing fee waivers and payments
+    fee_waivers = await db.lateness_fee_waivers.find({
+        'year': year, 'month': month
+    }, {'_id': 0}).to_list(10000)
+    waiver_map = {(w['staff_id'], w.get('date', '')): w for w in fee_waivers}
+    
+    # Get installment plans
+    installments = await db.lateness_fee_installments.find({
+        'year': year, 'month': month
+    }, {'_id': 0}).to_list(1000)
+    installment_map = {i['staff_id']: i for i in installments}
+    
+    # Calculate fees per staff
+    staff_fees = {}
+    for record in attendance_records:
+        staff_id = record['staff_id']
+        staff_name = record.get('staff_name', 'Unknown')
+        late_minutes = record.get('late_minutes', 0)
+        record_date = record.get('date', '')
+        
+        # Check if this specific record was waived
+        waiver_key = (staff_id, record_date)
+        if waiver_key in waiver_map:
+            continue  # Skip waived records
+        
+        if staff_id not in staff_fees:
+            staff_fees[staff_id] = {
+                'staff_id': staff_id,
+                'staff_name': staff_name,
+                'total_late_minutes': 0,
+                'total_fee': 0,
+                'late_days': 0,
+                'records': []
+            }
+        
+        fee = late_minutes * LATENESS_FEE_PER_MINUTE
+        staff_fees[staff_id]['total_late_minutes'] += late_minutes
+        staff_fees[staff_id]['total_fee'] += fee
+        staff_fees[staff_id]['late_days'] += 1
+        staff_fees[staff_id]['records'].append({
+            'date': record_date,
+            'late_minutes': late_minutes,
+            'fee': fee,
+            'check_in_time': record.get('check_in_time')
+        })
+    
+    # Add installment info
+    for staff_id, data in staff_fees.items():
+        installment = installment_map.get(staff_id)
+        if installment:
+            data['installment'] = {
+                'num_months': installment['num_months'],
+                'monthly_amount': installment['monthly_amount'],
+                'paid_months': installment.get('paid_months', []),
+                'created_at': installment.get('created_at')
+            }
+        else:
+            data['installment'] = None
+    
+    # Calculate global totals
+    total_fees = sum(d['total_fee'] for d in staff_fees.values())
+    total_late_minutes = sum(d['total_late_minutes'] for d in staff_fees.values())
+    
+    # Get historical payments (for accumulated total)
+    all_installment_payments = await db.lateness_fee_payments.find({}, {'_id': 0}).to_list(100000)
+    total_collected = sum(p.get('amount', 0) for p in all_installment_payments)
+    
+    return {
+        'year': year,
+        'month': month,
+        'fee_per_minute': LATENESS_FEE_PER_MINUTE,
+        'total_fees_this_month': total_fees,
+        'total_late_minutes': total_late_minutes,
+        'total_collected_all_time': total_collected,
+        'staff_count_with_fees': len(staff_fees),
+        'staff_fees': list(staff_fees.values())
+    }
+
+@router.post("/attendance/admin/fees/{staff_id}/waive")
+async def waive_fee(
+    staff_id: str,
+    date: str,  # Waive fee for specific date
+    data: WaiveFeeRequest,
+    user: User = Depends(get_current_user)
+):
+    """Waive/cancel lateness fee for a specific date"""
+    db = get_database()
+    
+    if user.role not in ['admin', 'master_admin']:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Parse date to get year/month
+    try:
+        parsed_date = datetime.strptime(date, '%Y-%m-%d')
+        year = parsed_date.year
+        month = parsed_date.month
+    except:
+        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+    
+    # Check if record exists
+    record = await db.attendance_records.find_one({
+        'staff_id': staff_id,
+        'date': date,
+        'is_late': True
+    })
+    
+    if not record:
+        raise HTTPException(status_code=404, detail="No late attendance record found for this date")
+    
+    # Create waiver
+    waiver = {
+        'staff_id': staff_id,
+        'staff_name': record.get('staff_name', 'Unknown'),
+        'date': date,
+        'year': year,
+        'month': month,
+        'late_minutes': record.get('late_minutes', 0),
+        'fee_waived': record.get('late_minutes', 0) * LATENESS_FEE_PER_MINUTE,
+        'reason': data.reason,
+        'waived_by': user.id,
+        'waived_by_name': user.name,
+        'waived_at': get_jakarta_now().isoformat()
+    }
+    
+    await db.lateness_fee_waivers.insert_one(waiver)
+    
+    return {
+        'success': True,
+        'message': f'Fee waived for {record.get("staff_name")} on {date}',
+        'fee_waived': waiver['fee_waived']
+    }
+
+@router.delete("/attendance/admin/fees/{staff_id}/waive/{date}")
+async def remove_waiver(
+    staff_id: str,
+    date: str,
+    user: User = Depends(get_current_user)
+):
+    """Remove a fee waiver (reinstate the fee)"""
+    db = get_database()
+    
+    if user.role not in ['admin', 'master_admin']:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    result = await db.lateness_fee_waivers.delete_one({
+        'staff_id': staff_id,
+        'date': date
+    })
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="No waiver found for this date")
+    
+    return {'success': True, 'message': 'Fee waiver removed, fee is now active'}
+
+@router.post("/attendance/admin/fees/{staff_id}/installment")
+async def setup_installment(
+    staff_id: str,
+    year: int,
+    month: int,
+    data: InstallmentRequest,
+    user: User = Depends(get_current_user)
+):
+    """Set up installment plan for staff's lateness fees (max 2 months)"""
+    db = get_database()
+    
+    if user.role not in ['admin', 'master_admin']:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    if data.num_months < 1 or data.num_months > 2:
+        raise HTTPException(status_code=400, detail="Installment must be 1 or 2 months")
+    
+    # Get staff info
+    staff = await db.users.find_one({'id': staff_id}, {'_id': 0})
+    if not staff:
+        raise HTTPException(status_code=404, detail="Staff not found")
+    
+    # Calculate total fee for the month (excluding waivers)
+    date_prefix = f"{year}-{str(month).zfill(2)}"
+    
+    attendance_records = await db.attendance_records.find({
+        'staff_id': staff_id,
+        'date': {'$regex': f'^{date_prefix}'},
+        'is_late': True,
+        'late_minutes': {'$gt': 0}
+    }, {'_id': 0}).to_list(100)
+    
+    waivers = await db.lateness_fee_waivers.find({
+        'staff_id': staff_id,
+        'year': year,
+        'month': month
+    }, {'_id': 0}).to_list(100)
+    waived_dates = set(w['date'] for w in waivers)
+    
+    total_fee = 0
+    for record in attendance_records:
+        if record['date'] not in waived_dates:
+            total_fee += record.get('late_minutes', 0) * LATENESS_FEE_PER_MINUTE
+    
+    if total_fee == 0:
+        raise HTTPException(status_code=400, detail="No fees to set up installment for")
+    
+    monthly_amount = total_fee / data.num_months
+    
+    # Create or update installment plan
+    installment = {
+        'staff_id': staff_id,
+        'staff_name': staff['name'],
+        'year': year,
+        'month': month,
+        'total_fee': total_fee,
+        'num_months': data.num_months,
+        'monthly_amount': monthly_amount,
+        'paid_months': [],
+        'created_by': user.id,
+        'created_at': get_jakarta_now().isoformat()
+    }
+    
+    await db.lateness_fee_installments.update_one(
+        {'staff_id': staff_id, 'year': year, 'month': month},
+        {'$set': installment},
+        upsert=True
+    )
+    
+    return {
+        'success': True,
+        'message': f'Installment plan created: ${monthly_amount:.2f}/month for {data.num_months} month(s)',
+        'installment': installment
+    }
+
+@router.delete("/attendance/admin/fees/{staff_id}/installment")
+async def cancel_installment(
+    staff_id: str,
+    year: int,
+    month: int,
+    user: User = Depends(get_current_user)
+):
+    """Cancel installment plan"""
+    db = get_database()
+    
+    if user.role not in ['admin', 'master_admin']:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    result = await db.lateness_fee_installments.delete_one({
+        'staff_id': staff_id,
+        'year': year,
+        'month': month
+    })
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="No installment plan found")
+    
+    return {'success': True, 'message': 'Installment plan cancelled'}
+
+@router.post("/attendance/admin/fees/{staff_id}/pay")
+async def record_payment(
+    staff_id: str,
+    year: int,
+    month: int,
+    payment_month: int,  # Which installment month is being paid (1 or 2)
+    user: User = Depends(get_current_user)
+):
+    """Record a payment for an installment"""
+    db = get_database()
+    
+    if user.role not in ['admin', 'master_admin']:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Get installment plan
+    installment = await db.lateness_fee_installments.find_one({
+        'staff_id': staff_id,
+        'year': year,
+        'month': month
+    })
+    
+    if not installment:
+        raise HTTPException(status_code=404, detail="No installment plan found")
+    
+    if payment_month in installment.get('paid_months', []):
+        raise HTTPException(status_code=400, detail=f"Month {payment_month} already paid")
+    
+    if payment_month > installment['num_months']:
+        raise HTTPException(status_code=400, detail="Invalid payment month")
+    
+    # Record payment
+    payment = {
+        'staff_id': staff_id,
+        'staff_name': installment['staff_name'],
+        'year': year,
+        'month': month,
+        'payment_month': payment_month,
+        'amount': installment['monthly_amount'],
+        'recorded_by': user.id,
+        'recorded_by_name': user.name,
+        'paid_at': get_jakarta_now().isoformat()
+    }
+    
+    await db.lateness_fee_payments.insert_one(payment)
+    
+    # Update installment with paid month
+    await db.lateness_fee_installments.update_one(
+        {'staff_id': staff_id, 'year': year, 'month': month},
+        {'$push': {'paid_months': payment_month}}
+    )
+    
+    return {
+        'success': True,
+        'message': f'Payment of ${installment["monthly_amount"]:.2f} recorded',
+        'amount': installment['monthly_amount']
+    }
+
+@router.get("/attendance/admin/fees/waivers")
+async def get_all_waivers(
+    year: Optional[int] = None,
+    month: Optional[int] = None,
+    user: User = Depends(get_current_user)
+):
+    """Get all fee waivers for a month"""
+    db = get_database()
+    
+    if user.role not in ['admin', 'master_admin']:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    now = get_jakarta_now()
+    year = year or now.year
+    month = month or now.month
+    
+    waivers = await db.lateness_fee_waivers.find({
+        'year': year, 'month': month
+    }, {'_id': 0}).to_list(10000)
+    
+    return {'year': year, 'month': month, 'waivers': waivers}
