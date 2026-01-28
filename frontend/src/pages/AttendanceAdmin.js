@@ -554,6 +554,316 @@ export default function AttendanceAdmin() {
           </div>
         </div>
       )}
+
+      {/* Fee & Payment Tab */}
+      {activeTab === 'fee-payment' && (
+        <div className="space-y-6">
+          {/* Month/Year Selector */}
+          <div className="flex flex-wrap gap-4 items-end">
+            <div>
+              <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Year</label>
+              <select
+                value={feeYear}
+                onChange={(e) => setFeeYear(Number(e.target.value))}
+                className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+              >
+                {[2024, 2025, 2026, 2027].map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Month</label>
+              <select
+                value={feeMonth}
+                onChange={(e) => setFeeMonth(Number(e.target.value))}
+                className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+              >
+                {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((m, idx) => (
+                  <option key={idx} value={idx + 1}>{m}</option>
+                ))}
+              </select>
+            </div>
+            <button
+              onClick={fetchFees}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg"
+            >
+              <RefreshCw size={18} />
+              Refresh
+            </button>
+          </div>
+
+          {/* Global Summary Cards */}
+          {feeData && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                      <Clock className="text-red-600" size={24} />
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">Total Late Minutes</p>
+                      <p className="text-2xl font-bold text-slate-900 dark:text-white">{feeData.total_late_minutes}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+                      <DollarSign className="text-amber-600" size={24} />
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">This Month's Fees</p>
+                      <p className="text-2xl font-bold text-slate-900 dark:text-white">${feeData.total_fees_this_month.toLocaleString()}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+                      <CreditCard className="text-emerald-600" size={24} />
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">Total Collected (All Time)</p>
+                      <p className="text-2xl font-bold text-emerald-600">${feeData.total_collected_all_time.toLocaleString()}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                      <Users className="text-blue-600" size={24} />
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">Staff with Fees</p>
+                      <p className="text-2xl font-bold text-slate-900 dark:text-white">{feeData.staff_count_with_fees}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-slate-100 dark:bg-slate-700/50 rounded-lg p-3 text-center text-sm text-slate-600 dark:text-slate-300">
+                💰 Fee Rate: <span className="font-bold">${feeData.fee_per_minute}/minute</span> of lateness
+              </div>
+
+              {/* Staff Fee Cards */}
+              <div className="space-y-4">
+                {feeData.staff_fees.length > 0 ? (
+                  feeData.staff_fees.map((staff) => (
+                    <div 
+                      key={staff.staff_id}
+                      className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden"
+                    >
+                      {/* Staff Header */}
+                      <div 
+                        className="p-4 flex justify-between items-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                        onClick={() => setExpandedFeeStaff(expandedFeeStaff === staff.staff_id ? null : staff.staff_id)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                            <DollarSign className="text-red-600" size={20} />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-slate-900 dark:text-white">{staff.staff_name}</p>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">
+                              {staff.late_days} late day(s) • {staff.total_late_minutes} min total
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <p className="text-lg font-bold text-red-600">${staff.total_fee.toLocaleString()}</p>
+                            {staff.installment && (
+                              <p className="text-xs text-emerald-600">
+                                Installment: ${staff.installment.monthly_amount.toFixed(2)}/mo × {staff.installment.num_months}
+                              </p>
+                            )}
+                          </div>
+                          {expandedFeeStaff === staff.staff_id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                        </div>
+                      </div>
+
+                      {/* Expanded Details */}
+                      {expandedFeeStaff === staff.staff_id && (
+                        <div className="border-t border-slate-200 dark:border-slate-700 p-4 bg-slate-50 dark:bg-slate-900/50">
+                          {/* Action Buttons */}
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {!staff.installment ? (
+                              <button
+                                onClick={() => setInstallmentModal(staff)}
+                                className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm"
+                              >
+                                <CreditCard size={16} />
+                                Setup Installment
+                              </button>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => handleCancelInstallment(staff.staff_id)}
+                                  disabled={processingFee === `cancel-installment-${staff.staff_id}`}
+                                  className="flex items-center gap-1 px-3 py-1.5 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm disabled:opacity-50"
+                                >
+                                  <Ban size={16} />
+                                  Cancel Installment
+                                </button>
+                                {/* Payment buttons for each installment month */}
+                                {[...Array(staff.installment.num_months)].map((_, idx) => {
+                                  const payMonth = idx + 1;
+                                  const isPaid = staff.installment.paid_months?.includes(payMonth);
+                                  return (
+                                    <button
+                                      key={payMonth}
+                                      onClick={() => !isPaid && handleRecordPayment(staff.staff_id, payMonth)}
+                                      disabled={isPaid || processingFee === `pay-${staff.staff_id}-${payMonth}`}
+                                      className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm ${
+                                        isPaid 
+                                          ? 'bg-emerald-100 text-emerald-700 cursor-not-allowed' 
+                                          : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                                      }`}
+                                    >
+                                      <CheckCircle size={16} />
+                                      {isPaid ? `Month ${payMonth} Paid` : `Pay Month ${payMonth} ($${staff.installment.monthly_amount.toFixed(2)})`}
+                                    </button>
+                                  );
+                                })}
+                              </>
+                            )}
+                          </div>
+
+                          {/* Late Records Table */}
+                          <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Late Records:</p>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                              <thead className="bg-slate-100 dark:bg-slate-800">
+                                <tr>
+                                  <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Date</th>
+                                  <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Check-in</th>
+                                  <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Late (min)</th>
+                                  <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Fee</th>
+                                  <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Action</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                                {staff.records.map((record, idx) => (
+                                  <tr key={idx}>
+                                    <td className="px-3 py-2 text-slate-900 dark:text-white font-mono">{record.date}</td>
+                                    <td className="px-3 py-2 text-slate-600 dark:text-slate-300 font-mono">{record.check_in_time}</td>
+                                    <td className="px-3 py-2 text-amber-600 font-medium">{record.late_minutes}</td>
+                                    <td className="px-3 py-2 text-red-600 font-medium">${record.fee}</td>
+                                    <td className="px-3 py-2">
+                                      <button
+                                        onClick={() => setWaiveModal({ staffId: staff.staff_id, date: record.date, staffName: staff.staff_name, fee: record.fee })}
+                                        className="flex items-center gap-1 px-2 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-300 rounded text-xs"
+                                      >
+                                        <XCircle size={14} />
+                                        Waive
+                                      </button>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="bg-white dark:bg-slate-800 rounded-xl p-8 text-center text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                    <CheckCircle className="mx-auto mb-2 text-emerald-500" size={32} />
+                    <p>No lateness fees for this month! 🎉</p>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Waive Fee Modal */}
+          {waiveModal && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-slate-800 rounded-xl p-6 max-w-md w-full mx-4">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Waive Fee</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                  Waive ${waiveModal.fee} fee for <strong>{waiveModal.staffName}</strong> on {waiveModal.date}?
+                </p>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Reason for waiving <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    value={waiveReason}
+                    onChange={(e) => setWaiveReason(e.target.value)}
+                    placeholder="e.g., Emergency situation, system error, etc."
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                    rows={3}
+                  />
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={() => { setWaiveModal(null); setWaiveReason(''); }}
+                    className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => handleWaiveFee(waiveModal.staffId, waiveModal.date)}
+                    disabled={processingFee === `${waiveModal.staffId}-${waiveModal.date}`}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                  >
+                    {processingFee === `${waiveModal.staffId}-${waiveModal.date}` ? 'Processing...' : 'Waive Fee'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Installment Setup Modal */}
+          {installmentModal && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-slate-800 rounded-xl p-6 max-w-md w-full mx-4">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Setup Installment Plan</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                  Total fee for <strong>{installmentModal.staff_name}</strong>: <span className="text-red-600 font-bold">${installmentModal.total_fee}</span>
+                </p>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Number of Months (max 2)
+                  </label>
+                  <select
+                    value={installmentMonths}
+                    onChange={(e) => setInstallmentMonths(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                  >
+                    <option value={1}>1 month (${installmentModal.total_fee.toFixed(2)})</option>
+                    <option value={2}>2 months (${(installmentModal.total_fee / 2).toFixed(2)}/month)</option>
+                  </select>
+                </div>
+                <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    Monthly payment: <strong>${(installmentModal.total_fee / installmentMonths).toFixed(2)}</strong>
+                  </p>
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={() => setInstallmentModal(null)}
+                    className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => handleSetupInstallment(installmentModal.staff_id)}
+                    disabled={processingFee === `installment-${installmentModal.staff_id}`}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {processingFee === `installment-${installmentModal.staff_id}` ? 'Processing...' : 'Create Plan'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
