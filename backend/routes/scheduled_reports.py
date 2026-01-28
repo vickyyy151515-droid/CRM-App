@@ -291,7 +291,8 @@ async def generate_atrisk_alert(inactive_days: int = 14) -> str:
     customer_data = {}  # {(normalized_customer_id, product_id): {last_date, ...}}
     
     for record in all_records:
-        cid_normalized = record.get('customer_id_normalized') or record.get('customer_id', '').strip().upper()
+        # Use .lower() for consistent normalization (matches retention.py)
+        cid_normalized = record.get('customer_id_normalized') or record.get('customer_id', '').strip().lower()
         product_id = record.get('product_id', '')
         record_date = record.get('record_date', '')
         
