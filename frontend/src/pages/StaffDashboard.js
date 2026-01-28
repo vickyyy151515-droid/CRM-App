@@ -264,6 +264,10 @@ export default function StaffDashboard({ user, onLogout }) {
       setActiveTab={setActiveTab}
       menuItems={menuItems}
     >
+      {/* Target Progress Banner - Always visible at top */}
+      <StaffTargetBanner />
+      
+      {/* Main Content */}
       {renderContent()}
     </DashboardLayout>
   );
