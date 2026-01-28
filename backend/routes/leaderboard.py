@@ -288,3 +288,255 @@ async def reset_leaderboard_targets(user: User = Depends(get_admin_user)):
     db = get_db()
     await db.settings.delete_one({'key': 'staff_targets'})
     return {'message': 'Targets reset to defaults', 'targets': DEFAULT_TARGETS}
+
+# ==================== STAFF TARGET PROGRESS ====================
+
+REQUIRED_SUCCESS_DAYS = 18  # Must reach target on at least 18 days per month
+
+@router.get("/staff/target-progress")
+async def get_staff_target_progress(user: User = Depends(get_current_user)):
+    """
+    Get staff's own target progress for the banner display.
+    Calculates:
+    - Today's NDP/RDP vs target
+    - Days reached target this month
+    - Current streak
+    - Previous months failure status (for warning levels)
+    """
+    db = get_db()
+    
+    jakarta_now = get_jakarta_now()
+    current_year = jakarta_now.year
+    current_month = jakarta_now.month
+    today = jakarta_now.strftime('%Y-%m-%d')
+    current_day = jakarta_now.day
+    days_in_month = 31 if current_month in [1,3,5,7,8,10,12] else 30 if current_month in [4,6,9,11] else 29 if current_year % 4 == 0 else 28
+    days_remaining = days_in_month - current_day
+    
+    # Get targets
+    targets = await get_targets()
+    daily_ndp_target = targets.get('daily_ndp', 10)
+    daily_rdp_target = targets.get('daily_rdp', 15)
+    
+    staff_id = user.id
+    
+    def is_tambahan_record(record):
+        keterangan = record.get('keterangan', '') or ''
+        return 'tambahan' in keterangan.lower()
+    
+    # Get all records for this staff
+    all_records = await db.omset_records.find(
+        {'staff_id': staff_id},
+        {'_id': 0, 'customer_id': 1, 'customer_id_normalized': 1, 'product_id': 1, 'record_date': 1, 'keterangan': 1}
+    ).to_list(100000)
+    
+    # Build staff-specific customer_first_date
+    staff_customer_first_date = {}
+    for record in sorted(all_records, key=lambda x: x['record_date']):
+        if is_tambahan_record(record):
+            continue
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (cid_normalized, record['product_id'])
+        if key not in staff_customer_first_date:
+            staff_customer_first_date[key] = record['record_date']
+    
+    # Calculate daily NDP/RDP for current month
+    month_str = f"{current_year}-{str(current_month).zfill(2)}"
+    month_records = [r for r in all_records if r['record_date'].startswith(month_str)]
+    
+    # Track unique customers per day
+    daily_ndp = {}  # {date: set(customer_ids)}
+    daily_rdp = {}  # {date: set(customer_ids)}
+    
+    for record in month_records:
+        date = record['record_date']
+        if date not in daily_ndp:
+            daily_ndp[date] = set()
+            daily_rdp[date] = set()
+        
+        if is_tambahan_record(record):
+            continue
+        
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (cid_normalized, record['product_id'])
+        first_date = staff_customer_first_date.get(key)
+        
+        if first_date:
+            unique_key = f"{cid_normalized}_{record['product_id']}"
+            if first_date == date:
+                daily_ndp[date].add(unique_key)
+            else:
+                daily_rdp[date].add(unique_key)
+    
+    # Calculate today's progress
+    today_ndp_count = len(daily_ndp.get(today, set()))
+    today_rdp_count = len(daily_rdp.get(today, set()))
+    today_target_reached = today_ndp_count >= daily_ndp_target or today_rdp_count >= daily_rdp_target
+    today_reached_via = 'ndp' if today_ndp_count >= daily_ndp_target else ('rdp' if today_rdp_count >= daily_rdp_target else None)
+    
+    # Calculate days reached target this month
+    success_days = 0
+    success_dates = []
+    all_dates_in_month = sorted(set(daily_ndp.keys()) | set(daily_rdp.keys()))
+    
+    for date in all_dates_in_month:
+        ndp_count = len(daily_ndp.get(date, set()))
+        rdp_count = len(daily_rdp.get(date, set()))
+        if ndp_count >= daily_ndp_target or rdp_count >= daily_rdp_target:
+            success_days += 1
+            success_dates.append(date)
+    
+    # Calculate current streak (consecutive days reaching target, ending today or yesterday)
+    streak = 0
+    check_date = today
+    while True:
+        ndp_count = len(daily_ndp.get(check_date, set()))
+        rdp_count = len(daily_rdp.get(check_date, set()))
+        if ndp_count >= daily_ndp_target or rdp_count >= daily_rdp_target:
+            streak += 1
+            # Go to previous day
+            prev_date = datetime.strptime(check_date, '%Y-%m-%d')
+            prev_date = prev_date.replace(day=prev_date.day - 1) if prev_date.day > 1 else None
+            if prev_date:
+                check_date = prev_date.strftime('%Y-%m-%d')
+            else:
+                break
+        else:
+            break
+    
+    # Get previous months' success history
+    # Check last 2 months for warning levels
+    prev_month_1 = current_month - 1 if current_month > 1 else 12
+    prev_year_1 = current_year if current_month > 1 else current_year - 1
+    prev_month_2 = prev_month_1 - 1 if prev_month_1 > 1 else 12
+    prev_year_2 = prev_year_1 if prev_month_1 > 1 else prev_year_1 - 1
+    
+    async def get_month_success(year, month):
+        """Calculate success days for a specific month"""
+        month_str = f"{year}-{str(month).zfill(2)}"
+        month_records = [r for r in all_records if r['record_date'].startswith(month_str)]
+        
+        daily_ndp_m = {}
+        daily_rdp_m = {}
+        
+        for record in month_records:
+            date = record['record_date']
+            if date not in daily_ndp_m:
+                daily_ndp_m[date] = set()
+                daily_rdp_m[date] = set()
+            
+            if is_tambahan_record(record):
+                continue
+            
+            cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+            key = (cid_normalized, record['product_id'])
+            first_date = staff_customer_first_date.get(key)
+            
+            if first_date:
+                unique_key = f"{cid_normalized}_{record['product_id']}"
+                if first_date == date:
+                    daily_ndp_m[date].add(unique_key)
+                else:
+                    daily_rdp_m[date].add(unique_key)
+        
+        success = 0
+        for date in set(daily_ndp_m.keys()) | set(daily_rdp_m.keys()):
+            if len(daily_ndp_m.get(date, set())) >= daily_ndp_target or len(daily_rdp_m.get(date, set())) >= daily_rdp_target:
+                success += 1
+        return success
+    
+    prev_month_1_success = await get_month_success(prev_year_1, prev_month_1)
+    prev_month_2_success = await get_month_success(prev_year_2, prev_month_2)
+    
+    prev_month_1_failed = prev_month_1_success < REQUIRED_SUCCESS_DAYS
+    prev_month_2_failed = prev_month_2_success < REQUIRED_SUCCESS_DAYS
+    
+    # Determine warning level
+    # 0 = No warning (on track or met target)
+    # 1 = Soft warning (10 days before month end, not on track)
+    # 2 = Hard warning (failed last month)
+    # 3 = Very serious warning (failed 2 consecutive months)
+    
+    warning_level = 0
+    warning_message = None
+    
+    if prev_month_1_failed and prev_month_2_failed:
+        warning_level = 3
+        warning_message = f"⚠️ SERIOUS: You've missed the {REQUIRED_SUCCESS_DAYS}-day target for 2 consecutive months. Immediate improvement required!"
+    elif prev_month_1_failed:
+        warning_level = 2
+        warning_message = f"⚠️ WARNING: You missed the {REQUIRED_SUCCESS_DAYS}-day target last month ({prev_month_1_success} days). Don't let it happen again!"
+    elif days_remaining <= 10 and success_days < REQUIRED_SUCCESS_DAYS:
+        days_needed = REQUIRED_SUCCESS_DAYS - success_days
+        if days_needed > days_remaining:
+            warning_level = 1
+            warning_message = f"⚠️ You need {days_needed} more successful days but only {days_remaining} days left in the month!"
+        elif days_needed > 0:
+            warning_level = 1
+            warning_message = f"📢 {days_remaining} days left! Need {days_needed} more successful day(s) to reach {REQUIRED_SUCCESS_DAYS}-day target."
+    
+    # Calculate projection
+    if current_day > 0:
+        avg_success_rate = success_days / current_day
+        projected_success = int(avg_success_rate * days_in_month)
+    else:
+        projected_success = 0
+    
+    # Determine status symbol
+    # 🏆 = Met/exceeding monthly target
+    # ✓ = On track
+    # ⚠️ = Soft warning / 1st month failure
+    # 🚨 = 2nd consecutive month failure
+    
+    if warning_level == 3:
+        status_symbol = '🚨'
+        status_text = '2nd Consecutive Miss'
+    elif warning_level == 2:
+        status_symbol = '⚠️'
+        status_text = 'Previous Month Missed'
+    elif success_days >= REQUIRED_SUCCESS_DAYS:
+        status_symbol = '🏆'
+        status_text = 'Monthly Target Achieved!'
+    elif projected_success >= REQUIRED_SUCCESS_DAYS:
+        status_symbol = '✓'
+        status_text = 'On Track'
+    else:
+        status_symbol = '📊'
+        status_text = 'In Progress'
+    
+    return {
+        'staff_id': staff_id,
+        'staff_name': user.name,
+        'today': today,
+        'current_month': current_month,
+        'current_year': current_year,
+        'days_remaining': days_remaining,
+        
+        # Targets
+        'daily_ndp_target': daily_ndp_target,
+        'daily_rdp_target': daily_rdp_target,
+        'required_success_days': REQUIRED_SUCCESS_DAYS,
+        
+        # Today's progress
+        'today_ndp': today_ndp_count,
+        'today_rdp': today_rdp_count,
+        'today_target_reached': today_target_reached,
+        'today_reached_via': today_reached_via,
+        
+        # Monthly progress
+        'success_days': success_days,
+        'projected_success': projected_success,
+        'streak': streak,
+        
+        # Warning system
+        'warning_level': warning_level,
+        'warning_message': warning_message,
+        'prev_month_1_success': prev_month_1_success,
+        'prev_month_2_success': prev_month_2_success,
+        'prev_month_1_failed': prev_month_1_failed,
+        'prev_month_2_failed': prev_month_2_failed,
+        
+        # Status
+        'status_symbol': status_symbol,
+        'status_text': status_text
+    }
