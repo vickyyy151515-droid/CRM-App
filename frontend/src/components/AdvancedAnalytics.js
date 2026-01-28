@@ -181,6 +181,99 @@ export default function AdvancedAnalytics() {
     }
   };
 
+  // Load comparison data for selected staff members
+  const loadCompareData = async () => {
+    if (compareStaff.length < 2) {
+      setCompareData(null);
+      return;
+    }
+
+    setLoadingCompare(true);
+    try {
+      const params = new URLSearchParams({ period });
+      if (selectedProduct) params.append('product_id', selectedProduct);
+
+      // Fetch data for each staff member in parallel
+      const requests = compareStaff.map(staffId => 
+        api.get(`/analytics/business?${params}&staff_id=${staffId}`)
+      );
+      
+      const responses = await Promise.all(requests);
+      
+      // Build comparison dataset
+      const comparisonResults = responses.map((res, idx) => {
+        const staffMember = staff.find(s => s.id === compareStaff[idx]);
+        return {
+          staff_id: compareStaff[idx],
+          staff_name: staffMember?.name || 'Unknown',
+          color: COMPARISON_COLORS[idx % COMPARISON_COLORS.length],
+          data: res.data
+        };
+      });
+
+      // Build chart data for trends comparison
+      const allDates = new Set();
+      comparisonResults.forEach(result => {
+        result.data.omset_chart?.forEach(d => allDates.add(d.date));
+      });
+      
+      const sortedDates = Array.from(allDates).sort();
+      const trendChartData = sortedDates.map(date => {
+        const point = { date };
+        comparisonResults.forEach(result => {
+          const dayData = result.data.omset_chart?.find(d => d.date === date);
+          point[`omset_${result.staff_id}`] = dayData?.total || 0;
+          point[`count_${result.staff_id}`] = dayData?.count || 0;
+        });
+        return point;
+      });
+
+      setCompareData({
+        staff: comparisonResults,
+        trendChart: trendChartData
+      });
+    } catch (error) {
+      console.error('Failed to load comparison data:', error);
+      toast.error('Failed to load comparison data');
+    } finally {
+      setLoadingCompare(false);
+    }
+  };
+
+  // Add staff to comparison
+  const addToCompare = (staffId) => {
+    if (compareStaff.length >= 6) {
+      toast.warning('Maximum 6 staff members can be compared');
+      return;
+    }
+    if (!compareStaff.includes(staffId)) {
+      setCompareStaff([...compareStaff, staffId]);
+    }
+  };
+
+  // Remove staff from comparison
+  const removeFromCompare = (staffId) => {
+    setCompareStaff(compareStaff.filter(id => id !== staffId));
+  };
+
+  // Toggle compare mode
+  const toggleCompareMode = () => {
+    if (compareMode) {
+      setCompareStaff([]);
+      setCompareData(null);
+    }
+    setCompareMode(!compareMode);
+  };
+
+  // Load comparison data when staff selection changes
+  useEffect(() => {
+    if (compareMode && compareStaff.length >= 2) {
+      loadCompareData();
+    } else {
+      setCompareData(null);
+    }
+  }, [compareStaff, compareMode, period, selectedProduct]);
+
   const toggleWidget = (key) => {
     setVisibleWidgets(prev => ({ ...prev, [key]: !prev[key] }));
   };
