@@ -358,11 +358,72 @@ async def get_attendance_history(
 
 LATENESS_FEE_PER_MINUTE = 5  # $5 per minute
 
+# Default currency rates (can be updated via API)
+DEFAULT_CURRENCY_RATES = {
+    'USD': 1,
+    'THB': 3100,  # $1 = 3100 THB
+    'IDR': 16700  # $1 = 16700 IDR
+}
+
 class WaiveFeeRequest(BaseModel):
     reason: str
 
 class InstallmentRequest(BaseModel):
     num_months: int  # 1 or 2
+
+class ManualFeeRequest(BaseModel):
+    amount_usd: float
+    reason: str
+    date: Optional[str] = None  # If not provided, use today
+
+class PaymentRequest(BaseModel):
+    amount: float
+    currency: str  # USD, THB, or IDR
+    note: Optional[str] = None
+
+class CurrencyRateUpdate(BaseModel):
+    thb_rate: float
+    idr_rate: float
+
+async def get_currency_rates(db):
+    """Get currency rates from database or use defaults"""
+    settings = await db.system_settings.find_one({'key': 'currency_rates'})
+    if settings:
+        return settings['rates']
+    return DEFAULT_CURRENCY_RATES
+
+@router.get("/attendance/admin/fees/currency-rates")
+async def get_currency_rates_endpoint(user: User = Depends(get_current_user)):
+    """Get current currency rates"""
+    db = get_database()
+    
+    if user.role not in ['admin', 'master_admin']:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    rates = await get_currency_rates(db)
+    return {'rates': rates}
+
+@router.put("/attendance/admin/fees/currency-rates")
+async def update_currency_rates(data: CurrencyRateUpdate, user: User = Depends(get_current_user)):
+    """Update currency rates"""
+    db = get_database()
+    
+    if user.role not in ['admin', 'master_admin']:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    rates = {
+        'USD': 1,
+        'THB': data.thb_rate,
+        'IDR': data.idr_rate
+    }
+    
+    await db.system_settings.update_one(
+        {'key': 'currency_rates'},
+        {'$set': {'key': 'currency_rates', 'rates': rates, 'updated_at': get_jakarta_now().isoformat(), 'updated_by': user.name}},
+        upsert=True
+    )
+    
+    return {'success': True, 'rates': rates}
 
 @router.get("/attendance/admin/fees/summary")
 async def get_fees_summary(
