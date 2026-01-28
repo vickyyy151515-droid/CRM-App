@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { 
   Users, Clock, CheckCircle, AlertTriangle, RefreshCw, 
   Calendar, UserX, Shield, Search, ChevronDown,
-  ChevronUp, Key, Trash2
+  ChevronUp, Key, Trash2, DollarSign, CreditCard, XCircle, Ban
 } from 'lucide-react';
 
 export default function AttendanceAdmin() {
