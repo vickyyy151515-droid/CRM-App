@@ -187,6 +187,50 @@ async def process_leave_request(request_id: str, action_data: LeaveRequestAction
     await db.notifications.insert_one(notification)
     return {'message': f'Leave request {new_status}', 'status': new_status}
 
+@router.put("/leave/request/{request_id}/cancel")
+async def cancel_approved_leave_request(request_id: str, user: User = Depends(get_admin_user)):
+    """
+    Cancel an approved leave request. This will:
+    1. Change status from 'approved' to 'cancelled'
+    2. Return the deducted hours to staff's balance (by excluding cancelled requests from balance calculation)
+    """
+    db = get_db()
+    request = await db.leave_requests.find_one({'id': request_id})
+    
+    if not request:
+        raise HTTPException(status_code=404, detail="Leave request not found")
+    
+    if request['status'] != 'approved':
+        raise HTTPException(status_code=400, detail="Only approved requests can be cancelled")
+    
+    # Update status to cancelled and record who cancelled it
+    await db.leave_requests.update_one({'id': request_id}, {'$set': {
+        'status': 'cancelled',
+        'cancelled_at': get_jakarta_now().isoformat(),
+        'cancelled_by': user.id,
+        'cancelled_by_name': user.name
+    }})
+    
+    # Notify the staff member that their leave was cancelled
+    hours_returned = request.get('hours_deducted', 0)
+    notification = {
+        'id': str(uuid.uuid4()),
+        'user_id': request['staff_id'],
+        'type': 'leave_cancelled',
+        'title': 'Leave Request Cancelled',
+        'message': f"Your {request['leave_type'].replace('_', ' ')} request for {request['date']} has been cancelled by admin. {hours_returned} hour(s) returned to your balance.",
+        'data': {'request_id': request_id, 'hours_returned': hours_returned},
+        'read': False,
+        'created_at': get_jakarta_now().isoformat()
+    }
+    await db.notifications.insert_one(notification)
+    
+    return {
+        'message': 'Leave request cancelled successfully',
+        'hours_returned': hours_returned,
+        'staff_name': request.get('staff_name', 'Unknown')
+    }
+
 @router.get("/leave/calendar")
 async def get_leave_calendar(year: int = Query(default=None), month: int = Query(default=None), user: User = Depends(get_admin_user)):
     db = get_db()
