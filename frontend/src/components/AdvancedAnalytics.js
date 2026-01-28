@@ -31,6 +31,7 @@ const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'
 const COMPARISON_COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
 const DEFAULT_WIDGET_ORDER = [
+  'staffCompare',
   'staffComparison',
   'dailyTrends', 
   'whatsappDistribution',
