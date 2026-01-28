@@ -1117,6 +1117,206 @@ export default function AttendanceAdmin() {
               </div>
             </div>
           )}
+
+          {/* Manual Fee Modal */}
+          {manualFeeModal && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-slate-800 rounded-xl p-6 max-w-md w-full mx-4">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Add Manual Fee</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      Staff <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={manualFeeStaffId}
+                      onChange={(e) => setManualFeeStaffId(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                    >
+                      <option value="">Select staff...</option>
+                      {staffList.map(s => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      Amount (USD) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={manualFeeAmount}
+                      onChange={(e) => setManualFeeAmount(e.target.value)}
+                      placeholder="e.g., 50"
+                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                    />
+                    {manualFeeAmount && (
+                      <p className="text-xs text-slate-500 mt-1">
+                        = ฿{(parseFloat(manualFeeAmount) * thbRate).toLocaleString()} THB = Rp {(parseFloat(manualFeeAmount) * idrRate).toLocaleString()} IDR
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      Reason <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      value={manualFeeReason}
+                      onChange={(e) => setManualFeeReason(e.target.value)}
+                      placeholder="e.g., Missed shift, policy violation, etc."
+                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                      rows={2}
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 justify-end mt-4">
+                  <button
+                    onClick={() => { setManualFeeModal(false); setManualFeeStaffId(''); setManualFeeAmount(''); setManualFeeReason(''); }}
+                    className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleAddManualFee}
+                    disabled={processingFee === 'manual-fee'}
+                    className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50"
+                  >
+                    {processingFee === 'manual-fee' ? 'Adding...' : 'Add Fee'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Payment Modal */}
+          {paymentModal && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-slate-800 rounded-xl p-6 max-w-md w-full mx-4">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Record Payment</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                  Recording payment for <strong>{paymentModal.staff_name}</strong>
+                  <br />
+                  <span className="text-red-600">Remaining: {formatCurrency(paymentModal.remaining_fee, 'USD')} = {formatCurrency(paymentModal.remaining_fee_thb, 'THB')} = {formatCurrency(paymentModal.remaining_fee_idr, 'IDR')}</span>
+                </p>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      Currency
+                    </label>
+                    <select
+                      value={paymentCurrency}
+                      onChange={(e) => setPaymentCurrency(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                    >
+                      <option value="USD">USD ($)</option>
+                      <option value="THB">THB (฿)</option>
+                      <option value="IDR">IDR (Rp)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      Amount <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      step={paymentCurrency === 'USD' ? '0.01' : '1'}
+                      value={paymentAmount}
+                      onChange={(e) => setPaymentAmount(e.target.value)}
+                      placeholder={paymentCurrency === 'USD' ? 'e.g., 50.00' : paymentCurrency === 'THB' ? 'e.g., 155000' : 'e.g., 835000'}
+                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                    />
+                    {paymentAmount && (
+                      <p className="text-xs text-emerald-600 mt-1">
+                        {paymentCurrency !== 'USD' && `= ${formatCurrency(parseFloat(paymentAmount) / (paymentCurrency === 'THB' ? thbRate : idrRate), 'USD')}`}
+                        {paymentCurrency === 'USD' && `= ${formatCurrency(parseFloat(paymentAmount) * thbRate, 'THB')} = ${formatCurrency(parseFloat(paymentAmount) * idrRate, 'IDR')}`}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      Note (optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={paymentNote}
+                      onChange={(e) => setPaymentNote(e.target.value)}
+                      placeholder="e.g., Cash payment, bank transfer, etc."
+                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 justify-end mt-4">
+                  <button
+                    onClick={() => { setPaymentModal(null); setPaymentAmount(''); setPaymentCurrency('USD'); setPaymentNote(''); }}
+                    className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleRecordPartialPayment}
+                    disabled={processingFee === `partial-payment-${paymentModal.staff_id}`}
+                    className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50"
+                  >
+                    {processingFee === `partial-payment-${paymentModal.staff_id}` ? 'Recording...' : 'Record Payment'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Currency Rates Modal */}
+          {currencyModal && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-slate-800 rounded-xl p-6 max-w-md w-full mx-4">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Currency Rates</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                  Set exchange rates relative to $1 USD
+                </p>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      $1 USD = THB (฿)
+                    </label>
+                    <input
+                      type="number"
+                      step="1"
+                      value={thbRate}
+                      onChange={(e) => setThbRate(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      $1 USD = IDR (Rp)
+                    </label>
+                    <input
+                      type="number"
+                      step="1"
+                      value={idrRate}
+                      onChange={(e) => setIdrRate(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 justify-end mt-4">
+                  <button
+                    onClick={() => setCurrencyModal(false)}
+                    className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleUpdateCurrencyRates}
+                    disabled={processingFee === 'currency-rates'}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                  >
+                    {processingFee === 'currency-rates' ? 'Saving...' : 'Save Rates'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
