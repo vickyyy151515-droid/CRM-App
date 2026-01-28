@@ -303,6 +303,7 @@ export default function AdvancedAnalytics() {
   };
 
   const widgetConfig = {
+    staffCompare: { label: 'Staff Comparison (Side-by-Side)', icon: GitCompare },
     staffComparison: { label: 'Staff Performance Comparison', icon: Users },
     dailyTrends: { label: 'Daily Activity Trends', icon: TrendingUp },
     whatsappDistribution: { label: 'WhatsApp Status Distribution', icon: PieChart },
