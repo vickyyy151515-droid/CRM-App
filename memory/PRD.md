@@ -14,6 +14,32 @@ This catches recurring issues like:
 
 ---
 
+### NEW FEATURE: Staff Comparison (Side-by-Side) - COMPLETED (Jan 28, 2026)
+**Status**: COMPLETED - Fully functional staff comparison feature in Advanced Analytics
+
+**Feature Description**: Compare performance of 2-6 staff members side-by-side with visual charts
+
+**Capabilities**:
+- Multi-select staff dropdown (up to 6 staff members)
+- Color-coded staff chips with remove functionality
+- Summary cards showing each staff's Total OMSET, NDP, and RDP counts
+- "Total OMSET Comparison" bar chart
+- "NDP vs RDP Comparison" grouped bar chart
+- "OMSET Trends Over Time" multi-line chart (one line per staff)
+- Toggle compare mode on/off
+- Respects existing period and product filters
+
+**Files Modified**:
+- `/app/frontend/src/components/AdvancedAnalytics.js` - Added compareMode state, compare staff selection, and new `staffCompare` widget with comparison charts
+
+**Usage**: 
+1. Go to Advanced Analytics
+2. Click "Enable Compare Mode" on the Staff Comparison widget
+3. Select 2-6 staff members from the dropdown
+4. View side-by-side comparison charts
+
+---
+
 ### Refactoring: AttendanceAdmin.js & attendance.py - COMPLETED (Jan 28, 2026)
 **Status**: COMPLETED - Both frontend and backend code successfully refactored
 
