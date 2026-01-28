@@ -118,6 +118,74 @@ export default function AttendanceAdmin() {
     }
   };
 
+  // Waive fee for a specific date
+  const handleWaiveFee = async (staffId, date) => {
+    if (!waiveReason.trim()) {
+      toast.error('Please provide a reason for waiving the fee');
+      return;
+    }
+    setProcessingFee(`${staffId}-${date}`);
+    try {
+      await api.post(`/attendance/admin/fees/${staffId}/waive?date=${date}`, {
+        reason: waiveReason
+      });
+      toast.success('Fee waived successfully');
+      setWaiveModal(null);
+      setWaiveReason('');
+      fetchFees();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to waive fee');
+    } finally {
+      setProcessingFee(null);
+    }
+  };
+
+  // Setup installment plan
+  const handleSetupInstallment = async (staffId) => {
+    setProcessingFee(`installment-${staffId}`);
+    try {
+      await api.post(`/attendance/admin/fees/${staffId}/installment?year=${feeYear}&month=${feeMonth}`, {
+        num_months: installmentMonths
+      });
+      toast.success(`Installment plan created for ${installmentMonths} month(s)`);
+      setInstallmentModal(null);
+      fetchFees();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to setup installment');
+    } finally {
+      setProcessingFee(null);
+    }
+  };
+
+  // Cancel installment plan
+  const handleCancelInstallment = async (staffId) => {
+    if (!window.confirm('Cancel this installment plan?')) return;
+    setProcessingFee(`cancel-installment-${staffId}`);
+    try {
+      await api.delete(`/attendance/admin/fees/${staffId}/installment?year=${feeYear}&month=${feeMonth}`);
+      toast.success('Installment plan cancelled');
+      fetchFees();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to cancel installment');
+    } finally {
+      setProcessingFee(null);
+    }
+  };
+
+  // Record payment for installment
+  const handleRecordPayment = async (staffId, paymentMonth) => {
+    setProcessingFee(`pay-${staffId}-${paymentMonth}`);
+    try {
+      await api.post(`/attendance/admin/fees/${staffId}/pay?year=${feeYear}&month=${feeMonth}&payment_month=${paymentMonth}`);
+      toast.success('Payment recorded successfully');
+      fetchFees();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to record payment');
+    } finally {
+      setProcessingFee(null);
+    }
+  };
+
   // Filter staff by search
   const filteredTotpStatus = totpStatus.filter(staff => 
     staff.staff_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
