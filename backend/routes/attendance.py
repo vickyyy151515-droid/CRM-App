@@ -880,3 +880,150 @@ async def get_all_waivers(
     }, {'_id': 0}).to_list(10000)
     
     return {'year': year, 'month': month, 'waivers': waivers}
+
+@router.post("/attendance/admin/fees/{staff_id}/manual")
+async def add_manual_fee(
+    staff_id: str,
+    year: int,
+    month: int,
+    data: ManualFeeRequest,
+    user: User = Depends(get_current_user)
+):
+    """Manually add a lateness fee for a staff member"""
+    db = get_database()
+    
+    if user.role not in ['admin', 'master_admin']:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Get staff info
+    staff = await db.users.find_one({'id': staff_id}, {'_id': 0})
+    if not staff:
+        raise HTTPException(status_code=404, detail="Staff not found")
+    
+    fee_date = data.date or get_jakarta_date_string()
+    
+    manual_fee = {
+        'id': str(uuid.uuid4()),
+        'staff_id': staff_id,
+        'staff_name': staff['name'],
+        'year': year,
+        'month': month,
+        'date': fee_date,
+        'amount_usd': data.amount_usd,
+        'reason': data.reason,
+        'added_by': user.id,
+        'added_by_name': user.name,
+        'added_at': get_jakarta_now().isoformat()
+    }
+    
+    await db.lateness_manual_fees.insert_one(manual_fee)
+    
+    return {
+        'success': True,
+        'message': f'Manual fee of ${data.amount_usd} added for {staff["name"]}',
+        'fee': {k: v for k, v in manual_fee.items() if k != '_id'}
+    }
+
+@router.delete("/attendance/admin/fees/manual/{fee_id}")
+async def delete_manual_fee(
+    fee_id: str,
+    user: User = Depends(get_current_user)
+):
+    """Delete a manual fee"""
+    db = get_database()
+    
+    if user.role not in ['admin', 'master_admin']:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    result = await db.lateness_manual_fees.delete_one({'id': fee_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Manual fee not found")
+    
+    return {'success': True, 'message': 'Manual fee deleted'}
+
+@router.post("/attendance/admin/fees/{staff_id}/payment")
+async def record_partial_payment(
+    staff_id: str,
+    year: int,
+    month: int,
+    data: PaymentRequest,
+    user: User = Depends(get_current_user)
+):
+    """Record a partial payment from staff (supports multiple currencies)"""
+    db = get_database()
+    
+    if user.role not in ['admin', 'master_admin']:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    if data.currency not in ['USD', 'THB', 'IDR']:
+        raise HTTPException(status_code=400, detail="Currency must be USD, THB, or IDR")
+    
+    # Get staff info
+    staff = await db.users.find_one({'id': staff_id}, {'_id': 0})
+    if not staff:
+        raise HTTPException(status_code=404, detail="Staff not found")
+    
+    # Get currency rates
+    currency_rates = await get_currency_rates(db)
+    
+    # Convert to USD
+    if data.currency == 'USD':
+        amount_usd = data.amount
+    elif data.currency == 'THB':
+        amount_usd = data.amount / currency_rates['THB']
+    else:  # IDR
+        amount_usd = data.amount / currency_rates['IDR']
+    
+    payment = {
+        'id': str(uuid.uuid4()),
+        'staff_id': staff_id,
+        'staff_name': staff['name'],
+        'year': year,
+        'month': month,
+        'amount_usd': amount_usd,
+        'original_amount': data.amount,
+        'original_currency': data.currency,
+        'note': data.note,
+        'recorded_by': user.id,
+        'recorded_by_name': user.name,
+        'paid_at': get_jakarta_now().isoformat()
+    }
+    
+    await db.lateness_partial_payments.insert_one(payment)
+    
+    return {
+        'success': True,
+        'message': f'Payment of {data.currency} {data.amount:,.0f} (${amount_usd:.2f} USD) recorded for {staff["name"]}',
+        'payment': {k: v for k, v in payment.items() if k != '_id'}
+    }
+
+@router.delete("/attendance/admin/fees/payment/{payment_id}")
+async def delete_payment(
+    payment_id: str,
+    user: User = Depends(get_current_user)
+):
+    """Delete a payment record"""
+    db = get_database()
+    
+    if user.role not in ['admin', 'master_admin']:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    result = await db.lateness_partial_payments.delete_one({'id': payment_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    return {'success': True, 'message': 'Payment deleted'}
+
+@router.get("/attendance/admin/fees/staff-list")
+async def get_staff_list_for_fees(user: User = Depends(get_current_user)):
+    """Get list of all staff for manual fee assignment"""
+    db = get_database()
+    
+    if user.role not in ['admin', 'master_admin']:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    staff = await db.users.find({'role': 'staff'}, {'_id': 0, 'id': 1, 'name': 1}).to_list(1000)
+    return {'staff': staff}
+
