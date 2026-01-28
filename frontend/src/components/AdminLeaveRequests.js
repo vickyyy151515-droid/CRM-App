@@ -257,11 +257,25 @@ export default function AdminLeaveRequests() {
                         </button>
                       </div>
                     ) : (
-                      <div className="text-right text-xs text-slate-500">
-                        <div>{request.status === 'approved' ? 'Approved' : 'Rejected'} by</div>
-                        <div className="font-medium">{request.reviewed_by_name}</div>
-                        {request.reviewed_at && (
-                          <div>{new Date(request.reviewed_at).toLocaleDateString()}</div>
+                      <div className="text-right">
+                        <div className="text-xs text-slate-500">
+                          <div>{request.status === 'approved' ? 'Approved' : request.status === 'cancelled' ? 'Cancelled' : 'Rejected'} by</div>
+                          <div className="font-medium">{request.status === 'cancelled' ? request.cancelled_by_name : request.reviewed_by_name}</div>
+                          {(request.reviewed_at || request.cancelled_at) && (
+                            <div>{new Date(request.cancelled_at || request.reviewed_at).toLocaleDateString()}</div>
+                          )}
+                        </div>
+                        {/* Cancel button for approved requests */}
+                        {request.status === 'approved' && (
+                          <button
+                            onClick={() => cancelApprovedRequest(request.id)}
+                            disabled={processingId === request.id}
+                            className="mt-2 px-3 py-1.5 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 flex items-center gap-1"
+                            data-testid={`cancel-leave-${request.id}`}
+                          >
+                            <XCircle size={14} />
+                            Cancel Leave
+                          </button>
                         )}
                       </div>
                     )}
