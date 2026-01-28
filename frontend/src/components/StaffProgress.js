@@ -850,6 +850,8 @@ export default function StaffProgress() {
           </div>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }
