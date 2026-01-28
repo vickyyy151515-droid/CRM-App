@@ -140,7 +140,11 @@ export default function AdvancedAnalytics() {
     try {
       const response = await api.get('/user/preferences/widget-layout');
       if (response.data.widget_order?.length > 0) {
-        setWidgetOrder(response.data.widget_order);
+        // Merge saved layout with default to include any new widgets
+        const savedOrder = response.data.widget_order;
+        const newWidgets = DEFAULT_WIDGET_ORDER.filter(w => !savedOrder.includes(w));
+        // Add new widgets at the beginning
+        setWidgetOrder([...newWidgets, ...savedOrder]);
       }
     } catch (error) {
       console.error('Failed to load saved layout');
