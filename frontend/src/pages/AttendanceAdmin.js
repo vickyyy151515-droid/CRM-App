@@ -89,11 +89,26 @@ export default function AttendanceAdmin() {
     try {
       const response = await api.get(`/attendance/admin/fees/summary?year=${feeYear}&month=${feeMonth}`);
       setFeeData(response.data);
+      // Update currency rates from server
+      if (response.data.currency_rates) {
+        setThbRate(response.data.currency_rates.THB);
+        setIdrRate(response.data.currency_rates.IDR);
+      }
     } catch (error) {
       console.error('Error fetching fees:', error);
       toast.error('Failed to load fee data');
     }
   }, [feeYear, feeMonth]);
+
+  // Fetch staff list for manual fees
+  const fetchStaffList = useCallback(async () => {
+    try {
+      const response = await api.get('/attendance/admin/fees/staff-list');
+      setStaffList(response.data.staff || []);
+    } catch (error) {
+      console.error('Error fetching staff list:', error);
+    }
+  }, []);
 
   // Initial data fetch
   useEffect(() => {
