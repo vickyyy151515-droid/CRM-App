@@ -404,7 +404,8 @@ async def generate_atrisk_alert(inactive_days: int = 14) -> str:
             )
             alert_lines.append("")
             shown_count += 1
-            customers_to_mark.append(customer['customer_id'])
+            # Store both customer_id and product_id for accurate rotation
+            customers_to_mark.append({'customer_id': customer['customer_id'], 'product_id': customer['product_id']})
         
         if len(staff_data['customers']) > 10:
             alert_lines.append(f"   <i>...and {len(staff_data['customers']) - 10} more</i>")
@@ -419,13 +420,15 @@ async def generate_atrisk_alert(inactive_days: int = 14) -> str:
     alert_lines.append(f"🔄 <i>These customers will rotate out for 3 days</i>")
     
     # Store which customers were shown today (for 3-day rotation)
+    # Now includes product_id for accurate per-product tracking
     if customers_to_mark:
         alert_history_records = [
             {
-                'customer_id': cid,
+                'customer_id': item['customer_id'],
+                'product_id': item['product_id'],
                 'alerted_at': jakarta_now.isoformat()
             }
-            for cid in customers_to_mark
+            for item in customers_to_mark
         ]
         await db.atrisk_alert_history.insert_many(alert_history_records)
         
