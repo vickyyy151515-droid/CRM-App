@@ -263,12 +263,13 @@ async def generate_atrisk_alert(inactive_days: int = 14) -> str:
     cutoff_date = (jakarta_now - timedelta(days=inactive_days)).strftime('%Y-%m-%d')
     
     # Get customers that were alerted in the last 3 days (to exclude them)
+    # Now using (customer_id, product_id) pairs for more accurate rotation
     three_days_ago = (jakarta_now - timedelta(days=3)).isoformat()
     recently_alerted = await db.atrisk_alert_history.find(
         {'alerted_at': {'$gte': three_days_ago}},
-        {'_id': 0, 'customer_id': 1}
+        {'_id': 0, 'customer_id': 1, 'product_id': 1}
     ).to_list(10000)
-    recently_alerted_ids = set(r['customer_id'] for r in recently_alerted)
+    recently_alerted_keys = set((r['customer_id'], r.get('product_id', '')) for r in recently_alerted)
     
     # Get all OMSET records
     all_records = await db.omset_records.find({}, {'_id': 0}).to_list(100000)
