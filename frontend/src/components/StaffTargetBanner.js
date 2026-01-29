@@ -112,7 +112,7 @@ export default function StaffTargetBanner() {
   const monthProgress = Math.min(100, (data.success_days / data.required_success_days) * 100);
 
   return (
-    <div className={`rounded-xl border shadow-md mb-4 overflow-hidden transition-all ${getBannerStyle()}`}>
+    <div className={`sticky top-0 z-40 rounded-xl border shadow-md mb-4 overflow-hidden transition-all ${getBannerStyle()}`} data-testid="staff-target-banner">
       {/* Main Banner Content */}
       <div className="p-3 sm:p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
