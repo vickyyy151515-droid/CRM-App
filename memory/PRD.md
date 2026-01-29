@@ -40,6 +40,20 @@ This catches recurring issues like:
 
 ---
 
+### BUG FIX: Staff Target Banner - January Reset & Sticky - COMPLETED (Jan 29, 2026)
+**Status**: COMPLETED - Both issues fixed
+
+**Issue 1: Warning level incorrectly showing red for new staff in January**
+- **Root Cause**: System looked at December and November of previous year, treating 0 records as "failed months"
+- **Fix**: Added `skip_prev_month_1` and `skip_prev_month_2` flags that activate in January/February to prevent looking back into the previous year
+- **Files Modified**: `/app/backend/routes/leaderboard.py` (both `/staff/target-progress` and `/admin/staff-target-progress` endpoints)
+
+**Issue 2: Banner disappears when staff scrolls down**
+- **Fix**: Added `sticky top-0 z-40` CSS classes to make banner stay fixed at top while scrolling
+- **File Modified**: `/app/frontend/src/components/StaffTargetBanner.js`
+
+---
+
 ### Refactoring: AttendanceAdmin.js & attendance.py - COMPLETED (Jan 28, 2026)
 **Status**: COMPLETED - Both frontend and backend code successfully refactored
 
