@@ -604,6 +604,11 @@ async def get_all_staff_target_progress(
     prev_month_2 = prev_month_1 - 1 if prev_month_1 > 1 else 12
     prev_year_2 = prev_year_1 if prev_month_1 > 1 else prev_year_1 - 1
     
+    # Reset warning counters in January - don't look back to previous year
+    # This gives staff a fresh start each year
+    skip_prev_month_1 = current_month == 1  # January - skip December of last year
+    skip_prev_month_2 = current_month <= 2  # January/February - skip months from last year
+    
     for staff in all_staff:
         staff_id = staff['id']
         staff_name = staff['name']
