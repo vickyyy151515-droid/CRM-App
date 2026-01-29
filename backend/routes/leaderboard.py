@@ -689,11 +689,11 @@ async def get_all_staff_target_progress(
                     success += 1
             return success
         
-        prev_month_1_success = get_month_success_for_staff(prev_year_1, prev_month_1)
-        prev_month_2_success = get_month_success_for_staff(prev_year_2, prev_month_2)
+        prev_month_1_success = get_month_success_for_staff(prev_year_1, prev_month_1) if not skip_prev_month_1 else REQUIRED_SUCCESS_DAYS
+        prev_month_2_success = get_month_success_for_staff(prev_year_2, prev_month_2) if not skip_prev_month_2 else REQUIRED_SUCCESS_DAYS
         
-        prev_month_1_failed = prev_month_1_success < REQUIRED_SUCCESS_DAYS
-        prev_month_2_failed = prev_month_2_success < REQUIRED_SUCCESS_DAYS
+        prev_month_1_failed = prev_month_1_success < REQUIRED_SUCCESS_DAYS and not skip_prev_month_1
+        prev_month_2_failed = prev_month_2_success < REQUIRED_SUCCESS_DAYS and not skip_prev_month_2
         
         # Determine warning level
         warning_level = 0
