@@ -451,11 +451,11 @@ async def get_staff_target_progress(user: User = Depends(get_current_user)):
                 success += 1
         return success
     
-    prev_month_1_success = await get_month_success(prev_year_1, prev_month_1)
-    prev_month_2_success = await get_month_success(prev_year_2, prev_month_2)
+    prev_month_1_success = await get_month_success(prev_year_1, prev_month_1) if not skip_prev_month_1 else REQUIRED_SUCCESS_DAYS  # Treat as passed if skipped
+    prev_month_2_success = await get_month_success(prev_year_2, prev_month_2) if not skip_prev_month_2 else REQUIRED_SUCCESS_DAYS  # Treat as passed if skipped
     
-    prev_month_1_failed = prev_month_1_success < REQUIRED_SUCCESS_DAYS
-    prev_month_2_failed = prev_month_2_success < REQUIRED_SUCCESS_DAYS
+    prev_month_1_failed = prev_month_1_success < REQUIRED_SUCCESS_DAYS and not skip_prev_month_1
+    prev_month_2_failed = prev_month_2_success < REQUIRED_SUCCESS_DAYS and not skip_prev_month_2
     
     # Determine warning level
     # 0 = No warning (on track or met target)
