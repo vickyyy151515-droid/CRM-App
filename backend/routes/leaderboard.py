@@ -406,10 +406,16 @@ async def get_staff_target_progress(user: User = Depends(get_current_user)):
     
     # Get previous months' success history
     # Check last 2 months for warning levels
+    # IMPORTANT: Reset at January - don't look at previous year's data
     prev_month_1 = current_month - 1 if current_month > 1 else 12
     prev_year_1 = current_year if current_month > 1 else current_year - 1
     prev_month_2 = prev_month_1 - 1 if prev_month_1 > 1 else 12
     prev_year_2 = prev_year_1 if prev_month_1 > 1 else prev_year_1 - 1
+    
+    # Reset warning counters in January - don't look back to previous year
+    # This gives staff a fresh start each year
+    skip_prev_month_1 = current_month == 1  # January - skip December of last year
+    skip_prev_month_2 = current_month <= 2  # January/February - skip months from last year
     
     async def get_month_success(year, month):
         """Calculate success days for a specific month"""
