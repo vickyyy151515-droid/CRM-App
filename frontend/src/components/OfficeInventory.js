@@ -195,6 +195,56 @@ export default function OfficeInventory() {
     }
   };
 
+  // Bulk add handlers
+  const addBulkRow = () => {
+    setBulkItems([...bulkItems, { name: '', category: 'laptop', serial_number: '', condition: 'good', staff_id: '' }]);
+  };
+
+  const removeBulkRow = (index) => {
+    if (bulkItems.length > 1) {
+      setBulkItems(bulkItems.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateBulkItem = (index, field, value) => {
+    const updated = [...bulkItems];
+    updated[index] = { ...updated[index], [field]: value };
+    setBulkItems(updated);
+  };
+
+  const duplicateBulkRow = (index) => {
+    const itemToCopy = { ...bulkItems[index], serial_number: '' }; // Clear serial for duplicate
+    setBulkItems([...bulkItems, itemToCopy]);
+  };
+
+  const handleBulkAdd = async (e) => {
+    e.preventDefault();
+    
+    // Validate at least one item has a name
+    const validItems = bulkItems.filter(item => item.name.trim());
+    if (validItems.length === 0) {
+      toast.error('Please enter at least one item name');
+      return;
+    }
+    
+    setSaving(true);
+    try {
+      const response = await api.post('/inventory/bulk', { items: validItems });
+      toast.success(`Successfully created ${response.data.total_created} items`);
+      setShowBulkAddModal(false);
+      setBulkItems([{ name: '', category: 'laptop', serial_number: '', condition: 'good', staff_id: '' }]);
+      loadInventory();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to bulk add items');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const applyStaffToAll = (staffId) => {
+    setBulkItems(bulkItems.map(item => ({ ...item, staff_id: staffId })));
+  };
+
   const loadHistory = async (item) => {
     try {
       const response = await api.get(`/inventory/${item.id}`);
