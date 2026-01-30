@@ -234,6 +234,8 @@ export default function StaffDashboard({ user, onLogout }) {
         return <CustomerRetention isAdmin={false} />;
       case 'message-generator':
         return <MessageVariationGenerator />;
+      case 'my-bonus':
+        return <StaffBonusProgress />;
       default:
         return null;
     }
