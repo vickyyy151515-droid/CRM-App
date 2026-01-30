@@ -244,6 +244,7 @@ export default function StaffDashboard({ user, onLogout }) {
   const menuItems = useMemo(() => [
     { id: 'databases', label: t('nav.browseDatabases'), icon: FileSpreadsheet },
     { id: 'leaderboard', label: t('nav.leaderboard'), icon: Trophy },
+    { id: 'my-bonus', label: t('nav.myBonus') || 'Bonus Saya', icon: Calculator },
     { id: 'daily-summary', label: t('nav.dailySummary'), icon: CalendarDays },
     { id: 'funnel', label: t('nav.conversionFunnel'), icon: Filter },
     { id: 'retention', label: t('nav.customerRetention'), icon: Heart },
