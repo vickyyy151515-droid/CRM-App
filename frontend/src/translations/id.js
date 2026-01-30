@@ -141,6 +141,7 @@ const id = {
     reservedMembers: 'Member Reserved',
     staffProgress: 'Progres & Kualitas Staf',
     leaderboard: 'Papan Peringkat',
+    myBonus: 'Bonus Saya',
     dailySummary: 'Ringkasan Harian',
     reportCRM: 'Laporan CRM',
     bonusCalculation: 'Kalkulasi Bonus CRM',
