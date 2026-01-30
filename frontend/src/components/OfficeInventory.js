@@ -19,7 +19,9 @@ import {
   Users,
   CheckCircle,
   Clock,
-  History
+  History,
+  Layers,
+  Copy
 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
