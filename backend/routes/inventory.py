@@ -48,6 +48,22 @@ class ReturnItem(BaseModel):
     condition: str = "good"
     notes: Optional[str] = None
 
+class BulkInventoryItem(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    name: str
+    description: Optional[str] = None
+    category: str
+    serial_number: Optional[str] = None
+    purchase_date: Optional[str] = None
+    purchase_price: Optional[float] = None
+    condition: str = "good"
+    notes: Optional[str] = None
+    staff_id: Optional[str] = None  # Assign to this staff
+
+class BulkInventoryCreate(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    items: List[BulkInventoryItem]
+
 
 # ==================== INVENTORY ENDPOINTS ====================
 
