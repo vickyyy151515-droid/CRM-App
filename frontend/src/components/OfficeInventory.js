@@ -55,11 +55,17 @@ export default function OfficeInventory() {
   
   // Modals
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showBulkAddModal, setShowBulkAddModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [assignmentHistory, setAssignmentHistory] = useState([]);
+  
+  // Bulk add state
+  const [bulkItems, setBulkItems] = useState([
+    { name: '', category: 'laptop', serial_number: '', condition: 'good', staff_id: '' }
+  ]);
   
   // Form state
   const [formData, setFormData] = useState({
