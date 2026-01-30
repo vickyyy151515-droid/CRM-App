@@ -49,8 +49,43 @@ This catches recurring issues like:
 - **Files Modified**: `/app/backend/routes/leaderboard.py` (both `/staff/target-progress` and `/admin/staff-target-progress` endpoints)
 
 **Issue 2: Banner disappears when staff scrolls down**
-- **Fix**: Added `sticky top-0 z-40` CSS classes to make banner stay fixed at top while scrolling
+- **Fix**: Initially added sticky positioning, then reverted per user request - banner now scrolls normally with page content
 - **File Modified**: `/app/frontend/src/components/StaffTargetBanner.js`
+
+---
+
+### NEW FEATURE: Staff Bonus Progress View - COMPLETED (Jan 30, 2026)
+**Status**: COMPLETED - Staff can now view their own bonus progress
+
+**Feature Description**: Staff members can see how bonus is calculated and track their own bonus progress. They CANNOT see other staff's bonus data.
+
+**Capabilities**:
+- **"Bonus Saya" (My Bonus)** menu item in Staff Dashboard
+- View bonus calculation rules with detailed tier breakdown:
+  - Main Bonus tiers (based on total monthly nominal)
+  - NDP daily bonus tiers
+  - RDP daily bonus tiers
+- See own bonus progress:
+  - Total Nominal for the month
+  - Main Bonus, NDP Bonus, RDP Bonus breakdown
+  - Days worked count
+  - Daily breakdown table (date, NDP count, RDP count, bonus earned)
+- Filter by month/year to view historical data
+- Toggle "Cara Kerja Bonus" (How Bonus Works) section
+
+**Files Created**:
+- `/app/frontend/src/components/StaffBonusProgress.js` - Staff-facing bonus UI
+
+**Backend Endpoint Added**:
+- `GET /api/bonus-calculation/my-bonus` - Returns only the logged-in staff's bonus data
+
+**Files Modified**:
+- `/app/backend/routes/bonus.py` - Added `my-bonus` endpoint
+- `/app/frontend/src/pages/StaffDashboard.js` - Added menu item and component
+- `/app/frontend/src/translations/id.js` - Added `myBonus` translation
+- `/app/frontend/src/translations/en.js` - Added `myBonus` translation
+
+**Security**: Staff can only access their own bonus data via `user.id` filter - no access to other staff's data.
 
 ---
 
