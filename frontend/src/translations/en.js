@@ -105,6 +105,7 @@ const en = {
     reservedMembers: 'Reserved Members',
     staffProgress: 'Staff Progress & Quality',
     leaderboard: 'Leaderboard',
+    myBonus: 'My Bonus',
     dailySummary: 'Daily Summary',
     reportCRM: 'CRM Report',
     bonusCalculation: 'CRM Bonus Calculation',
