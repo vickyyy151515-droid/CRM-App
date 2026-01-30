@@ -313,14 +313,24 @@ export default function OfficeInventory() {
           <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">Office Inventory</h2>
           <p className="text-slate-500 dark:text-slate-400 mt-1">Track office equipment assigned to staff</p>
         </div>
-        <button
-          onClick={() => { resetForm(); setShowAddModal(true); }}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2 transition-colors"
-          data-testid="btn-add-item"
-        >
-          <Plus size={18} />
-          Add Item
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowBulkAddModal(true)}
+            className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-2 transition-colors"
+            data-testid="btn-bulk-add"
+          >
+            <Layers size={18} />
+            Bulk Add
+          </button>
+          <button
+            onClick={() => { resetForm(); setShowAddModal(true); }}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2 transition-colors"
+            data-testid="btn-add-item"
+          >
+            <Plus size={18} />
+            Add Item
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}
