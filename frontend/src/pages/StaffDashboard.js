@@ -18,8 +18,9 @@ import DailySummary from '../components/DailySummary';
 import ConversionFunnel from '../components/ConversionFunnel';
 import CustomerRetention from '../components/CustomerRetention';
 import MessageVariationGenerator from '../components/MessageVariationGenerator';
+import StaffBonusProgress from '../components/StaffBonusProgress';
 import { useLanguage } from '../contexts/LanguageContext';
-import { LayoutDashboard, FileSpreadsheet, Clock, User, UserCheck, DollarSign, Gift, CreditCard, CalendarOff, Timer, Trophy, Bell, CalendarDays, Filter, Heart, Sparkles } from 'lucide-react';
+import { LayoutDashboard, FileSpreadsheet, Clock, User, UserCheck, DollarSign, Gift, CreditCard, CalendarOff, Timer, Trophy, Bell, CalendarDays, Filter, Heart, Sparkles, Calculator } from 'lucide-react';
 
 export default function StaffDashboard({ user, onLogout }) {
   const { t, setDefaultLanguageForRole } = useLanguage();
