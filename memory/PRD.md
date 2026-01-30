@@ -89,6 +89,32 @@ This catches recurring issues like:
 
 ---
 
+### NEW FEATURE: Bulk Add Inventory - COMPLETED (Jan 30, 2026)
+**Status**: COMPLETED - Admins can now bulk add inventory items with staff assignments
+
+**Feature Description**: Add multiple inventory items at once with optional staff assignment
+
+**Capabilities**:
+- **"Bulk Add" button** next to "Add Item" in Office Inventory
+- Modal interface with spreadsheet-like rows:
+  - Item Name, Category, Serial Number, Condition, Assign to Staff
+  - Add Row button to add more items
+  - Duplicate row button to copy an item (clears serial number)
+  - Remove row button
+- **Quick Actions**:
+  - "Assign all to:" dropdown - assigns all items to selected staff with one click
+- Shows summary: "X items ready to add • Y will be assigned"
+- Creates assignment records automatically for assigned items
+
+**Backend Endpoint Added**:
+- `POST /api/inventory/bulk` - Bulk create inventory items with optional staff assignment
+
+**Files Modified**:
+- `/app/backend/routes/inventory.py` - Added bulk endpoint and BulkInventoryItem model
+- `/app/frontend/src/components/OfficeInventory.js` - Added bulk add modal and handlers
+
+---
+
 ### Refactoring: AttendanceAdmin.js & attendance.py - COMPLETED (Jan 28, 2026)
 **Status**: COMPLETED - Both frontend and backend code successfully refactored
 
