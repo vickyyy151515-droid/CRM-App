@@ -389,3 +389,164 @@ async def export_bonus_calculation(
         media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         filename=filename
     )
+
+# ==================== STAFF BONUS ENDPOINT (Self-view only) ====================
+
+from .auth import get_current_user as get_any_user
+
+@router.get("/bonus-calculation/my-bonus")
+async def get_my_bonus_data(
+    year: int = None,
+    month: int = None,
+    user: User = Depends(get_any_user)
+):
+    """Get bonus data for the currently logged-in staff member (staff can only see their own bonus)"""
+    db = get_db()
+    
+    if year is None:
+        year = get_jakarta_now().year
+    if month is None:
+        month = get_jakarta_now().month
+    
+    month_str = f"{year}-{str(month).zfill(2)}"
+    
+    # Only fetch records for this specific staff member
+    query = {
+        'record_date': {'$regex': f'^{month_str}'},
+        'staff_id': user.id
+    }
+    
+    records = await db.omset_records.find(query, {'_id': 0}).to_list(100000)
+    
+    # Need all-time records to determine NDP vs RDP
+    all_time_records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
+    
+    def is_tambahan_record(record):
+        """Check if record has 'tambahan' in keterangan field"""
+        keterangan = record.get('keterangan', '') or ''
+        return 'tambahan' in keterangan.lower()
+    
+    # Build customer first deposit map
+    customer_first_date = {}
+    for record in sorted(all_time_records, key=lambda x: x['record_date']):
+        if is_tambahan_record(record):
+            continue
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        pid = record['product_id']
+        key = (cid_normalized, pid)
+        if key not in customer_first_date:
+            customer_first_date[key] = record['record_date']
+    
+    # Calculate staff's bonus data
+    total_nominal = 0
+    daily_stats = {}
+    daily_rdp_customers = {}
+    daily_ndp_customers = {}
+    
+    for record in records:
+        date = record['record_date']
+        
+        nominal = record.get('depo_total', 0) or record.get('nominal', 0) or 0
+        total_nominal += nominal
+        
+        if date not in daily_stats:
+            daily_stats[date] = {'ndp': 0, 'rdp': 0}
+            daily_rdp_customers[date] = set()
+            daily_ndp_customers[date] = set()
+        
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (cid_normalized, record['product_id'])
+        first_date = customer_first_date.get(key)
+        
+        if is_tambahan_record(record):
+            if cid_normalized not in daily_rdp_customers[date]:
+                daily_rdp_customers[date].add(cid_normalized)
+                daily_stats[date]['rdp'] += 1
+        elif first_date == date:
+            if cid_normalized not in daily_ndp_customers[date]:
+                daily_ndp_customers[date].add(cid_normalized)
+                daily_stats[date]['ndp'] += 1
+        else:
+            if cid_normalized not in daily_rdp_customers[date]:
+                daily_rdp_customers[date].add(cid_normalized)
+                daily_stats[date]['rdp'] += 1
+    
+    bonus_config = await get_bonus_config()
+    main_tiers = bonus_config['main_tiers']
+    ndp_tiers = bonus_config['ndp_tiers']
+    rdp_tiers = bonus_config['rdp_tiers']
+    
+    main_bonus = calculate_main_bonus_with_config(total_nominal, main_tiers)
+    
+    ndp_bonus_total = 0
+    rdp_bonus_total = 0
+    ndp_bonus_days = {}
+    rdp_bonus_days = {}
+    
+    for tier in ndp_tiers:
+        ndp_bonus_days[tier['label']] = 0
+    for tier in rdp_tiers:
+        rdp_bonus_days[tier['label']] = 0
+    
+    daily_breakdown = []
+    
+    for date, stats in sorted(daily_stats.items()):
+        ndp = stats['ndp']
+        rdp = stats['rdp']
+        
+        ndp_daily_bonus = calculate_daily_ndp_bonus_with_config(ndp, ndp_tiers)
+        rdp_daily_bonus = calculate_daily_rdp_bonus_with_config(rdp, rdp_tiers)
+        
+        ndp_bonus_total += ndp_daily_bonus
+        rdp_bonus_total += rdp_daily_bonus
+        
+        for tier in ndp_tiers:
+            min_val = tier['min']
+            max_val = tier.get('max')
+            if max_val is None:
+                if ndp >= min_val:
+                    ndp_bonus_days[tier['label']] += 1
+                    break
+            else:
+                if min_val <= ndp <= max_val:
+                    ndp_bonus_days[tier['label']] += 1
+                    break
+        
+        for tier in rdp_tiers:
+            min_val = tier['min']
+            max_val = tier.get('max')
+            if max_val is None:
+                if rdp >= min_val:
+                    rdp_bonus_days[tier['label']] += 1
+                    break
+            else:
+                if min_val <= rdp <= max_val:
+                    rdp_bonus_days[tier['label']] += 1
+                    break
+        
+        daily_breakdown.append({
+            'date': date,
+            'ndp': ndp,
+            'rdp': rdp,
+            'ndp_bonus': ndp_daily_bonus,
+            'rdp_bonus': rdp_daily_bonus
+        })
+    
+    total_bonus = main_bonus + ndp_bonus_total + rdp_bonus_total
+    
+    return {
+        'year': year,
+        'month': month,
+        'staff_id': user.id,
+        'staff_name': user.name,
+        'total_nominal': total_nominal,
+        'main_bonus': main_bonus,
+        'ndp_bonus_total': ndp_bonus_total,
+        'rdp_bonus_total': rdp_bonus_total,
+        'total_bonus': total_bonus,
+        'ndp_bonus_days': ndp_bonus_days,
+        'rdp_bonus_days': rdp_bonus_days,
+        'daily_breakdown': daily_breakdown,
+        'days_worked': len(daily_stats),
+        'bonus_config': bonus_config  # Include config so staff can see how bonus is calculated
+    }
