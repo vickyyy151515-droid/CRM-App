@@ -192,6 +192,91 @@ async def create_inventory_item(item_data: InventoryItemCreate, user: User = Dep
     return item
 
 
+@router.post("/inventory/bulk")
+async def bulk_create_inventory(data: BulkInventoryCreate, user: User = Depends(get_admin_user)):
+    """Bulk create inventory items with optional staff assignment"""
+    db = get_db()
+    
+    now = get_jakarta_now()
+    
+    # Pre-fetch all referenced staff
+    staff_ids = list(set(item.staff_id for item in data.items if item.staff_id))
+    staff_map = {}
+    if staff_ids:
+        staff_list = await db.users.find({'id': {'$in': staff_ids}}).to_list(100)
+        staff_map = {s['id']: s for s in staff_list}
+    
+    created_items = []
+    assignments = []
+    
+    for item_data in data.items:
+        item_id = str(uuid.uuid4())
+        
+        # Get staff if assigned
+        staff = staff_map.get(item_data.staff_id) if item_data.staff_id else None
+        
+        item = {
+            'id': item_id,
+            'name': item_data.name,
+            'description': item_data.description,
+            'category': item_data.category,
+            'serial_number': item_data.serial_number,
+            'purchase_date': item_data.purchase_date,
+            'purchase_price': item_data.purchase_price,
+            'condition': item_data.condition,
+            'notes': item_data.notes,
+            'status': 'assigned' if staff else 'available',
+            'assigned_to': staff['id'] if staff else None,
+            'assigned_to_name': staff['name'] if staff else None,
+            'assigned_at': now.isoformat() if staff else None,
+            'created_at': now.isoformat(),
+            'created_by': user.id,
+            'created_by_name': user.name,
+            'updated_at': now.isoformat()
+        }
+        
+        created_items.append(item)
+        
+        # Create assignment record if assigned
+        if staff:
+            assignment_record = {
+                'id': str(uuid.uuid4()),
+                'item_id': item_id,
+                'item_name': item_data.name,
+                'staff_id': staff['id'],
+                'staff_name': staff['name'],
+                'assigned_at': now.isoformat(),
+                'assigned_by': user.id,
+                'assigned_by_name': user.name,
+                'returned_at': None,
+                'return_condition': None,
+                'notes': f'Bulk assigned on {now.strftime("%Y-%m-%d")}'
+            }
+            assignments.append(assignment_record)
+    
+    # Insert all items
+    if created_items:
+        await db.inventory_items.insert_many(created_items)
+    
+    # Insert all assignments
+    if assignments:
+        await db.inventory_assignments.insert_many(assignments)
+    
+    # Count by staff
+    staff_counts = {}
+    for item in created_items:
+        if item['assigned_to_name']:
+            staff_counts[item['assigned_to_name']] = staff_counts.get(item['assigned_to_name'], 0) + 1
+    
+    return {
+        'success': True,
+        'total_created': len(created_items),
+        'total_assigned': len(assignments),
+        'by_staff': staff_counts,
+        'message': f'Successfully created {len(created_items)} items'
+    }
+
+
 @router.put("/inventory/{item_id}")
 async def update_inventory_item(item_id: str, item_data: InventoryItemUpdate, user: User = Depends(get_admin_user)):
     """Update an inventory item"""
