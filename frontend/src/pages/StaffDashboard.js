@@ -237,6 +237,8 @@ export default function StaffDashboard({ user, onLogout }) {
         return <MessageVariationGenerator />;
       case 'my-bonus':
         return <StaffBonusProgress />;
+      case 'bonus-check':
+        return <StaffBonusCheck />;
       default:
         return null;
     }
