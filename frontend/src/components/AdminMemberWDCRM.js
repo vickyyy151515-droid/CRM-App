@@ -662,6 +662,23 @@ export default function AdminMemberWDCRM() {
               </span>
             )}
           </button>
+          <button
+            onClick={() => setActiveTab('migration')}
+            className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors flex items-center gap-2 ${
+              activeTab === 'migration'
+                ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 border border-b-0 border-slate-200 dark:border-slate-700'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+            data-testid="tab-migration"
+          >
+            <Settings size={16} />
+            Migrasi Batch
+            {migrationStatus?.records_needing_migration > 0 && (
+              <span className="px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 text-xs rounded-full">
+                {migrationStatus.records_needing_migration}
+              </span>
+            )}
+          </button>
         </div>
       </div>
 
