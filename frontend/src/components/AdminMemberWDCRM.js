@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Upload, Database, Users, Trash2, ChevronDown, ChevronUp, Check, X, Search, Shuffle, Package, Edit2, AlertTriangle, RotateCcw } from 'lucide-react';
+import { Upload, Database, Users, Trash2, ChevronDown, ChevronUp, Check, X, Search, Shuffle, Package, Edit2, AlertTriangle, RefreshCw, Archive, Undo2 } from 'lucide-react';
 
 export default function AdminMemberWDCRM() {
   const [databases, setDatabases] = useState([]);
@@ -28,7 +28,17 @@ export default function AdminMemberWDCRM() {
   // Invalid records state
   const [invalidRecords, setInvalidRecords] = useState(null);
   const [showInvalidPanel, setShowInvalidPanel] = useState(false);
-  const [reassigning, setReassigning] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  // Replacement modal state
+  const [showReplaceModal, setShowReplaceModal] = useState(false);
+  const [replaceStaffId, setReplaceStaffId] = useState(null);
+  const [replaceStaffName, setReplaceStaffName] = useState('');
+  const [replaceInvalidCount, setReplaceInvalidCount] = useState(0);
+  const [replaceQuantity, setReplaceQuantity] = useState(0);
+  // Archived/Invalid Database state
+  const [activeTab, setActiveTab] = useState('databases');
+  const [archivedRecords, setArchivedRecords] = useState(null);
+  const [loadingArchived, setLoadingArchived] = useState(false);
 
   useEffect(() => {
     loadProducts();
@@ -40,6 +50,12 @@ export default function AdminMemberWDCRM() {
   useEffect(() => {
     loadDatabases();
   }, [filterProduct]);
+
+  useEffect(() => {
+    if (activeTab === 'invalid') {
+      loadArchivedRecords();
+    }
+  }, [activeTab]);
 
   const loadReservedNames = async () => {
     try {
