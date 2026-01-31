@@ -4,7 +4,7 @@
 from fastapi import APIRouter, Depends, Query
 from typing import Optional
 from datetime import datetime
-from .deps import User, get_db, get_admin_user, get_jakarta_now
+from .deps import User, get_db, get_admin_user, get_current_user, get_jakarta_now
 
 router = APIRouter(tags=["Member Monthly Bonus"])
 
@@ -21,7 +21,7 @@ async def get_member_monthly_bonus(
 ):
     """
     Get customers with total omset >= 10,000,000 in a specific month.
-    Results are grouped by staff and product.
+    Results are grouped by staff and product. Admin only.
     """
     db = get_db()
     
