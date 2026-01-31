@@ -381,12 +381,55 @@ async def get_memberwd_databases(product_id: Optional[str] = None, user: User = 
     
     databases = await db.memberwd_databases.find(query, {'_id': 0}).sort('uploaded_at', -1).to_list(1000)
     
+    # Get all approved reserved members for excluded count calculation
+    reserved_members = await db.reserved_members.find(
+        {'status': 'approved'},
+        {'_id': 0, 'customer_id': 1, 'customer_name': 1, 'product_id': 1}
+    ).to_list(100000)
+    
+    # Build set of reserved customer identifiers per product
+    reserved_by_product = {}
+    for rm in reserved_members:
+        prod_id = rm.get('product_id', '')
+        if prod_id not in reserved_by_product:
+            reserved_by_product[prod_id] = set()
+        if rm.get('customer_id'):
+            reserved_by_product[prod_id].add(rm['customer_id'].strip().upper())
+        if rm.get('customer_name'):
+            reserved_by_product[prod_id].add(rm['customer_name'].strip().upper())
+    
     for database in databases:
         total = await db.memberwd_records.count_documents({'database_id': database['id']})
         assigned = await db.memberwd_records.count_documents({'database_id': database['id'], 'status': 'assigned'})
+        
+        # Calculate excluded count
+        excluded_count = 0
+        product_id_for_db = database.get('product_id', '')
+        available_raw = total - assigned
+        
+        if product_id_for_db and product_id_for_db in reserved_by_product and available_raw > 0:
+            # Get available records to check against reserved members
+            available_records = await db.memberwd_records.find(
+                {'database_id': database['id'], 'status': 'available'},
+                {'_id': 0, 'row_data': 1}
+            ).to_list(100000)
+            
+            reserved_set = reserved_by_product[product_id_for_db]
+            for record in available_records:
+                row_data = record.get('row_data', {})
+                customer_id = None
+                for key in ['customer_id', 'Customer_ID', 'CUSTOMER_ID', 'ID', 'id', 'Username', 'USERNAME', 'username']:
+                    if key in row_data and row_data[key]:
+                        customer_id = str(row_data[key]).strip().upper()
+                        break
+                
+                if customer_id and customer_id in reserved_set:
+                    excluded_count += 1
+        
         database['total_records'] = total
         database['assigned_count'] = assigned
-        database['available_count'] = total - assigned
+        database['excluded_count'] = excluded_count
+        database['available_count'] = available_raw - excluded_count
         if 'product_id' not in database:
             database['product_id'] = ''
             database['product_name'] = 'Unknown'
