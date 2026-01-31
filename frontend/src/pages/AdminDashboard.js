@@ -250,6 +250,8 @@ export default function AdminDashboard({ user, onLogout }) {
         return <OfficeInventory />;
       case 'data-cleanup':
         return <DataCleanup />;
+      case 'bonus-check':
+        return <AdminBonusCheck />;
       default:
         return null;
     }
