@@ -408,7 +408,7 @@ class ProcessInvalidRequest(BaseModel):
 
 @router.post("/memberwd/admin/process-invalid/{staff_id}")
 async def process_invalid_memberwd_and_replace(staff_id: str, data: ProcessInvalidRequest, user: User = Depends(get_admin_user)):
-    """Archive invalid records and optionally assign new records to staff"""
+    """Archive invalid records and optionally assign new records to staff (to the same batch)"""
     db = get_db()
     
     now = get_jakarta_now()
@@ -429,8 +429,9 @@ async def process_invalid_memberwd_and_replace(staff_id: str, data: ProcessInval
     
     record_ids = [r['id'] for r in invalid_records]
     
-    # Get unique database IDs from invalid records for auto-assignment
+    # Get unique database IDs and batch IDs from invalid records for auto-assignment
     database_ids = list(set(r.get('database_id') for r in invalid_records if r.get('database_id')))
+    batch_ids = list(set(r.get('batch_id') for r in invalid_records if r.get('batch_id')))
     
     # Archive invalid records (move to 'invalid_archived' status)
     await db.memberwd_records.update_many(
@@ -442,6 +443,15 @@ async def process_invalid_memberwd_and_replace(staff_id: str, data: ProcessInval
             'archived_by_name': user.name
         }}
     )
+    
+    # Update batch counts
+    for batch_id in batch_ids:
+        if batch_id:
+            archived_in_batch = sum(1 for r in invalid_records if r.get('batch_id') == batch_id)
+            await db.memberwd_batches.update_one(
+                {'id': batch_id},
+                {'$inc': {'current_count': -archived_in_batch, 'archived_count': archived_in_batch}}
+            )
     
     # Mark related notifications as resolved
     await db.admin_notifications.update_many(
@@ -504,19 +514,36 @@ async def process_invalid_memberwd_and_replace(staff_id: str, data: ProcessInval
         
         if eligible_records:
             selected_ids = [r['id'] for r in eligible_records]
+            
+            # Use the first batch_id from invalid records for replacement records
+            target_batch_id = batch_ids[0] if batch_ids else None
+            
+            update_data = {
+                'status': 'assigned',
+                'assigned_to': staff['id'],
+                'assigned_to_name': staff['name'],
+                'assigned_at': now.isoformat(),
+                'assigned_by': user.id,
+                'assigned_by_name': user.name,
+                'auto_replaced': True,
+                'replaced_invalid_ids': record_ids
+            }
+            
+            if target_batch_id:
+                update_data['batch_id'] = target_batch_id
+            
             await db.memberwd_records.update_many(
                 {'id': {'$in': selected_ids}},
-                {'$set': {
-                    'status': 'assigned',
-                    'assigned_to': staff['id'],
-                    'assigned_to_name': staff['name'],
-                    'assigned_at': now.isoformat(),
-                    'assigned_by': user.id,
-                    'assigned_by_name': user.name,
-                    'auto_replaced': True,
-                    'replaced_invalid_ids': record_ids
-                }}
+                {'$set': update_data}
             )
+            
+            # Update batch count with new assignments
+            if target_batch_id:
+                await db.memberwd_batches.update_one(
+                    {'id': target_batch_id},
+                    {'$inc': {'current_count': len(selected_ids), 'replaced_count': len(selected_ids)}}
+                )
+            
             new_assigned_count = len(selected_ids)
     
     # Build message with reserved member info
