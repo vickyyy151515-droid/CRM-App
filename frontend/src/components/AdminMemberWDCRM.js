@@ -112,7 +112,7 @@ export default function AdminMemberWDCRM() {
       setMigrationStatus(response.data);
     } catch (error) {
       console.error('Failed to load migration status:', error);
-      toast.error('Gagal memuat status migrasi');
+      toast.error('Failed to load migration status');
     } finally {
       setLoadingMigration(false);
     }
@@ -120,7 +120,7 @@ export default function AdminMemberWDCRM() {
 
   // Run migration
   const handleRunMigration = async () => {
-    if (!window.confirm('Jalankan migrasi batch untuk record yang belum memiliki batch? Ini akan membuat batch card baru berdasarkan tanggal assignment.')) return;
+    if (!window.confirm('Run batch migration for records without batch? This will create new batch cards based on assignment date.')) return;
     
     setRunningMigration(true);
     try {
@@ -128,7 +128,7 @@ export default function AdminMemberWDCRM() {
       toast.success(response.data.message);
       loadMigrationStatus();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Gagal menjalankan migrasi');
+      toast.error(error.response?.data?.detail || 'Failed to run migration');
     } finally {
       setRunningMigration(false);
     }
@@ -136,7 +136,7 @@ export default function AdminMemberWDCRM() {
 
   // Reset migrated batches
   const handleResetMigratedBatches = async () => {
-    if (!window.confirm('Reset semua batch yang dibuat oleh migrasi sebelumnya? Setelah ini, Anda dapat menjalankan migrasi ulang untuk membuat batch yang benar berdasarkan tanggal assignment.')) return;
+    if (!window.confirm('Reset all batches created by previous migration? After this, you can run migration again to create correct batches based on assignment date.')) return;
     
     setRunningMigration(true);
     try {
@@ -144,7 +144,7 @@ export default function AdminMemberWDCRM() {
       toast.success(response.data.message);
       loadMigrationStatus();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Gagal mereset batch migrasi');
+      toast.error(error.response?.data?.detail || 'Failed to reset migrated batches');
     } finally {
       setRunningMigration(false);
     }
@@ -152,21 +152,21 @@ export default function AdminMemberWDCRM() {
 
   // Run full re-migration (reset + migrate)
   const handleFullRemigration = async () => {
-    if (!window.confirm('Ini akan mereset batch migrasi yang salah dan membuat ulang batch berdasarkan tanggal assignment. Lanjutkan?')) return;
+    if (!window.confirm('This will reset incorrectly migrated batches and recreate them based on assignment date. Continue?')) return;
     
     setRunningMigration(true);
     try {
       // Step 1: Reset
       const resetResponse = await api.post('/memberwd/admin/reset-migrated-batches');
-      toast.info(`Reset: ${resetResponse.data.batches_deleted} batch dihapus, ${resetResponse.data.records_reset} record direset`);
+      toast.info(`Reset: ${resetResponse.data.batches_deleted} batches deleted, ${resetResponse.data.records_reset} records reset`);
       
       // Step 2: Migrate
       const migrateResponse = await api.post('/memberwd/admin/migrate-batches');
-      toast.success(`Migrasi selesai: ${migrateResponse.data.batches_created} batch baru dibuat`);
+      toast.success(`Migration complete: ${migrateResponse.data.batches_created} new batches created`);
       
       loadMigrationStatus();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Gagal menjalankan re-migrasi');
+      toast.error(error.response?.data?.detail || 'Failed to run re-migration');
     } finally {
       setRunningMigration(false);
     }
