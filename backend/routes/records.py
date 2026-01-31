@@ -231,7 +231,7 @@ async def upload_database(
 
 @router.get("/databases/with-stats")
 async def get_databases_with_stats(search: Optional[str] = None, product_id: Optional[str] = None, user: User = Depends(get_current_user)):
-    """Get all databases with real-time record status counts"""
+    """Get all databases with real-time record status counts including excluded (reserved) records"""
     db = get_db()
     query = {}
     if search:
@@ -266,6 +266,24 @@ async def get_databases_with_stats(search: Optional[str] = None, product_id: Opt
             counts_lookup[db_id] = {'available': 0, 'requested': 0, 'assigned': 0}
         counts_lookup[db_id][status] = item['count']
     
+    # Get all approved reserved members to calculate excluded counts
+    reserved_members = await db.reserved_members.find(
+        {'status': 'approved'},
+        {'_id': 0, 'customer_id': 1, 'customer_name': 1, 'product_id': 1}
+    ).to_list(100000)
+    
+    # Build set of reserved customer identifiers per product for fast lookup
+    reserved_by_product = {}
+    for rm in reserved_members:
+        prod_id = rm.get('product_id', '')
+        if prod_id not in reserved_by_product:
+            reserved_by_product[prod_id] = set()
+        # Add both customer_id and customer_name (normalized to uppercase)
+        if rm.get('customer_id'):
+            reserved_by_product[prod_id].add(rm['customer_id'].strip().upper())
+        if rm.get('customer_name'):
+            reserved_by_product[prod_id].add(rm['customer_name'].strip().upper())
+    
     result = []
     for db_item in databases:
         if isinstance(db_item['uploaded_at'], str):
@@ -277,6 +295,33 @@ async def get_databases_with_stats(search: Optional[str] = None, product_id: Opt
         requested_count = counts.get('requested', 0)
         assigned_count = counts.get('assigned', 0)
         total_count = available_count + requested_count + assigned_count
+        
+        # Calculate excluded count (available records that match reserved members)
+        excluded_count = 0
+        product_id_for_db = db_item.get('product_id', '')
+        
+        if product_id_for_db and product_id_for_db in reserved_by_product and available_count > 0:
+            # Get available records for this database to check against reserved members
+            available_records = await db.customer_records.find(
+                {'database_id': db_item['id'], 'status': 'available'},
+                {'_id': 0, 'row_data': 1}
+            ).to_list(100000)
+            
+            reserved_set = reserved_by_product[product_id_for_db]
+            for record in available_records:
+                row_data = record.get('row_data', {})
+                # Check common identifier fields
+                customer_id = None
+                for key in ['customer_id', 'Customer_ID', 'CUSTOMER_ID', 'ID', 'id', 'Username', 'USERNAME', 'username']:
+                    if key in row_data and row_data[key]:
+                        customer_id = str(row_data[key]).strip().upper()
+                        break
+                
+                if customer_id and customer_id in reserved_set:
+                    excluded_count += 1
+        
+        # Adjust available count to show truly available (not excluded)
+        truly_available = available_count - excluded_count
         
         result.append({
             'id': db_item['id'],
@@ -290,7 +335,8 @@ async def get_databases_with_stats(search: Optional[str] = None, product_id: Opt
             'uploaded_by_name': db_item['uploaded_by_name'],
             'uploaded_at': db_item['uploaded_at'].isoformat() if hasattr(db_item['uploaded_at'], 'isoformat') else db_item['uploaded_at'],
             'total_records': total_count,
-            'available_count': available_count,
+            'available_count': truly_available,
+            'excluded_count': excluded_count,
             'requested_count': requested_count,
             'assigned_count': assigned_count
         })
