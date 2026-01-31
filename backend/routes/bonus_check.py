@@ -82,7 +82,7 @@ async def submit_bonus_check(data: BonusCheckSubmission, user: User = Depends(ge
         if isinstance(approved_at, str):
             try:
                 approved_date = datetime.fromisoformat(approved_at.replace('Z', '+00:00'))
-            except:
+            except ValueError:
                 approved_date = now
         else:
             approved_date = approved_at
