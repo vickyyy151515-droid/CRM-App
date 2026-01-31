@@ -1226,7 +1226,7 @@ export default function AdminMemberWDCRM() {
                 <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-1 list-disc list-inside">
                   <li>Migrasi mengorganisir record lama yang belum memiliki batch_id ke dalam batch card</li>
                   <li>Record dikelompokkan berdasarkan <strong>staff + database + tanggal assignment</strong></li>
-                  <li>Jika migrasi sebelumnya salah, gunakan "Reset & Migrasi Ulang" untuk memperbaiki</li>
+                  <li>Jika migrasi sebelumnya salah, gunakan &quot;Reset &amp; Migrasi Ulang&quot; untuk memperbaiki</li>
                 </ul>
               </div>
 
