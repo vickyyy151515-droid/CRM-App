@@ -19,6 +19,7 @@ import ConversionFunnel from '../components/ConversionFunnel';
 import CustomerRetention from '../components/CustomerRetention';
 import MessageVariationGenerator from '../components/MessageVariationGenerator';
 import StaffBonusProgress from '../components/StaffBonusProgress';
+import StaffBonusCheck from '../components/StaffBonusCheck';
 import { useLanguage } from '../contexts/LanguageContext';
 import { LayoutDashboard, FileSpreadsheet, Clock, User, UserCheck, DollarSign, Gift, CreditCard, CalendarOff, Timer, Trophy, Bell, CalendarDays, Filter, Heart, Sparkles, Calculator } from 'lucide-react';
 
