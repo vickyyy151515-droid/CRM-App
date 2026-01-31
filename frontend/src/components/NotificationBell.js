@@ -304,6 +304,9 @@ export default function NotificationBell({ userRole }) {
         return <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center"><AlertCircle size={16} className="text-red-600 dark:text-red-400" /></div>;
       case 'followup_high':
         return <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center"><Clock size={16} className="text-orange-600 dark:text-orange-400" /></div>;
+      case 'bonanza_invalid':
+      case 'memberwd_invalid':
+        return <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center"><AlertCircle size={16} className="text-red-600 dark:text-red-400" /></div>;
       default:
         return <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center"><Bell size={16} className="text-slate-600 dark:text-slate-400" /></div>;
     }
@@ -321,7 +324,7 @@ export default function NotificationBell({ userRole }) {
     }
   };
 
-  const totalAlerts = unreadCount + followupCount;
+  const totalAlerts = unreadCount + followupCount + invalidDbCount;
 
   return (
     <div className="relative" ref={dropdownRef}>
