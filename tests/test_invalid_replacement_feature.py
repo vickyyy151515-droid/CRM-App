@@ -34,7 +34,7 @@ class TestAuthFixtures:
             "password": ADMIN_PASSWORD
         })
         if response.status_code == 200:
-            return response.json().get("access_token")
+            return response.json().get("token")
         return None
     
     @staticmethod
@@ -45,7 +45,7 @@ class TestAuthFixtures:
             "password": STAFF_PASSWORD
         })
         if response.status_code == 200:
-            return response.json().get("access_token")
+            return response.json().get("token")
         return None
 
 
