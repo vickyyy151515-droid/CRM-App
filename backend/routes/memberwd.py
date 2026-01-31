@@ -14,12 +14,14 @@ router = APIRouter(tags=["Member WD CRM"])
 class MemberWDAssignment(BaseModel):
     record_ids: List[str]
     staff_id: str
+    batch_id: Optional[str] = None  # Optional: assign to existing batch
 
 class RandomMemberWDAssignment(BaseModel):
     database_id: str
     staff_id: str
     quantity: int
     username_field: str = "Username"
+    batch_id: Optional[str] = None  # Optional: assign to existing batch
 
 class RecordValidation(BaseModel):
     record_ids: List[str]
