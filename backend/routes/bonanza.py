@@ -382,30 +382,56 @@ async def process_invalid_and_replace(staff_id: str, data: ProcessInvalidRequest
     
     # Auto-assign new records if requested
     new_assigned_count = 0
+    skipped_reserved = 0
     if data.auto_assign_quantity > 0 and database_ids:
         # Find available records from the same databases
         available_records = await db.bonanza_records.find({
             'database_id': {'$in': database_ids},
             'status': 'available'
-        }, {'_id': 0}).to_list(data.auto_assign_quantity * 2)  # Get extra in case some are reserved
+        }, {'_id': 0}).to_list(data.auto_assign_quantity * 3)  # Get extra in case some are reserved
         
-        # Filter out reserved members
-        reserved_members = await db.reserved_members.find({}, {'_id': 0, 'customer_id': 1}).to_list(100000)
-        reserved_ids = set(str(m['customer_id']).strip().upper() for m in reserved_members if m.get('customer_id'))
+        # Get reserved members - check both customer_id and customer_name for comprehensive matching
+        reserved_members = await db.reserved_members.find(
+            {'status': 'approved'},  # Only approved reservations
+            {'_id': 0, 'customer_id': 1, 'customer_name': 1}
+        ).to_list(100000)
+        
+        # Build set of reserved identifiers (uppercase for case-insensitive matching)
+        reserved_ids = set()
+        for m in reserved_members:
+            if m.get('customer_id'):
+                reserved_ids.add(str(m['customer_id']).strip().upper())
+            if m.get('customer_name'):
+                reserved_ids.add(str(m['customer_name']).strip().upper())
         
         eligible_records = []
         for record in available_records:
-            # Check if username is in reserved list
-            username = None
-            for key in ['Username', 'username', 'USER', 'user']:
-                if key in record.get('row_data', {}):
-                    username = str(record['row_data'][key]).strip().upper()
+            row_data = record.get('row_data', {})
+            
+            # Check Username field (case-insensitive)
+            is_reserved = False
+            for key in ['Username', 'username', 'USER', 'user', 'ID', 'id']:
+                if key in row_data:
+                    value = str(row_data[key]).strip().upper()
+                    if value in reserved_ids:
+                        is_reserved = True
+                        skipped_reserved += 1
+                        break
+            
+            # Also check Nama Lengkap / Name field
+            if not is_reserved:
+                for key in ['Nama Lengkap', 'nama_lengkap', 'Name', 'name', 'NAMA']:
+                    if key in row_data:
+                        value = str(row_data[key]).strip().upper()
+                        if value in reserved_ids:
+                            is_reserved = True
+                            skipped_reserved += 1
+                            break
+            
+            if not is_reserved:
+                eligible_records.append(record)
+                if len(eligible_records) >= data.auto_assign_quantity:
                     break
-            if username and username in reserved_ids:
-                continue
-            eligible_records.append(record)
-            if len(eligible_records) >= data.auto_assign_quantity:
-                break
         
         if eligible_records:
             selected_ids = [r['id'] for r in eligible_records]
