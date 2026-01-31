@@ -212,61 +212,6 @@ async def migrate_existing_records_to_batches(user: User = Depends(get_admin_use
             for g in groups.values()
         ]
     }
-        
-        # Track earliest assignment time for this group
-        if assigned_at and (not groups[key]['earliest_assigned'] or assigned_at < groups[key]['earliest_assigned']):
-            groups[key]['earliest_assigned'] = assigned_at
-    
-    # Create batches and update records
-    batches_created = 0
-    records_updated = 0
-    
-    for key, group in groups.items():
-        batch_id = str(uuid.uuid4())
-        
-        # Create batch document
-        await db.memberwd_batches.insert_one({
-            'id': batch_id,
-            'staff_id': group['staff_id'],
-            'staff_name': group['staff_name'],
-            'database_id': group['database_id'],
-            'database_name': group['database_name'],
-            'product_id': group['product_id'],
-            'product_name': group['product_name'],
-            'created_at': group['earliest_assigned'] or now.isoformat(),
-            'created_by': group['assigned_by'],
-            'initial_count': len(group['records']),
-            'current_count': len(group['records']),
-            'migrated': True,
-            'migrated_at': now.isoformat(),
-            'migrated_by': user.name
-        })
-        batches_created += 1
-        
-        # Update all records in this group with the batch_id
-        record_ids = [r['id'] for r in group['records']]
-        result = await db.memberwd_records.update_many(
-            {'id': {'$in': record_ids}},
-            {'$set': {'batch_id': batch_id}}
-        )
-        records_updated += result.modified_count
-    
-    return {
-        'success': True,
-        'message': f'Migration completed: {batches_created} batches created, {records_updated} regular records updated, {replacement_count} replacement records linked to existing batches',
-        'batches_created': batches_created,
-        'records_updated': records_updated,
-        'replacement_records_linked': replacement_count,
-        'groups': [
-            {
-                'staff_name': g['staff_name'],
-                'database_name': g['database_name'],
-                'assigned_at': g['earliest_assigned'],
-                'record_count': len(g['records'])
-            }
-            for g in groups.values()
-        ]
-    }
 
 
 @router.get("/memberwd/admin/check-migration-status")
