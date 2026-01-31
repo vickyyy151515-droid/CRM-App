@@ -1146,6 +1146,145 @@ export default function AdminMemberWDCRM() {
           )}
         </div>
       )}
+
+      {/* Migration Tab Content */}
+      {activeTab === 'migration' && (
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm">
+          <div className="p-6 border-b border-slate-200 dark:border-slate-700">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                  <Settings className="text-indigo-600 dark:text-indigo-400" size={20} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Migrasi Batch</h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    Tool untuk mengorganisir record lama ke dalam sistem batch card
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={loadMigrationStatus}
+                disabled={loadingMigration}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                title="Refresh"
+              >
+                <RefreshCw size={18} className={`text-slate-500 dark:text-slate-400 ${loadingMigration ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+          </div>
+
+          {loadingMigration ? (
+            <div className="p-12 text-center text-slate-500 dark:text-slate-400">
+              Loading status migrasi...
+            </div>
+          ) : (
+            <div className="p-6 space-y-6">
+              {/* Status Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4">
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                    Record Perlu Migrasi
+                  </p>
+                  <p className={`text-2xl font-bold ${
+                    migrationStatus?.records_needing_migration > 0 
+                      ? 'text-amber-600 dark:text-amber-400' 
+                      : 'text-emerald-600 dark:text-emerald-400'
+                  }`}>
+                    {migrationStatus?.records_needing_migration || 0}
+                  </p>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4">
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                    Record Sudah Ada Batch
+                  </p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                    {migrationStatus?.records_with_batches || 0}
+                  </p>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4">
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                    Total Batch
+                  </p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                    {migrationStatus?.total_batches || 0}
+                  </p>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4">
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                    Batch Hasil Migrasi
+                  </p>
+                  <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                    {migrationStatus?.migrated_batches || 0}
+                  </p>
+                </div>
+              </div>
+
+              {/* Info Box */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <h4 className="font-medium text-blue-900 dark:text-blue-200 mb-2">Tentang Migrasi Batch</h4>
+                <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-1 list-disc list-inside">
+                  <li>Migrasi mengorganisir record lama yang belum memiliki batch_id ke dalam batch card</li>
+                  <li>Record dikelompokkan berdasarkan <strong>staff + database + tanggal assignment</strong></li>
+                  <li>Jika migrasi sebelumnya salah, gunakan "Reset & Migrasi Ulang" untuk memperbaiki</li>
+                </ul>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap gap-4">
+                {migrationStatus?.records_needing_migration > 0 && (
+                  <button
+                    onClick={handleRunMigration}
+                    disabled={runningMigration}
+                    className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+                    data-testid="run-migration-btn"
+                  >
+                    <Play size={18} />
+                    {runningMigration ? 'Memproses...' : 'Jalankan Migrasi'}
+                  </button>
+                )}
+
+                {migrationStatus?.migrated_batches > 0 && (
+                  <button
+                    onClick={handleResetMigratedBatches}
+                    disabled={runningMigration}
+                    className="flex items-center gap-2 px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+                    data-testid="reset-migration-btn"
+                  >
+                    <RotateCcw size={18} />
+                    {runningMigration ? 'Memproses...' : 'Reset Batch Migrasi'}
+                  </button>
+                )}
+
+                {migrationStatus?.migrated_batches > 0 && (
+                  <button
+                    onClick={handleFullRemigration}
+                    disabled={runningMigration}
+                    className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+                    data-testid="remigrate-btn"
+                  >
+                    <RefreshCw size={18} />
+                    {runningMigration ? 'Memproses...' : 'Reset & Migrasi Ulang'}
+                  </button>
+                )}
+              </div>
+
+              {/* Success State */}
+              {migrationStatus?.records_needing_migration === 0 && migrationStatus?.migrated_batches === 0 && (
+                <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-6 text-center">
+                  <Check size={48} className="mx-auto text-emerald-600 dark:text-emerald-400 mb-3" />
+                  <h4 className="text-lg font-medium text-emerald-800 dark:text-emerald-200 mb-1">
+                    Semua Record Sudah Terorganisir
+                  </h4>
+                  <p className="text-sm text-emerald-600 dark:text-emerald-400">
+                    Tidak ada record yang perlu dimigrasi. Semua record sudah memiliki batch card.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
