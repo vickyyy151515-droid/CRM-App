@@ -33,7 +33,7 @@ class RecordValidation(BaseModel):
 async def migrate_existing_records_to_batches(user: User = Depends(get_admin_user)):
     """
     Migration endpoint: Auto-create batch cards for existing assigned records that don't have batch_id.
-    Groups records by staff_id + database_id + assignment_date (records assigned on different dates = different batches).
+    Groups records by staff_id + database_id + assignment_timestamp (records assigned at different times = different batches).
     """
     db = get_db()
     now = get_jakarta_now()
@@ -56,8 +56,9 @@ async def migrate_existing_records_to_batches(user: User = Depends(get_admin_use
             'records_updated': 0
         }
     
-    # Group records by staff_id + database_id + assignment_date
-    # This ensures records assigned on different days become separate batches
+    # Group records by staff_id + database_id + assignment_timestamp (minute precision)
+    # This ensures records from different assignment operations become separate batches
+    # Records assigned in the same operation have the exact same timestamp
     groups = {}
     for record in records_without_batch:
         staff_id = record.get('assigned_to')
@@ -67,14 +68,16 @@ async def migrate_existing_records_to_batches(user: User = Depends(get_admin_use
         if not staff_id or not database_id:
             continue
         
-        # Extract date portion from assigned_at (e.g., "2026-01-18" from "2026-01-18T03:23:00+07:00")
-        # This groups records assigned on the same day into the same batch
+        # Use timestamp with MINUTE precision (e.g., "2026-01-18T03:23" from "2026-01-18T03:23:45+07:00")
+        # This creates separate batches for each assignment operation
+        # Records assigned together (same second) will be grouped, but different operations (minutes apart) will be separate
         if assigned_at:
-            assignment_date = assigned_at[:10]  # Get YYYY-MM-DD
+            # Get YYYY-MM-DDTHH:MM (16 chars) - minute precision
+            assignment_timestamp = assigned_at[:16] if len(assigned_at) >= 16 else assigned_at[:10]
         else:
-            assignment_date = 'unknown'
+            assignment_timestamp = 'unknown'
         
-        key = f"{staff_id}|{database_id}|{assignment_date}"
+        key = f"{staff_id}|{database_id}|{assignment_timestamp}"
         if key not in groups:
             groups[key] = {
                 'staff_id': staff_id,
@@ -86,7 +89,7 @@ async def migrate_existing_records_to_batches(user: User = Depends(get_admin_use
                 'records': [],
                 'earliest_assigned': assigned_at,
                 'assigned_by': record.get('assigned_by_name', 'System Migration'),
-                'assignment_date': assignment_date
+                'assignment_timestamp': assignment_timestamp
             }
         
         groups[key]['records'].append(record)
