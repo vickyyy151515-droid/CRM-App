@@ -121,7 +121,7 @@ async def migrate_existing_records_to_batches(user: User = Depends(get_admin_use
             'migrated': True,
             'migrated_at': now.isoformat(),
             'migrated_by': user.name,
-            'assignment_date': group['assignment_date']
+            'assignment_timestamp': group['assignment_timestamp']
         })
         batches_created += 1
         
@@ -142,7 +142,7 @@ async def migrate_existing_records_to_batches(user: User = Depends(get_admin_use
             {
                 'staff_name': g['staff_name'],
                 'database_name': g['database_name'],
-                'assignment_date': g['assignment_date'],
+                'assignment_timestamp': g['assignment_timestamp'],
                 'record_count': len(g['records'])
             }
             for g in groups.values()
