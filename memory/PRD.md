@@ -1,6 +1,6 @@
 # CRM Pro - Product Requirements Document
 
-## Latest Update: January 28, 2026
+## Latest Update: January 31, 2026
 
 ## ⚠️ MANDATORY: PRE-SESSION CHECKLIST
 **EVERY new session MUST run this before any work:**
@@ -11,6 +11,52 @@ This catches recurring issues like:
 - .gitignore corruption (has happened 3+ times)
 - Missing .env files
 - Missing dependencies
+
+---
+
+### NEW FEATURE: Database Validation & Admin Notification - COMPLETED (Jan 31, 2026)
+**Status**: COMPLETED - Full end-to-end workflow for staff to flag invalid database records
+
+**Feature Description**: Staff can mark assigned DB Bonanza and Member WD records as "Valid" or "Not Valid". Invalid records trigger notifications for admins who can then reassign replacement records.
+
+**Staff Capabilities**:
+- Select multiple records using checkboxes
+- "Pilih Semua Belum Validasi" (Select All Unvalidated) button
+- "Tandai Valid" (Mark Valid) button
+- "Tandai Tidak Valid" (Mark Invalid) button with reason modal
+- Visual indicators: Green "Valid" badge, Red "Invalid" badge, Gray "Belum divalidasi" text
+
+**Admin Capabilities**:
+- Red alert banner on DB Bonanza & Member WD pages showing invalid record count
+- Expandable panel showing staff name, invalid count, and record details
+- "Kembalikan ke Pool" button to return invalid records to available pool
+- Notification bell shows unresolved invalid database alert count
+
+**API Endpoints Added**:
+- `POST /api/bonanza/staff/validate` - Staff marks bonanza records valid/invalid
+- `POST /api/memberwd/staff/validate` - Staff marks member WD records valid/invalid
+- `GET /api/notifications/admin/invalid-database` - Admin gets invalid database notifications
+- `GET /api/bonanza/admin/invalid-records` - Admin gets grouped invalid bonanza records
+- `GET /api/memberwd/admin/invalid-records` - Admin gets grouped invalid member WD records
+- `POST /api/bonanza/admin/reassign-invalid/{staff_id}` - Return invalid records to pool
+- `POST /api/memberwd/admin/reassign-invalid/{staff_id}` - Return invalid member WD to pool
+
+**Files Modified**:
+- `/app/backend/routes/bonanza.py` - Added validation endpoints and invalid records management
+- `/app/backend/routes/memberwd.py` - Added validation endpoints and invalid records management
+- `/app/backend/routes/notifications.py` - Added admin invalid database notifications endpoint
+- `/app/frontend/src/components/StaffDBBonanza.js` - Validation UI for staff
+- `/app/frontend/src/components/StaffMemberWDCRM.js` - Validation UI for staff
+- `/app/frontend/src/components/AdminDBBonanza.js` - Invalid records alert banner
+- `/app/frontend/src/components/AdminMemberWDCRM.js` - Invalid records alert banner
+- `/app/frontend/src/components/NotificationBell.js` - Added admin invalid database alerts
+
+**Database Collections**:
+- `admin_notifications` - Stores notifications when staff marks records invalid
+- `bonanza_records` - Added fields: validation_status, validated_at, validation_reason
+- `memberwd_records` - Added fields: validation_status, validated_at, validation_reason
+
+**Testing**: 22 backend tests passed (100%), Full UI tests passed
 
 ---
 
