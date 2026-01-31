@@ -70,6 +70,7 @@ from routes.inventory import router as inventory_router
 from routes.attendance import router as attendance_router
 from routes.fees import router as fees_router
 from routes.message_variations import router as message_variations_router
+from routes.member_bonus import router as member_bonus_router
 
 # Initialize database connection for all route modules
 set_database(db)
