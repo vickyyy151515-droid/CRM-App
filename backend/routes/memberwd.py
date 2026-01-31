@@ -28,6 +28,145 @@ class RecordValidation(BaseModel):
     is_valid: bool
     reason: Optional[str] = None
 
+
+@router.post("/memberwd/admin/migrate-batches")
+async def migrate_existing_records_to_batches(user: User = Depends(get_admin_user)):
+    """
+    Migration endpoint: Auto-create batch cards for existing assigned records that don't have batch_id.
+    Groups records by staff_id + database_id combination.
+    """
+    db = get_db()
+    now = get_jakarta_now()
+    
+    # Find all assigned records without batch_id
+    records_without_batch = await db.memberwd_records.find({
+        'status': 'assigned',
+        '$or': [
+            {'batch_id': {'$exists': False}},
+            {'batch_id': None},
+            {'batch_id': ''}
+        ]
+    }, {'_id': 0}).to_list(100000)
+    
+    if not records_without_batch:
+        return {
+            'success': True,
+            'message': 'No records need migration - all assigned records already have batches',
+            'batches_created': 0,
+            'records_updated': 0
+        }
+    
+    # Group records by staff_id + database_id
+    groups = {}
+    for record in records_without_batch:
+        staff_id = record.get('assigned_to')
+        database_id = record.get('database_id')
+        
+        if not staff_id or not database_id:
+            continue
+        
+        key = f"{staff_id}|{database_id}"
+        if key not in groups:
+            groups[key] = {
+                'staff_id': staff_id,
+                'staff_name': record.get('assigned_to_name', 'Unknown'),
+                'database_id': database_id,
+                'database_name': record.get('database_name', 'Unknown'),
+                'product_id': record.get('product_id', ''),
+                'product_name': record.get('product_name', 'Unknown'),
+                'records': [],
+                'earliest_assigned': record.get('assigned_at'),
+                'assigned_by': record.get('assigned_by_name', 'System Migration')
+            }
+        
+        groups[key]['records'].append(record)
+        
+        # Track earliest assignment date for this group
+        if record.get('assigned_at') and (not groups[key]['earliest_assigned'] or record['assigned_at'] < groups[key]['earliest_assigned']):
+            groups[key]['earliest_assigned'] = record['assigned_at']
+    
+    # Create batches and update records
+    batches_created = 0
+    records_updated = 0
+    
+    for key, group in groups.items():
+        batch_id = str(uuid.uuid4())
+        
+        # Create batch document
+        await db.memberwd_batches.insert_one({
+            'id': batch_id,
+            'staff_id': group['staff_id'],
+            'staff_name': group['staff_name'],
+            'database_id': group['database_id'],
+            'database_name': group['database_name'],
+            'product_id': group['product_id'],
+            'product_name': group['product_name'],
+            'created_at': group['earliest_assigned'] or now.isoformat(),
+            'created_by': group['assigned_by'],
+            'initial_count': len(group['records']),
+            'current_count': len(group['records']),
+            'migrated': True,
+            'migrated_at': now.isoformat(),
+            'migrated_by': user.name
+        })
+        batches_created += 1
+        
+        # Update all records in this group with the batch_id
+        record_ids = [r['id'] for r in group['records']]
+        result = await db.memberwd_records.update_many(
+            {'id': {'$in': record_ids}},
+            {'$set': {'batch_id': batch_id}}
+        )
+        records_updated += result.modified_count
+    
+    return {
+        'success': True,
+        'message': f'Migration completed: {batches_created} batches created, {records_updated} records updated',
+        'batches_created': batches_created,
+        'records_updated': records_updated,
+        'groups': [
+            {
+                'staff_name': g['staff_name'],
+                'database_name': g['database_name'],
+                'record_count': len(g['records'])
+            }
+            for g in groups.values()
+        ]
+    }
+
+
+@router.get("/memberwd/admin/check-migration-status")
+async def check_migration_status(user: User = Depends(get_admin_user)):
+    """Check how many records still need batch migration"""
+    db = get_db()
+    
+    # Count records without batch_id
+    records_without_batch = await db.memberwd_records.count_documents({
+        'status': 'assigned',
+        '$or': [
+            {'batch_id': {'$exists': False}},
+            {'batch_id': None},
+            {'batch_id': ''}
+        ]
+    })
+    
+    # Count records with batch_id
+    records_with_batch = await db.memberwd_records.count_documents({
+        'status': 'assigned',
+        'batch_id': {'$exists': True, '$ne': None, '$ne': ''}
+    })
+    
+    # Count total batches
+    total_batches = await db.memberwd_batches.count_documents({})
+    
+    return {
+        'records_needing_migration': records_without_batch,
+        'records_with_batches': records_with_batch,
+        'total_batches': total_batches,
+        'migration_needed': records_without_batch > 0
+    }
+
+
 @router.post("/memberwd/upload")
 async def upload_memberwd_database(
     file: UploadFile = File(...),
