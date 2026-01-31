@@ -104,6 +104,74 @@ export default function AdminMemberWDCRM() {
     }
   };
 
+  // Load migration status
+  const loadMigrationStatus = async () => {
+    setLoadingMigration(true);
+    try {
+      const response = await api.get('/memberwd/admin/check-migration-status');
+      setMigrationStatus(response.data);
+    } catch (error) {
+      console.error('Failed to load migration status:', error);
+      toast.error('Gagal memuat status migrasi');
+    } finally {
+      setLoadingMigration(false);
+    }
+  };
+
+  // Run migration
+  const handleRunMigration = async () => {
+    if (!window.confirm('Jalankan migrasi batch untuk record yang belum memiliki batch? Ini akan membuat batch card baru berdasarkan tanggal assignment.')) return;
+    
+    setRunningMigration(true);
+    try {
+      const response = await api.post('/memberwd/admin/migrate-batches');
+      toast.success(response.data.message);
+      loadMigrationStatus();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Gagal menjalankan migrasi');
+    } finally {
+      setRunningMigration(false);
+    }
+  };
+
+  // Reset migrated batches
+  const handleResetMigratedBatches = async () => {
+    if (!window.confirm('Reset semua batch yang dibuat oleh migrasi sebelumnya? Setelah ini, Anda dapat menjalankan migrasi ulang untuk membuat batch yang benar berdasarkan tanggal assignment.')) return;
+    
+    setRunningMigration(true);
+    try {
+      const response = await api.post('/memberwd/admin/reset-migrated-batches');
+      toast.success(response.data.message);
+      loadMigrationStatus();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Gagal mereset batch migrasi');
+    } finally {
+      setRunningMigration(false);
+    }
+  };
+
+  // Run full re-migration (reset + migrate)
+  const handleFullRemigration = async () => {
+    if (!window.confirm('Ini akan mereset batch migrasi yang salah dan membuat ulang batch berdasarkan tanggal assignment. Lanjutkan?')) return;
+    
+    setRunningMigration(true);
+    try {
+      // Step 1: Reset
+      const resetResponse = await api.post('/memberwd/admin/reset-migrated-batches');
+      toast.info(`Reset: ${resetResponse.data.batches_deleted} batch dihapus, ${resetResponse.data.records_reset} record direset`);
+      
+      // Step 2: Migrate
+      const migrateResponse = await api.post('/memberwd/admin/migrate-batches');
+      toast.success(`Migrasi selesai: ${migrateResponse.data.batches_created} batch baru dibuat`);
+      
+      loadMigrationStatus();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Gagal menjalankan re-migrasi');
+    } finally {
+      setRunningMigration(false);
+    }
+  };
+
   // Open replacement modal
   const openReplaceModal = (staffId, staffName, invalidCount) => {
     setReplaceStaffId(staffId);
