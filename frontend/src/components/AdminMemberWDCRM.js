@@ -466,13 +466,13 @@ export default function AdminMemberWDCRM() {
                       </span>
                     </div>
                     <button
-                      onClick={() => handleReassignInvalid(staffGroup._id, staffGroup.staff_name)}
-                      disabled={reassigning}
-                      className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm rounded-lg flex items-center gap-1.5 disabled:opacity-50"
-                      data-testid={`reassign-invalid-${staffGroup._id}`}
+                      onClick={() => openReplaceModal(staffGroup._id, staffGroup.staff_name, staffGroup.count)}
+                      disabled={processing}
+                      className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg flex items-center gap-1.5 disabled:opacity-50"
+                      data-testid={`replace-invalid-${staffGroup._id}`}
                     >
-                      <RotateCcw size={14} />
-                      Kembalikan ke Pool
+                      <RefreshCw size={14} />
+                      Ganti dengan Record Baru
                     </button>
                   </div>
                   <div className="max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700">
@@ -506,28 +506,115 @@ export default function AdminMemberWDCRM() {
         </div>
       )}
 
-      {/* Upload Section */}
-      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm mb-6">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-          <Upload size={20} className="text-indigo-600" />
-          Upload New Database
-        </h3>
-        <form onSubmit={handleUpload} className="flex flex-col md:flex-row gap-4">
-          <input
-            type="text"
-            placeholder="Database name..."
-            value={uploadName}
-            onChange={(e) => setUploadName(e.target.value)}
-            className="flex-1 h-10 px-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            data-testid="memberwd-db-name"
-          />
-          <select
-            value={uploadProductId}
-            onChange={(e) => setUploadProductId(e.target.value)}
-            className="h-10 px-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[180px]"
-            data-testid="memberwd-product-select"
+      {/* Replacement Modal */}
+      {showReplaceModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowReplaceModal(false)}>
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-6 w-full max-w-md shadow-xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+              Ganti Record untuk {replaceStaffName}
+            </h3>
+            <div className="space-y-4">
+              <div className="bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                <p className="text-sm text-amber-800 dark:text-amber-200">
+                  <strong>{replaceInvalidCount}</strong> record tidak valid akan dipindahkan ke "Database Invalid"
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Berapa record baru yang ingin ditugaskan?
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={replaceQuantity}
+                  onChange={(e) => setReplaceQuantity(parseInt(e.target.value) || 0)}
+                  className="w-full h-10 px-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                />
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  Masukkan 0 jika tidak ingin menugaskan record baru
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowReplaceModal(false)}
+                className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleProcessInvalid}
+                disabled={processing}
+                className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {processing ? 'Memproses...' : 'Proses'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tabs */}
+      <div className="mb-6 border-b border-slate-200 dark:border-slate-700">
+        <div className="flex gap-1">
+          <button
+            onClick={() => setActiveTab('databases')}
+            className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+              activeTab === 'databases'
+                ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 border border-b-0 border-slate-200 dark:border-slate-700'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+            data-testid="tab-databases"
           >
-            <option value="">Select Product...</option>
+            <Database size={16} className="inline mr-2" />
+            Databases
+          </button>
+          <button
+            onClick={() => setActiveTab('invalid')}
+            className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors flex items-center gap-2 ${
+              activeTab === 'invalid'
+                ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 border border-b-0 border-slate-200 dark:border-slate-700'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+            data-testid="tab-invalid"
+          >
+            <Archive size={16} />
+            Database Invalid
+            {archivedRecords?.total > 0 && (
+              <span className="px-1.5 py-0.5 bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 text-xs rounded-full">
+                {archivedRecords.total}
+              </span>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Databases Tab Content */}
+      {activeTab === 'databases' && (
+        <>
+          {/* Upload Section */}
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm mb-6">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+              <Upload size={20} className="text-indigo-600" />
+              Upload New Database
+            </h3>
+            <form onSubmit={handleUpload} className="flex flex-col md:flex-row gap-4">
+              <input
+                type="text"
+                placeholder="Database name..."
+                value={uploadName}
+                onChange={(e) => setUploadName(e.target.value)}
+                className="flex-1 h-10 px-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                data-testid="memberwd-db-name"
+              />
+              <select
+                value={uploadProductId}
+                onChange={(e) => setUploadProductId(e.target.value)}
+                className="h-10 px-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[180px]"
+                data-testid="memberwd-product-select"
+              >
+                <option value="">Select Product...</option>
             {products.map(p => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
