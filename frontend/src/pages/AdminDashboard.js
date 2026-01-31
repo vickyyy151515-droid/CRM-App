@@ -249,8 +249,6 @@ export default function AdminDashboard({ user, onLogout }) {
         return <OfficeInventory />;
       case 'data-cleanup':
         return <DataCleanup />;
-      case 'member-bonus':
-        return <MemberMonthlyBonus />;
       default:
         return null;
     }
@@ -269,7 +267,6 @@ export default function AdminDashboard({ user, onLogout }) {
     { id: 'attendance', label: t('nav.attendance') || 'Attendance', icon: ScanLine, badge: 0 },
     { id: 'report', label: t('nav.reportCRM'), icon: FileText, badge: 0 },
     { id: 'bonus', label: t('nav.bonusCalculation'), icon: Calculator, badge: 0 },
-    { id: 'member-bonus', label: 'Member Monthly Bonus', icon: Award, badge: 0 },
     { id: 'leave', label: t('nav.leaveRequests'), icon: CalendarOff, badge: 0 },
     { id: 'leave-calendar', label: t('nav.leaveCalendar'), icon: Calendar, badge: 0 },
     { id: 'izin-monitor', label: t('nav.monitorIzin'), icon: Timer, badge: 0 },
