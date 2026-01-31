@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Gift, Download, Calendar, Users, Package, RefreshCw, FileSpreadsheet, FileText, Search, Filter } from 'lucide-react';
 import { toast } from 'sonner';
-import api from '../api';
+import { api } from '../App';
 
 export default function AdminBonusCheck() {
   const [submissions, setSubmissions] = useState([]);
