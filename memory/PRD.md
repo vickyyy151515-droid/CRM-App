@@ -14,7 +14,41 @@ This catches recurring issues like:
 
 ---
 
-### NEW FEATURE: Database Validation & Admin Notification - COMPLETED (Jan 31, 2026)
+### NEW FEATURE: Auto-Replacement & Invalid Database Archive - COMPLETED (Jan 31, 2026)
+**Status**: COMPLETED - Enhanced database validation with auto-replacement and archive
+
+**Feature Description**: When admin processes invalid records, they can choose how many replacement records to automatically assign to the staff. Invalid records are archived to a new "Database Invalid" section instead of returning to the available pool.
+
+**Admin Capabilities**:
+- "Ganti dengan Record Baru" button opens replacement modal
+- Modal shows invalid count and lets admin choose replacement quantity
+- Invalid records are archived (not returned to available pool)
+- New "Database Invalid" tab shows all archived invalid records
+- Restore archived records back to available pool
+- Permanently delete archived records
+
+**API Endpoints Added**:
+- `POST /api/bonanza/admin/process-invalid/{staff_id}` - Archive invalid & auto-assign new records
+- `GET /api/bonanza/admin/archived-invalid` - Get archived invalid records
+- `POST /api/bonanza/admin/archived-invalid/{record_id}/restore` - Restore to available
+- `DELETE /api/bonanza/admin/archived-invalid/{record_id}` - Permanently delete
+- Same endpoints for memberwd
+
+**Files Modified**:
+- `/app/backend/routes/bonanza.py` - Added process-invalid, archived endpoints
+- `/app/backend/routes/memberwd.py` - Added process-invalid, archived endpoints
+- `/app/frontend/src/components/AdminDBBonanza.js` - Tabs, replacement modal, invalid tab
+- `/app/frontend/src/components/AdminMemberWDCRM.js` - Same UI updates
+
+**Database Changes**:
+- New status: `invalid_archived` for processed invalid records
+- New fields: `archived_at`, `archived_by`, `archived_by_name`
+
+**Testing**: 17 backend tests passed (100%), Full UI tests verified
+
+---
+
+### PREVIOUS: Database Validation & Admin Notification - COMPLETED (Jan 31, 2026)
 **Status**: COMPLETED - Full end-to-end workflow for staff to flag invalid database records
 
 **Feature Description**: Staff can mark assigned DB Bonanza and Member WD records as "Valid" or "Not Valid". Invalid records trigger notifications for admins who can then reassign replacement records.
@@ -29,7 +63,6 @@ This catches recurring issues like:
 **Admin Capabilities**:
 - Red alert banner on DB Bonanza & Member WD pages showing invalid record count
 - Expandable panel showing staff name, invalid count, and record details
-- "Kembalikan ke Pool" button to return invalid records to available pool
 - Notification bell shows unresolved invalid database alert count
 
 **API Endpoints Added**:
@@ -38,8 +71,6 @@ This catches recurring issues like:
 - `GET /api/notifications/admin/invalid-database` - Admin gets invalid database notifications
 - `GET /api/bonanza/admin/invalid-records` - Admin gets grouped invalid bonanza records
 - `GET /api/memberwd/admin/invalid-records` - Admin gets grouped invalid member WD records
-- `POST /api/bonanza/admin/reassign-invalid/{staff_id}` - Return invalid records to pool
-- `POST /api/memberwd/admin/reassign-invalid/{staff_id}` - Return invalid member WD to pool
 
 **Files Modified**:
 - `/app/backend/routes/bonanza.py` - Added validation endpoints and invalid records management
