@@ -78,7 +78,7 @@ async def migrate_existing_records_to_batches(user: User = Depends(get_admin_use
         if invalid_ids:
             # Find the batch_id from one of the archived invalid records
             archived = await db.memberwd_records.find_one(
-                {'id': {'$in': invalid_ids}, 'batch_id': {'$exists': True, '$ne': None, '$ne': ''}},
+                {'id': {'$in': invalid_ids}, 'batch_id': {'$exists': True, '$nin': [None, '']}},
                 {'_id': 0, 'batch_id': 1}
             )
             if archived and archived.get('batch_id'):
