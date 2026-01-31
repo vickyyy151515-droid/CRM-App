@@ -140,7 +140,7 @@ function DatabaseCard({ database, t }) {
       </div>
 
       {/* Stats Cards - Matching the image layout */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-5 gap-3">
         {/* Total Records */}
         <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 border border-slate-100 dark:border-slate-700">
           <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{t('database.totalRecords')}</p>
@@ -154,6 +154,14 @@ function DatabaseCard({ database, t }) {
           <p className="text-xs text-emerald-600 dark:text-emerald-400 mb-1">{t('database.availableCount')}</p>
           <p className="text-xl font-bold text-emerald-700 dark:text-emerald-400" data-testid="stat-available">
             {db.available_count}
+          </p>
+        </div>
+
+        {/* Excluded - Red/Pink */}
+        <div className="bg-rose-50 dark:bg-rose-900/30 rounded-lg p-3 border border-rose-100 dark:border-rose-800">
+          <p className="text-xs text-rose-600 dark:text-rose-400 mb-1">Excluded</p>
+          <p className="text-xl font-bold text-rose-700 dark:text-rose-400" data-testid="stat-excluded">
+            {db.excluded_count || 0}
           </p>
         </div>
 
