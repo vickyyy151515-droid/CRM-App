@@ -450,11 +450,22 @@ async def process_invalid_and_replace(staff_id: str, data: ProcessInvalidRequest
             )
             new_assigned_count = len(selected_ids)
     
+    # Build message with reserved member info
+    message = f'{len(record_ids)} record diarsipkan.'
+    if data.auto_assign_quantity > 0:
+        message += f' {new_assigned_count} record baru ditugaskan ke {staff["name"]}.'
+        if skipped_reserved > 0:
+            message += f' ({skipped_reserved} record reserved member dilewati)'
+        if new_assigned_count < data.auto_assign_quantity:
+            shortage = data.auto_assign_quantity - new_assigned_count
+            message += f' Kekurangan {shortage} record karena tidak tersedia.'
+    
     return {
         'success': True,
         'archived_count': len(record_ids),
         'new_assigned_count': new_assigned_count,
-        'message': f'{len(record_ids)} record diarsipkan. {new_assigned_count} record baru ditugaskan ke {staff["name"]}.'
+        'skipped_reserved': skipped_reserved,
+        'message': message
     }
 
 
