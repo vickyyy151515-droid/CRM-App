@@ -33,7 +33,7 @@ class RecordValidation(BaseModel):
 async def migrate_existing_records_to_batches(user: User = Depends(get_admin_user)):
     """
     Migration endpoint: Auto-create batch cards for existing assigned records that don't have batch_id.
-    Groups records by staff_id + database_id combination.
+    Groups records by staff_id + database_id + assignment_date (records assigned on different dates = different batches).
     """
     db = get_db()
     now = get_jakarta_now()
@@ -56,16 +56,25 @@ async def migrate_existing_records_to_batches(user: User = Depends(get_admin_use
             'records_updated': 0
         }
     
-    # Group records by staff_id + database_id
+    # Group records by staff_id + database_id + assignment_date
+    # This ensures records assigned on different days become separate batches
     groups = {}
     for record in records_without_batch:
         staff_id = record.get('assigned_to')
         database_id = record.get('database_id')
+        assigned_at = record.get('assigned_at', '')
         
         if not staff_id or not database_id:
             continue
         
-        key = f"{staff_id}|{database_id}"
+        # Extract date portion from assigned_at (e.g., "2026-01-18" from "2026-01-18T03:23:00+07:00")
+        # This groups records assigned on the same day into the same batch
+        if assigned_at:
+            assignment_date = assigned_at[:10]  # Get YYYY-MM-DD
+        else:
+            assignment_date = 'unknown'
+        
+        key = f"{staff_id}|{database_id}|{assignment_date}"
         if key not in groups:
             groups[key] = {
                 'staff_id': staff_id,
@@ -75,15 +84,16 @@ async def migrate_existing_records_to_batches(user: User = Depends(get_admin_use
                 'product_id': record.get('product_id', ''),
                 'product_name': record.get('product_name', 'Unknown'),
                 'records': [],
-                'earliest_assigned': record.get('assigned_at'),
-                'assigned_by': record.get('assigned_by_name', 'System Migration')
+                'earliest_assigned': assigned_at,
+                'assigned_by': record.get('assigned_by_name', 'System Migration'),
+                'assignment_date': assignment_date
             }
         
         groups[key]['records'].append(record)
         
-        # Track earliest assignment date for this group
-        if record.get('assigned_at') and (not groups[key]['earliest_assigned'] or record['assigned_at'] < groups[key]['earliest_assigned']):
-            groups[key]['earliest_assigned'] = record['assigned_at']
+        # Track earliest assignment time for this group
+        if assigned_at and (not groups[key]['earliest_assigned'] or assigned_at < groups[key]['earliest_assigned']):
+            groups[key]['earliest_assigned'] = assigned_at
     
     # Create batches and update records
     batches_created = 0
@@ -107,7 +117,8 @@ async def migrate_existing_records_to_batches(user: User = Depends(get_admin_use
             'current_count': len(group['records']),
             'migrated': True,
             'migrated_at': now.isoformat(),
-            'migrated_by': user.name
+            'migrated_by': user.name,
+            'assignment_date': group['assignment_date']
         })
         batches_created += 1
         
@@ -128,6 +139,7 @@ async def migrate_existing_records_to_batches(user: User = Depends(get_admin_use
             {
                 'staff_name': g['staff_name'],
                 'database_name': g['database_name'],
+                'assignment_date': g['assignment_date'],
                 'record_count': len(g['records'])
             }
             for g in groups.values()
