@@ -35,10 +35,10 @@ async def migrate_existing_records_to_batches(user: User = Depends(get_admin_use
     Migration endpoint: Auto-create batch cards for existing assigned records that don't have batch_id.
     
     Logic:
-    1. For REPLACEMENT records (auto_replaced=True): Find the batch from their replaced invalid records
-    2. For REGULAR records: Group by staff_id + database_id + EXACT assigned_at timestamp
-    
-    Records assigned in the same operation have the exact same timestamp.
+    1. Group REGULAR records by staff_id + database_id + EXACT assigned_at timestamp
+    2. Create batches for each group
+    3. For REPLACEMENT records (auto_replaced=True): Find the correct batch by looking up 
+       the assigned_at of the invalid records they replaced
     """
     db = get_db()
     now = get_jakarta_now()
@@ -71,33 +71,7 @@ async def migrate_existing_records_to_batches(user: User = Depends(get_admin_use
         else:
             regular_records.append(record)
     
-    # Handle replacement records: find their correct batch from archived invalid records
-    replacement_updates = []
-    for record in replacement_records:
-        invalid_ids = record.get('replaced_invalid_ids', [])
-        if invalid_ids:
-            # Find the batch_id from one of the archived invalid records
-            archived = await db.memberwd_records.find_one(
-                {'id': {'$in': invalid_ids}, 'batch_id': {'$exists': True, '$nin': [None, '']}},
-                {'_id': 0, 'batch_id': 1}
-            )
-            if archived and archived.get('batch_id'):
-                replacement_updates.append({
-                    'record_id': record['id'],
-                    'batch_id': archived['batch_id']
-                })
-    
-    # Apply batch_id updates for replacement records
-    replacement_count = 0
-    for update in replacement_updates:
-        result = await db.memberwd_records.update_one(
-            {'id': update['record_id']},
-            {'$set': {'batch_id': update['batch_id']}}
-        )
-        if result.modified_count > 0:
-            replacement_count += 1
-    
-    # Group REGULAR records by staff_id + database_id + EXACT assigned_at timestamp
+    # STEP 1: Group REGULAR records by staff_id + database_id + EXACT assigned_at timestamp
     groups = {}
     for record in regular_records:
         staff_id = record.get('assigned_to')
@@ -107,7 +81,6 @@ async def migrate_existing_records_to_batches(user: User = Depends(get_admin_use
         if not staff_id or not database_id:
             continue
         
-        # Use the FULL assigned_at timestamp as the grouping key
         assignment_key = assigned_at if assigned_at else 'unknown'
         
         key = f"{staff_id}|{database_id}|{assignment_key}"
@@ -121,10 +94,124 @@ async def migrate_existing_records_to_batches(user: User = Depends(get_admin_use
                 'product_name': record.get('product_name', 'Unknown'),
                 'records': [],
                 'earliest_assigned': assigned_at,
-                'assigned_by': record.get('assigned_by_name', 'System Migration')
+                'assigned_by': record.get('assigned_by_name', 'System Migration'),
+                'assignment_key': assignment_key
             }
         
         groups[key]['records'].append(record)
+    
+    # STEP 2: Create batches for regular records and build timestamp->batch_id mapping
+    batches_created = 0
+    records_updated = 0
+    timestamp_to_batch = {}  # Maps (staff_id, database_id, assigned_at) -> batch_id
+    
+    for key, group in groups.items():
+        batch_id = str(uuid.uuid4())
+        
+        # Create batch document
+        await db.memberwd_batches.insert_one({
+            'id': batch_id,
+            'staff_id': group['staff_id'],
+            'staff_name': group['staff_name'],
+            'database_id': group['database_id'],
+            'database_name': group['database_name'],
+            'product_id': group['product_id'],
+            'product_name': group['product_name'],
+            'created_at': group['earliest_assigned'] or now.isoformat(),
+            'created_by': group['assigned_by'],
+            'initial_count': len(group['records']),
+            'current_count': len(group['records']),
+            'migrated': True,
+            'migrated_at': now.isoformat(),
+            'migrated_by': user.name
+        })
+        batches_created += 1
+        
+        # Store mapping for replacement record lookup
+        timestamp_to_batch[key] = batch_id
+        
+        # Update all records in this group with the batch_id
+        record_ids = [r['id'] for r in group['records']]
+        result = await db.memberwd_records.update_many(
+            {'id': {'$in': record_ids}},
+            {'$set': {'batch_id': batch_id}}
+        )
+        records_updated += result.modified_count
+    
+    # STEP 3: Handle replacement records - find correct batch from invalid records they replaced
+    replacement_count = 0
+    replacement_failed = 0
+    
+    for record in replacement_records:
+        invalid_ids = record.get('replaced_invalid_ids', [])
+        if not invalid_ids:
+            replacement_failed += 1
+            continue
+        
+        # Find one of the invalid records to get its original assigned_at
+        # This tells us which batch the replacement should belong to
+        invalid_record = await db.memberwd_records.find_one(
+            {'id': {'$in': invalid_ids}},
+            {'_id': 0, 'assigned_at': 1, 'assigned_to': 1, 'database_id': 1}
+        )
+        
+        if not invalid_record:
+            replacement_failed += 1
+            continue
+        
+        # Build the key to find the correct batch
+        staff_id = invalid_record.get('assigned_to')
+        database_id = invalid_record.get('database_id')
+        assigned_at = invalid_record.get('assigned_at', '')
+        
+        lookup_key = f"{staff_id}|{database_id}|{assigned_at}"
+        
+        if lookup_key in timestamp_to_batch:
+            # Found the batch! Assign replacement record to it
+            target_batch_id = timestamp_to_batch[lookup_key]
+            await db.memberwd_records.update_one(
+                {'id': record['id']},
+                {'$set': {'batch_id': target_batch_id}}
+            )
+            replacement_count += 1
+        else:
+            # Batch not found - might be in a non-migrated batch
+            # Try to find existing batch by matching timestamp
+            existing_batch = await db.memberwd_batches.find_one(
+                {
+                    'staff_id': staff_id,
+                    'database_id': database_id,
+                    'created_at': assigned_at
+                },
+                {'_id': 0, 'id': 1}
+            )
+            if existing_batch:
+                await db.memberwd_records.update_one(
+                    {'id': record['id']},
+                    {'$set': {'batch_id': existing_batch['id']}}
+                )
+                replacement_count += 1
+            else:
+                replacement_failed += 1
+    
+    return {
+        'success': True,
+        'message': f'Migration completed: {batches_created} batches created, {records_updated} regular records, {replacement_count} replacement records linked',
+        'batches_created': batches_created,
+        'records_updated': records_updated,
+        'replacement_records_linked': replacement_count,
+        'replacement_records_failed': replacement_failed,
+        'total_records': records_updated + replacement_count,
+        'groups': [
+            {
+                'staff_name': g['staff_name'],
+                'database_name': g['database_name'],
+                'assigned_at': g['earliest_assigned'],
+                'record_count': len(g['records'])
+            }
+            for g in groups.values()
+        ]
+    }
         
         # Track earliest assignment time for this group
         if assigned_at and (not groups[key]['earliest_assigned'] or assigned_at < groups[key]['earliest_assigned']):
