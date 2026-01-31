@@ -16,8 +16,10 @@ export default function NotificationBell({ userRole }) {
   const { t } = useLanguage();
   const [notifications, setNotifications] = useState([]);
   const [followupAlerts, setFollowupAlerts] = useState([]);
+  const [invalidDbAlerts, setInvalidDbAlerts] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [followupCount, setFollowupCount] = useState(0);
+  const [invalidDbCount, setInvalidDbCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [wsStatus, setWsStatus] = useState(WS_STATUS.DISCONNECTED);
@@ -27,6 +29,9 @@ export default function NotificationBell({ userRole }) {
   const reconnectAttemptsRef = useRef(0);
   const maxReconnectAttempts = 5;
   const baseReconnectDelay = 2000;
+
+  // Check if user is admin or master_admin
+  const isAdmin = userRole === 'admin' || userRole === 'master_admin';
 
   // Get WebSocket URL from backend URL
   const getWsUrl = () => {
@@ -61,6 +66,18 @@ export default function NotificationBell({ userRole }) {
       setFollowupCount(response.data.count || 0);
     } catch (error) {
       console.error('Failed to load followup alerts');
+    }
+  };
+
+  // Load invalid database notifications for admins
+  const loadInvalidDbAlerts = async () => {
+    if (!isAdmin) return;
+    try {
+      const response = await api.get('/notifications/admin/invalid-database');
+      setInvalidDbAlerts(response.data.notifications || []);
+      setInvalidDbCount(response.data.summary?.total_unresolved || 0);
+    } catch (error) {
+      console.error('Failed to load invalid database alerts:', error);
     }
   };
 
