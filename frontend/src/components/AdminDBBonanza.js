@@ -935,6 +935,113 @@ export default function AdminDBBonanza() {
           ))
         )}
       </div>
+        </>
+      )}
+
+      {/* Invalid Database Tab Content */}
+      {activeTab === 'invalid' && (
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm">
+          <div className="p-6 border-b border-slate-200 dark:border-slate-700">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                  <Archive className="text-red-600 dark:text-red-400" size={20} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Database Invalid</h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    Record yang ditandai tidak valid oleh staff dan telah diarsipkan
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={loadArchivedRecords}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                title="Refresh"
+              >
+                <RefreshCw size={18} className="text-slate-500 dark:text-slate-400" />
+              </button>
+            </div>
+          </div>
+          
+          {loadingArchived ? (
+            <div className="p-12 text-center text-slate-500 dark:text-slate-400">
+              Loading archived records...
+            </div>
+          ) : !archivedRecords || archivedRecords.total === 0 ? (
+            <div className="p-12 text-center">
+              <Archive size={48} className="mx-auto text-slate-300 dark:text-slate-600 mb-4" />
+              <h4 className="text-lg font-medium text-slate-600 dark:text-slate-400 mb-1">Tidak ada record invalid</h4>
+              <p className="text-sm text-slate-400 dark:text-slate-500">
+                Record invalid akan muncul di sini setelah diproses dari staff
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-200 dark:divide-slate-700">
+              {archivedRecords.by_database?.map((dbGroup) => (
+                <div key={dbGroup.database_id} className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Database size={16} className="text-slate-400" />
+                      <span className="font-medium text-slate-900 dark:text-white">{dbGroup.database_name}</span>
+                      <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded">
+                        {dbGroup.product_name}
+                      </span>
+                      <span className="px-2 py-0.5 bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 text-xs rounded-full">
+                        {dbGroup.count} records
+                      </span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    {dbGroup.records?.slice(0, 10).map((record) => (
+                      <div
+                        key={record.id}
+                        className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-slate-900 dark:text-white text-sm">
+                              {Object.values(record.row_data || {}).slice(0, 2).join(' - ')}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+                            <span>Staff: {record.assigned_to_name || '-'}</span>
+                            <span>Alasan: <span className="text-red-600 dark:text-red-400">{record.validation_reason || '-'}</span></span>
+                            {record.archived_at && (
+                              <span>Diarsipkan: {new Date(record.archived_at).toLocaleDateString('id-ID')}</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleRestoreRecord(record.id)}
+                            className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors text-amber-600 dark:text-amber-400"
+                            title="Kembalikan ke Pool"
+                          >
+                            <Undo2 size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteArchivedRecord(record.id)}
+                            className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors text-red-600 dark:text-red-400"
+                            title="Hapus Permanen"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    {dbGroup.records?.length > 10 && (
+                      <div className="text-center py-2 text-xs text-slate-500 dark:text-slate-400">
+                        +{dbGroup.records.length - 10} more records
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
