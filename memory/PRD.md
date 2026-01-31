@@ -14,6 +14,46 @@ This catches recurring issues like:
 
 ---
 
+### NEW FEATURE: Customer Bonus Check System - COMPLETED (Feb 1, 2026)
+**Status**: COMPLETED
+
+**Staff Panel - "Cek Bonus Member"**:
+- Staff can submit customers for monthly bonus eligibility check
+- Input: Customer ID + Product selection
+- Validation:
+  - Customer must be in staff's Reserved Member list
+  - Must be approved and not expired (30-day rule)
+  - Each customer can only be submitted once per month
+- Shows submission history by month
+
+**Admin Panel - "Customer Bonus Check"**:
+- View all submissions from staff
+- Filter by month, staff, product
+- Summary cards showing total submissions, active staff
+- Export to CSV or Excel
+
+**Files Created**:
+- `/app/backend/routes/bonus_check.py` - All backend APIs
+- `/app/frontend/src/components/StaffBonusCheck.js` - Staff UI
+- `/app/frontend/src/components/AdminBonusCheck.js` - Admin UI
+
+**API Endpoints**:
+- `POST /api/bonus-check/submit` - Staff submits customer
+- `GET /api/bonus-check/my-submissions` - Staff's own submissions
+- `GET /api/bonus-check/products` - Products list
+- `GET /api/bonus-check/admin/all` - Admin view all
+- `GET /api/bonus-check/admin/export` - Export to CSV/Excel
+- `GET /api/bonus-check/admin/staff-list` - Staff list for filter
+
+---
+
+### BUG: Member WD Batch Migration - PAUSED (Feb 1, 2026)
+**Status**: PAUSED - Migration logic still has issues with record distribution. User requested to continue tomorrow.
+
+**Issue**: Migration groups records incorrectly, resulting in wrong record counts per batch. User expects 8 batches with 10 records each + 1 batch with 15 records = 95 total.
+
+---
+
 ### BUG FIX: Member WD Batch Migration Reset Tool - COMPLETED (Feb 1, 2026)
 **Status**: COMPLETED - Added reset tool and UI for incorrectly migrated batches
 
