@@ -464,9 +464,11 @@ export default function StaffMemberWDCRM() {
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                         {batch.records.map((record, idx) => {
                           const rowData = record.row_data || {};
-                          const username = rowData.Username || rowData.username || '-';
-                          const name = rowData['Nama Lengkap'] || rowData.nama_lengkap || rowData.Name || '-';
-                          const whatsapp = rowData.WhatsApp || rowData.whatsapp || rowData.Phone || '-';
+                          
+                          // More flexible field detection - check multiple possible column names
+                          const username = rowData.USERNAME || rowData.Username || rowData.username || rowData.USER || rowData.user || rowData.ID || rowData.id || '-';
+                          const name = rowData.NAMA_REKENING || rowData.nama_rekening || rowData['Nama Rekening'] || rowData['Nama Lengkap'] || rowData.nama_lengkap || rowData.NAMA || rowData.Nama || rowData.Name || rowData.name || rowData.NAME || '-';
+                          const whatsapp = rowData.WHATSAPP || rowData.WhatsApp || rowData.whatsapp || rowData.PHONE || rowData.Phone || rowData.phone || rowData.HP || rowData.hp || rowData.NO_HP || rowData.no_hp || '-';
                           const isSelected = selectedRecords.includes(record.id);
                           const isUnvalidated = !record.validation_status;
 
