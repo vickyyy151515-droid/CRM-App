@@ -162,7 +162,8 @@ export default function StaffMemberWDCRM() {
   };
 
   const getStatusBadge = (record) => {
-    if (record.validation_status === 'valid') {
+    // Backend saves as 'validated', check both for compatibility
+    if (record.validation_status === 'valid' || record.validation_status === 'validated') {
       return (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-xs rounded-full">
           <CheckCircle size={12} />
