@@ -171,11 +171,61 @@ async def check_migration_status(user: User = Depends(get_admin_user)):
     # Count total batches
     total_batches = await db.memberwd_batches.count_documents({})
     
+    # Count migrated batches (created by migration, may need re-migration)
+    migrated_batches = await db.memberwd_batches.count_documents({'migrated': True})
+    
     return {
         'records_needing_migration': records_without_batch,
         'records_with_batches': records_with_batch,
         'total_batches': total_batches,
+        'migrated_batches': migrated_batches,
         'migration_needed': records_without_batch > 0
+    }
+
+
+@router.post("/memberwd/admin/reset-migrated-batches")
+async def reset_migrated_batches(user: User = Depends(get_admin_user)):
+    """
+    Reset batches created by the migration (migrated=True).
+    This will:
+    1. Remove batch_id from all records that belong to migrated batches
+    2. Delete all migrated batches
+    3. After this, run /admin/migrate-batches again to create proper batches
+    """
+    db = get_db()
+    
+    # Find all migrated batches
+    migrated_batches = await db.memberwd_batches.find(
+        {'migrated': True},
+        {'_id': 0, 'id': 1}
+    ).to_list(10000)
+    
+    if not migrated_batches:
+        return {
+            'success': True,
+            'message': 'No migrated batches found to reset',
+            'batches_deleted': 0,
+            'records_reset': 0
+        }
+    
+    batch_ids = [b['id'] for b in migrated_batches]
+    
+    # Remove batch_id from records belonging to these batches
+    result = await db.memberwd_records.update_many(
+        {'batch_id': {'$in': batch_ids}},
+        {'$unset': {'batch_id': ''}}
+    )
+    records_reset = result.modified_count
+    
+    # Delete the migrated batches
+    delete_result = await db.memberwd_batches.delete_many({'migrated': True})
+    batches_deleted = delete_result.deleted_count
+    
+    return {
+        'success': True,
+        'message': f'Reset {batches_deleted} migrated batches, {records_reset} records now need re-migration',
+        'batches_deleted': batches_deleted,
+        'records_reset': records_reset
     }
 
 
