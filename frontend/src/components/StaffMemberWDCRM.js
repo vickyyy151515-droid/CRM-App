@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { CreditCard, Calendar, Package, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronUp, Users, RefreshCw } from 'lucide-react';
+import { CreditCard, Calendar, Package, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronUp, Users, RefreshCw, Edit2, Check, X } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 export default function StaffMemberWDCRM() {
@@ -14,6 +14,9 @@ export default function StaffMemberWDCRM() {
   const [invalidReason, setInvalidReason] = useState('');
   const [processing, setProcessing] = useState(false);
   const [activeBatchId, setActiveBatchId] = useState(null);
+  // Rename state
+  const [editingBatchId, setEditingBatchId] = useState(null);
+  const [editingName, setEditingName] = useState('');
 
   useEffect(() => {
     loadBatches();
@@ -44,6 +47,44 @@ export default function StaffMemberWDCRM() {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  // Start editing batch name
+  const startEditingBatch = (batch, e) => {
+    e.stopPropagation();
+    setEditingBatchId(batch.id);
+    setEditingName(batch.custom_name || batch.database_name);
+  };
+
+  // Save batch name
+  const saveBatchName = async (batchId, e) => {
+    e.stopPropagation();
+    if (!editingName.trim()) {
+      toast.error('Nama batch tidak boleh kosong');
+      return;
+    }
+    
+    try {
+      await api.patch(`/memberwd/staff/batches/${batchId}/rename`, {
+        custom_name: editingName.trim()
+      });
+      toast.success('Nama batch berhasil diubah');
+      // Update local state
+      setBatches(prev => prev.map(b => 
+        b.id === batchId ? { ...b, custom_name: editingName.trim() } : b
+      ));
+      setEditingBatchId(null);
+      setEditingName('');
+    } catch (error) {
+      toast.error('Gagal mengubah nama batch');
+    }
+  };
+
+  // Cancel editing
+  const cancelEditing = (e) => {
+    e.stopPropagation();
+    setEditingBatchId(null);
+    setEditingName('');
   };
 
   const toggleBatch = (batchId) => {
