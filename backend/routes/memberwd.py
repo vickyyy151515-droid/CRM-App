@@ -153,7 +153,7 @@ async def check_migration_status(user: User = Depends(get_admin_user)):
     # Count records with batch_id
     records_with_batch = await db.memberwd_records.count_documents({
         'status': 'assigned',
-        'batch_id': {'$exists': True, '$ne': None, '$ne': ''}
+        'batch_id': {'$exists': True, '$nin': [None, '']}
     })
     
     # Count total batches
