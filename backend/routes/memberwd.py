@@ -289,6 +289,42 @@ async def delete_memberwd_database(database_id: str, user: User = Depends(get_ad
     await db.memberwd_databases.delete_one({'id': database_id})
     return {'message': 'Database deleted successfully'}
 
+
+@router.get("/memberwd/staff/batches")
+async def get_staff_memberwd_batches(user: User = Depends(get_current_user)):
+    """Get Member WD batches assigned to the current staff"""
+    db = get_db()
+    if user.role != 'staff':
+        raise HTTPException(status_code=403, detail="Only staff can access this endpoint")
+    
+    # Get batches for this staff
+    batches = await db.memberwd_batches.find(
+        {'staff_id': user.id},
+        {'_id': 0}
+    ).sort('created_at', -1).to_list(100)
+    
+    # Get records for each batch with counts
+    for batch in batches:
+        batch_records = await db.memberwd_records.find(
+            {'batch_id': batch['id'], 'assigned_to': user.id, 'status': 'assigned'},
+            {'_id': 0}
+        ).to_list(10000)
+        
+        batch['records'] = batch_records
+        batch['active_count'] = len(batch_records)
+        
+        # Count by validation status
+        validated = sum(1 for r in batch_records if r.get('validation_status') == 'valid')
+        invalid = sum(1 for r in batch_records if r.get('validation_status') == 'invalid')
+        unvalidated = len(batch_records) - validated - invalid
+        
+        batch['validated_count'] = validated
+        batch['invalid_count'] = invalid
+        batch['unvalidated_count'] = unvalidated
+    
+    return batches
+
+
 @router.get("/memberwd/staff/records")
 async def get_staff_memberwd_records(product_id: Optional[str] = None, user: User = Depends(get_current_user)):
     """Get Member WD records assigned to the current staff"""
