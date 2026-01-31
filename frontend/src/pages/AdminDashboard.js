@@ -270,6 +270,7 @@ export default function AdminDashboard({ user, onLogout }) {
     { id: 'attendance', label: t('nav.attendance') || 'Attendance', icon: ScanLine, badge: 0 },
     { id: 'report', label: t('nav.reportCRM'), icon: FileText, badge: 0 },
     { id: 'bonus', label: t('nav.bonusCalculation'), icon: Calculator, badge: 0 },
+    { id: 'bonus-check', label: 'Customer Bonus Check', icon: Award, badge: 0 },
     { id: 'leave', label: t('nav.leaveRequests'), icon: CalendarOff, badge: 0 },
     { id: 'leave-calendar', label: t('nav.leaveCalendar'), icon: Calendar, badge: 0 },
     { id: 'izin-monitor', label: t('nav.monitorIzin'), icon: Timer, badge: 0 },
