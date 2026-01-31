@@ -672,7 +672,7 @@ export default function AdminMemberWDCRM() {
             data-testid="tab-migration"
           >
             <Settings size={16} />
-            Migrasi Batch
+            Batch Migration
             {migrationStatus?.records_needing_migration > 0 && (
               <span className="px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 text-xs rounded-full">
                 {migrationStatus.records_needing_migration}
