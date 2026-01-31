@@ -175,6 +175,9 @@ export default function NotificationBell({ userRole }) {
     if (userRole === 'staff') {
       loadFollowupAlerts();
     }
+    if (isAdmin) {
+      loadInvalidDbAlerts();
+    }
 
     // Connect WebSocket
     const token = localStorage.getItem('token');
@@ -187,6 +190,9 @@ export default function NotificationBell({ userRole }) {
       loadNotifications();
       if (userRole === 'staff') {
         loadFollowupAlerts();
+      }
+      if (isAdmin) {
+        loadInvalidDbAlerts();
       }
     }, 60000);
 
@@ -203,7 +209,7 @@ export default function NotificationBell({ userRole }) {
         ws.close(1000, 'Component unmount');
       }
     };
-  }, [userRole]);
+  }, [userRole, isAdmin]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
