@@ -239,6 +239,145 @@ async def get_staff_memberwd_records(product_id: Optional[str] = None, user: Use
     
     return records
 
+
+@router.post("/memberwd/staff/validate")
+async def validate_memberwd_records(data: RecordValidation, user: User = Depends(get_current_user)):
+    """Staff marks records as valid or invalid"""
+    db = get_db()
+    if user.role != 'staff':
+        raise HTTPException(status_code=403, detail="Only staff can access this endpoint")
+    
+    now = get_jakarta_now()
+    
+    # Only allow validating records assigned to this staff
+    records = await db.memberwd_records.find({
+        'id': {'$in': data.record_ids},
+        'assigned_to': user.id
+    }).to_list(1000)
+    
+    if len(records) == 0:
+        raise HTTPException(status_code=404, detail="No records found or not assigned to you")
+    
+    validation_status = 'validated' if data.is_valid else 'invalid'
+    
+    # Update records
+    await db.memberwd_records.update_many(
+        {'id': {'$in': data.record_ids}, 'assigned_to': user.id},
+        {'$set': {
+            'validation_status': validation_status,
+            'validated_at': now.isoformat(),
+            'validation_reason': data.reason if not data.is_valid else None
+        }}
+    )
+    
+    # If marked as invalid, create notification for admin
+    if not data.is_valid:
+        # Count total invalid records for this staff
+        total_invalid = await db.memberwd_records.count_documents({
+            'assigned_to': user.id,
+            'validation_status': 'invalid'
+        })
+        
+        # Create or update admin notification
+        notification = {
+            'id': str(uuid.uuid4()),
+            'type': 'memberwd_invalid',
+            'staff_id': user.id,
+            'staff_name': user.name,
+            'record_count': len(data.record_ids),
+            'total_invalid': total_invalid,
+            'reason': data.reason,
+            'record_ids': data.record_ids,
+            'created_at': now.isoformat(),
+            'is_read': False,
+            'is_resolved': False
+        }
+        await db.admin_notifications.insert_one(notification)
+    
+    return {
+        'success': True,
+        'message': f'{len(records)} records marked as {"valid" if data.is_valid else "invalid"}',
+        'validation_status': validation_status
+    }
+
+
+@router.get("/memberwd/admin/invalid-records")
+async def get_invalid_memberwd_records(user: User = Depends(get_admin_user)):
+    """Get all invalid memberwd records with staff info (Admin only)"""
+    db = get_db()
+    
+    # Group invalid records by staff
+    pipeline = [
+        {'$match': {'validation_status': 'invalid'}},
+        {'$group': {
+            '_id': '$assigned_to',
+            'staff_name': {'$first': '$assigned_to_name'},
+            'count': {'$sum': 1},
+            'records': {'$push': {
+                'id': '$id',
+                'row_data': '$row_data',
+                'database_name': '$database_name',
+                'validation_reason': '$validation_reason',
+                'validated_at': '$validated_at'
+            }}
+        }},
+        {'$sort': {'count': -1}}
+    ]
+    
+    results = await db.memberwd_records.aggregate(pipeline).to_list(100)
+    
+    return {
+        'total_invalid': sum(r['count'] for r in results),
+        'by_staff': results
+    }
+
+
+@router.post("/memberwd/admin/reassign-invalid/{staff_id}")
+async def reassign_invalid_memberwd_to_available(staff_id: str, user: User = Depends(get_admin_user)):
+    """Move all invalid records from a staff back to available pool"""
+    db = get_db()
+    
+    now = get_jakarta_now()
+    
+    # Find invalid records
+    invalid_records = await db.memberwd_records.find({
+        'assigned_to': staff_id,
+        'validation_status': 'invalid'
+    }).to_list(10000)
+    
+    if len(invalid_records) == 0:
+        raise HTTPException(status_code=404, detail="No invalid records found for this staff")
+    
+    record_ids = [r['id'] for r in invalid_records]
+    
+    # Reset records to available
+    await db.memberwd_records.update_many(
+        {'id': {'$in': record_ids}},
+        {'$set': {
+            'status': 'available',
+            'assigned_to': None,
+            'assigned_to_name': None,
+            'assigned_at': None,
+            'validation_status': None,
+            'validated_at': None,
+            'validation_reason': None,
+            'returned_at': now.isoformat(),
+            'returned_reason': 'Invalid - reassigned to available pool'
+        }}
+    )
+    
+    # Mark related notifications as resolved
+    await db.admin_notifications.update_many(
+        {'type': 'memberwd_invalid', 'staff_id': staff_id, 'is_resolved': False},
+        {'$set': {'is_resolved': True, 'resolved_at': now.isoformat(), 'resolved_by': user.name}}
+    )
+    
+    return {
+        'success': True,
+        'message': f'{len(record_ids)} invalid records returned to available pool',
+        'count': len(record_ids)
+    }
+
 @router.get("/memberwd/staff")
 async def get_memberwd_staff_list(user: User = Depends(get_admin_user)):
     """Get list of staff members for assignment"""
