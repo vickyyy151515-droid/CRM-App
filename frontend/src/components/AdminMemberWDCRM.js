@@ -516,7 +516,7 @@ export default function AdminMemberWDCRM() {
             <div className="space-y-4">
               <div className="bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
                 <p className="text-sm text-amber-800 dark:text-amber-200">
-                  <strong>{replaceInvalidCount}</strong> record tidak valid akan dipindahkan ke "Database Invalid"
+                  <strong>{replaceInvalidCount}</strong> record tidak valid akan dipindahkan ke &quot;Database Invalid&quot;
                 </p>
               </div>
               <div>
