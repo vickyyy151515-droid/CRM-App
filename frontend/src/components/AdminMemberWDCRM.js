@@ -1157,9 +1157,9 @@ export default function AdminMemberWDCRM() {
                   <Settings className="text-indigo-600 dark:text-indigo-400" size={20} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Migrasi Batch</h3>
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Batch Migration</h3>
                   <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Tool untuk mengorganisir record lama ke dalam sistem batch card
+                    Tool to organize old records into the batch card system
                   </p>
                 </div>
               </div>
