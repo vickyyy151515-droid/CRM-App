@@ -166,9 +166,10 @@ async def migrate_existing_records_to_batches(user: User = Depends(get_admin_use
     
     return {
         'success': True,
-        'message': f'Migration completed: {batches_created} batches created, {records_updated} records updated',
+        'message': f'Migration completed: {batches_created} batches created, {records_updated} regular records updated, {replacement_count} replacement records linked to existing batches',
         'batches_created': batches_created,
         'records_updated': records_updated,
+        'replacement_records_linked': replacement_count,
         'groups': [
             {
                 'staff_name': g['staff_name'],
