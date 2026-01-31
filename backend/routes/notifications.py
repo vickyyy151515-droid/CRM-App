@@ -61,6 +61,65 @@ async def delete_all_notifications(user: User = Depends(get_current_user)):
     result = await db.notifications.delete_many({'user_id': user.id})
     return {'message': f'{result.deleted_count} notifications deleted', 'deleted_count': result.deleted_count}
 
+# ==================== ADMIN DATABASE VALIDATION NOTIFICATIONS ====================
+
+@router.get("/notifications/admin/invalid-database")
+async def get_admin_invalid_database_notifications(user: User = Depends(get_admin_user)):
+    """Get invalid database notifications for admin (DB Bonanza & Member WD)"""
+    db = get_db()
+    
+    # Get unread/unresolved notifications from admin_notifications collection
+    notifications = await db.admin_notifications.find(
+        {'is_resolved': False},
+        {'_id': 0}
+    ).sort('created_at', -1).to_list(100)
+    
+    # Get summary counts
+    bonanza_count = await db.admin_notifications.count_documents({
+        'type': 'bonanza_invalid', 
+        'is_resolved': False
+    })
+    memberwd_count = await db.admin_notifications.count_documents({
+        'type': 'memberwd_invalid', 
+        'is_resolved': False
+    })
+    
+    # Get total invalid records in each category
+    bonanza_invalid_total = await db.bonanza_records.count_documents({'validation_status': 'invalid'})
+    memberwd_invalid_total = await db.memberwd_records.count_documents({'validation_status': 'invalid'})
+    
+    return {
+        'notifications': notifications,
+        'summary': {
+            'bonanza_notifications': bonanza_count,
+            'memberwd_notifications': memberwd_count,
+            'bonanza_invalid_records': bonanza_invalid_total,
+            'memberwd_invalid_records': memberwd_invalid_total,
+            'total_unresolved': bonanza_count + memberwd_count
+        }
+    }
+
+@router.patch("/notifications/admin/invalid-database/{notification_id}/read")
+async def mark_admin_notification_read(notification_id: str, user: User = Depends(get_admin_user)):
+    """Mark an admin notification as read"""
+    db = get_db()
+    result = await db.admin_notifications.update_one(
+        {'id': notification_id},
+        {'$set': {'is_read': True}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    return {'message': 'Notification marked as read'}
+
+@router.delete("/notifications/admin/invalid-database/{notification_id}")
+async def delete_admin_notification(notification_id: str, user: User = Depends(get_admin_user)):
+    """Delete an admin notification"""
+    db = get_db()
+    result = await db.admin_notifications.delete_one({'id': notification_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    return {'message': 'Notification deleted'}
+
 # Helper function to create notification (can be imported by other modules)
 async def create_notification(user_id: str, type: str, title: str, message: str, data: dict = None):
     """Create a notification for a user and send it via WebSocket"""
