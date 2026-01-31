@@ -4,7 +4,7 @@
 from fastapi import APIRouter, Depends, Query
 from typing import Optional
 from datetime import datetime
-from .deps import User, get_db, get_admin_user, get_current_user, get_jakarta_now
+from .deps import User, get_db, get_admin_user, get_jakarta_now
 
 router = APIRouter(tags=["Member Monthly Bonus"])
 
