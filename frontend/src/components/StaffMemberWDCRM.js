@@ -1,45 +1,35 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Gift, FileSpreadsheet, Calendar, Package, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { CreditCard, Calendar, Package, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronUp, Users, RefreshCw } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 export default function StaffMemberWDCRM() {
   const { t } = useLanguage();
-  const [records, setRecords] = useState([]);
-  const [products, setProducts] = useState([]);
+  const [batches, setBatches] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterProduct, setFilterProduct] = useState('');
+  const [expandedBatches, setExpandedBatches] = useState({});
   const [selectedRecords, setSelectedRecords] = useState([]);
   const [showInvalidModal, setShowInvalidModal] = useState(false);
   const [invalidReason, setInvalidReason] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [activeBatchId, setActiveBatchId] = useState(null);
 
   useEffect(() => {
-    loadProducts();
+    loadBatches();
   }, []);
 
-  useEffect(() => {
-    loadRecords();
-  }, [filterProduct]);
-
-  const loadProducts = async () => {
+  const loadBatches = async () => {
+    setLoading(true);
     try {
-      const response = await api.get('/products');
-      setProducts(response.data);
+      const response = await api.get('/memberwd/staff/batches');
+      setBatches(response.data);
+      // Auto-expand first batch if exists
+      if (response.data.length > 0) {
+        setExpandedBatches({ [response.data[0].id]: true });
+      }
     } catch (error) {
-      console.error('Failed to load products');
-    }
-  };
-
-  const loadRecords = async () => {
-    try {
-      const params = filterProduct ? `?product_id=${filterProduct}` : '';
-      const response = await api.get(`/memberwd/staff/records${params}`);
-      setRecords(response.data);
-    } catch (error) {
-      toast.error(t('messages.loadFailed'));
+      toast.error('Gagal memuat data batch');
     } finally {
       setLoading(false);
     }
@@ -56,8 +46,16 @@ export default function StaffMemberWDCRM() {
     });
   };
 
-  // Toggle record selection
-  const toggleRecordSelection = (recordId) => {
+  const toggleBatch = (batchId) => {
+    setExpandedBatches(prev => ({
+      ...prev,
+      [batchId]: !prev[batchId]
+    }));
+  };
+
+  // Toggle record selection within a batch
+  const toggleRecordSelection = (recordId, batchId) => {
+    setActiveBatchId(batchId);
     setSelectedRecords(prev => 
       prev.includes(recordId) 
         ? prev.filter(id => id !== recordId)
@@ -65,12 +63,13 @@ export default function StaffMemberWDCRM() {
     );
   };
 
-  // Select all records in a database
-  const selectAllInDatabase = (dbRecords) => {
-    const unvalidatedRecords = dbRecords.filter(r => !r.validation_status);
+  // Select all unvalidated records in a batch
+  const selectAllInBatch = (batch) => {
+    const unvalidatedRecords = batch.records.filter(r => !r.validation_status);
     const recordIds = unvalidatedRecords.map(r => r.id);
     const allSelected = recordIds.every(id => selectedRecords.includes(id));
     
+    setActiveBatchId(batch.id);
     if (allSelected) {
       setSelectedRecords(prev => prev.filter(id => !recordIds.includes(id)));
     } else {
@@ -78,12 +77,9 @@ export default function StaffMemberWDCRM() {
     }
   };
 
-  // Mark records as valid
-  const handleMarkValid = async () => {
-    if (selectedRecords.length === 0) {
-      toast.warning('Pilih record terlebih dahulu');
-      return;
-    }
+  // Mark selected as valid
+  const markAsValid = async () => {
+    if (selectedRecords.length === 0) return;
     
     setProcessing(true);
     try {
@@ -93,25 +89,17 @@ export default function StaffMemberWDCRM() {
       });
       toast.success(`${selectedRecords.length} record ditandai valid`);
       setSelectedRecords([]);
-      loadRecords();
+      loadBatches();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Gagal memvalidasi');
+      toast.error(error.response?.data?.detail || 'Gagal menandai record');
     } finally {
       setProcessing(false);
     }
   };
 
-  // Mark records as invalid
-  const handleMarkInvalid = async () => {
-    if (selectedRecords.length === 0) {
-      toast.warning('Pilih record terlebih dahulu');
-      return;
-    }
-    
-    if (!invalidReason.trim()) {
-      toast.warning('Masukkan alasan tidak valid');
-      return;
-    }
+  // Mark selected as invalid
+  const markAsInvalid = async () => {
+    if (selectedRecords.length === 0 || !invalidReason.trim()) return;
     
     setProcessing(true);
     try {
@@ -120,117 +108,105 @@ export default function StaffMemberWDCRM() {
         is_valid: false,
         reason: invalidReason
       });
-      toast.success(`${selectedRecords.length} record ditandai tidak valid. Admin akan diberitahu.`);
+      toast.success(`${selectedRecords.length} record ditandai tidak valid`);
       setSelectedRecords([]);
       setShowInvalidModal(false);
       setInvalidReason('');
-      loadRecords();
+      loadBatches();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Gagal memvalidasi');
+      toast.error(error.response?.data?.detail || 'Gagal menandai record');
     } finally {
       setProcessing(false);
     }
   };
 
-  // Group records by database
-  const groupedRecords = records.reduce((acc, record) => {
-    const dbName = record.database_name;
-    if (!acc[dbName]) {
-      acc[dbName] = [];
-    }
-    acc[dbName].push(record);
-    return acc;
-  }, {});
-
-  // Filter records
-  const filteredGroupedRecords = Object.entries(groupedRecords).reduce((acc, [dbName, dbRecords]) => {
-    const filtered = dbRecords.filter(record => 
-      searchTerm === '' || 
-      Object.values(record.row_data).some(val => 
-        String(val).toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    );
-    if (filtered.length > 0) {
-      acc[dbName] = filtered;
-    }
-    return acc;
-  }, {});
-
-  const columns = records.length > 0 ? Object.keys(records[0].row_data) : [];
-  
-  // Filter out sensitive columns for staff users (rekening/bank account info)
-  // EXCEPTION: 'nama_rekening' or 'nama rekening' is allowed because it's the customer's full name
-  const HIDDEN_COLUMNS_FOR_STAFF = ['rekening', 'rek', 'bank', 'no_rekening', 'norek', 'account'];
-  const ALLOWED_COLUMNS = ['nama_rekening', 'nama rekening']; // Customer full name - allowed
-  const visibleColumns = columns.filter(col => {
-    const colLower = col.toLowerCase();
-    // Allow if it's in the allowed list
-    if (ALLOWED_COLUMNS.some(allowed => colLower === allowed.toLowerCase())) {
-      return true;
-    }
-    // Otherwise filter out hidden columns
-    return !HIDDEN_COLUMNS_FOR_STAFF.some(hidden => colLower.includes(hidden.toLowerCase()));
-  });
-
-  // Get validation status badge
-  const getValidationBadge = (record) => {
-    if (!record.validation_status) return null;
-    if (record.validation_status === 'validated') {
+  const getStatusBadge = (record) => {
+    if (record.validation_status === 'valid') {
       return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300">
-          <CheckCircle size={12} /> Valid
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-xs rounded-full">
+          <CheckCircle size={12} />
+          Valid
+        </span>
+      );
+    } else if (record.validation_status === 'invalid') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 text-xs rounded-full">
+          <XCircle size={12} />
+          Invalid
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300">
-        <XCircle size={12} /> Invalid
-      </span>
+      <span className="text-xs text-slate-400 dark:text-slate-500">Belum divalidasi</span>
     );
   };
 
-  return (
-    <div data-testid="staff-db-memberwd">
-      <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white mb-6">{t('dbRecords.memberWdTitle')}</h2>
+  // Calculate total stats
+  const totalRecords = batches.reduce((sum, b) => sum + b.active_count, 0);
+  const totalValidated = batches.reduce((sum, b) => sum + b.validated_count, 0);
+  const totalInvalid = batches.reduce((sum, b) => sum + b.invalid_count, 0);
+  const totalUnvalidated = batches.reduce((sum, b) => sum + b.unvalidated_count, 0);
 
-      {/* Filters */}
-      <div className="mb-6 flex flex-col sm:flex-row gap-4">
-        <input
-          type="text"
-          placeholder={t('dbRecords.searchRecords')}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="flex-1 max-w-md h-10 px-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder:text-slate-400 dark:placeholder:text-slate-500"
-          data-testid="memberwd-search"
-        />
-        <div className="flex items-center gap-2">
-          <Package size={18} className="text-slate-500 dark:text-slate-400" />
-          <select
-            value={filterProduct}
-            onChange={(e) => setFilterProduct(e.target.value)}
-            className="h-10 px-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[180px]"
-            data-testid="memberwd-filter-product"
-          >
-            <option value="">{t('dbRecords.allProducts')}</option>
-            {products.map(p => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
+  return (
+    <div data-testid="staff-memberwd-crm">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+        <div>
+          <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">
+            Member WD CRM
+          </h2>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">
+            {totalRecords} total records dalam {batches.length} batch
+          </p>
+        </div>
+        <button
+          onClick={loadBatches}
+          className="h-10 px-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-2"
+        >
+          <RefreshCw size={18} className={`text-slate-600 dark:text-slate-400 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </button>
+      </div>
+
+      {/* Summary Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
+          <p className="text-sm text-slate-500 dark:text-slate-400">Total Batches</p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-white">{batches.length}</p>
+        </div>
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
+          <p className="text-sm text-slate-500 dark:text-slate-400">Total Records</p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-white">{totalRecords}</p>
+        </div>
+        <div className="bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4">
+          <p className="text-sm text-emerald-600 dark:text-emerald-400">Validated</p>
+          <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{totalValidated}</p>
+        </div>
+        <div className="bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
+          <p className="text-sm text-amber-600 dark:text-amber-400">Belum Validasi</p>
+          <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">{totalUnvalidated}</p>
         </div>
       </div>
 
-      {/* Validation Actions Bar */}
+      {/* Validation Actions */}
       {selectedRecords.length > 0 && (
-        <div className="mb-4 p-3 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 rounded-xl flex items-center justify-between flex-wrap gap-3">
-          <span className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
-            {selectedRecords.length} record dipilih
-          </span>
-          <div className="flex gap-2">
+        <div className="mb-4 p-4 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-indigo-700 dark:text-indigo-300 font-medium">
+              {selectedRecords.length} record dipilih
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
             <button
-              onClick={handleMarkValid}
+              onClick={() => setSelectedRecords([])}
+              className="px-4 py-2 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"
+            >
+              Batal
+            </button>
+            <button
+              onClick={markAsValid}
               disabled={processing}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm flex items-center gap-2 disabled:opacity-50"
-              data-testid="btn-mark-valid"
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm rounded-lg flex items-center gap-2 disabled:opacity-50"
+              data-testid="mark-valid-btn"
             >
               <CheckCircle size={16} />
               Tandai Valid
@@ -238,190 +214,221 @@ export default function StaffMemberWDCRM() {
             <button
               onClick={() => setShowInvalidModal(true)}
               disabled={processing}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm flex items-center gap-2 disabled:opacity-50"
-              data-testid="btn-mark-invalid"
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg flex items-center gap-2 disabled:opacity-50"
+              data-testid="mark-invalid-btn"
             >
               <XCircle size={16} />
               Tandai Tidak Valid
             </button>
-            <button
-              onClick={() => setSelectedRecords([])}
-              className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-sm"
-            >
-              Batal
-            </button>
           </div>
         </div>
       )}
 
-      {loading ? (
-        <div className="text-center py-12 text-slate-600 dark:text-slate-400">{t('dbRecords.loadingRecords')}</div>
-      ) : records.length === 0 ? (
-        <div className="text-center py-12 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
-          <Gift className="mx-auto text-slate-300 dark:text-slate-600 mb-4" size={64} />
-          <p className="text-slate-600 dark:text-slate-400">{t('dbRecords.noMemberWdYet')}</p>
-          <p className="text-sm text-slate-500 dark:text-slate-500 mt-2">{t('dbRecords.adminWillAssign')}</p>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {/* Validation Guide */}
-          <div className="p-4 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-xl">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" size={20} />
-              <div className="text-sm text-amber-800 dark:text-amber-200">
-                <p className="font-semibold mb-1">Validasi Database</p>
-                <p>Pilih record dan tandai sebagai <strong>Valid</strong> jika data benar, atau <strong>Tidak Valid</strong> jika ada masalah. Admin akan diberitahu untuk record yang tidak valid dan akan memberikan pengganti.</p>
-              </div>
-            </div>
+      {/* Validation Guide */}
+      <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-xl">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="text-amber-600 dark:text-amber-400 mt-0.5" size={20} />
+          <div>
+            <h4 className="font-semibold text-amber-800 dark:text-amber-300">Validasi Database</h4>
+            <p className="text-sm text-amber-700 dark:text-amber-400">
+              Pilih record dan tandai sebagai <strong>Valid</strong> jika data benar, atau <strong>Tidak Valid</strong> jika ada masalah. 
+              Admin akan diberitahu untuk record yang tidak valid dan akan memberikan pengganti.
+            </p>
           </div>
-
-          {Object.entries(filteredGroupedRecords).map(([dbName, dbRecords]) => {
-            const unvalidatedRecords = dbRecords.filter(r => !r.validation_status);
-            const allUnvalidatedSelected = unvalidatedRecords.length > 0 && unvalidatedRecords.every(r => selectedRecords.includes(r.id));
-            
-            return (
-              <div key={dbName} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
-                <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/30 dark:to-purple-900/30 border-b border-slate-200 dark:border-slate-700">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
-                        <FileSpreadsheet className="text-indigo-600 dark:text-indigo-400" size={20} />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-slate-900 dark:text-white">{dbName}</h3>
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm text-slate-500 dark:text-slate-400">{dbRecords.length} {t('dbRecords.recordsAssigned')}</p>
-                          {dbRecords[0]?.product_name && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-300">
-                              <Package size={10} className="mr-1" />
-                              {dbRecords[0].product_name}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {unvalidatedRecords.length > 0 && (
-                        <button
-                          onClick={() => selectAllInDatabase(dbRecords)}
-                          className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
-                        >
-                          {allUnvalidatedSelected ? 'Batalkan Pilih Semua' : 'Pilih Semua Belum Validasi'}
-                        </button>
-                      )}
-                      <div className="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400">
-                        <Calendar size={14} />
-                        {t('dbRecords.assigned')}: {formatDate(dbRecords[0]?.assigned_at)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="min-w-full">
-                    <thead className="bg-slate-50 dark:bg-slate-900/50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 w-10">
-                          <input
-                            type="checkbox"
-                            checked={allUnvalidatedSelected && unvalidatedRecords.length > 0}
-                            onChange={() => selectAllInDatabase(dbRecords)}
-                            className="rounded border-slate-300 dark:border-slate-600"
-                          />
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300">#</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300">Status</th>
-                        {visibleColumns.map(col => (
-                          <th key={col} className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300">{col}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {dbRecords.map(record => (
-                        <tr 
-                          key={record.id} 
-                          className={`border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 ${
-                            record.validation_status === 'invalid' ? 'bg-red-50/50 dark:bg-red-900/10' : ''
-                          } ${
-                            record.validation_status === 'validated' ? 'bg-green-50/50 dark:bg-green-900/10' : ''
-                          }`}
-                        >
-                          <td className="px-4 py-3">
-                            {!record.validation_status && (
-                              <input
-                                type="checkbox"
-                                checked={selectedRecords.includes(record.id)}
-                                onChange={() => toggleRecordSelection(record.id)}
-                                className="rounded border-slate-300 dark:border-slate-600"
-                              />
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-slate-900 dark:text-white font-medium">{record.row_number}</td>
-                          <td className="px-4 py-3">
-                            {getValidationBadge(record)}
-                            {!record.validation_status && (
-                              <span className="text-xs text-slate-400">Belum divalidasi</span>
-                            )}
-                          </td>
-                          {visibleColumns.map(col => (
-                            <td key={col} className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">{record.row_data[col] || '-'}</td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            );
-          })}
         </div>
-      )}
+      </div>
 
       {/* Invalid Reason Modal */}
       {showInvalidModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-xl w-full max-w-md" data-testid="invalid-reason-modal">
-            <div className="p-6 border-b border-slate-200 dark:border-slate-700">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-                <XCircle className="text-red-500" size={20} />
-                Tandai Tidak Valid
-              </h3>
-            </div>
-            <div className="p-6">
-              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                {selectedRecords.length} record akan ditandai tidak valid. Admin akan diberitahu dan akan memberikan pengganti.
-              </p>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Alasan Tidak Valid <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  value={invalidReason}
-                  onChange={(e) => setInvalidReason(e.target.value)}
-                  placeholder="Contoh: Data tidak lengkap, nomor tidak aktif, sudah tidak bermain lagi, dll"
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-                  rows={3}
-                  data-testid="invalid-reason-input"
-                />
-              </div>
-            </div>
-            <div className="p-6 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowInvalidModal(false)}>
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-6 w-full max-w-md shadow-xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+              Alasan Tidak Valid
+            </h3>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+              Jelaskan mengapa {selectedRecords.length} record ini tidak valid:
+            </p>
+            <textarea
+              value={invalidReason}
+              onChange={(e) => setInvalidReason(e.target.value)}
+              placeholder="Contoh: Nomor tidak aktif, Data tidak lengkap, dll..."
+              className="w-full h-24 px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white resize-none"
+              data-testid="invalid-reason-input"
+            />
+            <div className="flex gap-3 mt-4">
               <button
-                onClick={() => { setShowInvalidModal(false); setInvalidReason(''); }}
-                className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg"
+                onClick={() => {
+                  setShowInvalidModal(false);
+                  setInvalidReason('');
+                }}
+                className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg"
               >
                 Batal
               </button>
               <button
-                onClick={handleMarkInvalid}
-                disabled={processing || !invalidReason.trim()}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-50 flex items-center gap-2"
-                data-testid="btn-confirm-invalid"
+                onClick={markAsInvalid}
+                disabled={!invalidReason.trim() || processing}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg disabled:opacity-50"
+                data-testid="confirm-invalid-btn"
               >
-                {processing ? 'Memproses...' : 'Konfirmasi Tidak Valid'}
+                {processing ? 'Memproses...' : 'Konfirmasi'}
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Batch Cards */}
+      {loading ? (
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-12 text-center">
+          <RefreshCw size={32} className="mx-auto text-slate-400 animate-spin mb-4" />
+          <p className="text-slate-500 dark:text-slate-400">Memuat data...</p>
+        </div>
+      ) : batches.length === 0 ? (
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-12 text-center">
+          <CreditCard size={48} className="mx-auto text-slate-300 dark:text-slate-600 mb-4" />
+          <h3 className="text-lg font-medium text-slate-600 dark:text-slate-400 mb-2">
+            Belum ada data Member WD
+          </h3>
+          <p className="text-sm text-slate-400 dark:text-slate-500">
+            Admin akan menugaskan data Member WD kepada Anda
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {batches.map((batch) => (
+            <div
+              key={batch.id}
+              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm"
+              data-testid={`batch-card-${batch.id}`}
+            >
+              {/* Batch Header */}
+              <button
+                onClick={() => toggleBatch(batch.id)}
+                className="w-full p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white">
+                    <CreditCard size={24} />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-semibold text-slate-900 dark:text-white">
+                      {batch.database_name}
+                    </h3>
+                    <div className="flex items-center gap-3 text-sm text-slate-500 dark:text-slate-400">
+                      <span className="flex items-center gap-1">
+                        <Package size={14} />
+                        {batch.product_name}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Calendar size={14} />
+                        {formatDate(batch.created_at)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-slate-600 dark:text-slate-400">{batch.active_count} records</span>
+                      {batch.validated_count > 0 && (
+                        <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-xs rounded-full">
+                          {batch.validated_count} valid
+                        </span>
+                      )}
+                      {batch.unvalidated_count > 0 && (
+                        <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 text-xs rounded-full">
+                          {batch.unvalidated_count} pending
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">
+                      Ditugaskan oleh {batch.created_by}
+                    </p>
+                  </div>
+                  {expandedBatches[batch.id] ? (
+                    <ChevronUp className="text-slate-400" />
+                  ) : (
+                    <ChevronDown className="text-slate-400" />
+                  )}
+                </div>
+              </button>
+
+              {/* Batch Content */}
+              {expandedBatches[batch.id] && (
+                <div className="border-t border-slate-200 dark:border-slate-700">
+                  {/* Select All Button */}
+                  {batch.unvalidated_count > 0 && (
+                    <div className="p-3 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
+                      <button
+                        onClick={() => selectAllInBatch(batch)}
+                        className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium"
+                      >
+                        Pilih Semua Belum Validasi ({batch.unvalidated_count})
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Records Table */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-slate-50 dark:bg-slate-900/50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase w-12">#</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Status</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Username</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Nama</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">WhatsApp</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                        {batch.records.map((record, idx) => {
+                          const rowData = record.row_data || {};
+                          const username = rowData.Username || rowData.username || '-';
+                          const name = rowData['Nama Lengkap'] || rowData.nama_lengkap || rowData.Name || '-';
+                          const whatsapp = rowData.WhatsApp || rowData.whatsapp || rowData.Phone || '-';
+                          const isSelected = selectedRecords.includes(record.id);
+                          const isUnvalidated = !record.validation_status;
+
+                          return (
+                            <tr
+                              key={record.id}
+                              className={`hover:bg-slate-50 dark:hover:bg-slate-700/30 ${isSelected ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''}`}
+                            >
+                              <td className="px-4 py-3">
+                                {isUnvalidated ? (
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() => toggleRecordSelection(record.id, batch.id)}
+                                    className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500"
+                                  />
+                                ) : (
+                                  <span className="text-sm text-slate-400">{idx + 1}</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3">
+                                {getStatusBadge(record)}
+                              </td>
+                              <td className="px-4 py-3 text-sm font-medium text-slate-900 dark:text-white">
+                                {username}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
+                                {name}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
+                                {whatsapp}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
     </div>
