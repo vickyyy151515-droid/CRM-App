@@ -59,6 +59,9 @@ export default function AdminMemberWDCRM() {
     if (activeTab === 'invalid') {
       loadArchivedRecords();
     }
+    if (activeTab === 'migration') {
+      loadMigrationStatus();
+    }
   }, [activeTab]);
 
   const loadReservedNames = async () => {
