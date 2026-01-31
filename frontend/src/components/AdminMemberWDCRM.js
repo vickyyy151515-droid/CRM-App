@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Upload, Database, Users, Trash2, ChevronDown, ChevronUp, Check, X, Search, Shuffle, Package, Edit2 } from 'lucide-react';
+import { Upload, Database, Users, Trash2, ChevronDown, ChevronUp, Check, X, Search, Shuffle, Package, Edit2, AlertTriangle, RotateCcw } from 'lucide-react';
 
 export default function AdminMemberWDCRM() {
   const [databases, setDatabases] = useState([]);
@@ -25,11 +25,16 @@ export default function AdminMemberWDCRM() {
   const [reservedNames, setReservedNames] = useState([]);
   const [editingProduct, setEditingProduct] = useState(null);
   const [newProductId, setNewProductId] = useState('');
+  // Invalid records state
+  const [invalidRecords, setInvalidRecords] = useState(null);
+  const [showInvalidPanel, setShowInvalidPanel] = useState(false);
+  const [reassigning, setReassigning] = useState(false);
 
   useEffect(() => {
     loadProducts();
     loadStaff();
     loadReservedNames();
+    loadInvalidRecords();
   }, []);
 
   useEffect(() => {
@@ -46,6 +51,37 @@ export default function AdminMemberWDCRM() {
       setReservedNames(names);
     } catch (error) {
       console.error('Failed to load reserved names');
+    }
+  };
+
+  // Load invalid records from staff validation
+  const loadInvalidRecords = async () => {
+    try {
+      const response = await api.get('/memberwd/admin/invalid-records');
+      setInvalidRecords(response.data);
+      // Auto-expand the invalid panel if there are invalid records
+      if (response.data.total_invalid > 0) {
+        setShowInvalidPanel(true);
+      }
+    } catch (error) {
+      console.error('Failed to load invalid records:', error);
+    }
+  };
+
+  // Reassign invalid records back to available pool
+  const handleReassignInvalid = async (staffId, staffName) => {
+    if (!window.confirm(`Kembalikan semua record tidak valid dari ${staffName} ke pool yang tersedia?`)) return;
+    
+    setReassigning(true);
+    try {
+      const response = await api.post(`/memberwd/admin/reassign-invalid/${staffId}`);
+      toast.success(response.data.message);
+      loadInvalidRecords();
+      loadDatabases();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to reassign records');
+    } finally {
+      setReassigning(false);
     }
   };
 
