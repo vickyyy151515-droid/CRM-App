@@ -39,6 +39,10 @@ export default function AdminMemberWDCRM() {
   const [activeTab, setActiveTab] = useState('databases');
   const [archivedRecords, setArchivedRecords] = useState(null);
   const [loadingArchived, setLoadingArchived] = useState(false);
+  // Migration state
+  const [migrationStatus, setMigrationStatus] = useState(null);
+  const [loadingMigration, setLoadingMigration] = useState(false);
+  const [runningMigration, setRunningMigration] = useState(false);
 
   useEffect(() => {
     loadProducts();
