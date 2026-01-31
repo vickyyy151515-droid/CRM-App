@@ -378,6 +378,40 @@ export default function NotificationBell({ userRole }) {
             )}
           </div>
 
+          {/* Invalid Database Alerts Section (for admin only) */}
+          {isAdmin && invalidDbAlerts.length > 0 && (
+            <div className="border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-red-50 to-amber-50 dark:from-red-900/30 dark:to-amber-900/30">
+              <div className="px-4 py-2 border-b border-red-100 dark:border-red-800">
+                <span className="text-xs font-semibold text-red-700 dark:text-red-400 uppercase tracking-wider">
+                  Database Validasi Tidak Valid ({invalidDbCount})
+                </span>
+              </div>
+              {invalidDbAlerts.slice(0, 5).map((alert, index) => (
+                <div key={alert.id || index} className="p-3 flex items-start gap-3 hover:bg-red-100/50 dark:hover:bg-red-900/40" data-testid={`invalid-db-alert-${index}`}>
+                  {getNotificationIcon(alert.type)}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                      {alert.staff_name} - {alert.record_count} record tidak valid
+                    </p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-1">
+                      {alert.type === 'bonanza_invalid' ? 'DB Bonanza' : 'Member WD'}: {alert.reason || 'No reason provided'}
+                    </p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                      {formatTime(alert.created_at)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              {invalidDbAlerts.length > 5 && (
+                <div className="px-4 py-2 text-center border-t border-red-100 dark:border-red-800">
+                  <span className="text-xs text-red-600 dark:text-red-400">
+                    +{invalidDbAlerts.length - 5} more alerts - Lihat di DB Bonanza / Member WD
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Follow-up Alerts Section (for staff only) */}
           {followupAlerts.length > 0 && (
             <div className="border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/30 dark:to-orange-900/30">
