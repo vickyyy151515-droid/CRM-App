@@ -34,6 +34,7 @@ export default function AdminDBBonanza() {
     loadProducts();
     loadStaff();
     loadReservedNames();
+    loadInvalidRecords();
   }, []);
 
   useEffect(() => {
@@ -47,6 +48,37 @@ export default function AdminDBBonanza() {
       setReservedNames(names);
     } catch (error) {
       console.error('Failed to load reserved names');
+    }
+  };
+
+  // Load invalid records from staff validation
+  const loadInvalidRecords = async () => {
+    try {
+      const response = await api.get('/bonanza/admin/invalid-records');
+      setInvalidRecords(response.data);
+      // Auto-expand the invalid panel if there are invalid records
+      if (response.data.total_invalid > 0) {
+        setShowInvalidPanel(true);
+      }
+    } catch (error) {
+      console.error('Failed to load invalid records:', error);
+    }
+  };
+
+  // Reassign invalid records back to available pool
+  const handleReassignInvalid = async (staffId, staffName) => {
+    if (!window.confirm(`Kembalikan semua record tidak valid dari ${staffName} ke pool yang tersedia?`)) return;
+    
+    setReassigning(true);
+    try {
+      const response = await api.post(`/bonanza/admin/reassign-invalid/${staffId}`);
+      toast.success(response.data.message);
+      loadInvalidRecords();
+      loadDatabases();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to reassign records');
+    } finally {
+      setReassigning(false);
     }
   };
 
