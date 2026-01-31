@@ -185,9 +185,12 @@ async def reset_migrated_batches(user: User = Depends(get_admin_user)):
     """
     Reset batches created by the migration (migrated=True).
     This will:
-    1. Remove batch_id from all records that belong to migrated batches
+    1. Remove batch_id from records that belong to migrated batches (EXCEPT replacement records)
     2. Delete all migrated batches
     3. After this, run /admin/migrate-batches again to create proper batches
+    
+    Note: Records with auto_replaced=True keep their batch_id because they were correctly
+    assigned to existing batches by the replacement flow.
     """
     db = get_db()
     
@@ -208,8 +211,17 @@ async def reset_migrated_batches(user: User = Depends(get_admin_user)):
     batch_ids = [b['id'] for b in migrated_batches]
     
     # Remove batch_id from records belonging to these batches
+    # BUT preserve batch_id for replacement records (auto_replaced=True) 
+    # because they were assigned to correct batches by the replacement flow
     result = await db.memberwd_records.update_many(
-        {'batch_id': {'$in': batch_ids}},
+        {
+            'batch_id': {'$in': batch_ids},
+            '$or': [
+                {'auto_replaced': {'$exists': False}},
+                {'auto_replaced': False},
+                {'auto_replaced': None}
+            ]
+        },
         {'$unset': {'batch_id': ''}}
     )
     records_reset = result.modified_count
@@ -220,7 +232,7 @@ async def reset_migrated_batches(user: User = Depends(get_admin_user)):
     
     return {
         'success': True,
-        'message': f'Reset {batches_deleted} migrated batches, {records_reset} records now need re-migration',
+        'message': f'Reset {batches_deleted} migrated batches, {records_reset} records now need re-migration (replacement records preserved)',
         'batches_deleted': batches_deleted,
         'records_reset': records_reset
     }
