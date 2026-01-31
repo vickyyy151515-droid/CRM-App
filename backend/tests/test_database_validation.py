@@ -32,37 +32,37 @@ class TestSetup:
         response = requests.post(f"{BASE_URL}/api/auth/login", json=MASTER_ADMIN)
         assert response.status_code == 200
         data = response.json()
-        assert "access_token" in data
+        assert "token" in data
         print(f"Master admin login successful: {data.get('user', {}).get('name')}")
-        return data["access_token"]
+        return data["token"]
     
     def test_admin_login(self):
         """Test admin login"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json=ADMIN)
         assert response.status_code == 200
         data = response.json()
-        assert "access_token" in data
+        assert "token" in data
         print(f"Admin login successful: {data.get('user', {}).get('name')}")
-        return data["access_token"]
+        return data["token"]
     
     def test_staff_login(self):
         """Test staff login"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json=STAFF)
         assert response.status_code == 200
         data = response.json()
-        assert "access_token" in data
+        assert "token" in data
         print(f"Staff login successful: {data.get('user', {}).get('name')}")
-        return data["access_token"]
+        return data["token"]
 
 
 # Helper function to get tokens
 def get_staff_token():
     response = requests.post(f"{BASE_URL}/api/auth/login", json=STAFF)
-    return response.json().get("access_token") if response.status_code == 200 else None
+    return response.json().get("token") if response.status_code == 200 else None
 
 def get_admin_token():
     response = requests.post(f"{BASE_URL}/api/auth/login", json=MASTER_ADMIN)
-    return response.json().get("access_token") if response.status_code == 200 else None
+    return response.json().get("token") if response.status_code == 200 else None
 
 
 class TestStaffBonanzaRecords:
