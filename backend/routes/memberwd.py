@@ -306,9 +306,9 @@ async def get_invalid_memberwd_records(user: User = Depends(get_admin_user)):
     """Get all invalid memberwd records with staff info (Admin only)"""
     db = get_db()
     
-    # Group invalid records by staff
+    # Group invalid records by staff (exclude archived records)
     pipeline = [
-        {'$match': {'validation_status': 'invalid'}},
+        {'$match': {'validation_status': 'invalid', 'status': {'$ne': 'invalid_archived'}}},
         {'$group': {
             '_id': '$assigned_to',
             'staff_name': {'$first': '$assigned_to_name'},
