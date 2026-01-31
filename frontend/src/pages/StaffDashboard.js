@@ -21,7 +21,7 @@ import MessageVariationGenerator from '../components/MessageVariationGenerator';
 import StaffBonusProgress from '../components/StaffBonusProgress';
 import StaffBonusCheck from '../components/StaffBonusCheck';
 import { useLanguage } from '../contexts/LanguageContext';
-import { LayoutDashboard, FileSpreadsheet, Clock, User, UserCheck, DollarSign, Gift, CreditCard, CalendarOff, Timer, Trophy, Bell, CalendarDays, Filter, Heart, Sparkles, Calculator } from 'lucide-react';
+import { LayoutDashboard, FileSpreadsheet, Clock, User, UserCheck, DollarSign, Gift, CreditCard, CalendarOff, Timer, Trophy, Bell, CalendarDays, Filter, Heart, Sparkles, Calculator, Award } from 'lucide-react';
 
 export default function StaffDashboard({ user, onLogout }) {
   const { t, setDefaultLanguageForRole } = useLanguage();
