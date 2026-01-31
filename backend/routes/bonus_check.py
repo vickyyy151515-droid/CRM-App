@@ -47,12 +47,13 @@ async def submit_bonus_check(data: BonusCheckSubmission, user: User = Depends(ge
     
     # Check if customer is in staff's reserved member list
     # Check both customer_id and customer_name fields for backwards compatibility
+    # Use staff_id field (not reserved_by)
     reserved = await db.reserved_members.find_one({
         '$or': [
             {'customer_id': {'$regex': f'^{customer_id_normalized}$', '$options': 'i'}},
             {'customer_name': {'$regex': f'^{customer_id_normalized}$', '$options': 'i'}}
         ],
-        'reserved_by': user.id,
+        'staff_id': user.id,
         'product_id': data.product_id,
         'status': 'approved'
     }, {'_id': 0})
