@@ -143,19 +143,54 @@ async def assign_memberwd_records(assignment: MemberWDAssignment, user: User = D
     if not staff:
         raise HTTPException(status_code=404, detail="Staff not found")
     
+    now = get_jakarta_now()
+    
+    # Create or use existing batch
+    batch_id = assignment.batch_id
+    if not batch_id:
+        # Create new batch
+        batch_id = str(uuid.uuid4())
+        
+        # Get database info from first record
+        first_record = await db.memberwd_records.find_one({'id': assignment.record_ids[0]}, {'_id': 0})
+        database_name = first_record.get('database_name', 'Unknown') if first_record else 'Unknown'
+        product_name = first_record.get('product_name', 'Unknown') if first_record else 'Unknown'
+        
+        await db.memberwd_batches.insert_one({
+            'id': batch_id,
+            'staff_id': staff['id'],
+            'staff_name': staff['name'],
+            'database_name': database_name,
+            'product_name': product_name,
+            'created_at': now.isoformat(),
+            'created_by': user.name,
+            'initial_count': len(assignment.record_ids),
+            'current_count': len(assignment.record_ids)
+        })
+    else:
+        # Update existing batch count
+        await db.memberwd_batches.update_one(
+            {'id': batch_id},
+            {'$inc': {'current_count': len(assignment.record_ids)}}
+        )
+    
     result = await db.memberwd_records.update_many(
         {'id': {'$in': assignment.record_ids}, 'status': 'available'},
         {'$set': {
             'status': 'assigned',
             'assigned_to': staff['id'],
             'assigned_to_name': staff['name'],
-            'assigned_at': get_jakarta_now().isoformat(),
+            'assigned_at': now.isoformat(),
             'assigned_by': user.id,
-            'assigned_by_name': user.name
+            'assigned_by_name': user.name,
+            'batch_id': batch_id
         }}
     )
     
-    return {'message': f'{result.modified_count} records assigned to {staff["name"]}'}
+    return {
+        'message': f'{result.modified_count} records assigned to {staff["name"]}',
+        'batch_id': batch_id
+    }
 
 @router.post("/memberwd/assign-random")
 async def assign_random_memberwd_records(assignment: RandomMemberWDAssignment, user: User = Depends(get_admin_user)):
@@ -164,6 +199,8 @@ async def assign_random_memberwd_records(assignment: RandomMemberWDAssignment, u
     staff = await db.users.find_one({'id': assignment.staff_id}, {'_id': 0})
     if not staff:
         raise HTTPException(status_code=404, detail="Staff not found")
+    
+    now = get_jakarta_now()
     
     reserved_members = await db.reserved_members.find({}, {'_id': 0, 'customer_name': 1}).to_list(100000)
     reserved_names = set(str(m['customer_name']).lower().strip() for m in reserved_members if m.get('customer_name'))
@@ -194,15 +231,45 @@ async def assign_random_memberwd_records(assignment: RandomMemberWDAssignment, u
     selected_records = eligible_records[:assignment.quantity]
     selected_ids = [r['id'] for r in selected_records]
     
+    # Get database info
+    db_info = await db.memberwd_databases.find_one({'id': assignment.database_id}, {'_id': 0})
+    database_name = db_info.get('name', 'Unknown') if db_info else 'Unknown'
+    product_name = db_info.get('product_name', 'Unknown') if db_info else 'Unknown'
+    
+    # Create or use existing batch
+    batch_id = assignment.batch_id
+    if not batch_id:
+        # Create new batch
+        batch_id = str(uuid.uuid4())
+        await db.memberwd_batches.insert_one({
+            'id': batch_id,
+            'staff_id': staff['id'],
+            'staff_name': staff['name'],
+            'database_id': assignment.database_id,
+            'database_name': database_name,
+            'product_name': product_name,
+            'created_at': now.isoformat(),
+            'created_by': user.name,
+            'initial_count': len(selected_ids),
+            'current_count': len(selected_ids)
+        })
+    else:
+        # Update existing batch count
+        await db.memberwd_batches.update_one(
+            {'id': batch_id},
+            {'$inc': {'current_count': len(selected_ids)}}
+        )
+    
     result = await db.memberwd_records.update_many(
         {'id': {'$in': selected_ids}},
         {'$set': {
             'status': 'assigned',
             'assigned_to': staff['id'],
             'assigned_to_name': staff['name'],
-            'assigned_at': get_jakarta_now().isoformat(),
+            'assigned_at': now.isoformat(),
             'assigned_by': user.id,
-            'assigned_by_name': user.name
+            'assigned_by_name': user.name,
+            'batch_id': batch_id
         }}
     )
     
@@ -210,7 +277,8 @@ async def assign_random_memberwd_records(assignment: RandomMemberWDAssignment, u
         'message': f'{result.modified_count} records assigned to {staff["name"]}',
         'assigned_count': result.modified_count,
         'total_reserved_in_db': skipped_count,
-        'remaining_eligible': len(eligible_records) - assignment.quantity
+        'remaining_eligible': len(eligible_records) - assignment.quantity,
+        'batch_id': batch_id
     }
 
 @router.delete("/memberwd/databases/{database_id}")
