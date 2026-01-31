@@ -2,9 +2,9 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 import uuid
-from .deps import User, get_db, get_current_user, get_jakarta_now
+from .deps import User, get_db, get_current_user, get_admin_user, get_jakarta_now
 
 router = APIRouter(tags=["Notifications & Preferences"])
 
