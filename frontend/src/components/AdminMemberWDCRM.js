@@ -1176,7 +1176,7 @@ export default function AdminMemberWDCRM() {
 
           {loadingMigration ? (
             <div className="p-12 text-center text-slate-500 dark:text-slate-400">
-              Loading status migrasi...
+              Loading migration status...
             </div>
           ) : (
             <div className="p-6 space-y-6">
@@ -1184,7 +1184,7 @@ export default function AdminMemberWDCRM() {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4">
                   <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
-                    Record Perlu Migrasi
+                    Records Need Migration
                   </p>
                   <p className={`text-2xl font-bold ${
                     migrationStatus?.records_needing_migration > 0 
@@ -1196,7 +1196,7 @@ export default function AdminMemberWDCRM() {
                 </div>
                 <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4">
                   <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
-                    Record Sudah Ada Batch
+                    Records With Batch
                   </p>
                   <p className="text-2xl font-bold text-slate-900 dark:text-white">
                     {migrationStatus?.records_with_batches || 0}
@@ -1204,7 +1204,7 @@ export default function AdminMemberWDCRM() {
                 </div>
                 <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4">
                   <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
-                    Total Batch
+                    Total Batches
                   </p>
                   <p className="text-2xl font-bold text-slate-900 dark:text-white">
                     {migrationStatus?.total_batches || 0}
@@ -1212,7 +1212,7 @@ export default function AdminMemberWDCRM() {
                 </div>
                 <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4">
                   <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
-                    Batch Hasil Migrasi
+                    Migrated Batches
                   </p>
                   <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
                     {migrationStatus?.migrated_batches || 0}
@@ -1222,11 +1222,11 @@ export default function AdminMemberWDCRM() {
 
               {/* Info Box */}
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                <h4 className="font-medium text-blue-900 dark:text-blue-200 mb-2">Tentang Migrasi Batch</h4>
+                <h4 className="font-medium text-blue-900 dark:text-blue-200 mb-2">About Batch Migration</h4>
                 <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-1 list-disc list-inside">
-                  <li>Migrasi mengorganisir record lama yang belum memiliki batch_id ke dalam batch card</li>
-                  <li>Record dikelompokkan berdasarkan <strong>staff + database + tanggal assignment</strong></li>
-                  <li>Jika migrasi sebelumnya salah, gunakan &quot;Reset &amp; Migrasi Ulang&quot; untuk memperbaiki</li>
+                  <li>Migration organizes old records without batch_id into batch cards</li>
+                  <li>Records are grouped by <strong>staff + database + assignment date</strong></li>
+                  <li>If previous migration was incorrect, use &quot;Reset &amp; Re-migrate&quot; to fix</li>
                 </ul>
               </div>
 
@@ -1240,7 +1240,7 @@ export default function AdminMemberWDCRM() {
                     data-testid="run-migration-btn"
                   >
                     <Play size={18} />
-                    {runningMigration ? 'Memproses...' : 'Jalankan Migrasi'}
+                    {runningMigration ? 'Processing...' : 'Run Migration'}
                   </button>
                 )}
 
@@ -1252,7 +1252,7 @@ export default function AdminMemberWDCRM() {
                     data-testid="reset-migration-btn"
                   >
                     <RotateCcw size={18} />
-                    {runningMigration ? 'Memproses...' : 'Reset Batch Migrasi'}
+                    {runningMigration ? 'Processing...' : 'Reset Migrated Batches'}
                   </button>
                 )}
 
@@ -1264,7 +1264,7 @@ export default function AdminMemberWDCRM() {
                     data-testid="remigrate-btn"
                   >
                     <RefreshCw size={18} />
-                    {runningMigration ? 'Memproses...' : 'Reset & Migrasi Ulang'}
+                    {runningMigration ? 'Processing...' : 'Reset & Re-migrate'}
                   </button>
                 )}
               </div>
@@ -1274,10 +1274,10 @@ export default function AdminMemberWDCRM() {
                 <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-6 text-center">
                   <Check size={48} className="mx-auto text-emerald-600 dark:text-emerald-400 mb-3" />
                   <h4 className="text-lg font-medium text-emerald-800 dark:text-emerald-200 mb-1">
-                    Semua Record Sudah Terorganisir
+                    All Records Organized
                   </h4>
                   <p className="text-sm text-emerald-600 dark:text-emerald-400">
-                    Tidak ada record yang perlu dimigrasi. Semua record sudah memiliki batch card.
+                    No records need migration. All records already have batch cards.
                   </p>
                 </div>
               )}
