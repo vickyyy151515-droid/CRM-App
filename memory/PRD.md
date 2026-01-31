@@ -15,31 +15,32 @@ This catches recurring issues like:
 ---
 
 ### BUG FIX: Member WD Batch Migration Reset Tool - COMPLETED (Feb 1, 2026)
-**Status**: COMPLETED - Added reset tool for incorrectly migrated batches
+**Status**: COMPLETED - Added reset tool and UI for incorrectly migrated batches
 
 **Problem**: Users who ran the initial migration script found that all records from the same database were grouped into a single batch, even if they were assigned at different times/dates.
 
 **Root Cause**: The user ran the migration on their production environment before the date-based grouping fix was applied. The current code already has the correct logic (groups by `assigned_at` date), but existing migrated batches needed to be reset.
 
-**Solution**: Added a new endpoint to reset migrated batches so users can re-run the migration:
+**Solution**: Added a new endpoint and UI tab to reset migrated batches so users can re-run the migration:
 1. `POST /api/memberwd/admin/reset-migrated-batches` - Resets all batches with `migrated: true`
    - Removes `batch_id` from records belonging to migrated batches
    - Deletes the migrated batch documents
    - After this, user can run `POST /api/memberwd/admin/migrate-batches` to create proper batches
 
-**How to Fix Incorrectly Migrated Data**:
-1. Call `POST /api/memberwd/admin/reset-migrated-batches` (resets old migrated batches)
-2. Call `POST /api/memberwd/admin/migrate-batches` (creates new batches grouped by date)
+**How to Fix Incorrectly Migrated Data (UI)**:
+1. Go to Admin → Member WD CRM → Click "Migrasi Batch" tab
+2. Click "Reset & Migrasi Ulang" button to reset old batches and create new ones based on assignment date
 
 **Files Modified**:
 - `/app/backend/routes/memberwd.py` - Added reset endpoint, enhanced status endpoint
+- `/app/frontend/src/components/AdminMemberWDCRM.js` - Added "Migrasi Batch" tab with status dashboard and action buttons
 
 **API Endpoints**:
 - `GET /api/memberwd/admin/check-migration-status` - Now includes `migrated_batches` count
 - `POST /api/memberwd/admin/reset-migrated-batches` - NEW: Reset incorrectly migrated batches
 - `POST /api/memberwd/admin/migrate-batches` - Re-run migration with correct date-based grouping
 
-**Testing**: Backend curl tests verified - reset and re-migrate successfully created separate batches per assignment date
+**Testing**: Backend curl tests + UI screenshot verified - reset and re-migrate successfully created separate batches per assignment date
 
 ---
 
