@@ -84,20 +84,71 @@ export default function AdminMemberWDCRM() {
     }
   };
 
-  // Reassign invalid records back to available pool
-  const handleReassignInvalid = async (staffId, staffName) => {
-    if (!window.confirm(`Kembalikan semua record tidak valid dari ${staffName} ke pool yang tersedia?`)) return;
-    
-    setReassigning(true);
+  // Load archived invalid records for "Invalid Database" tab
+  const loadArchivedRecords = async () => {
+    setLoadingArchived(true);
     try {
-      const response = await api.post(`/memberwd/admin/reassign-invalid/${staffId}`);
+      const response = await api.get('/memberwd/admin/archived-invalid');
+      setArchivedRecords(response.data);
+    } catch (error) {
+      console.error('Failed to load archived records:', error);
+    } finally {
+      setLoadingArchived(false);
+    }
+  };
+
+  // Open replacement modal
+  const openReplaceModal = (staffId, staffName, invalidCount) => {
+    setReplaceStaffId(staffId);
+    setReplaceStaffName(staffName);
+    setReplaceInvalidCount(invalidCount);
+    setReplaceQuantity(invalidCount); // Default to same number
+    setShowReplaceModal(true);
+  };
+
+  // Process invalid records and optionally assign replacements
+  const handleProcessInvalid = async () => {
+    setProcessing(true);
+    try {
+      const response = await api.post(`/memberwd/admin/process-invalid/${replaceStaffId}`, {
+        auto_assign_quantity: replaceQuantity
+      });
       toast.success(response.data.message);
+      setShowReplaceModal(false);
       loadInvalidRecords();
       loadDatabases();
+      if (activeTab === 'invalid') {
+        loadArchivedRecords();
+      }
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Failed to reassign records');
+      toast.error(error.response?.data?.detail || 'Failed to process records');
     } finally {
-      setReassigning(false);
+      setProcessing(false);
+    }
+  };
+
+  // Restore archived record back to available pool
+  const handleRestoreRecord = async (recordId) => {
+    if (!window.confirm('Kembalikan record ini ke pool yang tersedia?')) return;
+    try {
+      await api.post(`/memberwd/admin/archived-invalid/${recordId}/restore`);
+      toast.success('Record dikembalikan ke pool');
+      loadArchivedRecords();
+      loadDatabases();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to restore record');
+    }
+  };
+
+  // Permanently delete archived record
+  const handleDeleteArchivedRecord = async (recordId) => {
+    if (!window.confirm('Hapus record ini secara permanen? Tindakan ini tidak dapat dibatalkan.')) return;
+    try {
+      await api.delete(`/memberwd/admin/archived-invalid/${recordId}`);
+      toast.success('Record dihapus permanen');
+      loadArchivedRecords();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to delete record');
     }
   };
 
