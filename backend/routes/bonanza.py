@@ -21,6 +21,11 @@ class RandomBonanzaAssignment(BaseModel):
     quantity: int
     username_field: str = "Username"
 
+class RecordValidation(BaseModel):
+    record_ids: List[str]
+    is_valid: bool
+    reason: Optional[str] = None
+
 @router.post("/bonanza/upload")
 async def upload_bonanza_database(
     file: UploadFile = File(...),
