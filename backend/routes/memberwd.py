@@ -325,6 +325,31 @@ async def get_staff_memberwd_batches(user: User = Depends(get_current_user)):
     return batches
 
 
+class BatchRenameRequest(BaseModel):
+    custom_name: str
+
+
+@router.patch("/memberwd/staff/batches/{batch_id}/rename")
+async def rename_memberwd_batch(batch_id: str, data: BatchRenameRequest, user: User = Depends(get_current_user)):
+    """Allow staff to rename their batch card title"""
+    db = get_db()
+    if user.role != 'staff':
+        raise HTTPException(status_code=403, detail="Only staff can access this endpoint")
+    
+    # Verify the batch belongs to this staff
+    batch = await db.memberwd_batches.find_one({'id': batch_id, 'staff_id': user.id})
+    if not batch:
+        raise HTTPException(status_code=404, detail="Batch not found or not assigned to you")
+    
+    # Update the custom name
+    await db.memberwd_batches.update_one(
+        {'id': batch_id},
+        {'$set': {'custom_name': data.custom_name.strip()}}
+    )
+    
+    return {'success': True, 'message': 'Batch renamed successfully', 'custom_name': data.custom_name.strip()}
+
+
 @router.get("/memberwd/staff/records")
 async def get_staff_memberwd_records(product_id: Optional[str] = None, user: User = Depends(get_current_user)):
     """Get Member WD records assigned to the current staff"""
