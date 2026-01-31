@@ -101,6 +101,7 @@ api_router.include_router(inventory_router)
 api_router.include_router(attendance_router)
 api_router.include_router(fees_router)
 api_router.include_router(message_variations_router)
+api_router.include_router(bonus_check_router)
 # WebSocket routes are added at the app level (not under /api)
 app.include_router(websocket_router)
 
