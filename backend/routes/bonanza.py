@@ -333,9 +333,13 @@ async def get_invalid_bonanza_records(user: User = Depends(get_admin_user)):
     }
 
 
-@router.post("/bonanza/admin/reassign-invalid/{staff_id}")
-async def reassign_invalid_to_available(staff_id: str, user: User = Depends(get_admin_user)):
-    """Move all invalid records from a staff back to available pool"""
+class ProcessInvalidRequest(BaseModel):
+    auto_assign_quantity: int = 0  # How many new records to assign (0 = no auto-assign)
+
+
+@router.post("/bonanza/admin/process-invalid/{staff_id}")
+async def process_invalid_and_replace(staff_id: str, data: ProcessInvalidRequest, user: User = Depends(get_admin_user)):
+    """Archive invalid records and optionally assign new records to staff"""
     db = get_db()
     
     now = get_jakarta_now()
@@ -349,21 +353,24 @@ async def reassign_invalid_to_available(staff_id: str, user: User = Depends(get_
     if len(invalid_records) == 0:
         raise HTTPException(status_code=404, detail="No invalid records found for this staff")
     
+    # Get staff info
+    staff = await db.users.find_one({'id': staff_id}, {'_id': 0})
+    if not staff:
+        raise HTTPException(status_code=404, detail="Staff not found")
+    
     record_ids = [r['id'] for r in invalid_records]
     
-    # Reset records to available
+    # Get unique database IDs from invalid records for auto-assignment
+    database_ids = list(set(r.get('database_id') for r in invalid_records if r.get('database_id')))
+    
+    # Archive invalid records (move to 'invalid_archived' status)
     await db.bonanza_records.update_many(
         {'id': {'$in': record_ids}},
         {'$set': {
-            'status': 'available',
-            'assigned_to': None,
-            'assigned_to_name': None,
-            'assigned_at': None,
-            'validation_status': None,
-            'validated_at': None,
-            'validation_reason': None,
-            'returned_at': now.isoformat(),
-            'returned_reason': 'Invalid - reassigned to available pool'
+            'status': 'invalid_archived',
+            'archived_at': now.isoformat(),
+            'archived_by': user.id,
+            'archived_by_name': user.name
         }}
     )
     
@@ -373,11 +380,138 @@ async def reassign_invalid_to_available(staff_id: str, user: User = Depends(get_
         {'$set': {'is_resolved': True, 'resolved_at': now.isoformat(), 'resolved_by': user.name}}
     )
     
+    # Auto-assign new records if requested
+    new_assigned_count = 0
+    if data.auto_assign_quantity > 0 and database_ids:
+        # Find available records from the same databases
+        available_records = await db.bonanza_records.find({
+            'database_id': {'$in': database_ids},
+            'status': 'available'
+        }, {'_id': 0}).to_list(data.auto_assign_quantity * 2)  # Get extra in case some are reserved
+        
+        # Filter out reserved members
+        reserved_members = await db.reserved_members.find({}, {'_id': 0, 'customer_id': 1}).to_list(100000)
+        reserved_ids = set(str(m['customer_id']).strip().upper() for m in reserved_members if m.get('customer_id'))
+        
+        eligible_records = []
+        for record in available_records:
+            # Check if username is in reserved list
+            username = None
+            for key in ['Username', 'username', 'USER', 'user']:
+                if key in record.get('row_data', {}):
+                    username = str(record['row_data'][key]).strip().upper()
+                    break
+            if username and username in reserved_ids:
+                continue
+            eligible_records.append(record)
+            if len(eligible_records) >= data.auto_assign_quantity:
+                break
+        
+        if eligible_records:
+            selected_ids = [r['id'] for r in eligible_records]
+            await db.bonanza_records.update_many(
+                {'id': {'$in': selected_ids}},
+                {'$set': {
+                    'status': 'assigned',
+                    'assigned_to': staff['id'],
+                    'assigned_to_name': staff['name'],
+                    'assigned_at': now.isoformat(),
+                    'assigned_by': user.id,
+                    'assigned_by_name': user.name,
+                    'auto_replaced': True,
+                    'replaced_invalid_ids': record_ids
+                }}
+            )
+            new_assigned_count = len(selected_ids)
+    
     return {
         'success': True,
-        'message': f'{len(record_ids)} invalid records returned to available pool',
-        'count': len(record_ids)
+        'archived_count': len(record_ids),
+        'new_assigned_count': new_assigned_count,
+        'message': f'{len(record_ids)} record diarsipkan. {new_assigned_count} record baru ditugaskan ke {staff["name"]}.'
     }
+
+
+# Legacy endpoint - redirect to new one
+@router.post("/bonanza/admin/reassign-invalid/{staff_id}")
+async def reassign_invalid_to_available(staff_id: str, user: User = Depends(get_admin_user)):
+    """Legacy endpoint - now archives instead of returning to pool"""
+    return await process_invalid_and_replace(staff_id, ProcessInvalidRequest(auto_assign_quantity=0), user)
+
+
+@router.get("/bonanza/admin/archived-invalid")
+async def get_archived_invalid_records(user: User = Depends(get_admin_user)):
+    """Get all archived invalid records (Invalid Database section)"""
+    db = get_db()
+    
+    records = await db.bonanza_records.find(
+        {'status': 'invalid_archived'},
+        {'_id': 0}
+    ).sort('archived_at', -1).to_list(1000)
+    
+    # Group by database
+    by_database = {}
+    for record in records:
+        db_name = record.get('database_name', 'Unknown')
+        if db_name not in by_database:
+            by_database[db_name] = {
+                'database_name': db_name,
+                'database_id': record.get('database_id'),
+                'product_name': record.get('product_name', 'Unknown'),
+                'count': 0,
+                'records': []
+            }
+        by_database[db_name]['count'] += 1
+        by_database[db_name]['records'].append(record)
+    
+    return {
+        'total': len(records),
+        'by_database': list(by_database.values())
+    }
+
+
+@router.post("/bonanza/admin/archived-invalid/{record_id}/restore")
+async def restore_archived_record(record_id: str, user: User = Depends(get_admin_user)):
+    """Restore an archived invalid record back to available pool"""
+    db = get_db()
+    
+    now = get_jakarta_now()
+    
+    result = await db.bonanza_records.update_one(
+        {'id': record_id, 'status': 'invalid_archived'},
+        {'$set': {
+            'status': 'available',
+            'assigned_to': None,
+            'assigned_to_name': None,
+            'assigned_at': None,
+            'validation_status': None,
+            'validated_at': None,
+            'validation_reason': None,
+            'archived_at': None,
+            'archived_by': None,
+            'archived_by_name': None,
+            'restored_at': now.isoformat(),
+            'restored_by': user.name
+        }}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Record not found or not archived")
+    
+    return {'success': True, 'message': 'Record restored to available pool'}
+
+
+@router.delete("/bonanza/admin/archived-invalid/{record_id}")
+async def delete_archived_record(record_id: str, user: User = Depends(get_admin_user)):
+    """Permanently delete an archived invalid record"""
+    db = get_db()
+    
+    result = await db.bonanza_records.delete_one({'id': record_id, 'status': 'invalid_archived'})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Record not found or not archived")
+    
+    return {'success': True, 'message': 'Record permanently deleted'}
 
 @router.get("/bonanza/staff")
 async def get_staff_list(user: User = Depends(get_admin_user)):
