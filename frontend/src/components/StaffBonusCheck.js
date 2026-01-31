@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Search, Gift, CheckCircle, XCircle, Calendar, Package, User, RefreshCw, Clock } from 'lucide-react';
 import { toast } from 'sonner';
-import api from '../api';
+import { api } from '../App';
 
 export default function StaffBonusCheck() {
   const [customerId, setCustomerId] = useState('');
