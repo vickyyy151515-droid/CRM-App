@@ -587,7 +587,105 @@ export default function AdminMemberWDCRM() {
 
   return (
     <div data-testid="admin-db-memberwd">
-      <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white mb-6">Member WD CRM</h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">Member WD CRM</h2>
+        <button
+          onClick={() => setShowSettingsPanel(!showSettingsPanel)}
+          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg flex items-center gap-2 transition-colors"
+          data-testid="memberwd-settings-btn"
+        >
+          <Settings size={18} />
+          Settings
+        </button>
+      </div>
+
+      {/* Settings Panel */}
+      {showSettingsPanel && (
+        <div className="mb-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6" data-testid="memberwd-settings-panel">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Member WD Settings</h3>
+          
+          <div className="space-y-4">
+            {/* Auto Replace Toggle */}
+            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+              <div>
+                <h4 className="font-medium text-slate-900 dark:text-white">Auto-Replace Invalid Records</h4>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  When staff marks a record as invalid, automatically assign a new replacement from the same database
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={memberWDSettings.auto_replace_invalid}
+                  onChange={(e) => setMemberWDSettings({...memberWDSettings, auto_replace_invalid: e.target.checked})}
+                  className="sr-only peer"
+                  data-testid="auto-replace-toggle"
+                />
+                <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-slate-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-500 peer-checked:bg-indigo-600"></div>
+              </label>
+            </div>
+
+            {/* Max Replacements Per Batch */}
+            <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium text-slate-900 dark:text-white">Max Replacements Per Batch Card</h4>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    Maximum number of invalid records that can be replaced per batch. Example: if staff has 11 invalid records in 1 batch and limit is 10, only 10 can be replaced.
+                  </p>
+                </div>
+                <input
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={memberWDSettings.max_replacements_per_batch}
+                  onChange={(e) => setMemberWDSettings({...memberWDSettings, max_replacements_per_batch: parseInt(e.target.value) || 10})}
+                  className="w-20 h-10 px-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-center"
+                  data-testid="max-replacements-input"
+                />
+              </div>
+            </div>
+
+            {/* Current Status Info */}
+            <div className="p-4 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg border border-indigo-200 dark:border-indigo-800">
+              <div className="flex items-center gap-2 text-indigo-800 dark:text-indigo-300">
+                <AlertTriangle size={18} />
+                <span className="font-medium">Current Mode:</span>
+                <span className={`px-2 py-0.5 rounded text-sm ${
+                  memberWDSettings.auto_replace_invalid 
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' 
+                    : 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300'
+                }`}>
+                  {memberWDSettings.auto_replace_invalid ? 'Auto Replace' : 'Manual Admin Assign'}
+                </span>
+              </div>
+              <p className="text-sm text-indigo-600 dark:text-indigo-400 mt-2">
+                {memberWDSettings.auto_replace_invalid 
+                  ? `When staff marks records as invalid, system will auto-replace up to ${memberWDSettings.max_replacements_per_batch} records per batch from the same database.`
+                  : 'When staff marks records as invalid, admin must manually process and assign replacement records.'}
+              </p>
+            </div>
+
+            {/* Save Button */}
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                onClick={() => setShowSettingsPanel(false)}
+                className="px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveSettings}
+                disabled={savingSettings}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg disabled:opacity-50 flex items-center gap-2 transition-colors"
+                data-testid="save-settings-btn"
+              >
+                {savingSettings ? 'Saving...' : 'Save Settings'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Invalid Records Alert Banner */}
       {invalidRecords && invalidRecords.total_invalid > 0 && (
