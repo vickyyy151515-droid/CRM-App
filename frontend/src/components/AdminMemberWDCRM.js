@@ -1044,14 +1044,12 @@ export default function AdminMemberWDCRM() {
                               className={`border-b border-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 ${selectedRecords.includes(record.id) ? 'bg-indigo-50' : ''}`}
                             >
                               <td className="px-3 py-2">
-                                {record.status === 'available' && (
-                                  <input
-                                    type="checkbox"
-                                    checked={selectedRecords.includes(record.id)}
-                                    onChange={() => toggleSelectRecord(record.id)}
-                                    className="rounded border-slate-300"
-                                  />
-                                )}
+                                <input
+                                  type="checkbox"
+                                  checked={selectedRecords.includes(record.id)}
+                                  onChange={() => toggleSelectRecord(record.id)}
+                                  className="rounded border-slate-300"
+                                />
                               </td>
                               <td className="px-3 py-2 text-sm text-slate-900 font-medium">{record.row_number}</td>
                               {visibleColumns.map(col => (
