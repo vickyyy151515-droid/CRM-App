@@ -98,7 +98,6 @@ async def repair_memberwd_batches(user: User = Depends(get_admin_user)):
     2. Update batch counts to match actual record counts
     """
     db = get_db()
-    now = get_jakarta_now()
     
     repairs = {
         'replacements_fixed': 0,
