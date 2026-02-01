@@ -218,7 +218,6 @@ async def repair_memberwd_batches(user: User = Depends(get_admin_user)):
     orphaned_records = [r for r in all_assigned if r.get('batch_id') not in existing_batch_ids]
     
     for record in orphaned_records:
-        fixed = False
         target_batch_id = None
         fix_method = ''
         
@@ -259,7 +258,6 @@ async def repair_memberwd_batches(user: User = Depends(get_admin_user)):
                         # Find the batch with the closest created_at to the record's assigned_at
                         candidates = batch_lookup_by_date[date_key]
                         best_match = None
-                        best_diff = float('inf')
                         
                         for candidate in candidates:
                             candidate_time = candidate.get('created_at', '')
@@ -268,7 +266,6 @@ async def repair_memberwd_batches(user: User = Depends(get_admin_user)):
                                 # We want the batch created AT or BEFORE the record was assigned
                                 if candidate_time <= assigned_at:
                                     # Pick the one closest to the assignment time
-                                    diff = len(assigned_at) - len(candidate_time)  # Simple heuristic
                                     if best_match is None or candidate_time > best_match.get('created_at', ''):
                                         best_match = candidate
                         
