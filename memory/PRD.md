@@ -1,38 +1,38 @@
 # CRM Boost PRD
 
 ## Original Problem Statement
-CRM system for managing member data with batch assignment to staff. Core feature is the "Member WD" module where:
-- Admin uploads member databases
-- Admin assigns records to staff in batches
-- Staff validates records (valid/invalid)
-- Admin replaces invalid records with new ones
-- **Admin can recall assigned records back to available pool**
+CRM system for managing member data with batch assignment to staff.
 
-## Latest Feature: Recall Records (2026-02-01)
+## Latest Feature: Auto-Replace Invalid Records (2026-02-01)
 
 ### What it does
-Allows admin to recall (take back) assigned records from staff and return them to the available pool.
+When staff marks a record as invalid, the system can automatically assign a replacement record from the same database.
+
+### Settings
+- **Auto-Replace Invalid Records** (toggle): Enable/disable auto-replacement
+- **Max Replacements Per Batch** (number): Limit how many invalid records can be replaced per batch card (default: 10)
 
 ### How it works
-1. Admin expands a database in Member WD CRM
-2. Admin can select assigned records using checkboxes or "Select All Assigned" button
-3. Admin clicks "Recall Selected" button
-4. Records are returned to available status, removed from staff's list
-
-### Bug Fixed: Stuck Invalid Records Alert
-When records were recalled that had `validation_status='invalid'`, they would still show in the "Invalid Records Alert" panel. Fixed by:
-1. Changing the invalid records query to only show `status='assigned'` records
-2. Adding a "Dismiss All Invalid Alerts" button to clear orphaned alerts
+1. Staff marks record(s) as invalid
+2. If auto-replace is enabled:
+   - System finds available records from SAME database
+   - Checks if batch hasn't exceeded replacement limit
+   - Auto-assigns replacement to staff in same batch
+   - Archives the invalid record
+3. If no records available or limit reached:
+   - Staff sees warning notification
+   - Admin notification created for manual processing
 
 ### API Endpoints
-- `POST /api/memberwd/admin/recall-records` - Recall records to available pool
-- `POST /api/memberwd/admin/dismiss-invalid-alerts` - Clear orphaned invalid alerts
+- `GET /api/memberwd/admin/settings` - Get settings
+- `PUT /api/memberwd/admin/settings` - Update settings
+  - Body: `{ "auto_replace_invalid": bool, "max_replacements_per_batch": int }`
 
-### Changes made
-- Backend: Added `recall-records` and `dismiss-invalid-alerts` endpoints
-- Backend: Fixed `invalid-records` query to only show assigned records
-- Frontend: Added "Select All Assigned", "Recall Selected", and "Dismiss All Invalid Alerts" buttons
-- Frontend: Enabled checkboxes for assigned records
+### Key Rules
+- Replacement MUST be from same database_id (same product)
+- Replacement goes to SAME batch as invalid record
+- Maximum replacements per batch is configurable (default: 10)
+- If staff has 11 invalid in 1 batch with limit 10 → only 10 can be replaced
 
 ## Features Implemented
 
@@ -42,8 +42,10 @@ When records were recalled that had `validation_status='invalid'`, they would st
 - [x] Batch card system for staff
 - [x] Validation workflow (valid/invalid)
 - [x] Invalid record processing with auto-replacement
-- [x] **Recall assigned records back to available pool** (NEW)
-- [x] **Dismiss orphaned invalid alerts** (NEW)
+- [x] **Auto-replace invalid records** (NEW - configurable)
+- [x] **Max replacements per batch limit** (NEW - configurable)
+- [x] Recall assigned records back to available pool
+- [x] Dismiss orphaned invalid alerts
 - [x] Excluded count (reserved members in available pool)
 
 ### Other Modules
@@ -61,16 +63,18 @@ When records were recalled that had `validation_status='invalid'`, they would st
 - Database: MongoDB (Motor async driver)
 - UI: Tailwind CSS + Shadcn components
 
-## Key Endpoints
+## Data Models
 
-### Member WD
-- `POST /api/memberwd/upload` - Upload database
-- `POST /api/memberwd/assign-random` - Random assignment
-- `GET /api/memberwd/staff/batches` - Staff batches
-- `POST /api/memberwd/staff/validate` - Mark valid/invalid
-- `POST /api/memberwd/admin/process-invalid/{staff_id}` - Archive invalid + auto-replace
-- `POST /api/memberwd/admin/recall-records` - Recall assigned records (NEW)
-- `POST /api/memberwd/admin/dismiss-invalid-alerts` - Clear orphaned alerts (NEW)
+### App Settings (memberwd_settings)
+```
+{
+  id: 'memberwd_settings',
+  auto_replace_invalid: boolean,
+  max_replacements_per_batch: number,
+  updated_at: string,
+  updated_by: string
+}
+```
 
 ## Pending Tasks
 None - features complete
