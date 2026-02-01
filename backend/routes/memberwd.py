@@ -781,16 +781,23 @@ class ProcessInvalidRequest(BaseModel):
 
 @router.post("/memberwd/admin/process-invalid/{staff_id}")
 async def process_invalid_memberwd_and_replace(staff_id: str, data: ProcessInvalidRequest, user: User = Depends(get_admin_user)):
-    """Archive invalid records and optionally assign new records to staff (to the same batch)"""
+    """
+    Archive invalid records and optionally assign new records to staff.
+    
+    CRITICAL: Each replacement MUST go to the SAME batch as the invalid record it replaces.
+    1 invalid = 1 replacement, in the SAME batch.
+    Also ensures replacements come from the SAME product/database.
+    """
     db = get_db()
     
     now = get_jakarta_now()
     
-    # Find invalid records
+    # Find invalid records WITH their batch info
     invalid_records = await db.memberwd_records.find({
         'assigned_to': staff_id,
-        'validation_status': 'invalid'
-    }).to_list(10000)
+        'validation_status': 'invalid',
+        'status': {'$ne': 'invalid_archived'}  # Not already archived
+    }, {'_id': 0}).to_list(10000)
     
     if len(invalid_records) == 0:
         raise HTTPException(status_code=404, detail="No invalid records found for this staff")
@@ -802,11 +809,24 @@ async def process_invalid_memberwd_and_replace(staff_id: str, data: ProcessInval
     
     record_ids = [r['id'] for r in invalid_records]
     
-    # Get unique database IDs and batch IDs from invalid records for auto-assignment
-    database_ids = list(set(r.get('database_id') for r in invalid_records if r.get('database_id')))
-    batch_ids = list(set(r.get('batch_id') for r in invalid_records if r.get('batch_id')))
+    # Group invalid records by batch_id AND database_id
+    # This is critical: replacements must go to the SAME batch and be from SAME product
+    invalid_by_batch = {}  # batch_id -> list of invalid records
+    for r in invalid_records:
+        batch_id = r.get('batch_id')
+        database_id = r.get('database_id')
+        key = f"{batch_id}|{database_id}"
+        if key not in invalid_by_batch:
+            invalid_by_batch[key] = {
+                'batch_id': batch_id,
+                'database_id': database_id,
+                'database_name': r.get('database_name', 'Unknown'),
+                'records': []
+            }
+        invalid_by_batch[key]['records'].append(r)
     
     # Archive invalid records (move to 'invalid_archived' status)
+    # Keep their batch_id so we can trace them later!
     await db.memberwd_records.update_many(
         {'id': {'$in': record_ids}},
         {'$set': {
@@ -817,13 +837,14 @@ async def process_invalid_memberwd_and_replace(staff_id: str, data: ProcessInval
         }}
     )
     
-    # Update batch counts
-    for batch_id in batch_ids:
+    # Update batch counts (decrease by archived count)
+    for group in invalid_by_batch.values():
+        batch_id = group['batch_id']
         if batch_id:
-            archived_in_batch = sum(1 for r in invalid_records if r.get('batch_id') == batch_id)
+            archived_count = len(group['records'])
             await db.memberwd_batches.update_one(
                 {'id': batch_id},
-                {'$inc': {'current_count': -archived_in_batch, 'archived_count': archived_in_batch}}
+                {'$inc': {'current_count': -archived_count, 'archived_count': archived_count}}
             )
     
     # Mark related notifications as resolved
@@ -835,20 +856,15 @@ async def process_invalid_memberwd_and_replace(staff_id: str, data: ProcessInval
     # Auto-assign new records if requested
     new_assigned_count = 0
     skipped_reserved = 0
-    if data.auto_assign_quantity > 0 and database_ids:
-        # Find available records from the same databases
-        available_records = await db.memberwd_records.find({
-            'database_id': {'$in': database_ids},
-            'status': 'available'
-        }, {'_id': 0}).to_list(data.auto_assign_quantity * 3)  # Get extra in case some are reserved
-        
-        # Get reserved members - check both customer_id and customer_name for comprehensive matching
+    assignment_details = []
+    
+    if data.auto_assign_quantity > 0:
+        # Get reserved members for filtering
         reserved_members = await db.reserved_members.find(
-            {'status': 'approved'},  # Only approved reservations
+            {'status': 'approved'},
             {'_id': 0, 'customer_id': 1, 'customer_name': 1}
         ).to_list(100000)
         
-        # Build set of reserved identifiers (uppercase for case-insensitive matching)
         reserved_ids = set()
         for m in reserved_members:
             if m.get('customer_id'):
@@ -856,70 +872,93 @@ async def process_invalid_memberwd_and_replace(staff_id: str, data: ProcessInval
             if m.get('customer_name'):
                 reserved_ids.add(str(m['customer_name']).strip().upper())
         
-        eligible_records = []
-        for record in available_records:
+        def is_reserved(record):
+            """Check if a record is reserved"""
             row_data = record.get('row_data', {})
-            
-            # Check Username field (case-insensitive)
-            is_reserved = False
             for key in ['Username', 'username', 'USER', 'user', 'ID', 'id']:
-                if key in row_data:
-                    value = str(row_data[key]).strip().upper()
-                    if value in reserved_ids:
-                        is_reserved = True
-                        skipped_reserved += 1
+                if key in row_data and row_data[key]:
+                    if str(row_data[key]).strip().upper() in reserved_ids:
+                        return True
+            for key in ['Nama Lengkap', 'nama_lengkap', 'Name', 'name', 'NAMA']:
+                if key in row_data and row_data[key]:
+                    if str(row_data[key]).strip().upper() in reserved_ids:
+                        return True
+            return False
+        
+        # Process each batch group separately
+        # Key: Each invalid record gets replaced by one record from the SAME database, 
+        # assigned to the SAME batch
+        remaining_to_assign = data.auto_assign_quantity
+        
+        for key, group in invalid_by_batch.items():
+            if remaining_to_assign <= 0:
+                break
+            
+            batch_id = group['batch_id']
+            database_id = group['database_id']
+            invalid_in_group = group['records']
+            invalid_ids_in_group = [r['id'] for r in invalid_in_group]
+            
+            # How many replacements needed for THIS batch?
+            # Typically: number of invalid records in this batch
+            needed_for_batch = min(len(invalid_in_group), remaining_to_assign)
+            
+            if not database_id:
+                continue  # Can't replace without knowing the database
+            
+            # Get available records from the SAME database only
+            available_records = await db.memberwd_records.find({
+                'database_id': database_id,
+                'status': 'available'
+            }, {'_id': 0}).to_list(needed_for_batch * 3)
+            
+            # Filter out reserved
+            eligible_records = []
+            for record in available_records:
+                if is_reserved(record):
+                    skipped_reserved += 1
+                else:
+                    eligible_records.append(record)
+                    if len(eligible_records) >= needed_for_batch:
                         break
             
-            # Also check Nama Lengkap / Name field
-            if not is_reserved:
-                for key in ['Nama Lengkap', 'nama_lengkap', 'Name', 'name', 'NAMA']:
-                    if key in row_data:
-                        value = str(row_data[key]).strip().upper()
-                        if value in reserved_ids:
-                            is_reserved = True
-                            skipped_reserved += 1
-                            break
-            
-            if not is_reserved:
-                eligible_records.append(record)
-                if len(eligible_records) >= data.auto_assign_quantity:
-                    break
-        
-        if eligible_records:
-            selected_ids = [r['id'] for r in eligible_records]
-            
-            # Use the first batch_id from invalid records for replacement records
-            target_batch_id = batch_ids[0] if batch_ids else None
-            
-            update_data = {
-                'status': 'assigned',
-                'assigned_to': staff['id'],
-                'assigned_to_name': staff['name'],
-                'assigned_at': now.isoformat(),
-                'assigned_by': user.id,
-                'assigned_by_name': user.name,
-                'auto_replaced': True,
-                'replaced_invalid_ids': record_ids
-            }
-            
-            if target_batch_id:
-                update_data['batch_id'] = target_batch_id
-            
-            await db.memberwd_records.update_many(
-                {'id': {'$in': selected_ids}},
-                {'$set': update_data}
-            )
-            
-            # Update batch count with new assignments
-            if target_batch_id:
-                await db.memberwd_batches.update_one(
-                    {'id': target_batch_id},
-                    {'$inc': {'current_count': len(selected_ids), 'replaced_count': len(selected_ids)}}
+            # Assign eligible records to THIS batch
+            if eligible_records:
+                selected_ids = [r['id'] for r in eligible_records]
+                
+                await db.memberwd_records.update_many(
+                    {'id': {'$in': selected_ids}},
+                    {'$set': {
+                        'status': 'assigned',
+                        'assigned_to': staff['id'],
+                        'assigned_to_name': staff['name'],
+                        'assigned_at': now.isoformat(),
+                        'assigned_by': user.id,
+                        'assigned_by_name': user.name,
+                        'batch_id': batch_id,  # SAME batch as invalid!
+                        'auto_replaced': True,
+                        'replaced_invalid_ids': invalid_ids_in_group  # Link to specific invalids
+                    }}
                 )
-            
-            new_assigned_count = len(selected_ids)
+                
+                # Update batch count (increase by new assignments)
+                if batch_id:
+                    await db.memberwd_batches.update_one(
+                        {'id': batch_id},
+                        {'$inc': {'current_count': len(selected_ids), 'replaced_count': len(selected_ids)}}
+                    )
+                
+                new_assigned_count += len(selected_ids)
+                remaining_to_assign -= len(selected_ids)
+                
+                assignment_details.append({
+                    'batch': batch_id[:8] if batch_id else 'no-batch',
+                    'database': group['database_name'],
+                    'invalid_count': len(invalid_in_group),
+                    'replaced_count': len(selected_ids)
+                })
     
-    # Build message with reserved member info
+    # Build message
     message = f'{len(record_ids)} record diarsipkan.'
     if data.auto_assign_quantity > 0:
         message += f' {new_assigned_count} record baru ditugaskan ke {staff["name"]}.'
@@ -934,7 +973,8 @@ async def process_invalid_memberwd_and_replace(staff_id: str, data: ProcessInval
         'archived_count': len(record_ids),
         'new_assigned_count': new_assigned_count,
         'skipped_reserved': skipped_reserved,
-        'message': message
+        'message': message,
+        'assignment_details': assignment_details  # Show which batch got how many replacements
     }
 
 
