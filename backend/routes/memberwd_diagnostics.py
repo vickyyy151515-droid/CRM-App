@@ -12,7 +12,8 @@ async def diagnose_memberwd_batches(user: User = Depends(get_admin_user)):
     Diagnose Member WD batch issues:
     - Find records without batch_id
     - Find replacement records with wrong/missing batch_id
-    - Find orphaned records
+    - Find orphaned records (batch doesn't exist)
+    - Verify batch record counts match actual records
     """
     db = get_db()
     
@@ -33,7 +34,7 @@ async def diagnose_memberwd_batches(user: User = Depends(get_admin_user)):
     replacement_records = await db.memberwd_records.find({
         'status': 'assigned',
         'auto_replaced': True
-    }, {'_id': 0, 'id': 1, 'batch_id': 1, 'replaced_invalid_ids': 1}).to_list(10000)
+    }, {'_id': 0, 'id': 1, 'batch_id': 1, 'replaced_invalid_ids': 1, 'database_name': 1}).to_list(10000)
     
     replacements_with_batch = sum(1 for r in replacement_records if r.get('batch_id'))
     replacements_without_batch = len(replacement_records) - replacements_with_batch
@@ -42,69 +43,101 @@ async def diagnose_memberwd_batches(user: User = Depends(get_admin_user)):
     archived_count = await db.memberwd_records.count_documents({'status': 'invalid_archived'})
     
     # 5. Check batches
-    batches = await db.memberwd_batches.find({}, {'_id': 0, 'id': 1, 'initial_count': 1, 'current_count': 1}).to_list(1000)
+    batches = await db.memberwd_batches.find({}, {'_id': 0}).to_list(1000)
     existing_batch_ids = set(b['id'] for b in batches)
     
     total_initial = sum(b.get('initial_count', 0) for b in batches)
     total_current = sum(b.get('current_count', 0) for b in batches)
     
-    # 6. Count records per batch to verify
+    # 6. Count records per batch to verify - group by staff and database
     batch_record_counts = []
-    for batch in batches[:20]:  # Limit to first 20
+    batches_by_staff = {}
+    
+    for batch in batches:
+        staff_name = batch.get('staff_name', 'Unknown')
+        if staff_name not in batches_by_staff:
+            batches_by_staff[staff_name] = []
+        
         actual_count = await db.memberwd_records.count_documents({
             'batch_id': batch['id'],
             'status': 'assigned'
         })
-        batch_record_counts.append({
+        
+        batches_by_staff[staff_name].append({
             'batch_id': batch['id'][:8],
+            'database_name': batch.get('database_name', 'Unknown'),
+            'created_at': batch.get('created_at', '')[:16] if batch.get('created_at') else '',
             'stored_initial': batch.get('initial_count', 0),
             'stored_current': batch.get('current_count', 0),
-            'actual_assigned': actual_count
+            'actual_assigned': actual_count,
+            'mismatch': actual_count != batch.get('current_count', 0)
         })
     
     # 7. Find records with invalid batch_id (batch doesn't exist)
     records_with_batch = await db.memberwd_records.find({
         'status': 'assigned',
         'batch_id': {'$exists': True, '$nin': [None, '']}
-    }, {'_id': 0, 'id': 1, 'batch_id': 1}).to_list(100000)
+    }, {'_id': 0, 'id': 1, 'batch_id': 1, 'auto_replaced': 1, 'replaced_invalid_ids': 1, 
+        'assigned_to': 1, 'database_id': 1, 'assigned_at': 1, 'database_name': 1}).to_list(100000)
     
-    orphaned_records = sum(1 for r in records_with_batch if r.get('batch_id') not in existing_batch_ids)
+    orphaned_records = [r for r in records_with_batch if r.get('batch_id') not in existing_batch_ids]
+    orphaned_count = len(orphaned_records)
     
-    # 8. DETAILED: Get sample of orphaned records to understand the issue
+    # 8. DETAILED: Get sample of orphaned records with full tracing
     orphaned_details = []
-    for r in records_with_batch:
-        if r.get('batch_id') not in existing_batch_ids:
-            # Get full record details
-            full_record = await db.memberwd_records.find_one(
-                {'id': r['id']},
-                {'_id': 0, 'id': 1, 'batch_id': 1, 'auto_replaced': 1, 'replaced_invalid_ids': 1, 
-                 'assigned_to': 1, 'database_id': 1, 'assigned_at': 1, 'database_name': 1}
+    for r in orphaned_records[:10]:  # Limit to 10 samples
+        detail = {
+            'record_id': r['id'][:8],
+            'orphan_batch_id': r.get('batch_id', '')[:8] if r.get('batch_id') else 'None',
+            'is_replacement': r.get('auto_replaced', False),
+            'database_name': r.get('database_name', 'Unknown'),
+            'assigned_at': r.get('assigned_at', '')[:19] if r.get('assigned_at') else 'None'
+        }
+        
+        # If replacement, trace back to archived record
+        if r.get('replaced_invalid_ids'):
+            archived = await db.memberwd_records.find_one(
+                {'id': {'$in': r['replaced_invalid_ids']}},
+                {'_id': 0, 'id': 1, 'batch_id': 1, 'assigned_at': 1, 'assigned_to': 1, 
+                 'database_id': 1, 'database_name': 1}
             )
-            if full_record and len(orphaned_details) < 5:  # Limit to 5 samples
-                detail = {
-                    'record_id': full_record['id'][:8],
-                    'orphan_batch_id': full_record.get('batch_id', '')[:8] if full_record.get('batch_id') else 'None',
-                    'is_replacement': full_record.get('auto_replaced', False),
-                    'database_name': full_record.get('database_name', 'Unknown'),
-                    'assigned_at': full_record.get('assigned_at', '')[:19] if full_record.get('assigned_at') else 'None'
-                }
+            if archived:
+                detail['archived_record_id'] = archived['id'][:8]
+                detail['archived_batch_id'] = archived.get('batch_id', '')[:8] if archived.get('batch_id') else 'None'
+                detail['archived_assigned_at'] = archived.get('assigned_at', '')[:19] if archived.get('assigned_at') else 'None'
+                detail['archived_database'] = archived.get('database_name', 'Unknown')
                 
-                # If replacement, check the archived record
-                if full_record.get('replaced_invalid_ids'):
-                    archived = await db.memberwd_records.find_one(
-                        {'id': {'$in': full_record['replaced_invalid_ids']}},
-                        {'_id': 0, 'id': 1, 'batch_id': 1, 'assigned_at': 1, 'assigned_to': 1, 'database_id': 1}
-                    )
-                    if archived:
-                        detail['archived_record_id'] = archived['id'][:8]
-                        detail['archived_batch_id'] = archived.get('batch_id', '')[:8] if archived.get('batch_id') else 'None'
-                        detail['archived_assigned_at'] = archived.get('assigned_at', '')[:19] if archived.get('assigned_at') else 'None'
-                        
-                        # Check if archived batch exists
-                        if archived.get('batch_id'):
-                            detail['archived_batch_exists'] = archived['batch_id'] in existing_batch_ids
-                
-                orphaned_details.append(detail)
+                # Check if archived batch exists
+                if archived.get('batch_id'):
+                    detail['archived_batch_exists'] = archived['batch_id'] in existing_batch_ids
+                    
+                    # If archived batch exists, show its details
+                    if detail['archived_batch_exists']:
+                        archived_batch = await db.memberwd_batches.find_one(
+                            {'id': archived['batch_id']},
+                            {'_id': 0, 'database_name': 1, 'staff_name': 1, 'current_count': 1}
+                        )
+                        if archived_batch:
+                            detail['correct_batch_info'] = {
+                                'database': archived_batch.get('database_name'),
+                                'staff': archived_batch.get('staff_name'),
+                                'current_count': archived_batch.get('current_count')
+                            }
+        
+        orphaned_details.append(detail)
+    
+    # 9. Summary by staff
+    staff_summary = {}
+    for staff_name, staff_batches in batches_by_staff.items():
+        total_stored = sum(b['stored_current'] for b in staff_batches)
+        total_actual = sum(b['actual_assigned'] for b in staff_batches)
+        staff_summary[staff_name] = {
+            'batch_count': len(staff_batches),
+            'stored_total': total_stored,
+            'actual_total': total_actual,
+            'difference': total_stored - total_actual,
+            'batches': staff_batches
+        }
     
     return {
         'summary': {
@@ -114,16 +147,17 @@ async def diagnose_memberwd_batches(user: User = Depends(get_admin_user)):
             'replacements_with_batch': replacements_with_batch,
             'replacements_without_batch': replacements_without_batch,
             'archived_records': archived_count,
-            'orphaned_records': orphaned_records,
+            'orphaned_records': orphaned_count,
             'total_batches': len(batches),
             'sum_of_initial_counts': total_initial,
             'sum_of_current_counts': total_current
         },
         'orphaned_samples': orphaned_details,
-        'batch_verification': batch_record_counts,
-        'expected_total': total_initial,
+        'staff_batch_summary': staff_summary,
+        'expected_total': total_current,
         'actual_total': total_assigned,
-        'difference': total_initial - total_assigned
+        'difference': total_current - total_assigned,
+        'health_status': 'HEALTHY' if orphaned_count == 0 and records_no_batch == 0 else 'NEEDS_REPAIR'
     }
 
 
