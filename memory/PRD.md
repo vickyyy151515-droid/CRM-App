@@ -6,31 +6,28 @@ CRM system for managing member data with batch assignment to staff. Core feature
 - Admin assigns records to staff in batches
 - Staff validates records (valid/invalid)
 - Admin replaces invalid records with new ones
+- **Admin can recall assigned records back to available pool**
 
-## Critical Issue (P0) - Member WD Batch Data Integrity
+## Latest Feature: Recall Records (2026-02-01)
 
-### Problem
-When staff marks records as "invalid" and admin assigns replacements:
-1. Replacements were going to wrong batches (using `batch_ids[0]` instead of specific batch)
-2. Previous repair logic used fallback methods that assigned to ANY matching batch
-3. This caused incorrect record counts and distributions in the UI
+### What it does
+Allows admin to recall (take back) assigned records from staff and return them to the available pool.
 
-### Root Cause
-1. `process-invalid` endpoint assigned ALL replacements to first batch
-2. `repair-batches` used broad fallback logic instead of precise matching
-3. Previous migrations deleted batches but kept `batch_id` on archived records
+### How it works
+1. Admin expands a database in Member WD CRM
+2. Admin can select assigned records using checkboxes or "Select All Assigned" button
+3. Admin clicks "Recall Selected" button
+4. Records are returned to available status, removed from staff's list
 
-### Solution Implemented (2026-02-01)
-1. **Fixed `process-invalid`**: Groups invalid records by `batch_id + database_id`, each replacement goes to EXACT same batch
-2. **Fixed `repair-batches`**: Uses precise linking:
-   - Method 1: Archived record's `batch_id` if exists
-   - Method 2: Exact timestamp match (`staff_id + database_name + assigned_at`)
-   - Method 3: Same-day closest timestamp match
-   - Method 4: Last resort same staff+database fallback
-3. **Enhanced `diagnose-batches`**: Staff-level summary, health status, detailed orphan tracing
+### API Endpoint
+- `POST /api/memberwd/admin/recall-records`
+- Request: `{ "record_ids": ["id1", "id2", ...] }`
+- Response: `{ "success": true, "recalled_count": N, "message": "..." }`
 
-### Key Principle
-**1 invalid = 1 replacement, in the SAME batch, from the SAME product**
+### Changes made
+- Backend: Added `recall-records` endpoint in `routes/memberwd.py`
+- Frontend: Added "Select All Assigned" and "Recall Selected" buttons in `AdminMemberWDCRM.js`
+- Frontend: Enabled checkboxes for assigned records (previously only available records had checkboxes)
 
 ## Features Implemented
 
@@ -40,10 +37,10 @@ When staff marks records as "invalid" and admin assigns replacements:
 - [x] Batch card system for staff
 - [x] Validation workflow (valid/invalid)
 - [x] Invalid record processing with auto-replacement
-- [x] Diagnose and repair tools for data integrity
+- [x] **Recall assigned records back to available pool** (NEW)
 - [x] Excluded count (reserved members in available pool)
 
-### Cek Bonus Member (2026-01)
+### Cek Bonus Member
 - [x] Staff submission form
 - [x] Customer ID validation against reserved members
 - [x] Admin review page
@@ -71,8 +68,7 @@ When staff marks records as "invalid" and admin assigns replacements:
 - `GET /api/memberwd/staff/batches` - Staff batches
 - `POST /api/memberwd/staff/validate` - Mark valid/invalid
 - `POST /api/memberwd/admin/process-invalid/{staff_id}` - Archive invalid + auto-replace
-- `GET /api/memberwd/admin/diagnose-batches` - Diagnose data issues
-- `POST /api/memberwd/admin/repair-batches` - Fix data issues
+- `POST /api/memberwd/admin/recall-records` - Recall assigned records (NEW)
 
 ## Data Models
 
@@ -82,31 +78,18 @@ When staff marks records as "invalid" and admin assigns replacements:
   id: string,
   database_id: string,
   database_name: string,
-  batch_id: string,  // Links to batch
-  assigned_to: string,  // staff_id
+  batch_id: string,
+  assigned_to: string,
   status: 'available' | 'assigned' | 'invalid_archived',
   validation_status: 'validated' | 'invalid' | null,
-  auto_replaced: boolean,  // True if this is a replacement
-  replaced_invalid_ids: string[]  // IDs of invalid records this replaced
-}
-```
-
-### Batch
-```
-{
-  id: string,
-  staff_id: string,
-  database_id: string,
-  database_name: string,
-  created_at: string,  // ISO timestamp - used for matching
-  initial_count: number,
-  current_count: number
+  recalled_at: string,     // NEW - when record was recalled
+  recalled_by: string,     // NEW - who recalled
+  recalled_by_name: string // NEW
 }
 ```
 
 ## Pending Tasks
-1. Verify fix on production environment
-2. Clean up deprecated migration code after fix is confirmed
+None - recall feature is complete
 
 ## Known Issues
-- None after 2026-02-01 fix (pending production verification)
+None
