@@ -144,70 +144,119 @@ async def repair_memberwd_batches(user: User = Depends(get_admin_user)):
         'errors': []
     }
     
-    # Get all existing batch IDs
-    batches = await db.memberwd_batches.find({}, {'_id': 0, 'id': 1}).to_list(10000)
+    # Get all existing batches with full details
+    batches = await db.memberwd_batches.find({}, {'_id': 0}).to_list(10000)
     existing_batch_ids = set(b['id'] for b in batches)
     
+    # Build lookup by database_name and created_at for finding correct batch
+    batch_by_db_and_time = {}
+    for b in batches:
+        db_name = b.get('database_name', '')
+        created_at = b.get('created_at', '')[:16] if b.get('created_at') else ''  # Get YYYY-MM-DDTHH:MM
+        key = f"{db_name}|{created_at}"
+        batch_by_db_and_time[key] = b['id']
+    
+    # Also build lookup by database_name only (for fallback)
+    batches_by_db = {}
+    for b in batches:
+        db_name = b.get('database_name', '')
+        staff_id = b.get('staff_id', '')
+        key = f"{staff_id}|{db_name}"
+        if key not in batches_by_db:
+            batches_by_db[key] = []
+        batches_by_db[key].append(b)
+    
     # 1. Fix ORPHANED records (have batch_id but batch doesn't exist)
-    orphaned_records = await db.memberwd_records.find({
+    all_assigned = await db.memberwd_records.find({
         'status': 'assigned',
         'batch_id': {'$exists': True, '$nin': [None, '']},
     }, {'_id': 0}).to_list(100000)
     
-    for record in orphaned_records:
-        if record.get('batch_id') not in existing_batch_ids:
-            # This record points to a deleted batch - need to find correct batch
+    for record in all_assigned:
+        if record.get('batch_id') in existing_batch_ids:
+            continue  # Not orphaned
+        
+        # This record points to a deleted batch - need to find correct batch
+        fixed = False
+        
+        # If it's a replacement record, find the batch from archived invalid records
+        if record.get('auto_replaced') and record.get('replaced_invalid_ids'):
+            invalid_ids = record['replaced_invalid_ids']
             
-            # If it's a replacement record, find the batch from archived invalid records
-            if record.get('auto_replaced') and record.get('replaced_invalid_ids'):
-                invalid_ids = record['replaced_invalid_ids']
-                # Find archived record to get its original assignment info
-                archived = await db.memberwd_records.find_one(
-                    {'id': {'$in': invalid_ids}},
-                    {'_id': 0, 'assigned_at': 1, 'assigned_to': 1, 'database_id': 1, 'batch_id': 1}
-                )
-                
-                if archived:
-                    # Try to find batch by the archived record's batch_id first
-                    if archived.get('batch_id') and archived['batch_id'] in existing_batch_ids:
-                        await db.memberwd_records.update_one(
-                            {'id': record['id']},
-                            {'$set': {'batch_id': archived['batch_id']}}
-                        )
-                        repairs['orphaned_fixed'] += 1
-                        continue
-                    
-                    # Otherwise find batch by matching timestamp
-                    matching_batch = await db.memberwd_batches.find_one({
-                        'staff_id': archived.get('assigned_to'),
-                        'database_id': archived.get('database_id'),
-                        'created_at': archived.get('assigned_at')
-                    }, {'_id': 0, 'id': 1})
-                    
-                    if matching_batch:
-                        await db.memberwd_records.update_one(
-                            {'id': record['id']},
-                            {'$set': {'batch_id': matching_batch['id']}}
-                        )
-                        repairs['orphaned_fixed'] += 1
-                    else:
-                        repairs['errors'].append(f"Could not find batch for orphaned replacement {record['id'][:8]}")
-            else:
-                # Non-replacement orphaned record - try to find batch by timestamp
-                matching_batch = await db.memberwd_batches.find_one({
-                    'staff_id': record.get('assigned_to'),
-                    'database_id': record.get('database_id'),
-                    'created_at': record.get('assigned_at')
-                }, {'_id': 0, 'id': 1})
-                
-                if matching_batch:
+            # Find archived record to get its original assignment info
+            archived = await db.memberwd_records.find_one(
+                {'id': {'$in': invalid_ids}},
+                {'_id': 0, 'assigned_at': 1, 'assigned_to': 1, 'database_id': 1, 'database_name': 1, 'batch_id': 1}
+            )
+            
+            if archived:
+                # Method 1: Try archived record's batch_id if it exists and is valid
+                if archived.get('batch_id') and archived['batch_id'] in existing_batch_ids:
                     await db.memberwd_records.update_one(
                         {'id': record['id']},
-                        {'$set': {'batch_id': matching_batch['id']}}
+                        {'$set': {'batch_id': archived['batch_id']}}
                     )
                     repairs['orphaned_fixed'] += 1
-                else:
-                    repairs['errors'].append(f"Could not find batch for orphaned record {record['id'][:8]}")
+                    fixed = True
+                    continue
+                
+                # Method 2: Find batch by database_name + timestamp
+                db_name = archived.get('database_name', record.get('database_name', ''))
+                assigned_at = archived.get('assigned_at', '')[:16] if archived.get('assigned_at') else ''
+                lookup_key = f"{db_name}|{assigned_at}"
+                
+                if lookup_key in batch_by_db_and_time:
+                    target_batch_id = batch_by_db_and_time[lookup_key]
+                    await db.memberwd_records.update_one(
+                        {'id': record['id']},
+                        {'$set': {'batch_id': target_batch_id}}
+                    )
+                    repairs['orphaned_fixed'] += 1
+                    fixed = True
+                    continue
+                
+                # Method 3: Find any batch for this database + staff (fallback)
+                staff_id = archived.get('assigned_to', record.get('assigned_to', ''))
+                fallback_key = f"{staff_id}|{db_name}"
+                
+                if fallback_key in batches_by_db and batches_by_db[fallback_key]:
+                    # Find the batch with closest timestamp
+                    target_time = archived.get('assigned_at', '')
+                    best_batch = None
+                    
+                    for b in batches_by_db[fallback_key]:
+                        batch_time = b.get('created_at', '')
+                        if target_time and batch_time:
+                            # Simple comparison - find batch created on same day or earlier
+                            if batch_time[:10] <= target_time[:10]:  # Compare dates
+                                if best_batch is None or batch_time > best_batch.get('created_at', ''):
+                                    best_batch = b
+                    
+                    if best_batch:
+                        await db.memberwd_records.update_one(
+                            {'id': record['id']},
+                            {'$set': {'batch_id': best_batch['id']}}
+                        )
+                        repairs['orphaned_fixed'] += 1
+                        fixed = True
+                        continue
+        
+        if not fixed:
+            # Try to find batch by record's own database_name and timestamp
+            db_name = record.get('database_name', '')
+            staff_id = record.get('assigned_to', '')
+            fallback_key = f"{staff_id}|{db_name}"
+            
+            if fallback_key in batches_by_db and batches_by_db[fallback_key]:
+                # Just assign to the first matching batch
+                target_batch = batches_by_db[fallback_key][0]
+                await db.memberwd_records.update_one(
+                    {'id': record['id']},
+                    {'$set': {'batch_id': target_batch['id']}}
+                )
+                repairs['orphaned_fixed'] += 1
+            else:
+                repairs['errors'].append(f"Could not find batch for orphaned record {record['id'][:8]}, db: {db_name}")
     
     # 2. Fix replacement records without batch_id
     replacement_records = await db.memberwd_records.find({
@@ -226,23 +275,35 @@ async def repair_memberwd_batches(user: User = Depends(get_admin_user)):
             repairs['errors'].append(f"Record {record['id'][:8]} has no replaced_invalid_ids")
             continue
         
-        # Find the invalid record to get its batch_id
+        # Find the invalid record to get batch info
         invalid_record = await db.memberwd_records.find_one(
             {'id': {'$in': invalid_ids}},
-            {'_id': 0, 'batch_id': 1}
+            {'_id': 0, 'batch_id': 1, 'database_name': 1, 'assigned_to': 1, 'assigned_at': 1}
         )
         
-        if invalid_record and invalid_record.get('batch_id'):
-            if invalid_record['batch_id'] in existing_batch_ids:
+        if invalid_record:
+            if invalid_record.get('batch_id') and invalid_record['batch_id'] in existing_batch_ids:
                 await db.memberwd_records.update_one(
                     {'id': record['id']},
                     {'$set': {'batch_id': invalid_record['batch_id']}}
                 )
                 repairs['replacements_fixed'] += 1
             else:
-                repairs['errors'].append(f"Invalid record's batch {invalid_record['batch_id'][:8]} doesn't exist")
+                # Fallback: find by database_name
+                db_name = invalid_record.get('database_name', '')
+                staff_id = invalid_record.get('assigned_to', '')
+                fallback_key = f"{staff_id}|{db_name}"
+                
+                if fallback_key in batches_by_db and batches_by_db[fallback_key]:
+                    await db.memberwd_records.update_one(
+                        {'id': record['id']},
+                        {'$set': {'batch_id': batches_by_db[fallback_key][0]['id']}}
+                    )
+                    repairs['replacements_fixed'] += 1
+                else:
+                    repairs['errors'].append(f"Could not find batch for replacement {record['id'][:8]}")
         else:
-            repairs['errors'].append(f"Could not find batch for replacement {record['id'][:8]}")
+            repairs['errors'].append(f"Could not find archived record for replacement {record['id'][:8]}")
     
     # 3. Update batch counts to match actual records
     all_batches = await db.memberwd_batches.find({}, {'_id': 0}).to_list(1000)
