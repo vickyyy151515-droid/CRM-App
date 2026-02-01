@@ -19,15 +19,20 @@ Allows admin to recall (take back) assigned records from staff and return them t
 3. Admin clicks "Recall Selected" button
 4. Records are returned to available status, removed from staff's list
 
-### API Endpoint
-- `POST /api/memberwd/admin/recall-records`
-- Request: `{ "record_ids": ["id1", "id2", ...] }`
-- Response: `{ "success": true, "recalled_count": N, "message": "..." }`
+### Bug Fixed: Stuck Invalid Records Alert
+When records were recalled that had `validation_status='invalid'`, they would still show in the "Invalid Records Alert" panel. Fixed by:
+1. Changing the invalid records query to only show `status='assigned'` records
+2. Adding a "Dismiss All Invalid Alerts" button to clear orphaned alerts
+
+### API Endpoints
+- `POST /api/memberwd/admin/recall-records` - Recall records to available pool
+- `POST /api/memberwd/admin/dismiss-invalid-alerts` - Clear orphaned invalid alerts
 
 ### Changes made
-- Backend: Added `recall-records` endpoint in `routes/memberwd.py`
-- Frontend: Added "Select All Assigned" and "Recall Selected" buttons in `AdminMemberWDCRM.js`
-- Frontend: Enabled checkboxes for assigned records (previously only available records had checkboxes)
+- Backend: Added `recall-records` and `dismiss-invalid-alerts` endpoints
+- Backend: Fixed `invalid-records` query to only show assigned records
+- Frontend: Added "Select All Assigned", "Recall Selected", and "Dismiss All Invalid Alerts" buttons
+- Frontend: Enabled checkboxes for assigned records
 
 ## Features Implemented
 
@@ -38,13 +43,8 @@ Allows admin to recall (take back) assigned records from staff and return them t
 - [x] Validation workflow (valid/invalid)
 - [x] Invalid record processing with auto-replacement
 - [x] **Recall assigned records back to available pool** (NEW)
+- [x] **Dismiss orphaned invalid alerts** (NEW)
 - [x] Excluded count (reserved members in available pool)
-
-### Cek Bonus Member
-- [x] Staff submission form
-- [x] Customer ID validation against reserved members
-- [x] Admin review page
-- [x] CSV/Excel export
 
 ### Other Modules
 - Authentication (JWT + TOTP)
@@ -53,6 +53,7 @@ Allows admin to recall (take back) assigned records from staff and return them t
 - Attendance tracking
 - Inventory management
 - Scheduled reports
+- Cek Bonus Member
 
 ## Tech Stack
 - Backend: FastAPI (Python)
@@ -69,27 +70,10 @@ Allows admin to recall (take back) assigned records from staff and return them t
 - `POST /api/memberwd/staff/validate` - Mark valid/invalid
 - `POST /api/memberwd/admin/process-invalid/{staff_id}` - Archive invalid + auto-replace
 - `POST /api/memberwd/admin/recall-records` - Recall assigned records (NEW)
-
-## Data Models
-
-### MemberWDRecord
-```
-{
-  id: string,
-  database_id: string,
-  database_name: string,
-  batch_id: string,
-  assigned_to: string,
-  status: 'available' | 'assigned' | 'invalid_archived',
-  validation_status: 'validated' | 'invalid' | null,
-  recalled_at: string,     // NEW - when record was recalled
-  recalled_by: string,     // NEW - who recalled
-  recalled_by_name: string // NEW
-}
-```
+- `POST /api/memberwd/admin/dismiss-invalid-alerts` - Clear orphaned alerts (NEW)
 
 ## Pending Tasks
-None - recall feature is complete
+None - features complete
 
 ## Known Issues
 None
