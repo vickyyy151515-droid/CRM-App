@@ -43,12 +43,20 @@ export default function AdminMemberWDCRM() {
   const [migrationStatus, setMigrationStatus] = useState(null);
   const [loadingMigration, setLoadingMigration] = useState(false);
   const [runningMigration, setRunningMigration] = useState(false);
+  // Settings state
+  const [memberWDSettings, setMemberWDSettings] = useState({
+    auto_replace_invalid: false,
+    max_replacements_per_batch: 10
+  });
+  const [showSettingsPanel, setShowSettingsPanel] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(false);
 
   useEffect(() => {
     loadProducts();
     loadStaff();
     loadReservedNames();
     loadInvalidRecords();
+    loadSettings();
   }, []);
 
   useEffect(() => {
