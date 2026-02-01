@@ -625,8 +625,8 @@ async def get_staff_memberwd_batches(user: User = Depends(get_current_user)):
         batch['records'] = batch_records
         batch['active_count'] = len(batch_records)
         
-        # Count by validation status
-        validated = sum(1 for r in batch_records if r.get('validation_status') == 'valid')
+        # Count by validation status (check both 'valid' and 'validated' for compatibility)
+        validated = sum(1 for r in batch_records if r.get('validation_status') in ['valid', 'validated'])
         invalid = sum(1 for r in batch_records if r.get('validation_status') == 'invalid')
         unvalidated = len(batch_records) - validated - invalid
         
