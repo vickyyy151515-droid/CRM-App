@@ -582,6 +582,17 @@ export default function AdminMemberWDCRM() {
           
           {showInvalidPanel && (
             <div className="border-t border-red-200 dark:border-red-800 p-4 space-y-4">
+              {/* Dismiss All Button */}
+              <div className="flex justify-end">
+                <button
+                  onClick={handleDismissInvalidAlerts}
+                  className="px-3 py-1.5 bg-slate-600 hover:bg-slate-700 text-white text-sm rounded-lg flex items-center gap-1.5"
+                  data-testid="dismiss-invalid-alerts"
+                >
+                  <X size={14} />
+                  Dismiss All Invalid Alerts
+                </button>
+              </div>
               {invalidRecords.by_staff?.map((staffGroup) => (
                 <div key={staffGroup._id} className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                   <div className="p-3 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between">
