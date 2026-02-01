@@ -144,12 +144,22 @@ export default function StaffMemberWDCRM() {
     
     setProcessing(true);
     try {
-      await api.post('/memberwd/staff/validate', {
+      const response = await api.post('/memberwd/staff/validate', {
         record_ids: selectedRecords,
         is_valid: false,
         reason: invalidReason
       });
-      toast.success(`${selectedRecords.length} record ditandai tidak valid`);
+      
+      // Show appropriate message based on auto-replace result
+      const data = response.data;
+      if (data.auto_replaced > 0) {
+        toast.success(`${selectedRecords.length} record ditandai tidak valid. ${data.auto_replaced} record baru otomatis ditugaskan!`);
+      } else if (data.replacement_failed > 0) {
+        toast.warning(`${selectedRecords.length} record ditandai tidak valid. ${data.replacement_message || 'Record pengganti tidak tersedia.'}`);
+      } else {
+        toast.success(`${selectedRecords.length} record ditandai tidak valid`);
+      }
+      
       setSelectedRecords([]);
       setShowInvalidModal(false);
       setInvalidReason('');
