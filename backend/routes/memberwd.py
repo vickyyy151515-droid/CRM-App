@@ -1059,6 +1059,82 @@ async def delete_archived_memberwd_record(record_id: str, user: User = Depends(g
     
     return {'success': True, 'message': 'Record permanently deleted'}
 
+
+class RecallRecordsRequest(BaseModel):
+    record_ids: List[str]
+
+
+@router.post("/memberwd/admin/recall-records")
+async def recall_assigned_records(data: RecallRecordsRequest, user: User = Depends(get_admin_user)):
+    """
+    Recall assigned records from staff - return them to available pool.
+    This removes records from staff's Member WD CRM list.
+    """
+    db = get_db()
+    now = get_jakarta_now()
+    
+    if not data.record_ids:
+        raise HTTPException(status_code=400, detail="No record IDs provided")
+    
+    # Find the records to recall
+    records_to_recall = await db.memberwd_records.find({
+        'id': {'$in': data.record_ids},
+        'status': 'assigned'
+    }, {'_id': 0}).to_list(10000)
+    
+    if not records_to_recall:
+        raise HTTPException(status_code=404, detail="No assigned records found with the provided IDs")
+    
+    # Group by batch_id to update batch counts
+    batch_counts = {}
+    for record in records_to_recall:
+        batch_id = record.get('batch_id')
+        if batch_id:
+            batch_counts[batch_id] = batch_counts.get(batch_id, 0) + 1
+    
+    # Update records: set status back to 'available' and clear assignment fields
+    result = await db.memberwd_records.update_many(
+        {'id': {'$in': data.record_ids}, 'status': 'assigned'},
+        {
+            '$set': {
+                'status': 'available',
+                'recalled_at': now.isoformat(),
+                'recalled_by': user.id,
+                'recalled_by_name': user.name
+            },
+            '$unset': {
+                'assigned_to': '',
+                'assigned_to_name': '',
+                'assigned_at': '',
+                'assigned_by': '',
+                'assigned_by_name': '',
+                'batch_id': '',
+                'validation_status': '',
+                'validated_at': '',
+                'validation_reason': '',
+                'auto_replaced': '',
+                'replaced_invalid_ids': ''
+            }
+        }
+    )
+    
+    # Update batch counts
+    for batch_id, count in batch_counts.items():
+        await db.memberwd_batches.update_one(
+            {'id': batch_id},
+            {'$inc': {'current_count': -count, 'recalled_count': count}}
+        )
+    
+    # Delete empty batches (current_count <= 0)
+    await db.memberwd_batches.delete_many({'current_count': {'$lte': 0}})
+    
+    return {
+        'success': True,
+        'recalled_count': result.modified_count,
+        'message': f'{result.modified_count} records recalled and returned to available pool'
+    }
+
+
 @router.get("/memberwd/staff")
 async def get_memberwd_staff_list(user: User = Depends(get_admin_user)):
     """Get list of staff members for assignment"""
