@@ -94,18 +94,85 @@ async def diagnose_memberwd_batches(user: User = Depends(get_admin_user)):
 async def repair_memberwd_batches(user: User = Depends(get_admin_user)):
     """
     Repair Member WD batch issues:
-    1. Find replacement records without batch_id and assign them to correct batch
-    2. Update batch counts to match actual record counts
+    1. Find orphaned records (batch_id points to non-existent batch) and reassign them
+    2. Find replacement records without batch_id and assign them to correct batch
+    3. Update batch counts to match actual record counts
     """
     db = get_db()
     
     repairs = {
+        'orphaned_fixed': 0,
         'replacements_fixed': 0,
         'batch_counts_updated': 0,
         'errors': []
     }
     
-    # 1. Fix replacement records without batch_id
+    # Get all existing batch IDs
+    batches = await db.memberwd_batches.find({}, {'_id': 0, 'id': 1}).to_list(10000)
+    existing_batch_ids = set(b['id'] for b in batches)
+    
+    # 1. Fix ORPHANED records (have batch_id but batch doesn't exist)
+    orphaned_records = await db.memberwd_records.find({
+        'status': 'assigned',
+        'batch_id': {'$exists': True, '$nin': [None, '']},
+    }, {'_id': 0}).to_list(100000)
+    
+    for record in orphaned_records:
+        if record.get('batch_id') not in existing_batch_ids:
+            # This record points to a deleted batch - need to find correct batch
+            
+            # If it's a replacement record, find the batch from archived invalid records
+            if record.get('auto_replaced') and record.get('replaced_invalid_ids'):
+                invalid_ids = record['replaced_invalid_ids']
+                # Find archived record to get its original assignment info
+                archived = await db.memberwd_records.find_one(
+                    {'id': {'$in': invalid_ids}},
+                    {'_id': 0, 'assigned_at': 1, 'assigned_to': 1, 'database_id': 1, 'batch_id': 1}
+                )
+                
+                if archived:
+                    # Try to find batch by the archived record's batch_id first
+                    if archived.get('batch_id') and archived['batch_id'] in existing_batch_ids:
+                        await db.memberwd_records.update_one(
+                            {'id': record['id']},
+                            {'$set': {'batch_id': archived['batch_id']}}
+                        )
+                        repairs['orphaned_fixed'] += 1
+                        continue
+                    
+                    # Otherwise find batch by matching timestamp
+                    matching_batch = await db.memberwd_batches.find_one({
+                        'staff_id': archived.get('assigned_to'),
+                        'database_id': archived.get('database_id'),
+                        'created_at': archived.get('assigned_at')
+                    }, {'_id': 0, 'id': 1})
+                    
+                    if matching_batch:
+                        await db.memberwd_records.update_one(
+                            {'id': record['id']},
+                            {'$set': {'batch_id': matching_batch['id']}}
+                        )
+                        repairs['orphaned_fixed'] += 1
+                    else:
+                        repairs['errors'].append(f"Could not find batch for orphaned replacement {record['id'][:8]}")
+            else:
+                # Non-replacement orphaned record - try to find batch by timestamp
+                matching_batch = await db.memberwd_batches.find_one({
+                    'staff_id': record.get('assigned_to'),
+                    'database_id': record.get('database_id'),
+                    'created_at': record.get('assigned_at')
+                }, {'_id': 0, 'id': 1})
+                
+                if matching_batch:
+                    await db.memberwd_records.update_one(
+                        {'id': record['id']},
+                        {'$set': {'batch_id': matching_batch['id']}}
+                    )
+                    repairs['orphaned_fixed'] += 1
+                else:
+                    repairs['errors'].append(f"Could not find batch for orphaned record {record['id'][:8]}")
+    
+    # 2. Fix replacement records without batch_id
     replacement_records = await db.memberwd_records.find({
         'status': 'assigned',
         'auto_replaced': True,
@@ -129,18 +196,21 @@ async def repair_memberwd_batches(user: User = Depends(get_admin_user)):
         )
         
         if invalid_record and invalid_record.get('batch_id'):
-            await db.memberwd_records.update_one(
-                {'id': record['id']},
-                {'$set': {'batch_id': invalid_record['batch_id']}}
-            )
-            repairs['replacements_fixed'] += 1
+            if invalid_record['batch_id'] in existing_batch_ids:
+                await db.memberwd_records.update_one(
+                    {'id': record['id']},
+                    {'$set': {'batch_id': invalid_record['batch_id']}}
+                )
+                repairs['replacements_fixed'] += 1
+            else:
+                repairs['errors'].append(f"Invalid record's batch {invalid_record['batch_id'][:8]} doesn't exist")
         else:
             repairs['errors'].append(f"Could not find batch for replacement {record['id'][:8]}")
     
-    # 2. Update batch counts to match actual records
-    batches = await db.memberwd_batches.find({}, {'_id': 0}).to_list(1000)
+    # 3. Update batch counts to match actual records
+    all_batches = await db.memberwd_batches.find({}, {'_id': 0}).to_list(1000)
     
-    for batch in batches:
+    for batch in all_batches:
         actual_count = await db.memberwd_records.count_documents({
             'batch_id': batch['id'],
             'status': 'assigned'
@@ -155,6 +225,6 @@ async def repair_memberwd_batches(user: User = Depends(get_admin_user)):
     
     return {
         'success': True,
-        'message': f"Repaired {repairs['replacements_fixed']} replacement records, updated {repairs['batch_counts_updated']} batch counts",
+        'message': f"Fixed {repairs['orphaned_fixed']} orphaned records, {repairs['replacements_fixed']} replacements, updated {repairs['batch_counts_updated']} batch counts",
         'details': repairs
     }
