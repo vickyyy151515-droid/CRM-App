@@ -819,6 +819,8 @@ async def dismiss_invalid_alerts(user: User = Depends(get_admin_user)):
         'message': f'{result.modified_count} orphaned invalid alerts cleared'
     }
 
+
+class ProcessInvalidRequest(BaseModel):
     auto_assign_quantity: int = 0  # How many new records to assign (0 = no auto-assign)
 
 
