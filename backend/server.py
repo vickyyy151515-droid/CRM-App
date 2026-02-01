@@ -71,6 +71,7 @@ from routes.attendance import router as attendance_router
 from routes.fees import router as fees_router
 from routes.message_variations import router as message_variations_router
 from routes.bonus_check import router as bonus_check_router
+from routes.memberwd_diagnostics import router as memberwd_diagnostics_router
 
 # Initialize database connection for all route modules
 set_database(db)
