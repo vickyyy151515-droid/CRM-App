@@ -29,6 +29,58 @@ class RecordValidation(BaseModel):
     reason: Optional[str] = None
 
 
+class MemberWDSettings(BaseModel):
+    auto_replace_invalid: bool = False  # Toggle auto vs manual replacement
+    max_replacements_per_batch: int = 10  # Maximum replacements per batch card
+
+
+# Default settings
+DEFAULT_MEMBERWD_SETTINGS = {
+    'id': 'memberwd_settings',
+    'auto_replace_invalid': False,
+    'max_replacements_per_batch': 10
+}
+
+
+@router.get("/memberwd/admin/settings")
+async def get_memberwd_settings(user: User = Depends(get_admin_user)):
+    """Get Member WD settings"""
+    db = get_db()
+    settings = await db.app_settings.find_one({'id': 'memberwd_settings'}, {'_id': 0})
+    if not settings:
+        # Create default settings
+        await db.app_settings.insert_one(DEFAULT_MEMBERWD_SETTINGS.copy())
+        settings = DEFAULT_MEMBERWD_SETTINGS.copy()
+    return settings
+
+
+@router.put("/memberwd/admin/settings")
+async def update_memberwd_settings(data: MemberWDSettings, user: User = Depends(get_admin_user)):
+    """Update Member WD settings"""
+    db = get_db()
+    now = get_jakarta_now()
+    
+    await db.app_settings.update_one(
+        {'id': 'memberwd_settings'},
+        {'$set': {
+            'auto_replace_invalid': data.auto_replace_invalid,
+            'max_replacements_per_batch': data.max_replacements_per_batch,
+            'updated_at': now.isoformat(),
+            'updated_by': user.name
+        }},
+        upsert=True
+    )
+    
+    return {
+        'success': True,
+        'message': 'Settings updated successfully',
+        'settings': {
+            'auto_replace_invalid': data.auto_replace_invalid,
+            'max_replacements_per_batch': data.max_replacements_per_batch
+        }
+    }
+
+
 @router.post("/memberwd/admin/migrate-batches")
 async def migrate_existing_records_to_batches(user: User = Depends(get_admin_user)):
     """
