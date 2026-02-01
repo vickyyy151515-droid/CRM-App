@@ -749,9 +749,12 @@ async def get_invalid_memberwd_records(user: User = Depends(get_admin_user)):
     """Get all invalid memberwd records with staff info (Admin only)"""
     db = get_db()
     
-    # Group invalid records by staff (exclude archived records)
+    # Group invalid records by staff (only show ASSIGNED records, not recalled/available ones)
     pipeline = [
-        {'$match': {'validation_status': 'invalid', 'status': {'$ne': 'invalid_archived'}}},
+        {'$match': {
+            'validation_status': 'invalid', 
+            'status': 'assigned'  # Only show records still assigned to staff
+        }},
         {'$group': {
             '_id': '$assigned_to',
             'staff_name': {'$first': '$assigned_to_name'},
@@ -775,7 +778,47 @@ async def get_invalid_memberwd_records(user: User = Depends(get_admin_user)):
     }
 
 
-class ProcessInvalidRequest(BaseModel):
+@router.post("/memberwd/admin/dismiss-invalid-alerts")
+async def dismiss_invalid_alerts(user: User = Depends(get_admin_user)):
+    """
+    Clear invalid status from records that are no longer assigned.
+    This is for cleanup when records were recalled but still show as invalid.
+    """
+    db = get_db()
+    now = get_jakarta_now()
+    
+    # Find records that have validation_status='invalid' but are not assigned
+    # These are orphaned invalid alerts that should be cleared
+    result = await db.memberwd_records.update_many(
+        {
+            'validation_status': 'invalid',
+            'status': {'$ne': 'assigned'}  # Not assigned (available, recalled, etc.)
+        },
+        {
+            '$unset': {
+                'validation_status': '',
+                'validated_at': '',
+                'validation_reason': ''
+            },
+            '$set': {
+                'invalid_dismissed_at': now.isoformat(),
+                'invalid_dismissed_by': user.name
+            }
+        }
+    )
+    
+    # Also resolve any related notifications
+    await db.admin_notifications.update_many(
+        {'type': 'memberwd_invalid', 'is_resolved': False},
+        {'$set': {'is_resolved': True, 'resolved_at': now.isoformat(), 'resolved_by': user.name}}
+    )
+    
+    return {
+        'success': True,
+        'cleared_count': result.modified_count,
+        'message': f'{result.modified_count} orphaned invalid alerts cleared'
+    }
+
     auto_assign_quantity: int = 0  # How many new records to assign (0 = no auto-assign)
 
 
