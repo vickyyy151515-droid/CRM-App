@@ -418,8 +418,8 @@ export default function StaffMemberWDCRM() {
                         </span>
                       )}
                       {batch.unvalidated_count > 0 && (
-                        <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 text-xs rounded-full">
-                          {batch.unvalidated_count} pending
+                        <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 text-xs rounded-full">
+                          {batch.unvalidated_count} belum dicek
                         </span>
                       )}
                     </div>
