@@ -227,6 +227,19 @@ export default function AdminMemberWDCRM() {
     }
   };
 
+  // Dismiss all orphaned invalid alerts (for recalled records)
+  const handleDismissInvalidAlerts = async () => {
+    if (!window.confirm('Clear all invalid alerts for records that are no longer assigned? This cannot be undone.')) return;
+    try {
+      const response = await api.post('/memberwd/admin/dismiss-invalid-alerts');
+      toast.success(response.data.message);
+      loadInvalidRecords();
+      loadDatabases();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to dismiss alerts');
+    }
+  };
+
   const loadProducts = async () => {
     try {
       const response = await api.get('/products');
