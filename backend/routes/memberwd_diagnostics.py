@@ -50,7 +50,6 @@ async def diagnose_memberwd_batches(user: User = Depends(get_admin_user)):
     total_current = sum(b.get('current_count', 0) for b in batches)
     
     # 6. Count records per batch to verify - group by staff and database
-    batch_record_counts = []
     batches_by_staff = {}
     
     for batch in batches:
