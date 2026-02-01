@@ -85,6 +85,30 @@ export default function AdminMemberWDCRM() {
     }
   };
 
+  // Load Member WD settings
+  const loadSettings = async () => {
+    try {
+      const response = await api.get('/memberwd/admin/settings');
+      setMemberWDSettings(response.data);
+    } catch (error) {
+      console.error('Failed to load settings:', error);
+    }
+  };
+
+  // Save Member WD settings
+  const handleSaveSettings = async () => {
+    setSavingSettings(true);
+    try {
+      await api.put('/memberwd/admin/settings', memberWDSettings);
+      toast.success('Settings saved successfully');
+      setShowSettingsPanel(false);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to save settings');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
   // Load invalid records from staff validation
   const loadInvalidRecords = async () => {
     try {
