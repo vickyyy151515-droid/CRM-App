@@ -387,6 +387,44 @@ export default function AdminMemberWDCRM() {
     setSelectedRecords([]);
   };
 
+  // Recall records - return assigned records back to available pool
+  const handleRecallRecords = async () => {
+    // Get selected assigned records
+    const assignedSelectedIds = selectedRecords.filter(id => {
+      const record = records.find(r => r.id === id);
+      return record && record.status === 'assigned';
+    });
+
+    if (assignedSelectedIds.length === 0) {
+      toast.error('Please select assigned records to recall');
+      return;
+    }
+
+    if (!window.confirm(`Recall ${assignedSelectedIds.length} record(s) from staff? This will return them to the available pool.`)) {
+      return;
+    }
+
+    try {
+      const response = await api.post('/memberwd/admin/recall-records', {
+        record_ids: assignedSelectedIds
+      });
+      toast.success(response.data.message);
+      setSelectedRecords([]);
+      loadRecords(expandedDb);
+      loadDatabases();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to recall records');
+    }
+  };
+
+  // Select all assigned records
+  const selectAllAssigned = () => {
+    const assignedIds = filteredRecords
+      .filter(r => r.status === 'assigned')
+      .map(r => r.id);
+    setSelectedRecords(assignedIds);
+  };
+
   const handleRandomAssign = async () => {
     const quantity = parseInt(randomQuantity);
     if (!selectedStaff || !quantity || quantity <= 0) {
