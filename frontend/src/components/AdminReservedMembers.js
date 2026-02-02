@@ -677,6 +677,94 @@ export default function AdminReservedMembers({ onUpdate }) {
         </table>
       </div>
 
+        </>
+      )}
+
+      {activeTab === 'deleted' && (
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
+          <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-red-50 dark:bg-red-900/20">
+            <h3 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+              <Archive size={18} className="text-red-600" />
+              Deleted Reserved Members (No Omset)
+            </h3>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+              These members were automatically removed because the assigned staff had no OMSET within the grace period.
+            </p>
+          </div>
+          
+          {deletedMembers.length === 0 ? (
+            <div className="p-8 text-center text-slate-500">
+              No deleted members found
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                <thead className="bg-slate-50 dark:bg-slate-900">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase">Customer ID</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase">Staff</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase">Product</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase">Deleted At</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase">Reason</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                  {deletedMembers.map((member) => (
+                    <tr key={member.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                      <td className="px-4 py-3">
+                        <span className="font-medium text-slate-900 dark:text-white">
+                          {member.customer_id || member.customer_name}
+                        </span>
+                        {member.phone_number && (
+                          <p className="text-xs text-slate-500">{member.phone_number}</p>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
+                        {member.staff_name || '-'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300">
+                          {member.product_name || '-'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
+                        {formatDate(member.deleted_at)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300">
+                          {member.deleted_reason === 'no_omset_grace_period' 
+                            ? `No Omset (${member.grace_days_used || 0} days)`
+                            : member.deleted_reason || 'No Omset'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleRestoreDeleted(member.id)}
+                            className="p-1.5 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"
+                            title="Restore to Active"
+                          >
+                            <RotateCcw size={16} />
+                          </button>
+                          <button
+                            onClick={() => handlePermanentDelete(member.id)}
+                            className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                            title="Delete Permanently"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Move Modal */}
       {moveModal.open && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" data-testid="move-modal">
