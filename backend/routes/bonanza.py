@@ -26,6 +26,61 @@ class RecordValidation(BaseModel):
     is_valid: bool
     reason: Optional[str] = None
 
+
+class BonanzaSettings(BaseModel):
+    auto_replace_invalid: bool = False
+    max_replacements_per_batch: int = 10
+
+
+class RecallRecordsRequest(BaseModel):
+    record_ids: List[str]
+
+
+# Default settings
+DEFAULT_BONANZA_SETTINGS = {
+    'id': 'bonanza_settings',
+    'auto_replace_invalid': False,
+    'max_replacements_per_batch': 10
+}
+
+
+@router.get("/bonanza/admin/settings")
+async def get_bonanza_settings(user: User = Depends(get_admin_user)):
+    """Get DB Bonanza settings"""
+    db = get_db()
+    settings = await db.app_settings.find_one({'id': 'bonanza_settings'}, {'_id': 0})
+    if not settings:
+        await db.app_settings.insert_one(DEFAULT_BONANZA_SETTINGS.copy())
+        settings = DEFAULT_BONANZA_SETTINGS.copy()
+    return settings
+
+
+@router.put("/bonanza/admin/settings")
+async def update_bonanza_settings(data: BonanzaSettings, user: User = Depends(get_admin_user)):
+    """Update DB Bonanza settings"""
+    db = get_db()
+    now = get_jakarta_now()
+    
+    await db.app_settings.update_one(
+        {'id': 'bonanza_settings'},
+        {'$set': {
+            'auto_replace_invalid': data.auto_replace_invalid,
+            'max_replacements_per_batch': data.max_replacements_per_batch,
+            'updated_at': now.isoformat(),
+            'updated_by': user.name
+        }},
+        upsert=True
+    )
+    
+    return {
+        'success': True,
+        'message': 'Settings updated successfully',
+        'settings': {
+            'auto_replace_invalid': data.auto_replace_invalid,
+            'max_replacements_per_batch': data.max_replacements_per_batch
+        }
+    }
+
 @router.post("/bonanza/upload")
 async def upload_bonanza_database(
     file: UploadFile = File(...),
