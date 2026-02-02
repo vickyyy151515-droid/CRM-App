@@ -1037,6 +1037,10 @@ export default function AdminDBBonanza() {
                         </div>
                       </div>
                     );
+                      } catch (e) {
+                        console.error('Error rendering random assignment:', e);
+                        return <div className="p-4 text-red-600">Error loading assignment controls</div>;
+                      }
                   })()}
 
                   {/* Manual Assignment Controls */}
