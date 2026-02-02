@@ -50,6 +50,15 @@ export default function AdminMemberWDCRM() {
   });
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
+  // Track which staff's invalid records are expanded
+  const [expandedInvalidStaff, setExpandedInvalidStaff] = useState({});
+
+  const toggleExpandInvalidStaff = (staffId) => {
+    setExpandedInvalidStaff(prev => ({
+      ...prev,
+      [staffId]: !prev[staffId]
+    }));
+  };
 
   useEffect(() => {
     loadProducts();
