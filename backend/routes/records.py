@@ -1385,6 +1385,15 @@ async def bulk_create_reserved_members(bulk_data: BulkReservedMemberCreate, user
         doc['approved_at'] = doc['approved_at'].isoformat()
         
         await db.reserved_members.insert_one(doc)
+        
+        # Remove from deleted_reserved_members if exists (member is being re-reserved)
+        await db.deleted_reserved_members.delete_many({
+            '$or': [
+                {'customer_id': customer_id},
+                {'customer_name': customer_id}
+            ]
+        })
+        
         added.append(customer_id)
     
     return {
