@@ -1181,7 +1181,8 @@ export default function AdminDBBonanza() {
                       </table>
                     </div>
                   )}
-                </div>
+                  </div>
+                </ErrorBoundary>
               )}
             </div>
           ))
