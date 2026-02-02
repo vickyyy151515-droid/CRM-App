@@ -1584,6 +1584,68 @@ async def cleanup_reserved_member_duplicates(user: User = Depends(get_admin_user
         'deleted': deleted_ids
     }
 
+
+@router.get("/reserved-members/deleted")
+async def get_deleted_reserved_members(user: User = Depends(get_admin_user)):
+    """Get list of reserved members deleted due to no omset"""
+    db = get_db()
+    
+    deleted_members = await db.deleted_reserved_members.find(
+        {},
+        {'_id': 0}
+    ).sort('deleted_at', -1).to_list(10000)
+    
+    return deleted_members
+
+
+@router.delete("/reserved-members/deleted/{member_id}")
+async def permanently_delete_archived_reserved_member(member_id: str, user: User = Depends(get_admin_user)):
+    """Permanently delete an archived reserved member"""
+    db = get_db()
+    
+    result = await db.deleted_reserved_members.delete_one({'id': member_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Archived member not found")
+    
+    return {'success': True, 'message': 'Archived member permanently deleted'}
+
+
+@router.post("/reserved-members/deleted/{member_id}/restore")
+async def restore_deleted_reserved_member(member_id: str, user: User = Depends(get_admin_user)):
+    """Restore a deleted reserved member back to active status"""
+    db = get_db()
+    now = datetime.now(JAKARTA_TZ)
+    
+    # Find the archived member
+    archived_member = await db.deleted_reserved_members.find_one({'id': member_id}, {'_id': 0})
+    
+    if not archived_member:
+        raise HTTPException(status_code=404, detail="Archived member not found")
+    
+    # Remove deletion-related fields
+    archived_member.pop('deleted_at', None)
+    archived_member.pop('deleted_reason', None)
+    archived_member.pop('grace_days_used', None)
+    archived_member.pop('days_since_reservation', None)
+    
+    # Update timestamps
+    archived_member['reserved_at'] = now.isoformat()
+    archived_member['restored_at'] = now.isoformat()
+    archived_member['restored_by'] = user.name
+    
+    # Insert back to active reserved members
+    await db.reserved_members.insert_one(archived_member)
+    
+    # Delete from archived
+    await db.deleted_reserved_members.delete_one({'id': member_id})
+    
+    return {
+        'success': True, 
+        'message': f'Member {archived_member.get("customer_id", "")} restored to active reserved members'
+    }
+
+
 # ==================== DOWNLOAD HISTORY ====================
 
 @router.get("/download-history", response_model=List[DownloadHistory])
