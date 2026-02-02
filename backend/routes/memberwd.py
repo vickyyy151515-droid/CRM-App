@@ -407,7 +407,7 @@ async def upload_memberwd_database(
                 # Convert to string and handle any encoding issues
                 try:
                     row_data[str(col)] = str(value) if value is not None else ''
-                except:
+                except Exception:
                     row_data[str(col)] = ''
         
         record = {
