@@ -411,13 +411,14 @@ export default function AdminDBBonanza() {
       return;
     }
 
-    // Detect the username field from the first record
-    const columns = Object.keys(records[0]?.row_data || {});
+    // Detect the username field from the first record - with null check
+    const firstRecord = records.find(r => r.row_data);
+    const columns = firstRecord?.row_data ? Object.keys(firstRecord.row_data) : [];
     const usernameField = columns.find(col => 
       col.toLowerCase().includes('username') || 
       col.toLowerCase().includes('user') ||
       col.toLowerCase() === 'nama'
-    ) || columns[0];
+    ) || columns[0] || 'username';
 
     setAssigning(true);
     try {
