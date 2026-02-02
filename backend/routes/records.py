@@ -1300,6 +1300,15 @@ async def create_reserved_member(member_data: ReservedMemberCreate, user: User =
         doc['approved_at'] = doc['approved_at'].isoformat()
     
     await db.reserved_members.insert_one(doc)
+    
+    # Remove from deleted_reserved_members if exists (member is being re-reserved)
+    await db.deleted_reserved_members.delete_many({
+        '$or': [
+            {'customer_id': member_data.customer_id},
+            {'customer_name': member_data.customer_id}  # Also check customer_name field
+        ]
+    })
+    
     return member
 
 
