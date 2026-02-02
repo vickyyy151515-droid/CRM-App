@@ -1082,6 +1082,10 @@ export default function AdminDBBonanza() {
                   {/* Records Table */}
                   {loadingRecords ? (
                     <div className="text-center py-8 text-slate-600 dark:text-slate-400">Loading records...</div>
+                  ) : filteredRecords.length === 0 ? (
+                    <div className="text-center py-8 text-slate-600 dark:text-slate-400">
+                      {records.length === 0 ? 'No records in this database' : 'No records match the current filter'}
+                    </div>
                   ) : (
                     <div className="overflow-x-auto max-h-96 overflow-y-auto">
                       <table className="min-w-full border border-slate-200 rounded-lg">
@@ -1091,7 +1095,7 @@ export default function AdminDBBonanza() {
                               <input
                                 type="checkbox"
                                 onChange={(e) => e.target.checked ? selectAllAvailable() : clearSelection()}
-                                checked={selectedRecords.length > 0 && selectedRecords.length === filteredRecords.filter(r => r.status === 'available').length}
+                                checked={selectedRecords.length > 0 && filteredRecords.filter(r => r.status === 'available').length > 0 && selectedRecords.length === filteredRecords.filter(r => r.status === 'available').length}
                                 className="rounded border-slate-300"
                               />
                             </th>
@@ -1110,18 +1114,16 @@ export default function AdminDBBonanza() {
                               className={`border-b border-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 ${selectedRecords.includes(record.id) ? 'bg-indigo-50' : ''}`}
                             >
                               <td className="px-3 py-2">
-                                {record.status === 'available' && (
-                                  <input
-                                    type="checkbox"
-                                    checked={selectedRecords.includes(record.id)}
-                                    onChange={() => toggleSelectRecord(record.id)}
-                                    className="rounded border-slate-300"
-                                  />
-                                )}
+                                <input
+                                  type="checkbox"
+                                  checked={selectedRecords.includes(record.id)}
+                                  onChange={() => toggleSelectRecord(record.id)}
+                                  className="rounded border-slate-300"
+                                />
                               </td>
-                              <td className="px-3 py-2 text-sm text-slate-900 font-medium">{record.row_number}</td>
+                              <td className="px-3 py-2 text-sm text-slate-900 font-medium">{record.row_number || '-'}</td>
                               {visibleColumns.map(col => (
-                                <td key={col} className="px-3 py-2 text-sm text-slate-700 dark:text-slate-200">{record.row_data[col] || '-'}</td>
+                                <td key={col} className="px-3 py-2 text-sm text-slate-700 dark:text-slate-200">{record.row_data?.[col] ?? '-'}</td>
                               ))}
                               <td className="px-3 py-2">
                                 <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
