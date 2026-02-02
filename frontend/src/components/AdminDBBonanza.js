@@ -1012,6 +1012,12 @@ export default function AdminDBBonanza() {
                       Select All Available
                     </button>
                     <button
+                      onClick={selectAllAssigned}
+                      className="h-9 px-4 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                    >
+                      Select All Assigned
+                    </button>
+                    <button
                       onClick={clearSelection}
                       className="h-9 px-4 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
                     >
@@ -1027,6 +1033,15 @@ export default function AdminDBBonanza() {
                       data-testid="assign-records-btn"
                     >
                       {assigning ? 'Assigning...' : 'Assign Selected'}
+                    </button>
+                    <button
+                      onClick={handleRecallRecords}
+                      disabled={selectedRecords.length === 0}
+                      className="h-9 px-4 text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 disabled:opacity-50 rounded-lg transition-colors flex items-center gap-1"
+                      data-testid="recall-records-btn"
+                    >
+                      <Undo2 size={14} />
+                      Recall Selected
                     </button>
                     <button
                       onClick={handleBulkDeleteRecords}
