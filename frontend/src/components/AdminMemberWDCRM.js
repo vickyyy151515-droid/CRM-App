@@ -352,7 +352,10 @@ export default function AdminMemberWDCRM() {
     }
   };
 
-  const handleDelete = async (databaseId) => {
+  const handleDelete = async (e, databaseId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (!window.confirm('Are you sure you want to delete this database and all its records?')) return;
 
     try {
@@ -364,7 +367,8 @@ export default function AdminMemberWDCRM() {
         setRecords([]);
       }
     } catch (error) {
-      toast.error('Failed to delete database');
+      console.error('Delete error:', error);
+      toast.error(error.response?.data?.detail || 'Failed to delete database');
     }
   };
 
