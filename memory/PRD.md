@@ -1,61 +1,81 @@
 # CRM Boost PRD
 
 ## Original Problem Statement
-CRM system for managing member data with batch assignment to staff.
+CRM system for managing member data with two main modules:
+1. **Member WD CRM** - Batch-based assignment system
+2. **DB Bonanza** - Database-based assignment system
 
-## Latest Feature: Auto-Replace Invalid Records (2026-02-01)
+Both modules support:
+- Database upload (CSV/Excel)
+- Random/manual assignment to staff
+- Validation workflow (valid/invalid)
+- Auto-replace invalid records (configurable)
+- Recall assigned records
+- Reserved member filtering
 
-### What it does
-When staff marks a record as invalid, the system can automatically assign a replacement record from the same database.
+## Latest Update: DB Bonanza Feature Parity (2026-02-02)
 
-### Settings
-- **Auto-Replace Invalid Records** (toggle): Enable/disable auto-replacement
-- **Max Replacements Per Batch** (number): Limit how many invalid records can be replaced per batch card (default: 10)
-
-### How it works
-1. Staff marks record(s) as invalid
-2. If auto-replace is enabled:
-   - System finds available records from SAME database
-   - Checks if batch hasn't exceeded replacement limit
-   - Auto-assigns replacement to staff in same batch
-   - Archives the invalid record
-3. If no records available or limit reached:
-   - Staff sees warning notification
-   - Admin notification created for manual processing
-
-### API Endpoints
-- `GET /api/memberwd/admin/settings` - Get settings
-- `PUT /api/memberwd/admin/settings` - Update settings
-  - Body: `{ "auto_replace_invalid": bool, "max_replacements_per_batch": int }`
-
-### Key Rules
-- Replacement MUST be from same database_id (same product)
-- Replacement goes to SAME batch as invalid record
-- Maximum replacements per batch is configurable (default: 10)
-- If staff has 11 invalid in 1 batch with limit 10 → only 10 can be replaced
+Implemented all Member WD CRM features in DB Bonanza:
+- Settings (auto-replace toggle, max limit)
+- Auto-replace invalid records
+- Recall records
+- Dismiss invalid alerts
+- Excluded count
 
 ## Features Implemented
 
-### Member WD Module
+### Member WD CRM
 - [x] Database upload (CSV/Excel)
 - [x] Random assignment with reserved member filtering
 - [x] Batch card system for staff
 - [x] Validation workflow (valid/invalid)
-- [x] Invalid record processing with auto-replacement
-- [x] **Auto-replace invalid records** (NEW - configurable)
-- [x] **Max replacements per batch limit** (NEW - configurable)
+- [x] Auto-replace invalid records (configurable)
+- [x] Max replacements per batch limit (default: 10)
 - [x] Recall assigned records back to available pool
 - [x] Dismiss orphaned invalid alerts
-- [x] Excluded count (reserved members in available pool)
+- [x] Excluded count (reserved members)
 
-### Other Modules
-- Authentication (JWT + TOTP)
-- Product management
-- Leaderboard & Analytics
-- Attendance tracking
-- Inventory management
-- Scheduled reports
-- Cek Bonus Member
+### DB Bonanza
+- [x] Database upload (CSV/Excel)
+- [x] Random assignment with reserved member filtering
+- [x] Validation workflow (valid/invalid)
+- [x] Auto-replace invalid records (configurable)
+- [x] Max replacements per database limit (default: 10)
+- [x] Recall assigned records back to available pool
+- [x] Dismiss orphaned invalid alerts
+- [x] Excluded count (reserved members)
+
+## Settings
+
+### Member WD Settings (`memberwd_settings`)
+```json
+{
+  "id": "memberwd_settings",
+  "auto_replace_invalid": false,
+  "max_replacements_per_batch": 10
+}
+```
+
+### DB Bonanza Settings (`bonanza_settings`)
+```json
+{
+  "id": "bonanza_settings",
+  "auto_replace_invalid": false,
+  "max_replacements_per_batch": 10
+}
+```
+
+## Key API Endpoints
+
+### Member WD
+- `GET/PUT /api/memberwd/admin/settings` - Settings
+- `POST /api/memberwd/admin/recall-records` - Recall
+- `POST /api/memberwd/admin/dismiss-invalid-alerts` - Dismiss alerts
+
+### DB Bonanza
+- `GET/PUT /api/bonanza/admin/settings` - Settings
+- `POST /api/bonanza/admin/recall-records` - Recall
+- `POST /api/bonanza/admin/dismiss-invalid-alerts` - Dismiss alerts
 
 ## Tech Stack
 - Backend: FastAPI (Python)
@@ -63,21 +83,8 @@ When staff marks a record as invalid, the system can automatically assign a repl
 - Database: MongoDB (Motor async driver)
 - UI: Tailwind CSS + Shadcn components
 
-## Data Models
-
-### App Settings (memberwd_settings)
-```
-{
-  id: 'memberwd_settings',
-  auto_replace_invalid: boolean,
-  max_replacements_per_batch: number,
-  updated_at: string,
-  updated_by: string
-}
-```
-
 ## Pending Tasks
-None - features complete
+None - all features complete
 
 ## Known Issues
 None
