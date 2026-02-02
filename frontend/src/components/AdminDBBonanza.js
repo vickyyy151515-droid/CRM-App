@@ -75,6 +75,80 @@ export default function AdminDBBonanza() {
     }
   };
 
+  // Load Bonanza settings
+  const loadSettings = async () => {
+    try {
+      const response = await api.get('/bonanza/admin/settings');
+      setBonanzaSettings(response.data);
+    } catch (error) {
+      console.error('Failed to load settings:', error);
+    }
+  };
+
+  // Save Bonanza settings
+  const handleSaveSettings = async () => {
+    setSavingSettings(true);
+    try {
+      await api.put('/bonanza/admin/settings', bonanzaSettings);
+      toast.success('Settings saved successfully');
+      setShowSettingsPanel(false);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to save settings');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
+  // Dismiss all invalid alerts
+  const handleDismissInvalidAlerts = async () => {
+    if (!window.confirm('Clear all invalid alerts for records that are no longer assigned? This cannot be undone.')) return;
+    try {
+      const response = await api.post('/bonanza/admin/dismiss-invalid-alerts');
+      toast.success(response.data.message);
+      loadInvalidRecords();
+      loadDatabases();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to dismiss alerts');
+    }
+  };
+
+  // Recall records - return assigned records back to available pool
+  const handleRecallRecords = async () => {
+    const assignedSelectedIds = selectedRecords.filter(id => {
+      const record = records.find(r => r.id === id);
+      return record && record.status === 'assigned';
+    });
+
+    if (assignedSelectedIds.length === 0) {
+      toast.error('Please select assigned records to recall');
+      return;
+    }
+
+    if (!window.confirm(`Recall ${assignedSelectedIds.length} record(s) from staff? This will return them to the available pool.`)) {
+      return;
+    }
+
+    try {
+      const response = await api.post('/bonanza/admin/recall-records', {
+        record_ids: assignedSelectedIds
+      });
+      toast.success(response.data.message);
+      setSelectedRecords([]);
+      loadRecords(expandedDb);
+      loadDatabases();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to recall records');
+    }
+  };
+
+  // Select all assigned records
+  const selectAllAssigned = () => {
+    const assignedIds = filteredRecords
+      .filter(r => r.status === 'assigned')
+      .map(r => r.id);
+    setSelectedRecords(assignedIds);
+  };
+
   // Load invalid records from staff validation
   const loadInvalidRecords = async () => {
     try {
