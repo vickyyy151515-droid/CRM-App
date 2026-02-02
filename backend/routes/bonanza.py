@@ -545,9 +545,9 @@ async def get_invalid_bonanza_records(user: User = Depends(get_admin_user)):
     """Get all invalid bonanza records with staff info (Admin only)"""
     db = get_db()
     
-    # Group invalid records by staff (exclude archived records)
+    # Group invalid records by staff (only show records still ASSIGNED)
     pipeline = [
-        {'$match': {'validation_status': 'invalid', 'status': {'$ne': 'invalid_archived'}}},
+        {'$match': {'validation_status': 'invalid', 'status': 'assigned'}},
         {'$group': {
             '_id': '$assigned_to',
             'staff_name': {'$first': '$assigned_to_name'},
@@ -568,6 +568,95 @@ async def get_invalid_bonanza_records(user: User = Depends(get_admin_user)):
     return {
         'total_invalid': sum(r['count'] for r in results),
         'by_staff': results
+    }
+
+
+@router.post("/bonanza/admin/dismiss-invalid-alerts")
+async def dismiss_invalid_alerts(user: User = Depends(get_admin_user)):
+    """
+    Clear invalid status from records that are no longer assigned.
+    For cleanup when records were recalled but still show as invalid.
+    """
+    db = get_db()
+    now = get_jakarta_now()
+    
+    result = await db.bonanza_records.update_many(
+        {
+            'validation_status': 'invalid',
+            'status': {'$ne': 'assigned'}
+        },
+        {
+            '$unset': {
+                'validation_status': '',
+                'validated_at': '',
+                'validation_reason': ''
+            },
+            '$set': {
+                'invalid_dismissed_at': now.isoformat(),
+                'invalid_dismissed_by': user.name
+            }
+        }
+    )
+    
+    await db.admin_notifications.update_many(
+        {'type': 'bonanza_invalid', 'is_resolved': False},
+        {'$set': {'is_resolved': True, 'resolved_at': now.isoformat(), 'resolved_by': user.name}}
+    )
+    
+    return {
+        'success': True,
+        'cleared_count': result.modified_count,
+        'message': f'{result.modified_count} orphaned invalid alerts cleared'
+    }
+
+
+@router.post("/bonanza/admin/recall-records")
+async def recall_assigned_records(data: RecallRecordsRequest, user: User = Depends(get_admin_user)):
+    """
+    Recall assigned records from staff - return them to available pool.
+    """
+    db = get_db()
+    now = get_jakarta_now()
+    
+    if not data.record_ids:
+        raise HTTPException(status_code=400, detail="No record IDs provided")
+    
+    records_to_recall = await db.bonanza_records.find({
+        'id': {'$in': data.record_ids},
+        'status': 'assigned'
+    }, {'_id': 0}).to_list(10000)
+    
+    if not records_to_recall:
+        raise HTTPException(status_code=404, detail="No assigned records found with the provided IDs")
+    
+    result = await db.bonanza_records.update_many(
+        {'id': {'$in': data.record_ids}, 'status': 'assigned'},
+        {
+            '$set': {
+                'status': 'available',
+                'recalled_at': now.isoformat(),
+                'recalled_by': user.id,
+                'recalled_by_name': user.name
+            },
+            '$unset': {
+                'assigned_to': '',
+                'assigned_to_name': '',
+                'assigned_at': '',
+                'assigned_by': '',
+                'assigned_by_name': '',
+                'validation_status': '',
+                'validated_at': '',
+                'validation_reason': '',
+                'auto_replaced': '',
+                'replaced_invalid_ids': ''
+            }
+        }
+    )
+    
+    return {
+        'success': True,
+        'recalled_count': result.modified_count,
+        'message': f'{result.modified_count} records recalled and returned to available pool'
     }
 
 
