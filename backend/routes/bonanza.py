@@ -326,7 +326,7 @@ async def get_staff_bonanza_records(product_id: Optional[str] = None, user: User
 
 @router.post("/bonanza/staff/validate")
 async def validate_bonanza_records(data: RecordValidation, user: User = Depends(get_current_user)):
-    """Staff marks records as valid or invalid"""
+    """Staff marks records as valid or invalid. Auto-replaces if enabled in settings."""
     db = get_db()
     if user.role != 'staff':
         raise HTTPException(status_code=403, detail="Only staff can access this endpoint")
@@ -337,7 +337,7 @@ async def validate_bonanza_records(data: RecordValidation, user: User = Depends(
     records = await db.bonanza_records.find({
         'id': {'$in': data.record_ids},
         'assigned_to': user.id
-    }).to_list(1000)
+    }, {'_id': 0}).to_list(1000)
     
     if len(records) == 0:
         raise HTTPException(status_code=404, detail="No records found or not assigned to you")
@@ -354,35 +354,190 @@ async def validate_bonanza_records(data: RecordValidation, user: User = Depends(
         }}
     )
     
-    # If marked as invalid, create notification for admin
-    if not data.is_valid:
-        # Count total invalid records for this staff
-        total_invalid = await db.bonanza_records.count_documents({
-            'assigned_to': user.id,
-            'validation_status': 'invalid'
-        })
-        
-        # Create or update admin notification
-        notification = {
-            'id': str(uuid.uuid4()),
-            'type': 'bonanza_invalid',
-            'staff_id': user.id,
-            'staff_name': user.name,
-            'record_count': len(data.record_ids),
-            'total_invalid': total_invalid,
-            'reason': data.reason,
-            'record_ids': data.record_ids,
-            'created_at': now.isoformat(),
-            'is_read': False,
-            'is_resolved': False
-        }
-        await db.admin_notifications.insert_one(notification)
-    
-    return {
+    # Response data
+    response = {
         'success': True,
         'message': f'{len(records)} records marked as {"valid" if data.is_valid else "invalid"}',
-        'validation_status': validation_status
+        'validation_status': validation_status,
+        'auto_replaced': 0,
+        'replacement_failed': 0,
+        'replacement_message': None
     }
+    
+    # If marked as invalid, check for auto-replace setting
+    if not data.is_valid:
+        # Get settings
+        settings = await db.app_settings.find_one({'id': 'bonanza_settings'}, {'_id': 0})
+        if not settings:
+            settings = DEFAULT_BONANZA_SETTINGS.copy()
+        
+        auto_replace = settings.get('auto_replace_invalid', False)
+        max_per_batch = settings.get('max_replacements_per_batch', 10)
+        
+        if auto_replace:
+            # Group invalid records by database_id
+            invalid_by_db = {}
+            for record in records:
+                database_id = record.get('database_id')
+                if database_id:
+                    if database_id not in invalid_by_db:
+                        invalid_by_db[database_id] = {
+                            'database_id': database_id,
+                            'database_name': record.get('database_name', 'Unknown'),
+                            'product_id': record.get('product_id', ''),
+                            'records': []
+                        }
+                    invalid_by_db[database_id]['records'].append(record)
+            
+            total_replaced = 0
+            total_failed = 0
+            replacement_details = []
+            
+            # Get reserved members
+            reserved_members = await db.reserved_members.find({'status': 'approved'}, {'_id': 0, 'customer_id': 1, 'customer_name': 1}).to_list(100000)
+            reserved_ids = set()
+            for m in reserved_members:
+                if m.get('customer_id'):
+                    reserved_ids.add(str(m['customer_id']).strip().upper())
+                if m.get('customer_name'):
+                    reserved_ids.add(str(m['customer_name']).strip().upper())
+            
+            for database_id, group in invalid_by_db.items():
+                invalid_records = group['records']
+                invalid_ids = [r['id'] for r in invalid_records]
+                
+                # Check how many replacements already done for this staff from this database
+                existing_replacements = await db.bonanza_records.count_documents({
+                    'database_id': database_id,
+                    'assigned_to': user.id,
+                    'auto_replaced': True,
+                    'status': 'assigned'
+                })
+                
+                # Calculate how many more replacements allowed
+                remaining_quota = max(0, max_per_batch - existing_replacements)
+                needed = len(invalid_records)
+                can_replace = min(needed, remaining_quota)
+                
+                if can_replace == 0:
+                    total_failed += needed
+                    replacement_details.append({
+                        'database': group['database_name'],
+                        'needed': needed,
+                        'replaced': 0,
+                        'reason': f'Replacement limit reached ({max_per_batch} per database)'
+                    })
+                    continue
+                
+                # Get available records from SAME database
+                available = await db.bonanza_records.find({
+                    'database_id': database_id,
+                    'status': 'available'
+                }, {'_id': 0}).to_list(can_replace * 3)
+                
+                # Filter out reserved
+                eligible = []
+                for rec in available:
+                    row_data = rec.get('row_data', {})
+                    is_reserved = False
+                    for key in ['Username', 'username', 'USER', 'user', 'ID', 'id', 'Nama Lengkap', 'nama_lengkap', 'Name', 'name']:
+                        if key in row_data and row_data[key]:
+                            if str(row_data[key]).strip().upper() in reserved_ids:
+                                is_reserved = True
+                                break
+                    if not is_reserved:
+                        eligible.append(rec)
+                        if len(eligible) >= can_replace:
+                            break
+                
+                if len(eligible) == 0:
+                    total_failed += can_replace
+                    replacement_details.append({
+                        'database': group['database_name'],
+                        'needed': needed,
+                        'replaced': 0,
+                        'reason': 'No available records in database'
+                    })
+                    continue
+                
+                # Assign eligible records as replacements
+                to_assign = eligible[:can_replace]
+                assigned_ids = [r['id'] for r in to_assign]
+                
+                await db.bonanza_records.update_many(
+                    {'id': {'$in': assigned_ids}},
+                    {'$set': {
+                        'status': 'assigned',
+                        'assigned_to': user.id,
+                        'assigned_to_name': user.name,
+                        'assigned_at': now.isoformat(),
+                        'auto_replaced': True,
+                        'replaced_invalid_ids': invalid_ids[:len(assigned_ids)]
+                    }}
+                )
+                
+                # Archive the invalid records
+                await db.bonanza_records.update_many(
+                    {'id': {'$in': invalid_ids[:len(assigned_ids)]}},
+                    {'$set': {
+                        'status': 'invalid_archived',
+                        'archived_at': now.isoformat(),
+                        'auto_archived': True
+                    }}
+                )
+                
+                total_replaced += len(assigned_ids)
+                
+                if len(assigned_ids) < can_replace:
+                    total_failed += (can_replace - len(assigned_ids))
+                if needed > can_replace:
+                    total_failed += (needed - can_replace)
+                
+                replacement_details.append({
+                    'database': group['database_name'],
+                    'needed': needed,
+                    'replaced': len(assigned_ids),
+                    'reason': None if len(assigned_ids) >= needed else 'Limit or availability'
+                })
+            
+            response['auto_replaced'] = total_replaced
+            response['replacement_failed'] = total_failed
+            
+            if total_replaced > 0:
+                response['replacement_message'] = f'{total_replaced} record(s) auto-replaced'
+            if total_failed > 0:
+                if response['replacement_message']:
+                    response['replacement_message'] += f', {total_failed} could not be replaced'
+                else:
+                    response['replacement_message'] = f'{total_failed} record(s) could not be replaced'
+            
+            response['replacement_details'] = replacement_details
+        
+        # Create admin notification for invalid records
+        total_invalid = await db.bonanza_records.count_documents({
+            'assigned_to': user.id,
+            'validation_status': 'invalid',
+            'status': 'assigned'
+        })
+        
+        if total_invalid > 0:
+            notification = {
+                'id': str(uuid.uuid4()),
+                'type': 'bonanza_invalid',
+                'staff_id': user.id,
+                'staff_name': user.name,
+                'record_count': len(data.record_ids),
+                'total_invalid': total_invalid,
+                'reason': data.reason,
+                'record_ids': data.record_ids,
+                'created_at': now.isoformat(),
+                'is_read': False,
+                'is_resolved': False,
+                'auto_replaced': response.get('auto_replaced', 0)
+            }
+            await db.admin_notifications.insert_one(notification)
+    
+    return response
 
 
 @router.get("/bonanza/admin/invalid-records")
