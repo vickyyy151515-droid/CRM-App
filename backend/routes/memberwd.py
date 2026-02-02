@@ -393,6 +393,23 @@ async def upload_memberwd_database(
     
     records = []
     for idx, row in df.iterrows():
+        # Sanitize row data to handle NaN, NaT, and other special values
+        row_data = {}
+        for col, value in row.items():
+            if pd.isna(value):
+                row_data[str(col)] = ''
+            elif isinstance(value, (int, float)):
+                if pd.isna(value) or value != value:  # Check for NaN
+                    row_data[str(col)] = ''
+                else:
+                    row_data[str(col)] = str(value) if not float(value).is_integer() else str(int(value))
+            else:
+                # Convert to string and handle any encoding issues
+                try:
+                    row_data[str(col)] = str(value) if value is not None else ''
+                except:
+                    row_data[str(col)] = ''
+        
         record = {
             'id': str(uuid.uuid4()),
             'database_id': database_id,
@@ -400,7 +417,7 @@ async def upload_memberwd_database(
             'product_id': product_id,
             'product_name': product['name'],
             'row_number': idx + 1,
-            'row_data': row.to_dict(),
+            'row_data': row_data,
             'status': 'available',
             'assigned_to': None,
             'assigned_to_name': None,
