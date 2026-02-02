@@ -302,10 +302,41 @@ export default function AdminDBBonanza() {
     setExpandedDb(databaseId);
     try {
       const response = await api.get(`/bonanza/databases/${databaseId}/records`);
-      setRecords(response.data);
+      // Sanitize records to prevent crashes from malformed data
+      const sanitizedRecords = (response.data || []).map(record => {
+        try {
+          // Ensure row_data exists and is an object
+          const row_data = record.row_data || {};
+          // Sanitize each value in row_data
+          const sanitizedRowData = {};
+          Object.entries(row_data).forEach(([key, value]) => {
+            // Convert any value to safe string, handle null/undefined
+            if (value === null || value === undefined) {
+              sanitizedRowData[key] = '';
+            } else if (typeof value === 'object') {
+              sanitizedRowData[key] = JSON.stringify(value);
+            } else {
+              sanitizedRowData[key] = String(value);
+            }
+          });
+          return {
+            ...record,
+            row_data: sanitizedRowData,
+            row_number: record.row_number || 0,
+            id: record.id || `temp-${Math.random()}`
+          };
+        } catch (e) {
+          console.error('Error sanitizing record:', e, record);
+          return null;
+        }
+      }).filter(Boolean);
+      
+      setRecords(sanitizedRecords);
       setSelectedRecords([]);
     } catch (error) {
+      console.error('Failed to load records:', error);
       toast.error('Failed to load records');
+      setRecords([]);
     } finally {
       setLoadingRecords(false);
     }
