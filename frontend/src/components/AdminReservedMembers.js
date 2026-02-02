@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { UserPlus, Check, X, Trash2, ArrowRight, Search, Users, Clock, CheckCircle, Package, Upload, FileText, Phone, Copy } from 'lucide-react';
+import { UserPlus, Check, X, Trash2, ArrowRight, Search, Users, Clock, CheckCircle, Package, Upload, FileText, Phone, Copy, RotateCcw, Archive } from 'lucide-react';
 
 export default function AdminReservedMembers({ onUpdate }) {
   const [members, setMembers] = useState([]);
+  const [deletedMembers, setDeletedMembers] = useState([]);
   const [staffList, setStaffList] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('active'); // 'active' or 'deleted'
   const [customerId, setCustomerId] = useState('');  // Renamed from customerName
   const [phoneNumber, setPhoneNumber] = useState('');
   const [selectedStaff, setSelectedStaff] = useState('');
@@ -33,14 +35,16 @@ export default function AdminReservedMembers({ onUpdate }) {
 
   const loadData = async () => {
     try {
-      const [membersRes, staffRes, productsRes] = await Promise.all([
+      const [membersRes, staffRes, productsRes, deletedRes] = await Promise.all([
         api.get('/reserved-members'),
         api.get('/staff-users'),
-        api.get('/products')
+        api.get('/products'),
+        api.get('/reserved-members/deleted').catch(() => ({ data: [] }))
       ]);
       setMembers(membersRes.data);
       setStaffList(staffRes.data);
       setProducts(productsRes.data);
+      setDeletedMembers(deletedRes.data || []);
     } catch (error) {
       toast.error('Failed to load data');
     } finally {
