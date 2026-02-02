@@ -197,6 +197,47 @@ export default function AdminReservedMembers({ onUpdate }) {
   const pendingCount = members.filter(m => m.status === 'pending').length;
   const approvedCount = members.filter(m => m.status === 'approved').length;
 
+  // Restore deleted member
+  const handleRestoreDeleted = async (memberId) => {
+    if (!window.confirm('Restore this member back to active reserved members?')) return;
+    try {
+      await api.post(`/reserved-members/deleted/${memberId}/restore`);
+      toast.success('Member restored successfully');
+      loadData();
+      if (onUpdate) onUpdate();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to restore member');
+    }
+  };
+
+  // Permanently delete archived member
+  const handlePermanentDelete = async (memberId) => {
+    if (!window.confirm('Permanently delete this archived member? This cannot be undone.')) return;
+    try {
+      await api.delete(`/reserved-members/deleted/${memberId}`);
+      toast.success('Member permanently deleted');
+      loadData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to delete member');
+    }
+  };
+
+  // Format date for display
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '-';
+    try {
+      return new Date(dateStr).toLocaleDateString('id-ID', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
