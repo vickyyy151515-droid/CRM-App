@@ -1028,7 +1028,7 @@ export default function AdminMemberWDCRM() {
                     </p>
                   </div>
                   <button
-                    onClick={(e) => { e.stopPropagation(); handleDelete(database.id); }}
+                    onClick={(e) => handleDelete(e, database.id)}
                     className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                     data-testid={`delete-memberwd-${database.id}`}
                   >
