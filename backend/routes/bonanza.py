@@ -81,6 +81,55 @@ async def update_bonanza_settings(data: BonanzaSettings, user: User = Depends(ge
         }
     }
 
+
+@router.post("/bonanza/admin/sanitize-records/{database_id}")
+async def sanitize_bonanza_records(database_id: str, user: User = Depends(get_admin_user)):
+    """Sanitize all records in a database to fix data issues"""
+    db = get_db()
+    
+    # Get all records for this database
+    records = await db.bonanza_records.find({'database_id': database_id}, {'_id': 0}).to_list(100000)
+    
+    if not records:
+        raise HTTPException(status_code=404, detail="No records found for this database")
+    
+    fixed_count = 0
+    for record in records:
+        row_data = record.get('row_data', {})
+        sanitized = {}
+        needs_fix = False
+        
+        for key, value in row_data.items():
+            # Check if value needs sanitization
+            if value is None or (isinstance(value, float) and (value != value)):  # NaN check
+                sanitized[str(key)] = ''
+                needs_fix = True
+            elif isinstance(value, (int, float)):
+                sanitized[str(key)] = str(value) if not float(value).is_integer() else str(int(value))
+                if str(key) != key:
+                    needs_fix = True
+            else:
+                try:
+                    sanitized[str(key)] = str(value) if value is not None else ''
+                except Exception:
+                    sanitized[str(key)] = ''
+                    needs_fix = True
+        
+        if needs_fix or row_data != sanitized:
+            await db.bonanza_records.update_one(
+                {'id': record['id']},
+                {'$set': {'row_data': sanitized}}
+            )
+            fixed_count += 1
+    
+    return {
+        'success': True,
+        'total_records': len(records),
+        'fixed_count': fixed_count,
+        'message': f'Sanitized {fixed_count} records out of {len(records)} total'
+    }
+
+
 @router.post("/bonanza/upload")
 async def upload_bonanza_database(
     file: UploadFile = File(...),
