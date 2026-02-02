@@ -165,12 +165,40 @@ async def get_bonanza_databases(product_id: Optional[str] = None, user: User = D
     
     databases = await db.bonanza_databases.find(query, {'_id': 0}).sort('uploaded_at', -1).to_list(1000)
     
+    # Get reserved members for excluded count
+    reserved_members = await db.reserved_members.find({'status': 'approved'}, {'_id': 0, 'customer_id': 1, 'customer_name': 1}).to_list(100000)
+    reserved_ids = set()
+    for m in reserved_members:
+        if m.get('customer_id'):
+            reserved_ids.add(str(m['customer_id']).strip().upper())
+        if m.get('customer_name'):
+            reserved_ids.add(str(m['customer_name']).strip().upper())
+    
     for database in databases:
         total = await db.bonanza_records.count_documents({'database_id': database['id']})
         assigned = await db.bonanza_records.count_documents({'database_id': database['id'], 'status': 'assigned'})
+        archived = await db.bonanza_records.count_documents({'database_id': database['id'], 'status': 'invalid_archived'})
+        
+        # Count excluded (reserved members in available records)
+        available_records = await db.bonanza_records.find(
+            {'database_id': database['id'], 'status': 'available'},
+            {'_id': 0, 'row_data': 1}
+        ).to_list(100000)
+        
+        excluded_count = 0
+        for record in available_records:
+            row_data = record.get('row_data', {})
+            for key in ['Username', 'username', 'USER', 'user', 'ID', 'id', 'Nama Lengkap', 'nama_lengkap', 'Name', 'name']:
+                if key in row_data and row_data[key]:
+                    if str(row_data[key]).strip().upper() in reserved_ids:
+                        excluded_count += 1
+                        break
+        
         database['total_records'] = total
         database['assigned_count'] = assigned
-        database['available_count'] = total - assigned
+        database['archived_count'] = archived
+        database['excluded_count'] = excluded_count
+        database['available_count'] = total - assigned - archived - excluded_count
         if 'product_id' not in database:
             database['product_id'] = ''
             database['product_name'] = 'Unknown'
