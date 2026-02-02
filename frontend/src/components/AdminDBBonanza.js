@@ -481,17 +481,19 @@ export default function AdminDBBonanza() {
     });
   };
 
-  // Filter records
+  // Filter records - with defensive null checks
   const filteredRecords = records.filter(record => {
+    if (!record || !record.row_data) return false;
     const matchesStatus = filterStatus === 'all' || record.status === filterStatus;
     const matchesSearch = searchTerm === '' || 
-      Object.values(record.row_data).some(val => 
-        String(val).toLowerCase().includes(searchTerm.toLowerCase())
+      Object.values(record.row_data || {}).some(val => 
+        String(val || '').toLowerCase().includes(searchTerm.toLowerCase())
       );
     return matchesStatus && matchesSearch;
   });
 
-  const columns = records.length > 0 ? Object.keys(records[0].row_data) : [];
+  // Get columns safely
+  const columns = records.length > 0 && records[0]?.row_data ? Object.keys(records[0].row_data) : [];
   
   // Filter out rekening/bank account columns (no longer needed)
   const HIDDEN_COLUMNS = ['rekening', 'rek', 'bank', 'no_rekening', 'norek', 'account'];
