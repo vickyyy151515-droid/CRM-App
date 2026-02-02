@@ -704,8 +704,11 @@ export default function AdminDBBonanza() {
                       Ganti dengan Record Baru
                     </button>
                   </div>
-                  <div className="max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700">
-                    {staffGroup.records?.slice(0, 5).map((record, idx) => (
+                  <div className="max-h-64 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700">
+                    {(expandedInvalidStaff[staffGroup._id] 
+                      ? staffGroup.records 
+                      : staffGroup.records?.slice(0, 3)
+                    )?.map((record, idx) => (
                       <div key={record.id || idx} className="p-3 text-sm">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1 min-w-0">
@@ -722,10 +725,15 @@ export default function AdminDBBonanza() {
                         </div>
                       </div>
                     ))}
-                    {staffGroup.records?.length > 5 && (
-                      <div className="p-2 text-center text-xs text-slate-500 dark:text-slate-400">
-                        +{staffGroup.records.length - 5} more records
-                      </div>
+                    {staffGroup.records?.length > 3 && (
+                      <button
+                        onClick={() => toggleExpandInvalidStaff(staffGroup._id)}
+                        className="w-full p-2 text-center text-sm text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors cursor-pointer font-medium"
+                      >
+                        {expandedInvalidStaff[staffGroup._id] 
+                          ? '▲ Show less' 
+                          : `▼ +${staffGroup.records.length - 3} more records`}
+                      </button>
                     )}
                   </div>
                 </div>
