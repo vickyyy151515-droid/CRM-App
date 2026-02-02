@@ -966,22 +966,27 @@ export default function AdminDBBonanza() {
 
               {/* Expanded Records */}
               {expandedDb === database.id && (
-                <div className="border-t border-slate-200 p-4">
-                  {/* Random Assignment Controls */}
-                  {(() => {
-                    const columns = records.length > 0 ? Object.keys(records[0]?.row_data || {}) : [];
-                    const usernameField = columns.find(col => 
-                      col.toLowerCase().includes('username') || 
-                      col.toLowerCase().includes('user') ||
-                      col.toLowerCase() === 'nama'
-                    ) || columns[0];
-                    
-                    const availableRecords = records.filter(r => r.status === 'available');
-                    const eligibleRecords = availableRecords.filter(r => {
-                      const username = r.row_data?.[usernameField];
-                      return !username || !reservedNames.includes(username.toLowerCase().trim());
-                    });
-                    const reservedInDb = availableRecords.length - eligibleRecords.length;
+                <ErrorBoundary 
+                  fallbackMessage="Error loading records. The database file might contain invalid data. Please try re-uploading the file."
+                  onReset={() => { setExpandedDb(null); setRecords([]); }}
+                >
+                  <div className="border-t border-slate-200 p-4">
+                    {/* Random Assignment Controls */}
+                    {(() => {
+                      try {
+                        const columns = records.length > 0 ? Object.keys(records[0]?.row_data || {}) : [];
+                        const usernameField = columns.find(col => 
+                          col.toLowerCase().includes('username') || 
+                          col.toLowerCase().includes('user') ||
+                          col.toLowerCase() === 'nama'
+                        ) || columns[0] || 'username';
+                        
+                        const availableRecords = records.filter(r => r && r.status === 'available');
+                        const eligibleRecords = availableRecords.filter(r => {
+                          const username = r.row_data?.[usernameField];
+                          return !username || !reservedNames.includes(String(username).toLowerCase().trim());
+                        });
+                        const reservedInDb = availableRecords.length - eligibleRecords.length;
                     
                     return (
                       <div className="mb-4 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg">
