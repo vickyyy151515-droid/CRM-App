@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Upload, Database, Users, Trash2, ChevronDown, ChevronUp, Check, X, Search, Shuffle, Package, Edit2, AlertTriangle, RefreshCw, Archive, Undo2 } from 'lucide-react';
+import { Upload, Database, Users, Trash2, ChevronDown, ChevronUp, Check, X, Search, Shuffle, Package, Edit2, AlertTriangle, RefreshCw, Archive, Undo2, Settings } from 'lucide-react';
 
 export default function AdminDBBonanza() {
   const [databases, setDatabases] = useState([]);
@@ -39,12 +39,20 @@ export default function AdminDBBonanza() {
   const [activeTab, setActiveTab] = useState('databases'); // 'databases' or 'invalid'
   const [archivedRecords, setArchivedRecords] = useState(null);
   const [loadingArchived, setLoadingArchived] = useState(false);
+  // Settings state
+  const [bonanzaSettings, setBonanzaSettings] = useState({
+    auto_replace_invalid: false,
+    max_replacements_per_batch: 10
+  });
+  const [showSettingsPanel, setShowSettingsPanel] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(false);
 
   useEffect(() => {
     loadProducts();
     loadStaff();
     loadReservedNames();
     loadInvalidRecords();
+    loadSettings();
   }, []);
 
   useEffect(() => {
