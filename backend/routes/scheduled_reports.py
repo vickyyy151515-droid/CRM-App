@@ -759,7 +759,22 @@ async def process_reserved_member_cleanup():
         
         # No OMSET from this customer
         if days_remaining <= 0:
-            # Grace period passed with no OMSET - delete the reservation
+            # Grace period passed with no OMSET - archive then delete the reservation
+            # First, get the full member data to archive
+            member_data = await db.reserved_members.find_one({'id': member_id}, {'_id': 0})
+            
+            if member_data:
+                # Archive to deleted_reserved_members collection
+                archived_member = {
+                    **member_data,
+                    'deleted_at': jakarta_now.isoformat(),
+                    'deleted_reason': 'no_omset_grace_period',
+                    'grace_days_used': grace_days,
+                    'days_since_reservation': days_since_reservation
+                }
+                await db.deleted_reserved_members.insert_one(archived_member)
+            
+            # Now delete from active reserved members
             await db.reserved_members.delete_one({'id': member_id})
             members_deleted += 1
             
@@ -776,7 +791,8 @@ async def process_reserved_member_cleanup():
                     'reason': 'no_omset_grace_period'
                 }
             )
-            print(f"Deleted expired reservation: {customer_id} (staff: {staff_name}, grace: {grace_days} days)")
+            print(f"Archived and deleted expired reservation: {customer_id} (staff: {staff_name}, grace: {grace_days} days)")
+            
             
         elif days_remaining <= warning_days:
             # Send warning notification (within warning period)
