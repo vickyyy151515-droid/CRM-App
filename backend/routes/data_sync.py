@@ -307,6 +307,49 @@ async def repair_data(repair_type: str, user: User = Depends(get_admin_user)):
             'message': f'Fixed {fixed_count} attendance records with leave conflict'
         }
     
+    if repair_type in ['sync_last_omset_date', 'all']:
+        # Populate last_omset_date for reserved members from omset_records
+        reserved_members = await db.reserved_members.find({}, {'_id': 0, 'id': 1, 'customer_id': 1, 'staff_id': 1}).to_list(10000)
+        updated_count = 0
+        
+        for rm in reserved_members:
+            customer_id = rm.get('customer_id', '')
+            staff_id = rm.get('staff_id', '')
+            
+            if not customer_id or not staff_id:
+                continue
+            
+            # Find the most recent omset record for this customer+staff
+            last_omset = await db.omset_records.find_one(
+                {
+                    'customer_id': {'$regex': f'^{customer_id}$', '$options': 'i'},
+                    'staff_id': staff_id
+                },
+                {'_id': 0, 'record_date': 1},
+                sort=[('record_date', -1)]
+            )
+            
+            if last_omset and last_omset.get('record_date'):
+                from datetime import datetime
+                try:
+                    record_date_str = last_omset['record_date']
+                    last_date = datetime.strptime(record_date_str, '%Y-%m-%d')
+                    last_date = JAKARTA_TZ.localize(last_date)
+                    
+                    result = await db.reserved_members.update_one(
+                        {'id': rm['id']},
+                        {'$set': {'last_omset_date': last_date.isoformat()}}
+                    )
+                    if result.modified_count > 0:
+                        updated_count += 1
+                except Exception as e:
+                    print(f"Error updating last_omset_date for {customer_id}: {e}")
+        
+        results['sync_last_omset_date'] = {
+            'updated': updated_count,
+            'message': f'Updated last_omset_date for {updated_count} reserved members'
+        }
+    
     # Log the repair action
     await db.system_logs.insert_one({
         'type': 'data_repair',
