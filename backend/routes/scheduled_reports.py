@@ -1531,13 +1531,11 @@ async def preview_reserved_member_cleanup(user: User = Depends(get_admin_user)):
             'last_deposit_date': last_deposit_date.strftime('%Y-%m-%d'),
             'days_since_last_deposit': days_since_last_deposit,
             'days_remaining': days_remaining,
-            'grace_days': grace_days,
-            'reserved_at': reserved_at_str
+            'grace_days': grace_days
         }
         
-        if has_omset:
-            active_members.append(member_info)
-        elif days_remaining <= 0:
+        # Categorize based on days_remaining (from last deposit, not reservation)
+        if days_remaining <= 0:
             will_be_deleted.append(member_info)
         elif days_remaining <= warning_days:
             expiring_soon.append(member_info)
