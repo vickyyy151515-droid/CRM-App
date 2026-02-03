@@ -361,9 +361,9 @@ async def generate_atrisk_alert(inactive_days: int = 14) -> str:
     ]
     
     if not at_risk_customers:
-        if recently_alerted_ids:
+        if recently_alerted_keys:
             alert_lines.append("✅ <i>All at-risk customers were shown recently.</i>")
-            alert_lines.append(f"<i>Next rotation in 1-3 days ({len(recently_alerted_ids)} customers in cooldown)</i>")
+            alert_lines.append(f"<i>Next rotation in 1-3 days ({len(recently_alerted_keys)} customers in cooldown)</i>")
         else:
             alert_lines.append("✅ <i>No at-risk customers found! Great job!</i>")
         return "\n".join(alert_lines)
