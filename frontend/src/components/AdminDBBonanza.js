@@ -3,6 +3,9 @@ import { api } from '../App';
 import { toast } from 'sonner';
 import { Upload, Database, Users, Trash2, ChevronDown, ChevronUp, Check, X, Search, Shuffle, Package, Edit2, AlertTriangle, RefreshCw, Archive, Undo2, Settings } from 'lucide-react';
 import ErrorBoundary from './ErrorBoundary';
+import SettingsPanel from './shared/SettingsPanel';
+import ReplaceModal from './shared/ReplaceModal';
+import InvalidRecordsPanel from './shared/InvalidRecordsPanel';
 
 export default function AdminDBBonanza() {
   const [databases, setDatabases] = useState([]);
