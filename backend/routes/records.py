@@ -1526,6 +1526,16 @@ async def delete_reserved_member(member_id: str, user: User = Depends(get_admin_
     if not member:
         raise HTTPException(status_code=404, detail="Reserved member not found")
     
+    # SYNC: Delete related bonus_check_submissions for this customer+staff
+    customer_id = member.get('customer_id') or member.get('customer_name', '')
+    staff_id = member.get('staff_id')
+    
+    if customer_id and staff_id:
+        await db.bonus_check_submissions.delete_many({
+            'customer_id_normalized': customer_id.strip().upper(),
+            'staff_id': staff_id
+        })
+    
     await db.reserved_members.delete_one({'id': member_id})
     
     return {'message': 'Reserved member deleted'}
