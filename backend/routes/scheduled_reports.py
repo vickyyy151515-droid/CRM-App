@@ -787,10 +787,13 @@ async def process_reserved_member_cleanup():
                     continue
         
         # Calculate days since LAST DEPOSIT (the key logic!)
-        days_since_last_deposit = (jakarta_now - last_deposit_date).days
+        # Compare dates only (ignore time portion) to get accurate day count
+        today_date = jakarta_now.date()
+        last_deposit_date_only = last_deposit_date.date()
+        days_since_last_deposit = (today_date - last_deposit_date_only).days
         days_remaining = grace_days - days_since_last_deposit
         
-        print(f"  {customer_id}: last_deposit={last_deposit_date.date()}, days_since={days_since_last_deposit}, grace={grace_days}, remaining={days_remaining}")
+        print(f"  {customer_id}: last_deposit={last_deposit_date_only}, days_since={days_since_last_deposit}, grace={grace_days}, remaining={days_remaining}")
         
         # Check if grace period has passed
         if days_remaining <= 0:
