@@ -528,7 +528,16 @@ async def update_user(user_id: str, user_data: UserUpdate, admin: User = Depends
 
 @router.delete("/users/{user_id}")
 async def delete_user(user_id: str, admin: User = Depends(get_admin_user)):
-    """Delete a user (Admin only - with role hierarchy enforcement)"""
+    """Delete a user (Admin only - with role hierarchy enforcement)
+    
+    SYNC: When a user is deleted, all their related data is also cleaned up:
+    - Reserved members
+    - Bonus check submissions
+    - Notifications
+    - Attendance records
+    - Leave requests
+    - Izin records
+    """
     db = get_db()
     if user_id == admin.id:
         raise HTTPException(status_code=400, detail="Cannot delete yourself")
@@ -545,8 +554,47 @@ async def delete_user(user_id: str, admin: User = Depends(get_admin_user)):
             detail=f"You don't have permission to delete {target_role} users"
         )
     
+    # SYNC: Clean up all related data for this user
+    cleanup_results = {}
+    
+    # Delete reserved members owned by this user
+    result = await db.reserved_members.delete_many({'staff_id': user_id})
+    cleanup_results['reserved_members'] = result.deleted_count
+    
+    # Delete bonus check submissions by this user
+    result = await db.bonus_check_submissions.delete_many({'staff_id': user_id})
+    cleanup_results['bonus_check_submissions'] = result.deleted_count
+    
+    # Delete notifications for this user
+    result = await db.notifications.delete_many({'user_id': user_id})
+    cleanup_results['notifications'] = result.deleted_count
+    
+    # Delete attendance records for this user
+    result = await db.attendance_records.delete_many({'staff_id': user_id})
+    cleanup_results['attendance_records'] = result.deleted_count
+    
+    # Delete leave requests by this user
+    result = await db.leave_requests.delete_many({'staff_id': user_id})
+    cleanup_results['leave_requests'] = result.deleted_count
+    
+    # Delete izin records by this user
+    result = await db.izin_records.delete_many({'staff_id': user_id})
+    cleanup_results['izin_records'] = result.deleted_count
+    
+    # Delete follow-up assignments
+    result = await db.customer_records.update_many(
+        {'assigned_to': user_id},
+        {'$set': {'assigned_to': None, 'assigned_to_name': None, 'status': 'available'}}
+    )
+    cleanup_results['followup_unassigned'] = result.modified_count
+    
+    # Finally delete the user
     await db.users.delete_one({'id': user_id})
-    return {'message': 'User deleted successfully'}
+    
+    return {
+        'message': 'User deleted successfully',
+        'cleanup_results': cleanup_results
+    }
 
 @router.get("/staff-users")
 async def get_staff_users(user: User = Depends(get_current_user)):
