@@ -682,6 +682,10 @@ async def process_reserved_member_cleanup():
     - Global default (default: 30 days)
     - Per-product override (optional)
     - Warning notification period (default: 7 days before expiry)
+    
+    IMPORTANT: Grace period is counted from the customer's LAST DEPOSIT DATE,
+    NOT from when they were reserved. If a customer hasn't deposited in X days,
+    they should be removed regardless of when they were reserved.
     """
     db = get_db()
     jakarta_now = datetime.now(JAKARTA_TZ)
@@ -726,39 +730,61 @@ async def process_reserved_member_cleanup():
         # Get grace period for this member (product-specific or global)
         grace_days = product_overrides.get(product_id, global_grace_days)
         
-        # Get the reservation date (use approved_at if available, otherwise created_at)
-        reserved_at_str = member.get('approved_at') or member.get('created_at')
-        if not reserved_at_str:
-            continue
-            
-        try:
-            reserved_at = datetime.fromisoformat(reserved_at_str.replace('Z', '+00:00'))
-            if reserved_at.tzinfo is None:
-                reserved_at = JAKARTA_TZ.localize(reserved_at)
-        except Exception as e:
-            print(f"Error parsing date for member {member_id}: {e}")
-            continue
+        # IMPORTANT: Get the customer's LAST DEPOSIT DATE
+        # This is the key logic - grace period counts from LAST DEPOSIT, not from reservation
+        last_omset = await db.omset_records.find_one(
+            {
+                'customer_id': {'$regex': f'^{customer_id}$', '$options': 'i'},
+                'staff_id': staff_id
+            },
+            {'_id': 0, 'created_at': 1},
+            sort=[('created_at', -1)]  # Get the most recent one
+        )
         
-        # Calculate days since reservation
-        days_since_reservation = (jakarta_now - reserved_at).days
-        days_remaining = grace_days - days_since_reservation
+        # Determine the last deposit date
+        if last_omset and last_omset.get('created_at'):
+            try:
+                last_deposit_str = last_omset['created_at']
+                if isinstance(last_deposit_str, str):
+                    last_deposit_date = datetime.fromisoformat(last_deposit_str.replace('Z', '+00:00'))
+                else:
+                    last_deposit_date = last_deposit_str
+                if last_deposit_date.tzinfo is None:
+                    last_deposit_date = JAKARTA_TZ.localize(last_deposit_date)
+            except Exception as e:
+                print(f"Error parsing last omset date for {customer_id}: {e}")
+                # Fall back to reserved_at if can't parse
+                reserved_at_str = member.get('approved_at') or member.get('created_at')
+                if reserved_at_str:
+                    last_deposit_date = datetime.fromisoformat(reserved_at_str.replace('Z', '+00:00'))
+                    if last_deposit_date.tzinfo is None:
+                        last_deposit_date = JAKARTA_TZ.localize(last_deposit_date)
+                else:
+                    continue
+        else:
+            # No omset found - use reservation date as the baseline
+            # This means customer has NEVER deposited since being reserved
+            reserved_at_str = member.get('approved_at') or member.get('created_at')
+            if not reserved_at_str:
+                continue
+            try:
+                last_deposit_date = datetime.fromisoformat(reserved_at_str.replace('Z', '+00:00'))
+                if last_deposit_date.tzinfo is None:
+                    last_deposit_date = JAKARTA_TZ.localize(last_deposit_date)
+            except Exception as e:
+                print(f"Error parsing reservation date for {customer_id}: {e}")
+                continue
         
-        # Check if there's any OMSET from this customer since reservation
-        # Match by customer_id - case insensitive
-        omset_query = {
-            'customer_id': {'$regex': f'^{customer_id}$', '$options': 'i'},
-            'staff_id': staff_id,
-            'created_at': {'$gte': reserved_at_str}
-        }
+        # Calculate days since LAST DEPOSIT (not since reservation!)
+        days_since_last_deposit = (jakarta_now - last_deposit_date).days
+        days_remaining = grace_days - days_since_last_deposit
         
-        has_omset = await db.omset_records.find_one(omset_query, {'_id': 1})
+        print(f"Member {customer_id}: last_deposit={last_deposit_date.date()}, days_since={days_since_last_deposit}, grace={grace_days}, remaining={days_remaining}")
         
-        if has_omset:
-            # Customer has OMSET, skip (reservation is valid)
-            continue
-        
-        # No OMSET from this customer
-        if days_remaining <= 0:
+        # If customer deposited recently (within grace period), skip
+        if days_remaining > 0:
+            # Still within grace period - check if we need to send warning
+            if days_remaining <= warning_days:
             # Grace period passed with no OMSET - archive then delete the reservation
             # First, get the full member data to archive
             member_data = await db.reserved_members.find_one({'id': member_id}, {'_id': 0})
