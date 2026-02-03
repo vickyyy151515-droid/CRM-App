@@ -470,11 +470,12 @@ async def get_memberwd_databases(product_id: Optional[str] = None, user: User = 
     for database in databases:
         total = await db.memberwd_records.count_documents({'database_id': database['id']})
         assigned = await db.memberwd_records.count_documents({'database_id': database['id'], 'status': 'assigned'})
+        archived = await db.memberwd_records.count_documents({'database_id': database['id'], 'status': 'invalid_archived'})
         
         # Calculate excluded count
         excluded_count = 0
         product_id_for_db = database.get('product_id', '')
-        available_raw = total - assigned
+        available_raw = total - assigned - archived  # Don't count archived as available
         
         if product_id_for_db and product_id_for_db in reserved_by_product and available_raw > 0:
             # Get available records to check against reserved members
