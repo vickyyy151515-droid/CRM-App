@@ -949,8 +949,19 @@ def start_scheduler(report_hour: int = 1, report_minute: int = 0,
                     atrisk_hour: int = None, atrisk_minute: int = None, 
                     atrisk_enabled: bool = False,
                     staff_offline_hour: int = None, staff_offline_minute: int = None,
-                    staff_offline_enabled: bool = False):
-    """Start the APScheduler with the configured schedules"""
+                    staff_offline_enabled: bool = False,
+                    report_enabled: bool = True):
+    """Start the APScheduler with the configured schedules
+    
+    CRITICAL JOBS (always run):
+    - Reserved member cleanup (00:01 daily)
+    - OMSET trash cleanup (00:05 daily)
+    
+    OPTIONAL JOBS (based on settings):
+    - Daily report (if report_enabled)
+    - At-risk alerts (if atrisk_enabled)
+    - Staff offline alerts (if staff_offline_enabled)
+    """
     global scheduler
     
     if scheduler is not None:
@@ -958,14 +969,17 @@ def start_scheduler(report_hour: int = 1, report_minute: int = 0,
     
     scheduler = AsyncIOScheduler(timezone=JAKARTA_TZ)
     
-    # Schedule daily report
-    scheduler.add_job(
-        send_scheduled_report,
-        CronTrigger(hour=report_hour, minute=report_minute, timezone=JAKARTA_TZ),
-        id='daily_report',
-        replace_existing=True
-    )
-    print(f"Daily report scheduled at {report_hour:02d}:{report_minute:02d} WIB")
+    # Schedule daily report only if enabled
+    if report_enabled:
+        scheduler.add_job(
+            send_scheduled_report,
+            CronTrigger(hour=report_hour, minute=report_minute, timezone=JAKARTA_TZ),
+            id='daily_report',
+            replace_existing=True
+        )
+        print(f"Daily report scheduled at {report_hour:02d}:{report_minute:02d} WIB")
+    else:
+        print("Daily report scheduling skipped (disabled)")
     
     # Schedule at-risk alerts if enabled
     if atrisk_enabled and atrisk_hour is not None:
