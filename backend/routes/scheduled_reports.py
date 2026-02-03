@@ -1542,8 +1542,13 @@ async def preview_reserved_member_cleanup(user: User = Depends(get_admin_user)):
 async def run_reserved_member_cleanup(user: User = Depends(get_admin_user)):
     """Manually trigger the reserved member cleanup job"""
     try:
-        await process_reserved_member_cleanup()
-        return {'success': True, 'message': 'Reserved member cleanup completed successfully'}
+        result = await process_reserved_member_cleanup()
+        return {
+            'success': True, 
+            'message': 'Reserved member cleanup completed successfully',
+            'warnings_sent': result.get('warnings_sent', 0) if result else 0,
+            'members_removed': result.get('members_removed', 0) if result else 0
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Cleanup failed: {str(e)}")
 
