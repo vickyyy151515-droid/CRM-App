@@ -610,16 +610,16 @@ export default function AdminReservedMembers({ onUpdate }) {
 
       {/* Reservations Table */}
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-x-auto">
-        <table className="w-full min-w-[900px]" data-testid="reservations-table">
+        <table className="w-full min-w-[1100px]" data-testid="reservations-table">
           <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
             <tr>
               <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">Customer ID</th>
               <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">Phone</th>
               <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">Product</th>
               <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">Staff</th>
+              <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">Last Deposit</th>
+              <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">Days Since</th>
               <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">Status</th>
-              <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">Requested By</th>
-              <th className="text-left px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">Date</th>
               <th className="text-right px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">Actions</th>
             </tr>
           </thead>
@@ -671,6 +671,24 @@ export default function AdminReservedMembers({ onUpdate }) {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{member.staff_name}</td>
+                  <td className="px-6 py-4 text-slate-600 dark:text-slate-400">
+                    {member.last_omset_date ? formatDate(member.last_omset_date) : '-'}
+                  </td>
+                  <td className="px-6 py-4">
+                    {member.days_since_last_omset !== null && member.days_since_last_omset !== undefined ? (
+                      <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                        member.days_since_last_omset > 21 
+                          ? 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300'
+                          : member.days_since_last_omset > 14
+                          ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300'
+                          : 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300'
+                      }`}>
+                        {member.days_since_last_omset} days
+                      </span>
+                    ) : (
+                      <span className="text-slate-400 text-sm">No deposit</span>
+                    )}
+                  </td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                       member.status === 'approved' 
