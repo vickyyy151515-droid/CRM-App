@@ -291,7 +291,8 @@ export default function AdminDashboard({ user, onLogout }) {
     { id: 'inventory', label: t('nav.officeInventory') || 'Office Inventory', icon: Boxes, badge: 0 },
     { id: 'manage-users', label: t('nav.userManagement'), icon: UserCog, badge: 0 },
     { id: 'users', label: t('nav.createUser'), icon: Users, badge: 0 },
-    { id: 'data-cleanup', label: t('nav.dataCleanup') || 'Data Cleanup', icon: Trash2, badge: 0 }
+    { id: 'data-cleanup', label: t('nav.dataCleanup') || 'Data Cleanup', icon: Trash2, badge: 0 },
+    { id: 'data-sync', label: 'Data Sync Dashboard', icon: Shield, badge: 0 }
   ], [t, language, stats.pendingReservations, stats.pendingRequests]);
 
   // Filter out blocked pages for admin users (master_admin has full access)
