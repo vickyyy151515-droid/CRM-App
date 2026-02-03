@@ -1064,7 +1064,7 @@ async def process_invalid_memberwd_and_replace(staff_id: str, data: ProcessInval
     invalid_records = await db.memberwd_records.find({
         'assigned_to': staff_id,
         'validation_status': 'invalid',
-        'status': {'$ne': 'invalid_archived'}  # Not already archived
+        'status': 'assigned'  # Only get records that are still assigned (not already archived or recalled)
     }, {'_id': 0}).to_list(10000)
     
     if len(invalid_records) == 0:
