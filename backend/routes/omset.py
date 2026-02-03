@@ -176,6 +176,22 @@ async def create_omset_record(record_data: OmsetRecordCreate, user: User = Depen
     doc['customer_type'] = customer_type  # Store NDP/RDP classification
     
     await db.omset_records.insert_one(doc)
+    
+    # SYNC: Update reserved_members last_omset_date if this customer is reserved
+    # This ensures grace period cleanup uses the correct date
+    await db.reserved_members.update_many(
+        {
+            'customer_id': {'$regex': f'^{record_data.customer_id.strip()}$', '$options': 'i'},
+            'staff_id': user.id,
+            'status': 'approved'
+        },
+        {
+            '$set': {
+                'last_omset_date': record_data.record_date  # Use actual deposit date, not created_at
+            }
+        }
+    )
+    
     return record
 
 @router.get("/omset")
