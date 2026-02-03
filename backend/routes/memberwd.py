@@ -1213,23 +1213,24 @@ async def process_invalid_memberwd_and_replace(staff_id: str, data: ProcessInval
                     )
                 
                 new_assigned_count += len(selected_ids)
-                remaining_to_assign -= len(selected_ids)
                 
                 assignment_details.append({
                     'batch': batch_id[:8] if batch_id else 'no-batch',
                     'database': group['database_name'],
                     'invalid_count': len(invalid_in_group),
-                    'replaced_count': len(selected_ids)
+                    'replaced_count': len(selected_ids),
+                    'shortage': needed_for_batch - len(selected_ids) if len(selected_ids) < needed_for_batch else 0
                 })
     
     # Build message
-    message = f'{len(record_ids)} record diarsipkan.'
+    total_invalid = len(record_ids)
+    message = f'{total_invalid} record diarsipkan.'
     if data.auto_assign_quantity > 0:
         message += f' {new_assigned_count} record baru ditugaskan ke {staff["name"]}.'
         if skipped_reserved > 0:
             message += f' ({skipped_reserved} record reserved member dilewati)'
-        if new_assigned_count < data.auto_assign_quantity:
-            shortage = data.auto_assign_quantity - new_assigned_count
+        if new_assigned_count < total_invalid:
+            shortage = total_invalid - new_assigned_count
             message += f' Kekurangan {shortage} record karena tidak tersedia.'
     
     return {
