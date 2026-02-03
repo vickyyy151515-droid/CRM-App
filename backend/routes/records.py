@@ -1551,6 +1551,10 @@ async def move_reserved_member(member_id: str, new_staff_id: str, user: User = D
     if not staff:
         raise HTTPException(status_code=404, detail="Staff not found")
     
+    old_staff_id = member.get('staff_id')
+    customer_id = member.get('customer_id') or member.get('customer_name', '')
+    
+    # Update the reserved member
     await db.reserved_members.update_one(
         {'id': member_id},
         {'$set': {
@@ -1558,6 +1562,19 @@ async def move_reserved_member(member_id: str, new_staff_id: str, user: User = D
             'staff_name': staff['name']
         }}
     )
+    
+    # SYNC: Move bonus_check_submissions to new staff
+    if customer_id and old_staff_id:
+        await db.bonus_check_submissions.update_many(
+            {
+                'customer_id_normalized': customer_id.strip().upper(),
+                'staff_id': old_staff_id
+            },
+            {'$set': {
+                'staff_id': new_staff_id,
+                'staff_name': staff['name']
+            }}
+        )
     
     return {'message': f"Reserved member moved to {staff['name']}"}
 
