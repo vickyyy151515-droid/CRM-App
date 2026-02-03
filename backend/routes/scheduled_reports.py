@@ -1669,15 +1669,24 @@ async def manual_omset_trash_cleanup(user: User = Depends(get_admin_user)):
 
 # Initialize scheduler on startup
 async def init_scheduler():
-    """Initialize scheduler from saved config"""
+    """Initialize scheduler from saved config.
+    
+    IMPORTANT: Scheduler is ALWAYS started because:
+    - Reserved member cleanup must run daily (at 00:01)
+    - OMSET trash cleanup must run daily (at 00:05)
+    These critical jobs run regardless of report/alert settings.
+    """
     db = get_db()
     config = await db.scheduled_report_config.find_one({'id': 'scheduled_report_config'}, {'_id': 0})
     
-    if config and (config.get('enabled') or config.get('atrisk_enabled')):
-        start_scheduler(
-            report_hour=config.get('report_hour', 1),
-            report_minute=config.get('report_minute', 0),
-            atrisk_hour=config.get('atrisk_hour', 11),
-            atrisk_minute=config.get('atrisk_minute', 0),
-            atrisk_enabled=config.get('atrisk_enabled', False)
-        )
+    # ALWAYS start scheduler - critical cleanup jobs must run even if reports/alerts are disabled
+    start_scheduler(
+        report_hour=config.get('report_hour', 1) if config else 1,
+        report_minute=config.get('report_minute', 0) if config else 0,
+        atrisk_hour=config.get('atrisk_hour', 11) if config else 11,
+        atrisk_minute=config.get('atrisk_minute', 0) if config else 0,
+        atrisk_enabled=config.get('atrisk_enabled', False) if config else False,
+        staff_offline_hour=config.get('staff_offline_hour', 11) if config else 11,
+        staff_offline_minute=config.get('staff_offline_minute', 0) if config else 0,
+        staff_offline_enabled=config.get('staff_offline_enabled', False) if config else False
+    )
