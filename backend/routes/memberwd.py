@@ -498,6 +498,7 @@ async def get_memberwd_databases(product_id: Optional[str] = None, user: User = 
         
         database['total_records'] = total
         database['assigned_count'] = assigned
+        database['archived_count'] = archived
         database['excluded_count'] = excluded_count
         database['available_count'] = available_raw - excluded_count
         if 'product_id' not in database:
