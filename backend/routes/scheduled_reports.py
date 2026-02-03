@@ -1479,7 +1479,8 @@ async def preview_reserved_member_cleanup(user: User = Depends(get_admin_user)):
     
     for member in reserved_members:
         member_id = member.get('id')
-        customer_id = member.get('customer_id', '')  # Renamed from customer_name
+        # Support both old field name (customer_name) and new field name (customer_id)
+        customer_id = member.get('customer_id') or member.get('customer_name') or ''
         staff_id = member.get('staff_id')
         staff_name = member.get('staff_name', 'Unknown')
         product_id = member.get('product_id', '')
