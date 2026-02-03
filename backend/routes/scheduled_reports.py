@@ -1150,18 +1150,18 @@ async def update_atrisk_config(config: AtRiskAlertConfig, user: User = Depends(g
         await db.scheduled_report_config.insert_one(update_data)
         updated_config = update_data
     
-    # Restart scheduler
-    if updated_config.get('enabled') or config.enabled or updated_config.get('staff_offline_enabled'):
-        start_scheduler(
-            report_hour=updated_config.get('report_hour', 1),
-            report_minute=updated_config.get('report_minute', 0),
-            atrisk_hour=config.alert_hour,
-            atrisk_minute=config.alert_minute,
-            atrisk_enabled=config.enabled,
-            staff_offline_hour=updated_config.get('staff_offline_hour', 11),
-            staff_offline_minute=updated_config.get('staff_offline_minute', 0),
-            staff_offline_enabled=updated_config.get('staff_offline_enabled', False)
-        )
+    # ALWAYS restart scheduler - critical cleanup jobs must run
+    start_scheduler(
+        report_hour=updated_config.get('report_hour', 1),
+        report_minute=updated_config.get('report_minute', 0),
+        report_enabled=updated_config.get('enabled', False),
+        atrisk_hour=config.alert_hour,
+        atrisk_minute=config.alert_minute,
+        atrisk_enabled=config.enabled,
+        staff_offline_hour=updated_config.get('staff_offline_hour', 11),
+        staff_offline_minute=updated_config.get('staff_offline_minute', 0),
+        staff_offline_enabled=updated_config.get('staff_offline_enabled', False)
+    )
     
     return {'success': True, 'message': 'At-risk alert configuration updated successfully'}
 
