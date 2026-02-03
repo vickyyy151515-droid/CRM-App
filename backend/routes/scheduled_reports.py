@@ -1499,9 +1499,10 @@ async def preview_reserved_member_cleanup(user: User = Depends(get_admin_user)):
     ).to_list(10000)
     
     expiring_soon = []  # Within warning period
-    will_be_deleted = []  # 0 days or less remaining
+    will_be_deleted = []  # 0 days or less remaining OR no deposit
     active_members = []  # Has OMSET
     safe_members = []  # No OMSET but still within grace period (outside warning)
+    no_deposit_members = []  # Members with no deposit record (will be deleted)
     
     for member in reserved_members:
         member_id = member.get('id')
@@ -1515,44 +1516,58 @@ async def preview_reserved_member_cleanup(user: User = Depends(get_admin_user)):
         # Get grace period for this member
         grace_days = product_overrides.get(product_id, global_grace_days)
         
-        # Get the customer's LAST DEPOSIT DATE from omset_records
-        # IMPORTANT: Use 'record_date' (actual deposit date), NOT 'created_at'
-        last_omset = await db.omset_records.find_one(
-            {
-                'customer_id': {'$regex': f'^{customer_id}$', '$options': 'i'},
-                'staff_id': staff_id
-            },
-            {'_id': 0, 'record_date': 1},
-            sort=[('record_date', -1)]
-        )
+        # First check if there's a stored last_omset_date
+        last_omset_date_str = member.get('last_omset_date')
+        has_deposit = False
         
-        if last_omset and last_omset.get('record_date'):
+        if last_omset_date_str:
+            has_deposit = True
             try:
-                record_date_str = last_omset['record_date']
-                last_deposit_date = datetime.strptime(record_date_str, '%Y-%m-%d')
-                last_deposit_date = JAKARTA_TZ.localize(last_deposit_date)
-            except Exception:
-                # Fall back to reservation date
-                reserved_at_str = member.get('approved_at') or member.get('created_at')
-                if not reserved_at_str:
-                    continue
-                try:
-                    last_deposit_date = datetime.fromisoformat(reserved_at_str.replace('Z', '+00:00'))
-                    if last_deposit_date.tzinfo is None:
-                        last_deposit_date = JAKARTA_TZ.localize(last_deposit_date)
-                except Exception:
-                    continue
-        else:
-            # No omset found - use reservation date as fallback
-            reserved_at_str = member.get('approved_at') or member.get('created_at')
-            if not reserved_at_str:
-                continue
-            try:
-                last_deposit_date = datetime.fromisoformat(reserved_at_str.replace('Z', '+00:00'))
+                if isinstance(last_omset_date_str, str):
+                    last_deposit_date = datetime.fromisoformat(last_omset_date_str.replace('Z', '+00:00'))
+                else:
+                    last_deposit_date = last_omset_date_str
                 if last_deposit_date.tzinfo is None:
                     last_deposit_date = JAKARTA_TZ.localize(last_deposit_date)
             except Exception:
-                continue
+                has_deposit = False
+        
+        if not has_deposit:
+            # Get the customer's LAST DEPOSIT DATE from omset_records
+            last_omset = await db.omset_records.find_one(
+                {
+                    'customer_id': {'$regex': f'^{customer_id}$', '$options': 'i'},
+                    'staff_id': staff_id
+                },
+                {'_id': 0, 'record_date': 1},
+                sort=[('record_date', -1)]
+            )
+            
+            if last_omset and last_omset.get('record_date'):
+                has_deposit = True
+                try:
+                    record_date_str = last_omset['record_date']
+                    last_deposit_date = datetime.strptime(record_date_str, '%Y-%m-%d')
+                    last_deposit_date = JAKARTA_TZ.localize(last_deposit_date)
+                except Exception:
+                    has_deposit = False
+        
+        # If NO DEPOSIT - mark for immediate deletion
+        if not has_deposit:
+            member_info = {
+                'id': member_id,
+                'customer_id': customer_id,
+                'staff_name': staff_name,
+                'product_id': product_id,
+                'product_name': product_name,
+                'last_deposit_date': None,
+                'days_since_last_deposit': None,
+                'days_remaining': None,
+                'grace_days': grace_days,
+                'reason': 'no_deposit'
+            }
+            will_be_deleted.append(member_info)
+            continue
         
         # Compare dates only (ignore time portion) to get accurate day count
         today_date = jakarta_now.date()
