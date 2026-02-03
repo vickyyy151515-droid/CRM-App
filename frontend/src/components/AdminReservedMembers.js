@@ -698,10 +698,6 @@ export default function AdminReservedMembers({ onUpdate }) {
                       {member.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{member.created_by_name}</td>
-                  <td className="px-6 py-4 text-slate-500 dark:text-slate-400 text-sm">
-                    {new Date(member.created_at).toLocaleDateString()}
-                  </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
                       {member.status === 'pending' && (
