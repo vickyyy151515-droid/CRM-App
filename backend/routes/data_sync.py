@@ -172,7 +172,7 @@ async def run_health_check(user: User = Depends(get_admin_user)):
         try:
             count = await db[coll].count_documents({})
             collection_stats[coll] = count
-        except:
+        except Exception:
             collection_stats[coll] = 0
     
     stats['collections'] = collection_stats
