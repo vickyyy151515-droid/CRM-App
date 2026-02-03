@@ -1697,6 +1697,7 @@ async def init_scheduler():
     start_scheduler(
         report_hour=config.get('report_hour', 1) if config else 1,
         report_minute=config.get('report_minute', 0) if config else 0,
+        report_enabled=config.get('enabled', False) if config else False,
         atrisk_hour=config.get('atrisk_hour', 11) if config else 11,
         atrisk_minute=config.get('atrisk_minute', 0) if config else 0,
         atrisk_enabled=config.get('atrisk_enabled', False) if config else False,
