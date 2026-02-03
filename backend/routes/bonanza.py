@@ -1192,3 +1192,100 @@ async def get_bonanza_data_health(user: User = Depends(get_admin_user)):
     health_report['is_healthy'] = health_report['total_issues'] == 0
     
     return health_report
+
+
+@router.get("/bonanza/admin/diagnose-invalid/{staff_id}")
+async def diagnose_invalid_records(staff_id: str, user: User = Depends(get_admin_user)):
+    """
+    Diagnose why invalid record replacement might be failing.
+    Returns detailed information about the invalid records and available records.
+    """
+    db = get_db()
+    
+    # Get invalid records for this staff
+    invalid_records = await db.bonanza_records.find({
+        'assigned_to': staff_id,
+        'validation_status': 'invalid',
+        'status': 'assigned'
+    }, {'_id': 0}).to_list(10000)
+    
+    # Get reserved members
+    reserved_members = await db.reserved_members.find(
+        {'status': 'approved'},
+        {'_id': 0, 'customer_id': 1, 'customer_name': 1}
+    ).to_list(100000)
+    
+    reserved_ids = set()
+    for m in reserved_members:
+        if m.get('customer_id'):
+            reserved_ids.add(str(m['customer_id']).strip().upper())
+        if m.get('customer_name'):
+            reserved_ids.add(str(m['customer_name']).strip().upper())
+    
+    diagnosis = {
+        'total_invalid_records': len(invalid_records),
+        'reserved_members_count': len(reserved_members),
+        'invalid_records_by_database': {},
+        'issues': []
+    }
+    
+    # Group invalid records by database
+    for record in invalid_records:
+        db_id = record.get('database_id')
+        db_name = record.get('database_name', 'Unknown')
+        
+        if not db_id:
+            diagnosis['issues'].append(f"Invalid record {record.get('id', 'unknown')[:8]} has no database_id")
+            continue
+        
+        if db_id not in diagnosis['invalid_records_by_database']:
+            # Get database info
+            database = await db.bonanza_databases.find_one({'id': db_id}, {'_id': 0})
+            
+            # Count available records in this database
+            available_count = await db.bonanza_records.count_documents({
+                'database_id': db_id,
+                'status': 'available'
+            })
+            
+            # Get sample available records
+            available_sample = await db.bonanza_records.find({
+                'database_id': db_id,
+                'status': 'available'
+            }, {'_id': 0, 'id': 1, 'row_data': 1}).to_list(10)
+            
+            # Check how many are reserved
+            reserved_count = 0
+            for rec in available_sample:
+                row_data = rec.get('row_data', {})
+                for key in ['Username', 'username', 'USER', 'user', 'ID', 'id', 'Nama Lengkap', 'nama_lengkap', 'Name', 'name', 'NAMA']:
+                    if key in row_data and row_data[key]:
+                        if str(row_data[key]).strip().upper() in reserved_ids:
+                            reserved_count += 1
+                            break
+            
+            diagnosis['invalid_records_by_database'][db_id] = {
+                'database_name': database.get('name') if database else db_name,
+                'database_exists': database is not None,
+                'invalid_count': 0,
+                'available_in_database': available_count,
+                'sample_reserved_ratio': f'{reserved_count}/{len(available_sample)}',
+                'sample_records': [
+                    {
+                        'id': r.get('id', '')[:8],
+                        'username': r.get('row_data', {}).get('Username') or r.get('row_data', {}).get('username', 'N/A')
+                    }
+                    for r in available_sample[:5]
+                ]
+            }
+        
+        diagnosis['invalid_records_by_database'][db_id]['invalid_count'] += 1
+    
+    # Check if database_id in invalid records matches any existing database
+    for db_id, info in diagnosis['invalid_records_by_database'].items():
+        if not info['database_exists']:
+            diagnosis['issues'].append(f"Database {db_id} does not exist - invalid records are orphaned")
+        elif info['available_in_database'] == 0:
+            diagnosis['issues'].append(f"Database {info['database_name']} has 0 available records")
+    
+    return diagnosis
