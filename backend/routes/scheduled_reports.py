@@ -812,6 +812,13 @@ async def process_reserved_member_cleanup():
             await db.reserved_members.delete_one({'id': member_id})
             members_deleted += 1
             
+            # SYNC: Delete related bonus_check_submissions for this customer+staff
+            # When a reserved member expires, their bonus check submissions should also be removed
+            await db.bonus_check_submissions.delete_many({
+                'customer_id_normalized': customer_id.strip().upper(),
+                'staff_id': staff_id
+            })
+            
             # Send notification to staff
             await create_notification(
                 user_id=staff_id,
