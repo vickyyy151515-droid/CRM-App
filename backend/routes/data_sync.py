@@ -276,7 +276,7 @@ async def repair_data(repair_type: str, user: User = Depends(get_admin_user)):
             {'status': 'approved'},
             {'staff_id': 1, 'date': 1}
         ).to_list(10000)
-        leave_set = {(l['staff_id'], l['date']) for l in leave_records}
+        leave_set = {(leave['staff_id'], leave['date']) for leave in leave_records}
         
         # Update attendance records that have leave but aren't marked
         fixed_count = 0
