@@ -1531,7 +1531,10 @@ async def preview_reserved_member_cleanup(user: User = Depends(get_admin_user)):
             except Exception:
                 continue
         
-        days_since_last_deposit = (jakarta_now - last_deposit_date).days
+        # Compare dates only (ignore time portion) to get accurate day count
+        today_date = jakarta_now.date()
+        last_deposit_date_only = last_deposit_date.date()
+        days_since_last_deposit = (today_date - last_deposit_date_only).days
         days_remaining = grace_days - days_since_last_deposit
         
         member_info = {
@@ -1540,7 +1543,7 @@ async def preview_reserved_member_cleanup(user: User = Depends(get_admin_user)):
             'staff_name': staff_name,
             'product_id': product_id,
             'product_name': product_name,
-            'last_deposit_date': last_deposit_date.strftime('%Y-%m-%d'),
+            'last_deposit_date': last_deposit_date_only.strftime('%Y-%m-%d'),
             'days_since_last_deposit': days_since_last_deposit,
             'days_remaining': days_remaining,
             'grace_days': grace_days
