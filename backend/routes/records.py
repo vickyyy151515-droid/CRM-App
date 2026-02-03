@@ -1446,17 +1446,19 @@ async def get_reserved_members(status: Optional[str] = None, product_id: Optiona
                     'customer_id': {'$regex': f'^{customer_id}$', '$options': 'i'},
                     'staff_id': staff_id
                 },
-                {'_id': 0, 'created_at': 1},
-                sort=[('created_at', -1)]
+                {'_id': 0, 'record_date': 1},
+                sort=[('record_date', -1)]  # Sort by actual deposit date, not created_at
             )
             
-            if last_omset and last_omset.get('created_at'):
+            if last_omset and last_omset.get('record_date'):
                 try:
-                    omset_date_str = last_omset['created_at']
-                    if isinstance(omset_date_str, str):
-                        last_deposit = datetime.fromisoformat(omset_date_str.replace('Z', '+00:00'))
+                    record_date_str = last_omset['record_date']
+                    # record_date is stored as 'YYYY-MM-DD' string
+                    if isinstance(record_date_str, str):
+                        last_deposit = datetime.strptime(record_date_str, '%Y-%m-%d')
+                        last_deposit = last_deposit.replace(tzinfo=jakarta_now.tzinfo)
                     else:
-                        last_deposit = omset_date_str
+                        last_deposit = record_date_str
                     
                     member['last_omset_date'] = last_deposit
                     member['days_since_last_omset'] = (jakarta_now - last_deposit).days
