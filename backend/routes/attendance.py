@@ -156,6 +156,17 @@ async def check_in_with_totp(data: TOTPVerifyRequest, user: User = Depends(get_c
             detail=f"You have already checked in today at {existing_record.get('check_in_time')}"
         )
     
+    # Check if staff has APPROVED leave for today (off_day or sakit)
+    # If they have approved leave, they should NOT be marked late
+    approved_leave = await db.leave_requests.find_one({
+        'staff_id': user.id,
+        'date': today,
+        'status': 'approved'
+    })
+    
+    has_approved_leave = approved_leave is not None
+    leave_type = approved_leave.get('leave_type') if approved_leave else None
+    
     # Get TOTP secret
     totp_data = await db.attendance_totp.find_one({'staff_id': user.id})
     if not totp_data:
@@ -177,18 +188,22 @@ async def check_in_with_totp(data: TOTPVerifyRequest, user: User = Depends(get_c
     if not totp.verify(data.code, valid_window=1):
         raise HTTPException(status_code=400, detail="Invalid code. Please check your authenticator app.")
     
-    # Calculate lateness
-    is_late = now.hour > SHIFT_START_HOUR or (now.hour == SHIFT_START_HOUR and now.minute > 0)
+    # Calculate lateness - but SKIP if staff has approved leave
+    is_late = False
     late_minutes = 0
-    if is_late:
-        shift_start = now.replace(hour=SHIFT_START_HOUR, minute=0, second=0, microsecond=0)
-        late_delta = now - shift_start
-        late_minutes = int(late_delta.total_seconds() / 60)
+    
+    if not has_approved_leave:
+        # Only calculate lateness if no approved leave
+        is_late = now.hour > SHIFT_START_HOUR or (now.hour == SHIFT_START_HOUR and now.minute > 0)
+        if is_late:
+            shift_start = now.replace(hour=SHIFT_START_HOUR, minute=0, second=0, microsecond=0)
+            late_delta = now - shift_start
+            late_minutes = int(late_delta.total_seconds() / 60)
     
     # Record attendance
     check_in_time = now.strftime('%H:%M:%S')
     
-    await db.attendance_records.insert_one({
+    attendance_record = {
         'staff_id': user.id,
         'staff_name': user.name,
         'date': today,
@@ -196,8 +211,20 @@ async def check_in_with_totp(data: TOTPVerifyRequest, user: User = Depends(get_c
         'check_in_datetime': now.isoformat(),
         'is_late': is_late,
         'late_minutes': late_minutes,
-        'method': 'totp'
-    })
+        'method': 'totp',
+        'has_approved_leave': has_approved_leave,
+        'leave_type': leave_type
+    }
+    
+    await db.attendance_records.insert_one(attendance_record)
+    
+    # Build response message
+    if has_approved_leave:
+        status_message = f'On Leave ({leave_type})'
+    elif is_late:
+        status_message = 'Late'
+    else:
+        status_message = 'On Time'
     
     return {
         'success': True,
@@ -206,7 +233,9 @@ async def check_in_with_totp(data: TOTPVerifyRequest, user: User = Depends(get_c
         'check_in_time': check_in_time,
         'is_late': is_late,
         'late_minutes': late_minutes,
-        'attendance_status': 'Late' if is_late else 'On Time'
+        'has_approved_leave': has_approved_leave,
+        'leave_type': leave_type,
+        'attendance_status': status_message
     }
 
 @router.get("/attendance/check-today")
