@@ -126,10 +126,15 @@ async def get_fees_summary(
     date_prefix = f"{year}-{str(month).zfill(2)}"
     
     # Get all attendance records with lateness for the month
+    # EXCLUDE records where staff has approved leave
     attendance_records = await db.attendance_records.find({
         'date': {'$regex': f'^{date_prefix}'},
         'is_late': True,
-        'late_minutes': {'$gt': 0}
+        'late_minutes': {'$gt': 0},
+        '$or': [
+            {'has_approved_leave': {'$exists': False}},
+            {'has_approved_leave': False}
+        ]
     }, {'_id': 0}).to_list(100000)
     
     # Get existing fee waivers
