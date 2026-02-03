@@ -253,6 +253,8 @@ export default function AdminDashboard({ user, onLogout }) {
         return <DataCleanup />;
       case 'bonus-check':
         return <AdminBonusCheck />;
+      case 'data-sync':
+        return <DataSyncDashboard />;
       default:
         return null;
     }
