@@ -13,30 +13,41 @@ Both modules support:
 - Recall assigned records
 - Reserved member filtering
 
-## Latest Update: Bug Fixes + Refactoring (2026-02-03)
+## Latest Update: Comprehensive Feature Synchronization (2026-02-03)
 
-### Fixed Bugs:
-1. **Grace Period Cleanup Bug** - Reserved members without omset were NOT being moved to "Deleted - No Omset" archive
-   - Root cause: Scheduler only started when reports were enabled; cleanup jobs never ran
-   - Fix: Scheduler now ALWAYS starts for cleanup jobs (00:01 WIB daily)
+### ✅ Completed Sync Features (All 26 tests passed):
 
-2. **Database Count Bug** - Available/assigned counts were incorrect after re-assigning invalid records
-   - Root cause: MemberWD didn't subtract archived records from available count
-   - Fix: Formula now correctly uses: `available = total - assigned - archived - excluded`
+1. **Attendance + Leave Integration**
+   - Staff with approved leave are NOT marked late when checking in
+   - `has_approved_leave` and `leave_type` stored in attendance record
+
+2. **Lateness Fees + Leave Integration**
+   - Fee calculation now EXCLUDES days with approved leave
+   - Query filters out records where `has_approved_leave=True`
+
+3. **Bonus Check Expiration Fix**
+   - Uses `record_date` from omset_records (actual deposit date)
+   - NOT `approved_at` (reservation approval date)
+
+4. **Reserved Member Cleanup Fix**
+   - Grace period calculated from `last_omset_date` (customer's last deposit)
+   - NOT from reservation date
+
+5. **Manual Delete Sync**
+   - Deleting a reserved member also cleans up `bonus_check_submissions`
+
+6. **User Delete Cascade**
+   - Deleting a user cascades to: `reserved_members`, `bonus_check_submissions`, `notifications`, `attendance_records`, `leave_requests`, `izin_records`
+
+7. **At-Risk Alert Bug Fix**
+   - Fixed variable name: `recently_alerted_ids` → `recently_alerted_keys`
+
+### Previous Bug Fixes (2026-02-03):
+1. **Grace Period Cleanup Bug** - Scheduler now ALWAYS starts for cleanup jobs
+2. **Database Count Bug** - Formula: `available = total - assigned - archived - excluded`
 
 ### Frontend Refactoring:
-Created `/app/frontend/src/components/shared/` with reusable components:
-- `ReplaceModal.js` - Modal for processing invalid records (66 lines)
-- `SettingsPanel.js` - Settings panel with auto-replace toggle (98 lines)
-- `InvalidRecordsPanel.js` - Invalid records display panel (127 lines)
-- `DatabaseUploadForm.js` - Database upload form (67 lines)
-- `TabsNavigation.js` - Tabs component (46 lines)
-- `RecordsTable.js` - Records table with filtering (186 lines)
-- `DatabaseCard.js` - Expandable database card (125 lines)
-- `ArchivedRecordsTable.js` - Archived records display (85 lines)
-- `AssignmentPanel.js` - Record assignment panel (100 lines)
-
-Both AdminDBBonanza.js and AdminMemberWDCRM.js now use ReplaceModal from shared components.
+Created `/app/frontend/src/components/shared/` with 9 reusable components.
 
 ## Features Implemented
 
