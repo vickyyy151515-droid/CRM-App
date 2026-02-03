@@ -1480,37 +1480,56 @@ async def preview_reserved_member_cleanup(user: User = Depends(get_admin_user)):
         # Get grace period for this member
         grace_days = product_overrides.get(product_id, global_grace_days)
         
-        # Get the reservation date
-        reserved_at_str = member.get('approved_at') or member.get('created_at')
-        if not reserved_at_str:
-            continue
-            
-        try:
-            reserved_at = datetime.fromisoformat(reserved_at_str.replace('Z', '+00:00'))
-            if reserved_at.tzinfo is None:
-                reserved_at = JAKARTA_TZ.localize(reserved_at)
-        except Exception:
-            continue
+        # Get the customer's LAST DEPOSIT DATE from omset_records
+        # IMPORTANT: Use 'record_date' (actual deposit date), NOT 'created_at'
+        last_omset = await db.omset_records.find_one(
+            {
+                'customer_id': {'$regex': f'^{customer_id}$', '$options': 'i'},
+                'staff_id': staff_id
+            },
+            {'_id': 0, 'record_date': 1},
+            sort=[('record_date', -1)]
+        )
         
-        days_since_reservation = (jakarta_now - reserved_at).days
-        days_remaining = grace_days - days_since_reservation
+        if last_omset and last_omset.get('record_date'):
+            try:
+                record_date_str = last_omset['record_date']
+                last_deposit_date = datetime.strptime(record_date_str, '%Y-%m-%d')
+                last_deposit_date = JAKARTA_TZ.localize(last_deposit_date)
+            except Exception:
+                # Fall back to reservation date
+                reserved_at_str = member.get('approved_at') or member.get('created_at')
+                if not reserved_at_str:
+                    continue
+                try:
+                    last_deposit_date = datetime.fromisoformat(reserved_at_str.replace('Z', '+00:00'))
+                    if last_deposit_date.tzinfo is None:
+                        last_deposit_date = JAKARTA_TZ.localize(last_deposit_date)
+                except Exception:
+                    continue
+        else:
+            # No omset found - use reservation date as fallback
+            reserved_at_str = member.get('approved_at') or member.get('created_at')
+            if not reserved_at_str:
+                continue
+            try:
+                last_deposit_date = datetime.fromisoformat(reserved_at_str.replace('Z', '+00:00'))
+                if last_deposit_date.tzinfo is None:
+                    last_deposit_date = JAKARTA_TZ.localize(last_deposit_date)
+            except Exception:
+                continue
         
-        # Check if there's any OMSET from this customer since reservation
-        omset_query = {
-            'customer_id': {'$regex': f'^{customer_id}$', '$options': 'i'},
-            'staff_id': staff_id,
-            'created_at': {'$gte': reserved_at_str}
-        }
-        
-        has_omset = await db.omset_records.find_one(omset_query, {'_id': 1})
+        days_since_last_deposit = (jakarta_now - last_deposit_date).days
+        days_remaining = grace_days - days_since_last_deposit
         
         member_info = {
             'id': member_id,
-            'customer_id': customer_id,  # Renamed from customer_name
+            'customer_id': customer_id,
             'staff_name': staff_name,
             'product_id': product_id,
             'product_name': product_name,
-            'days_since_reservation': days_since_reservation,
+            'last_deposit_date': last_deposit_date.strftime('%Y-%m-%d'),
+            'days_since_last_deposit': days_since_last_deposit,
             'days_remaining': days_remaining,
             'grace_days': grace_days,
             'reserved_at': reserved_at_str
