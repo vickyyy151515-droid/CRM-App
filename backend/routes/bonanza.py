@@ -732,16 +732,25 @@ class ProcessInvalidRequest(BaseModel):
 
 @router.post("/bonanza/admin/process-invalid/{staff_id}")
 async def process_invalid_and_replace(staff_id: str, data: ProcessInvalidRequest, user: User = Depends(get_admin_user)):
-    """Archive invalid records and optionally assign new records to staff"""
+    """
+    Archive invalid records and assign replacement records to staff.
+    
+    KEY LOGIC:
+    - For each database with invalid records, archive those invalid records
+    - Then assign the SAME number of new records from the SAME database
+    - This ensures assigned count stays the same (e.g., 50 assigned -> 50 assigned)
+    - Available count decreases by the number of new records assigned
+    """
     db = get_db()
     
     now = get_jakarta_now()
     
-    # Find invalid records
+    # Find invalid records for this staff
     invalid_records = await db.bonanza_records.find({
         'assigned_to': staff_id,
-        'validation_status': 'invalid'
-    }).to_list(10000)
+        'validation_status': 'invalid',
+        'status': 'assigned'  # Only get records that are still assigned (not already archived)
+    }, {'_id': 0}).to_list(10000)
     
     if len(invalid_records) == 0:
         raise HTTPException(status_code=404, detail="No invalid records found for this staff")
@@ -751,21 +760,110 @@ async def process_invalid_and_replace(staff_id: str, data: ProcessInvalidRequest
     if not staff:
         raise HTTPException(status_code=404, detail="Staff not found")
     
-    record_ids = [r['id'] for r in invalid_records]
+    # Get reserved members for filtering
+    reserved_members = await db.reserved_members.find(
+        {'status': 'approved'},
+        {'_id': 0, 'customer_id': 1, 'customer_name': 1}
+    ).to_list(100000)
     
-    # Get unique database IDs from invalid records for auto-assignment
-    database_ids = list(set(r.get('database_id') for r in invalid_records if r.get('database_id')))
+    reserved_ids = set()
+    for m in reserved_members:
+        if m.get('customer_id'):
+            reserved_ids.add(str(m['customer_id']).strip().upper())
+        if m.get('customer_name'):
+            reserved_ids.add(str(m['customer_name']).strip().upper())
     
-    # Archive invalid records (move to 'invalid_archived' status)
-    await db.bonanza_records.update_many(
-        {'id': {'$in': record_ids}},
-        {'$set': {
-            'status': 'invalid_archived',
-            'archived_at': now.isoformat(),
-            'archived_by': user.id,
-            'archived_by_name': user.name
-        }}
-    )
+    def is_reserved(record):
+        """Check if a record matches a reserved member"""
+        row_data = record.get('row_data', {})
+        for key in ['Username', 'username', 'USER', 'user', 'ID', 'id', 'Nama Lengkap', 'nama_lengkap', 'Name', 'name', 'NAMA']:
+            if key in row_data and row_data[key]:
+                if str(row_data[key]).strip().upper() in reserved_ids:
+                    return True
+        return False
+    
+    # Group invalid records by database_id
+    invalid_by_database = {}
+    for record in invalid_records:
+        db_id = record.get('database_id')
+        if db_id:
+            if db_id not in invalid_by_database:
+                invalid_by_database[db_id] = {
+                    'database_id': db_id,
+                    'database_name': record.get('database_name', 'Unknown'),
+                    'records': []
+                }
+            invalid_by_database[db_id]['records'].append(record)
+    
+    total_archived = 0
+    total_assigned = 0
+    total_skipped_reserved = 0
+    assignment_details = []
+    
+    # Process each database separately
+    for db_id, group in invalid_by_database.items():
+        invalid_in_db = group['records']
+        invalid_ids = [r['id'] for r in invalid_in_db]
+        needed_replacements = len(invalid_in_db)  # Need same number as invalid
+        
+        # Step 1: Archive the invalid records
+        await db.bonanza_records.update_many(
+            {'id': {'$in': invalid_ids}},
+            {'$set': {
+                'status': 'invalid_archived',
+                'archived_at': now.isoformat(),
+                'archived_by': user.id,
+                'archived_by_name': user.name
+            }}
+        )
+        total_archived += len(invalid_ids)
+        
+        # Step 2: Find and assign replacement records from the SAME database
+        if data.auto_assign_quantity > 0:
+            # Get available records from this specific database
+            available_records = await db.bonanza_records.find({
+                'database_id': db_id,
+                'status': 'available'
+            }, {'_id': 0}).to_list(needed_replacements * 3)
+            
+            # Filter out reserved members
+            eligible_records = []
+            skipped = 0
+            for record in available_records:
+                if is_reserved(record):
+                    skipped += 1
+                else:
+                    eligible_records.append(record)
+                    if len(eligible_records) >= needed_replacements:
+                        break
+            
+            total_skipped_reserved += skipped
+            
+            # Assign eligible records (up to the number of invalid records)
+            to_assign = eligible_records[:needed_replacements]
+            if to_assign:
+                assigned_ids = [r['id'] for r in to_assign]
+                await db.bonanza_records.update_many(
+                    {'id': {'$in': assigned_ids}},
+                    {'$set': {
+                        'status': 'assigned',
+                        'assigned_to': staff['id'],
+                        'assigned_to_name': staff['name'],
+                        'assigned_at': now.isoformat(),
+                        'assigned_by': user.id,
+                        'assigned_by_name': user.name,
+                        'auto_replaced': True,
+                        'replaced_invalid_ids': invalid_ids
+                    }}
+                )
+                total_assigned += len(assigned_ids)
+            
+            assignment_details.append({
+                'database': group['database_name'],
+                'invalid_archived': len(invalid_ids),
+                'replacements_assigned': len(to_assign),
+                'shortage': needed_replacements - len(to_assign) if len(to_assign) < needed_replacements else 0
+            })
     
     # Mark related notifications as resolved
     await db.admin_notifications.update_many(
@@ -773,91 +871,24 @@ async def process_invalid_and_replace(staff_id: str, data: ProcessInvalidRequest
         {'$set': {'is_resolved': True, 'resolved_at': now.isoformat(), 'resolved_by': user.name}}
     )
     
-    # Auto-assign new records if requested
-    new_assigned_count = 0
-    skipped_reserved = 0
-    if data.auto_assign_quantity > 0 and database_ids:
-        # Find available records from the same databases
-        available_records = await db.bonanza_records.find({
-            'database_id': {'$in': database_ids},
-            'status': 'available'
-        }, {'_id': 0}).to_list(data.auto_assign_quantity * 3)  # Get extra in case some are reserved
-        
-        # Get reserved members - check both customer_id and customer_name for comprehensive matching
-        reserved_members = await db.reserved_members.find(
-            {'status': 'approved'},  # Only approved reservations
-            {'_id': 0, 'customer_id': 1, 'customer_name': 1}
-        ).to_list(100000)
-        
-        # Build set of reserved identifiers (uppercase for case-insensitive matching)
-        reserved_ids = set()
-        for m in reserved_members:
-            if m.get('customer_id'):
-                reserved_ids.add(str(m['customer_id']).strip().upper())
-            if m.get('customer_name'):
-                reserved_ids.add(str(m['customer_name']).strip().upper())
-        
-        eligible_records = []
-        for record in available_records:
-            row_data = record.get('row_data', {})
-            
-            # Check Username field (case-insensitive)
-            is_reserved = False
-            for key in ['Username', 'username', 'USER', 'user', 'ID', 'id']:
-                if key in row_data:
-                    value = str(row_data[key]).strip().upper()
-                    if value in reserved_ids:
-                        is_reserved = True
-                        skipped_reserved += 1
-                        break
-            
-            # Also check Nama Lengkap / Name field
-            if not is_reserved:
-                for key in ['Nama Lengkap', 'nama_lengkap', 'Name', 'name', 'NAMA']:
-                    if key in row_data:
-                        value = str(row_data[key]).strip().upper()
-                        if value in reserved_ids:
-                            is_reserved = True
-                            skipped_reserved += 1
-                            break
-            
-            if not is_reserved:
-                eligible_records.append(record)
-                if len(eligible_records) >= data.auto_assign_quantity:
-                    break
-        
-        if eligible_records:
-            selected_ids = [r['id'] for r in eligible_records]
-            await db.bonanza_records.update_many(
-                {'id': {'$in': selected_ids}},
-                {'$set': {
-                    'status': 'assigned',
-                    'assigned_to': staff['id'],
-                    'assigned_to_name': staff['name'],
-                    'assigned_at': now.isoformat(),
-                    'assigned_by': user.id,
-                    'assigned_by_name': user.name,
-                    'auto_replaced': True,
-                    'replaced_invalid_ids': record_ids
-                }}
-            )
-            new_assigned_count = len(selected_ids)
-    
-    # Build message with reserved member info
-    message = f'{len(record_ids)} record diarsipkan.'
+    # Build message
+    message = f'{total_archived} record tidak valid diarsipkan.'
     if data.auto_assign_quantity > 0:
-        message += f' {new_assigned_count} record baru ditugaskan ke {staff["name"]}.'
-        if skipped_reserved > 0:
-            message += f' ({skipped_reserved} record reserved member dilewati)'
-        if new_assigned_count < data.auto_assign_quantity:
-            shortage = data.auto_assign_quantity - new_assigned_count
+        message += f' {total_assigned} record baru ditugaskan ke {staff["name"]}.'
+        if total_skipped_reserved > 0:
+            message += f' ({total_skipped_reserved} reserved member dilewati)'
+        if total_assigned < total_archived:
+            shortage = total_archived - total_assigned
             message += f' Kekurangan {shortage} record karena tidak tersedia.'
     
     return {
         'success': True,
-        'archived_count': len(record_ids),
-        'new_assigned_count': new_assigned_count,
-        'skipped_reserved': skipped_reserved,
+        'archived_count': total_archived,
+        'new_assigned_count': total_assigned,
+        'skipped_reserved': total_skipped_reserved,
+        'message': message,
+        'details': assignment_details
+    }
         'message': message
     }
 
