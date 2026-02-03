@@ -889,8 +889,6 @@ async def process_invalid_and_replace(staff_id: str, data: ProcessInvalidRequest
         'message': message,
         'details': assignment_details
     }
-        'message': message
-    }
 
 
 # Legacy endpoint - redirect to new one
