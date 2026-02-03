@@ -1421,6 +1421,8 @@ async def get_reserved_members(status: Optional[str] = None, product_id: Optiona
     
     members = await db.reserved_members.find(query, {'_id': 0}).sort('created_at', -1).to_list(10000)
     
+    jakarta_now = get_jakarta_now()
+    
     for member in members:
         if isinstance(member.get('created_at'), str):
             member['created_at'] = datetime.fromisoformat(member['created_at'])
@@ -1432,6 +1434,34 @@ async def get_reserved_members(status: Optional[str] = None, product_id: Optiona
         # Ensure customer_id is populated (migrate from customer_name if needed)
         if not member.get('customer_id') and member.get('customer_name'):
             member['customer_id'] = member['customer_name']
+        
+        # Calculate last_omset_date from omset_records if not already stored
+        customer_id = member.get('customer_id') or member.get('customer_name', '')
+        staff_id = member.get('staff_id')
+        
+        if customer_id and staff_id:
+            # Find the most recent omset for this customer+staff
+            last_omset = await db.omset_records.find_one(
+                {
+                    'customer_id': {'$regex': f'^{customer_id}$', '$options': 'i'},
+                    'staff_id': staff_id
+                },
+                {'_id': 0, 'created_at': 1},
+                sort=[('created_at', -1)]
+            )
+            
+            if last_omset and last_omset.get('created_at'):
+                try:
+                    omset_date_str = last_omset['created_at']
+                    if isinstance(omset_date_str, str):
+                        last_deposit = datetime.fromisoformat(omset_date_str.replace('Z', '+00:00'))
+                    else:
+                        last_deposit = omset_date_str
+                    
+                    member['last_omset_date'] = last_deposit
+                    member['days_since_last_omset'] = (jakarta_now - last_deposit).days
+                except Exception:
+                    pass
     
     return members
 
