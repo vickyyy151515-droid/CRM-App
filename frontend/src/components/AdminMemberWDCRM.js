@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
 import { Upload, Database, Users, Trash2, ChevronDown, ChevronUp, Check, X, Search, Shuffle, Package, Edit2, AlertTriangle, RefreshCw, Archive, Undo2, Settings, Play, RotateCcw } from 'lucide-react';
+import ReplaceModal from './shared/ReplaceModal';
 
 export default function AdminMemberWDCRM() {
   const [databases, setDatabases] = useState([]);
