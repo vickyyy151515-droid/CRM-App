@@ -978,3 +978,217 @@ async def get_staff_list(user: User = Depends(get_admin_user)):
     db = get_db()
     staff = await db.users.find({'role': 'staff'}, {'_id': 0, 'password_hash': 0}).to_list(1000)
     return staff
+
+
+@router.post("/bonanza/admin/repair-data")
+async def repair_bonanza_data(user: User = Depends(get_admin_user)):
+    """
+    Repair and synchronize bonanza record data.
+    This fixes inconsistencies caused by pre-update code:
+    1. Fixes records with missing database_id or database_name
+    2. Resets corrupted status values
+    3. Clears orphaned assignments
+    4. Reports detailed statistics
+    """
+    db = get_db()
+    now = get_jakarta_now()
+    
+    repair_log = {
+        'timestamp': now.isoformat(),
+        'fixed_missing_db_info': 0,
+        'fixed_invalid_status': 0,
+        'fixed_orphaned_assignments': 0,
+        'databases_checked': [],
+        'errors': []
+    }
+    
+    # Get all databases
+    databases = await db.bonanza_databases.find({}, {'_id': 0}).to_list(1000)
+    db_map = {d['id']: d for d in databases}
+    
+    for database in databases:
+        db_id = database['id']
+        db_name = database['name']
+        product_name = database.get('product_name', 'Unknown')
+        
+        # Get all records for this database
+        records = await db.bonanza_records.find({'database_id': db_id}, {'_id': 0}).to_list(100000)
+        
+        # Count actual statuses
+        status_counts = {
+            'available': 0,
+            'assigned': 0,
+            'invalid_archived': 0,
+            'unknown': 0
+        }
+        
+        for record in records:
+            status = record.get('status', 'unknown')
+            if status in status_counts:
+                status_counts[status] += 1
+            else:
+                status_counts['unknown'] += 1
+        
+        # Fix records with missing database_name
+        result = await db.bonanza_records.update_many(
+            {'database_id': db_id, 'database_name': {'$exists': False}},
+            {'$set': {'database_name': db_name, 'product_name': product_name}}
+        )
+        if result.modified_count > 0:
+            repair_log['fixed_missing_db_info'] += result.modified_count
+        
+        # Fix records with None database_name
+        result = await db.bonanza_records.update_many(
+            {'database_id': db_id, 'database_name': None},
+            {'$set': {'database_name': db_name, 'product_name': product_name}}
+        )
+        if result.modified_count > 0:
+            repair_log['fixed_missing_db_info'] += result.modified_count
+        
+        # Fix invalid status values (not one of the valid statuses)
+        valid_statuses = ['available', 'assigned', 'invalid_archived']
+        result = await db.bonanza_records.update_many(
+            {'database_id': db_id, 'status': {'$nin': valid_statuses}},
+            {'$set': {'status': 'available'}}
+        )
+        if result.modified_count > 0:
+            repair_log['fixed_invalid_status'] += result.modified_count
+        
+        # Fix orphaned assignments (assigned but no assigned_to)
+        result = await db.bonanza_records.update_many(
+            {'database_id': db_id, 'status': 'assigned', 'assigned_to': None},
+            {'$set': {
+                'status': 'available',
+                'assigned_to': None,
+                'assigned_to_name': None,
+                'assigned_at': None
+            }}
+        )
+        if result.modified_count > 0:
+            repair_log['fixed_orphaned_assignments'] += result.modified_count
+        
+        # Recalculate counts after fixes
+        available = await db.bonanza_records.count_documents({'database_id': db_id, 'status': 'available'})
+        assigned = await db.bonanza_records.count_documents({'database_id': db_id, 'status': 'assigned'})
+        archived = await db.bonanza_records.count_documents({'database_id': db_id, 'status': 'invalid_archived'})
+        total = await db.bonanza_records.count_documents({'database_id': db_id})
+        
+        repair_log['databases_checked'].append({
+            'database_id': db_id,
+            'database_name': db_name,
+            'total_records': total,
+            'available': available,
+            'assigned': assigned,
+            'archived': archived,
+            'sum_check': available + assigned + archived,
+            'is_consistent': total == (available + assigned + archived)
+        })
+    
+    # Check for records with no database_id at all
+    orphan_records = await db.bonanza_records.count_documents({'database_id': {'$exists': False}})
+    if orphan_records > 0:
+        repair_log['errors'].append(f'{orphan_records} records have no database_id - manual intervention needed')
+    
+    orphan_records_null = await db.bonanza_records.count_documents({'database_id': None})
+    if orphan_records_null > 0:
+        repair_log['errors'].append(f'{orphan_records_null} records have null database_id - manual intervention needed')
+    
+    total_fixed = (
+        repair_log['fixed_missing_db_info'] + 
+        repair_log['fixed_invalid_status'] + 
+        repair_log['fixed_orphaned_assignments']
+    )
+    
+    return {
+        'success': True,
+        'message': f'Data repair completed. Fixed {total_fixed} issues.',
+        'repair_log': repair_log
+    }
+
+
+@router.get("/bonanza/admin/data-health")
+async def get_bonanza_data_health(user: User = Depends(get_admin_user)):
+    """
+    Check the health of bonanza data without making changes.
+    Returns detailed statistics about data consistency.
+    """
+    db = get_db()
+    
+    health_report = {
+        'databases': [],
+        'total_issues': 0,
+        'issues': []
+    }
+    
+    # Get all databases
+    databases = await db.bonanza_databases.find({}, {'_id': 0}).to_list(1000)
+    
+    for database in databases:
+        db_id = database['id']
+        db_name = database['name']
+        
+        # Count records by status
+        available = await db.bonanza_records.count_documents({'database_id': db_id, 'status': 'available'})
+        assigned = await db.bonanza_records.count_documents({'database_id': db_id, 'status': 'assigned'})
+        archived = await db.bonanza_records.count_documents({'database_id': db_id, 'status': 'invalid_archived'})
+        total = await db.bonanza_records.count_documents({'database_id': db_id})
+        
+        # Check for issues
+        missing_db_name = await db.bonanza_records.count_documents({
+            'database_id': db_id, 
+            '$or': [{'database_name': {'$exists': False}}, {'database_name': None}]
+        })
+        
+        orphaned_assignments = await db.bonanza_records.count_documents({
+            'database_id': db_id, 
+            'status': 'assigned', 
+            'assigned_to': None
+        })
+        
+        invalid_status = await db.bonanza_records.count_documents({
+            'database_id': db_id, 
+            'status': {'$nin': ['available', 'assigned', 'invalid_archived']}
+        })
+        
+        db_issues = missing_db_name + orphaned_assignments + invalid_status
+        
+        health_report['databases'].append({
+            'database_id': db_id,
+            'database_name': db_name,
+            'total_records': total,
+            'available': available,
+            'assigned': assigned,
+            'archived': archived,
+            'sum_matches': total == (available + assigned + archived),
+            'issues': {
+                'missing_db_name': missing_db_name,
+                'orphaned_assignments': orphaned_assignments,
+                'invalid_status': invalid_status
+            },
+            'has_issues': db_issues > 0
+        })
+        
+        health_report['total_issues'] += db_issues
+        
+        if db_issues > 0:
+            if missing_db_name > 0:
+                health_report['issues'].append(f'{db_name}: {missing_db_name} records missing database_name')
+            if orphaned_assignments > 0:
+                health_report['issues'].append(f'{db_name}: {orphaned_assignments} orphaned assignments')
+            if invalid_status > 0:
+                health_report['issues'].append(f'{db_name}: {invalid_status} invalid status values')
+    
+    # Check for completely orphaned records
+    orphan_no_db = await db.bonanza_records.count_documents({'database_id': {'$exists': False}})
+    orphan_null_db = await db.bonanza_records.count_documents({'database_id': None})
+    
+    if orphan_no_db > 0:
+        health_report['issues'].append(f'{orphan_no_db} records have no database_id field')
+        health_report['total_issues'] += orphan_no_db
+    if orphan_null_db > 0:
+        health_report['issues'].append(f'{orphan_null_db} records have null database_id')
+        health_report['total_issues'] += orphan_null_db
+    
+    health_report['is_healthy'] = health_report['total_issues'] == 0
+    
+    return health_report
