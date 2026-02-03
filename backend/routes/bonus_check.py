@@ -64,7 +64,7 @@ async def submit_bonus_check(data: BonusCheckSubmission, user: User = Depends(ge
             message=f"Customer '{data.customer_id}' tidak ditemukan di daftar Reserved Member Anda untuk produk {product['name']}. Pastikan customer sudah di-reserve dan sudah diapprove."
         )
     
-    # Check expiration based on 30-day grace period
+    # Check expiration based on grace period from LAST DEPOSIT DATE (not approved_at)
     # Get grace period config
     config = await db.reserved_member_config.find_one({'type': 'cleanup_config'}, {'_id': 0})
     global_grace_days = 30  # Default
@@ -77,32 +77,57 @@ async def submit_bonus_check(data: BonusCheckSubmission, user: User = Depends(ge
         else:
             global_grace_days = config.get('global_grace_days', 30)
     
-    # Calculate expiration
-    approved_at = reserved.get('approved_at') or reserved.get('created_at')
-    if approved_at:
-        if isinstance(approved_at, str):
-            try:
-                approved_date = datetime.fromisoformat(approved_at.replace('Z', '+00:00'))
-            except ValueError:
-                approved_date = now
+    # Get LAST DEPOSIT DATE from omset_records (using record_date field)
+    # This is the CORRECT date to use for grace period calculation
+    last_omset = await db.omset_records.find_one(
+        {
+            'customer_id': {'$regex': f'^{customer_id_normalized}$', '$options': 'i'},
+            'staff_id': user.id
+        },
+        {'_id': 0, 'record_date': 1},
+        sort=[('record_date', -1)]  # Get the most recent by actual deposit date
+    )
+    
+    if last_omset and last_omset.get('record_date'):
+        # Use last deposit date for expiration calculation
+        try:
+            record_date_str = last_omset['record_date']
+            last_deposit_date = datetime.strptime(record_date_str, '%Y-%m-%d')
+        except Exception:
+            # Fall back to approved_at if parsing fails
+            approved_at = reserved.get('approved_at') or reserved.get('created_at')
+            if approved_at:
+                if isinstance(approved_at, str):
+                    try:
+                        last_deposit_date = datetime.fromisoformat(approved_at.replace('Z', '+00:00')).replace(tzinfo=None)
+                    except ValueError:
+                        last_deposit_date = now
+                else:
+                    last_deposit_date = approved_at.replace(tzinfo=None) if approved_at.tzinfo else approved_at
+            else:
+                last_deposit_date = now
+    else:
+        # No omset found - use approved_at as fallback
+        approved_at = reserved.get('approved_at') or reserved.get('created_at')
+        if approved_at:
+            if isinstance(approved_at, str):
+                try:
+                    last_deposit_date = datetime.fromisoformat(approved_at.replace('Z', '+00:00')).replace(tzinfo=None)
+                except ValueError:
+                    last_deposit_date = now
+            else:
+                last_deposit_date = approved_at.replace(tzinfo=None) if approved_at.tzinfo else approved_at
         else:
-            approved_date = approved_at
-        
-        expiration_date = approved_date + timedelta(days=global_grace_days)
-        
-        # Make now timezone-aware if needed for comparison
-        now_aware = now
-        if expiration_date.tzinfo is not None and now_aware.tzinfo is None:
-            from datetime import timezone
-            now_aware = now.replace(tzinfo=timezone.utc)
-        elif expiration_date.tzinfo is None and now_aware.tzinfo is not None:
-            expiration_date = expiration_date.replace(tzinfo=now_aware.tzinfo)
-        
-        if now_aware > expiration_date:
-            return BonusCheckResponse(
-                success=False,
-                message=f"Reserved member untuk customer '{data.customer_id}' sudah expired (lebih dari {global_grace_days} hari). Silakan ajukan reserved member baru."
-            )
+            last_deposit_date = now
+    
+    # Calculate days since last deposit
+    days_since_last_deposit = (now - last_deposit_date).days
+    
+    if days_since_last_deposit > global_grace_days:
+        return BonusCheckResponse(
+            success=False,
+            message=f"Reserved member untuk customer '{data.customer_id}' sudah expired karena tidak ada deposit dalam {days_since_last_deposit} hari (batas: {global_grace_days} hari). Silakan ajukan reserved member baru."
+        )
     
     # Check for duplicate submission this month
     current_month = now.strftime('%Y-%m')
