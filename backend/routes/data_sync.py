@@ -89,7 +89,6 @@ async def run_health_check(user: User = Depends(get_admin_user)):
         })
     
     # 4. Check for attendance records with leave conflicts
-    today = jakarta_now.strftime('%Y-%m-%d')
     thirty_days_ago = (jakarta_now - timedelta(days=30)).strftime('%Y-%m-%d')
     
     attendance_records = await db.attendance_records.find({
@@ -102,7 +101,7 @@ async def run_health_check(user: User = Depends(get_admin_user)):
         'date': {'$gte': thirty_days_ago}
     }, {'_id': 0, 'staff_id': 1, 'date': 1}).to_list(10000)
     
-    leave_set = {(l['staff_id'], l['date']) for l in leave_records}
+    leave_set = {(leave['staff_id'], leave['date']) for leave in leave_records}
     
     conflict_records = []
     for a in attendance_records:
