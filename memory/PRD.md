@@ -126,6 +126,12 @@ Both modules support:
 
 ## Key API Endpoints
 
+### Data Sync (NEW)
+- `GET /api/data-sync/health-check` - Run comprehensive health check
+- `POST /api/data-sync/repair?repair_type=all` - Auto-repair detected issues
+- `GET /api/data-sync/sync-status` - Get feature sync status
+- `GET /api/data-sync/activity-log` - Get repair history
+
 ### Member WD
 - `GET/PUT /api/memberwd/admin/settings` - Settings
 - `POST /api/memberwd/admin/recall-records` - Recall
