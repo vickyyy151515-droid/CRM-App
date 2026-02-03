@@ -1156,20 +1156,16 @@ async def process_invalid_memberwd_and_replace(staff_id: str, data: ProcessInval
         # Process each batch group separately
         # Key: Each invalid record gets replaced by one record from the SAME database, 
         # assigned to the SAME batch
-        remaining_to_assign = data.auto_assign_quantity
+        # Replace ALL invalid records (not limited by auto_assign_quantity)
         
         for key, group in invalid_by_batch.items():
-            if remaining_to_assign <= 0:
-                break
-            
             batch_id = group['batch_id']
             database_id = group['database_id']
             invalid_in_group = group['records']
             invalid_ids_in_group = [r['id'] for r in invalid_in_group]
             
-            # How many replacements needed for THIS batch?
-            # Typically: number of invalid records in this batch
-            needed_for_batch = min(len(invalid_in_group), remaining_to_assign)
+            # Need to replace ALL invalid records in this batch
+            needed_for_batch = len(invalid_in_group)
             
             if not database_id:
                 continue  # Can't replace without knowing the database
