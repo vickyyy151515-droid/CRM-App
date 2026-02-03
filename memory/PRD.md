@@ -13,7 +13,7 @@ Both modules support:
 - Recall assigned records
 - Reserved member filtering
 
-## Latest Update: Bug Fixes (2026-02-03)
+## Latest Update: Bug Fixes + Refactoring (2026-02-03)
 
 ### Fixed Bugs:
 1. **Grace Period Cleanup Bug** - Reserved members without omset were NOT being moved to "Deleted - No Omset" archive
@@ -23,6 +23,20 @@ Both modules support:
 2. **Database Count Bug** - Available/assigned counts were incorrect after re-assigning invalid records
    - Root cause: MemberWD didn't subtract archived records from available count
    - Fix: Formula now correctly uses: `available = total - assigned - archived - excluded`
+
+### Frontend Refactoring:
+Created `/app/frontend/src/components/shared/` with reusable components:
+- `ReplaceModal.js` - Modal for processing invalid records (66 lines)
+- `SettingsPanel.js` - Settings panel with auto-replace toggle (98 lines)
+- `InvalidRecordsPanel.js` - Invalid records display panel (127 lines)
+- `DatabaseUploadForm.js` - Database upload form (67 lines)
+- `TabsNavigation.js` - Tabs component (46 lines)
+- `RecordsTable.js` - Records table with filtering (186 lines)
+- `DatabaseCard.js` - Expandable database card (125 lines)
+- `ArchivedRecordsTable.js` - Archived records display (85 lines)
+- `AssignmentPanel.js` - Record assignment panel (100 lines)
+
+Both AdminDBBonanza.js and AdminMemberWDCRM.js now use ReplaceModal from shared components.
 
 ## Features Implemented
 
