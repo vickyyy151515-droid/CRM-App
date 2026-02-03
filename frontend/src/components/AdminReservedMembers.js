@@ -238,6 +238,41 @@ export default function AdminReservedMembers({ onUpdate }) {
     }
   };
 
+  // State for cleanup
+  const [runningCleanup, setRunningCleanup] = useState(false);
+
+  // Manually trigger the grace period cleanup
+  const handleRunCleanup = async () => {
+    if (!window.confirm('Run grace period cleanup now?\n\nThis will:\n- Check all approved reserved members\n- Move members without OMSET past the grace period to "Deleted - No Omset"\n\nContinue?')) {
+      return;
+    }
+    
+    setRunningCleanup(true);
+    try {
+      const response = await api.post('/scheduled-reports/reserved-member-cleanup-run');
+      const data = response.data;
+      
+      // Build detailed message
+      let message = `Cleanup completed!\n\n`;
+      message += `• Warnings sent: ${data.warnings_sent || 0}\n`;
+      message += `• Members removed: ${data.members_removed || 0}`;
+      
+      if (data.members_removed > 0) {
+        toast.success(message);
+      } else {
+        toast.info(message || 'No members needed to be cleaned up');
+      }
+      
+      // Reload data to reflect changes
+      loadData();
+      if (onUpdate) onUpdate();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to run cleanup');
+    } finally {
+      setRunningCleanup(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -248,7 +283,28 @@ export default function AdminReservedMembers({ onUpdate }) {
 
   return (
     <div data-testid="admin-reserved-members">
-      <h2 className="text-3xl font-semibold tracking-tight text-slate-900 mb-6">Reserved Member CRM</h2>
+      {/* Header with Title and Action Button */}
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-3xl font-semibold tracking-tight text-slate-900">Reserved Member CRM</h2>
+        <button
+          onClick={handleRunCleanup}
+          disabled={runningCleanup}
+          className="px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:bg-amber-300 text-white rounded-lg flex items-center gap-2 transition-colors font-medium"
+          data-testid="run-cleanup-btn"
+        >
+          {runningCleanup ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+              Running...
+            </>
+          ) : (
+            <>
+              <RotateCcw size={18} />
+              Run Cleanup Now
+            </>
+          )}
+        </button>
+      </div>
       
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
