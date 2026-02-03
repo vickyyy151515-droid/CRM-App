@@ -323,6 +323,25 @@ async def restore_omset_record(record_id: str, user: User = Depends(get_current_
     await db.omset_records.insert_one(restored_record)
     await db.omset_trash.delete_one({'id': record_id})
     
+    # SYNC: Update reserved_members last_omset_date if this customer is reserved
+    customer_id = restored_record.get('customer_id', '')
+    staff_id = restored_record.get('staff_id', '')
+    record_date = restored_record.get('record_date', '')
+    
+    if customer_id and staff_id and record_date:
+        await db.reserved_members.update_many(
+            {
+                'customer_id': {'$regex': f'^{customer_id}$', '$options': 'i'},
+                'staff_id': staff_id,
+                'status': 'approved'
+            },
+            {
+                '$set': {
+                    'last_omset_date': record_date
+                }
+            }
+        )
+    
     return {
         'message': 'Record restored successfully',
         'restored_id': record_id,
