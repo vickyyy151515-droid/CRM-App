@@ -747,26 +747,30 @@ async def process_reserved_member_cleanup():
                 continue
         else:
             # No last_omset_date stored - try to get from omset_records
+            # IMPORTANT: Use 'record_date' field (the actual deposit date), NOT 'created_at'
             last_omset = await db.omset_records.find_one(
                 {
                     'customer_id': {'$regex': f'^{customer_id}$', '$options': 'i'},
                     'staff_id': staff_id
                 },
-                {'_id': 0, 'created_at': 1},
-                sort=[('created_at', -1)]  # Get the most recent one
+                {'_id': 0, 'record_date': 1},
+                sort=[('record_date', -1)]  # Get the most recent by actual deposit date
             )
             
-            if last_omset and last_omset.get('created_at'):
+            if last_omset and last_omset.get('record_date'):
                 try:
-                    omset_date_str = last_omset['created_at']
-                    if isinstance(omset_date_str, str):
-                        last_deposit_date = datetime.fromisoformat(omset_date_str.replace('Z', '+00:00'))
-                    else:
-                        last_deposit_date = omset_date_str
-                    if last_deposit_date.tzinfo is None:
+                    record_date_str = last_omset['record_date']
+                    # record_date is stored as 'YYYY-MM-DD' string
+                    if isinstance(record_date_str, str):
+                        # Parse as date and convert to datetime at start of day
+                        last_deposit_date = datetime.strptime(record_date_str, '%Y-%m-%d')
                         last_deposit_date = JAKARTA_TZ.localize(last_deposit_date)
+                    else:
+                        last_deposit_date = record_date_str
+                        if last_deposit_date.tzinfo is None:
+                            last_deposit_date = JAKARTA_TZ.localize(last_deposit_date)
                 except Exception as e:
-                    print(f"Error parsing omset date for {customer_id}: {e}")
+                    print(f"Error parsing record_date for {customer_id}: {e}")
                     continue
             else:
                 # No omset found at all - use reservation date as fallback
