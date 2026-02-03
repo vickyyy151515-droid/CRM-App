@@ -33,8 +33,9 @@ import OfficeInventory from '../components/OfficeInventory';
 import AttendanceAdmin from './AttendanceAdmin';
 import DataCleanup from './DataCleanup';
 import AdminBonusCheck from '../components/AdminBonusCheck';
+import DataSyncDashboard from '../components/DataSyncDashboard';
 import { useLanguage } from '../contexts/LanguageContext';
-import { LayoutDashboard, Upload, FileSpreadsheet, Clock, Users, Package, List, BarChart, UserCheck, DollarSign, UserCog, Gift, CreditCard, PieChart, Download, FileText, Calculator, CalendarOff, Calendar, Timer, Trophy, CalendarDays, Filter, Heart, Send, Boxes, Activity, ScanLine, Trash2, Award } from 'lucide-react';
+import { LayoutDashboard, Upload, FileSpreadsheet, Clock, Users, Package, List, BarChart, UserCheck, DollarSign, UserCog, Gift, CreditCard, PieChart, Download, FileText, Calculator, CalendarOff, Calendar, Timer, Trophy, CalendarDays, Filter, Heart, Send, Boxes, Activity, ScanLine, Trash2, Award, Shield } from 'lucide-react';
 
 export default function AdminDashboard({ user, onLogout }) {
   const { t, language } = useLanguage();
