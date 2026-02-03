@@ -733,9 +733,11 @@ async def process_reserved_member_cleanup():
         # Get the customer's LAST DEPOSIT DATE from reserved member record
         # This is stored as 'last_omset_date' field
         last_omset_date_str = member.get('last_omset_date')
+        has_deposit = False
         
         if last_omset_date_str:
             # Use the stored last_omset_date
+            has_deposit = True
             try:
                 if isinstance(last_omset_date_str, str):
                     last_deposit_date = datetime.fromisoformat(last_omset_date_str.replace('Z', '+00:00'))
@@ -745,8 +747,9 @@ async def process_reserved_member_cleanup():
                     last_deposit_date = JAKARTA_TZ.localize(last_deposit_date)
             except Exception as e:
                 print(f"Error parsing last_omset_date for {customer_id}: {e}")
-                continue
-        else:
+                has_deposit = False
+        
+        if not has_deposit:
             # No last_omset_date stored - try to get from omset_records
             # IMPORTANT: Use 'record_date' field (the actual deposit date), NOT 'created_at'
             last_omset = await db.omset_records.find_one(
@@ -759,6 +762,7 @@ async def process_reserved_member_cleanup():
             )
             
             if last_omset and last_omset.get('record_date'):
+                has_deposit = True
                 try:
                     record_date_str = last_omset['record_date']
                     # record_date is stored as 'YYYY-MM-DD' string
@@ -772,19 +776,38 @@ async def process_reserved_member_cleanup():
                             last_deposit_date = JAKARTA_TZ.localize(last_deposit_date)
                 except Exception as e:
                     print(f"Error parsing record_date for {customer_id}: {e}")
-                    continue
-            else:
-                # No omset found at all - use reservation date as fallback
-                reserved_at_str = member.get('approved_at') or member.get('created_at')
-                if not reserved_at_str:
-                    continue
-                try:
-                    last_deposit_date = datetime.fromisoformat(reserved_at_str.replace('Z', '+00:00'))
-                    if last_deposit_date.tzinfo is None:
-                        last_deposit_date = JAKARTA_TZ.localize(last_deposit_date)
-                except Exception as e:
-                    print(f"Error parsing reservation date for {customer_id}: {e}")
-                    continue
+                    has_deposit = False
+        
+        # If NO DEPOSIT at all - DELETE immediately
+        if not has_deposit:
+            print(f"  {customer_id}: NO DEPOSIT - deleting immediately")
+            
+            # Archive to deleted_reserved_members collection
+            member_data = await db.reserved_members.find_one({'id': member_id}, {'_id': 0})
+            
+            if member_data:
+                archived_member = {
+                    **member_data,
+                    'deleted_at': jakarta_now.isoformat(),
+                    'deleted_reason': 'no_deposit',
+                    'grace_days_used': grace_days,
+                    'days_since_last_deposit': None,
+                    'last_deposit_date': None
+                }
+                await db.deleted_reserved_members.insert_one(archived_member)
+            
+            # Delete from active reserved members
+            await db.reserved_members.delete_one({'id': member_id})
+            members_deleted += 1
+            
+            # SYNC: Delete related bonus_check_submissions for this customer+staff
+            await db.bonus_check_submissions.delete_many({
+                'customer_id_normalized': customer_id.strip().upper(),
+                'staff_id': staff_id
+            })
+            
+            print(f"  -> DELETED: {customer_id} (no deposit)")
+            continue
         
         # Calculate days since LAST DEPOSIT (the key logic!)
         # Compare dates only (ignore time portion) to get accurate day count
