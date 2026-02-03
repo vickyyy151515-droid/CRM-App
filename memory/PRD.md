@@ -13,9 +13,16 @@ Both modules support:
 - Recall assigned records
 - Reserved member filtering
 
-## Latest Update: Data Sync Dashboard + Monitoring (2026-02-03)
+## Latest Update: Grace Period Cleanup Fix (2026-02-04)
 
-### ✅ NEW: Data Sync Dashboard
+### ✅ Bug Fix: Reserved Member Cleanup Not Deleting Members
+- **Root Cause 1:** Old reserved member records used `customer_name` field instead of `customer_id`
+  - Fix: Now supports both field names: `customer_id` OR `customer_name`
+- **Root Cause 2:** Days calculation used datetime comparison instead of date-only
+  - Fix: Now uses `.date()` comparison for accurate day count
+- **Result:** Members with `days_since >= grace_period` are now correctly deleted
+
+### Data Sync Dashboard (2026-02-03)
 - **Health Check System** - Real-time monitoring of data integrity
   - Health score calculation (0-100%)
   - Detection of orphaned data, sync conflicts
