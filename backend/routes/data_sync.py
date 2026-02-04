@@ -271,21 +271,26 @@ async def repair_data(repair_type: str, user: User = Depends(get_admin_user)):
             results['bonus_without_reservation'] = {'deleted': 0, 'message': 'No orphaned submissions found'}
     
     if repair_type in ['attendance_leave_conflict', 'all']:
-        # Get approved leave records
+        # Get ALL approved leave records
         leave_records = await db.leave_requests.find(
             {'status': 'approved'},
-            {'staff_id': 1, 'date': 1}
+            {'staff_id': 1, 'date': 1, 'leave_type': 1}
         ).to_list(10000)
-        leave_set = {(leave['staff_id'], leave['date']) for leave in leave_records}
         
-        # Update attendance records that have leave but aren't marked
+        # Create a map of leave by (staff_id, date)
+        leave_map = {}
+        for leave in leave_records:
+            key = (leave['staff_id'], leave['date'])
+            leave_map[key] = leave.get('leave_type', 'approved')
+        
+        # Update ALL attendance records that have approved leave for that day
         fixed_count = 0
-        for staff_id, date in leave_set:
+        for (staff_id, date), leave_type in leave_map.items():
+            # Update any attendance record for this staff+date to mark as has_approved_leave
             result = await db.attendance_records.update_many(
                 {
                     'staff_id': staff_id,
                     'date': date,
-                    'is_late': True,
                     '$or': [
                         {'has_approved_leave': {'$exists': False}},
                         {'has_approved_leave': False}
@@ -294,7 +299,8 @@ async def repair_data(repair_type: str, user: User = Depends(get_admin_user)):
                 {
                     '$set': {
                         'has_approved_leave': True,
-                        'is_late': False,
+                        'leave_type': leave_type,
+                        'is_late': False,  # Can't be late if on leave
                         'sync_fixed_at': jakarta_now.isoformat()
                     }
                 }
@@ -303,7 +309,8 @@ async def repair_data(repair_type: str, user: User = Depends(get_admin_user)):
         
         results['attendance_leave_conflict'] = {
             'fixed': fixed_count,
-            'message': f'Fixed {fixed_count} attendance records with leave conflict'
+            'leave_days_checked': len(leave_map),
+            'message': f'Synced {fixed_count} attendance records with leave data'
         }
     
     if repair_type in ['sync_last_omset_date', 'all']:
