@@ -315,25 +315,51 @@ async def repair_data(repair_type: str, user: User = Depends(get_admin_user)):
     
     if repair_type in ['sync_last_omset_date', 'all']:
         # Populate last_omset_date for reserved members from omset_records
-        reserved_members = await db.reserved_members.find({}, {'_id': 0, 'id': 1, 'customer_id': 1, 'staff_id': 1}).to_list(10000)
+        # Support both old field (customer_name) and new field (customer_id)
+        reserved_members = await db.reserved_members.find(
+            {}, 
+            {'_id': 0, 'id': 1, 'customer_id': 1, 'customer_name': 1, 'staff_id': 1, 'last_omset_date': 1}
+        ).to_list(10000)
+        
         updated_count = 0
+        checked_count = 0
+        already_has_date = 0
+        no_omset_found = 0
         
         for rm in reserved_members:
-            customer_id = rm.get('customer_id', '')
+            # Support both old and new field names
+            customer_id = rm.get('customer_id') or rm.get('customer_name') or ''
             staff_id = rm.get('staff_id', '')
             
-            if not customer_id or not staff_id:
+            if not customer_id:
                 continue
             
-            # Find the most recent omset record for this customer+staff
+            checked_count += 1
+            
+            # Skip if already has last_omset_date
+            if rm.get('last_omset_date'):
+                already_has_date += 1
+                continue
+            
+            # Try to find omset record - first with exact staff match, then any staff
             last_omset = await db.omset_records.find_one(
                 {
-                    'customer_id': {'$regex': f'^{customer_id}$', '$options': 'i'},
+                    'customer_id': {'$regex': f'^{customer_id.strip()}$', '$options': 'i'},
                     'staff_id': staff_id
                 },
                 {'_id': 0, 'record_date': 1},
                 sort=[('record_date', -1)]
             )
+            
+            # If not found with staff_id, try without staff filter (for migrated customers)
+            if not last_omset:
+                last_omset = await db.omset_records.find_one(
+                    {
+                        'customer_id': {'$regex': f'^{customer_id.strip()}$', '$options': 'i'}
+                    },
+                    {'_id': 0, 'record_date': 1},
+                    sort=[('record_date', -1)]
+                )
             
             if last_omset and last_omset.get('record_date'):
                 from datetime import datetime
@@ -344,16 +370,24 @@ async def repair_data(repair_type: str, user: User = Depends(get_admin_user)):
                     
                     result = await db.reserved_members.update_one(
                         {'id': rm['id']},
-                        {'$set': {'last_omset_date': last_date.isoformat()}}
+                        {'$set': {
+                            'last_omset_date': last_date.isoformat(),
+                            'sync_updated_at': jakarta_now.isoformat()
+                        }}
                     )
                     if result.modified_count > 0:
                         updated_count += 1
                 except Exception as e:
                     print(f"Error updating last_omset_date for {customer_id}: {e}")
+            else:
+                no_omset_found += 1
         
         results['sync_last_omset_date'] = {
             'updated': updated_count,
-            'message': f'Updated last_omset_date for {updated_count} reserved members'
+            'checked': checked_count,
+            'already_synced': already_has_date,
+            'no_omset_found': no_omset_found,
+            'message': f'Updated {updated_count} reserved members. {already_has_date} already had date. {no_omset_found} have no omset records.'
         }
     
     # Log the repair action
