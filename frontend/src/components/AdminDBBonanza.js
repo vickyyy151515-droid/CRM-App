@@ -594,6 +594,48 @@ export default function AdminDBBonanza() {
             Repair Data
           </button>
           <button
+            onClick={async () => {
+              try {
+                // First diagnose
+                const diagRes = await api.get('/bonanza/admin/diagnose-product-mismatch');
+                const diag = diagRes.data;
+                
+                if (diag.total_mismatched === 0) {
+                  toast.info('No product mismatches found. All records are in the correct database.');
+                  return;
+                }
+                
+                // Show what will be fixed
+                let message = `Found ${diag.total_mismatched} records in wrong databases:\n\n`;
+                diag.would_move.forEach(m => {
+                  message += `• ${m.count} records (${m.assigned_count} assigned) will move:\n  ${m.from_database} → ${m.to_database}\n`;
+                });
+                
+                if (diag.cannot_fix.length > 0) {
+                  message += `\n⚠️ Cannot fix ${diag.cannot_fix.length} records (no target database)`;
+                }
+                
+                message += '\n\nProceed with repair?';
+                
+                if (!window.confirm(message)) return;
+                
+                // Run the repair
+                const repairRes = await api.post('/bonanza/admin/repair-product-mismatch');
+                toast.success(repairRes.data.message);
+                loadDatabases();
+                console.log('Product Mismatch Repair Log:', repairRes.data.repair_log);
+              } catch (error) {
+                console.error('Repair error:', error);
+                toast.error('Failed to repair product mismatch');
+              }
+            }}
+            className="px-3 py-2 bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/50 dark:hover:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-lg flex items-center gap-2 transition-colors text-sm"
+            title="Fix records that are in the wrong database based on product_id"
+          >
+            <RefreshCw size={16} />
+            Fix Product Mismatch
+          </button>
+          <button
             onClick={() => setShowSettingsPanel(!showSettingsPanel)}
             className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg flex items-center gap-2 transition-colors"
             data-testid="bonanza-settings-btn"
