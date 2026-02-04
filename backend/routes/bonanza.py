@@ -1246,6 +1246,116 @@ async def repair_product_mismatch(user: User = Depends(get_admin_user)):
     }
 
 
+@router.get("/bonanza/admin/diagnose-product-mismatch")
+async def diagnose_product_mismatch(user: User = Depends(get_admin_user)):
+    """
+    Preview what the product mismatch repair would fix WITHOUT making changes.
+    Use this to see the scope of the issue before running the actual repair.
+    """
+    db = get_db()
+    
+    diagnosis = {
+        'total_mismatched': 0,
+        'by_database': [],
+        'would_move': [],
+        'cannot_fix': []
+    }
+    
+    # Get all databases and create maps
+    databases = await db.bonanza_databases.find({}, {'_id': 0}).to_list(1000)
+    db_by_product = {}
+    
+    for database in databases:
+        product_id = database.get('product_id')
+        if product_id:
+            if product_id not in db_by_product:
+                db_by_product[product_id] = []
+            db_by_product[product_id].append(database)
+    
+    # For each database, find records with wrong product_id
+    for database in databases:
+        db_id = database['id']
+        db_name = database['name']
+        db_product_id = database.get('product_id')
+        
+        if not db_product_id:
+            diagnosis['cannot_fix'].append({
+                'database': db_name,
+                'reason': 'Database has no product_id set'
+            })
+            continue
+        
+        # Find records in this database with DIFFERENT product_id
+        mismatched_records = await db.bonanza_records.find({
+            'database_id': db_id,
+            'product_id': {'$exists': True, '$ne': db_product_id}
+        }, {'_id': 0, 'id': 1, 'product_id': 1, 'status': 1, 'assigned_to_name': 1}).to_list(100000)
+        
+        if mismatched_records:
+            # Group by their actual product_id
+            by_product = {}
+            for record in mismatched_records:
+                rec_product = record.get('product_id', 'UNKNOWN')
+                if rec_product not in by_product:
+                    by_product[rec_product] = {'count': 0, 'assigned': 0, 'available': 0}
+                by_product[rec_product]['count'] += 1
+                if record.get('status') == 'assigned':
+                    by_product[rec_product]['assigned'] += 1
+                else:
+                    by_product[rec_product]['available'] += 1
+            
+            for rec_product, stats in by_product.items():
+                target_databases = db_by_product.get(rec_product, [])
+                
+                if target_databases:
+                    target_db = target_databases[0]
+                    diagnosis['would_move'].append({
+                        'from_database': db_name,
+                        'to_database': target_db['name'],
+                        'product_id': rec_product,
+                        'count': stats['count'],
+                        'assigned_count': stats['assigned'],
+                        'available_count': stats['available']
+                    })
+                else:
+                    diagnosis['cannot_fix'].append({
+                        'database': db_name,
+                        'product_id': rec_product,
+                        'count': stats['count'],
+                        'reason': f'No database exists for product {rec_product}'
+                    })
+            
+            diagnosis['by_database'].append({
+                'database_name': db_name,
+                'expected_product': db_product_id,
+                'mismatched_count': len(mismatched_records),
+                'breakdown': by_product
+            })
+            
+            diagnosis['total_mismatched'] += len(mismatched_records)
+    
+    # Current stats for reference
+    current_stats = []
+    for database in databases:
+        db_id = database['id']
+        available = await db.bonanza_records.count_documents({'database_id': db_id, 'status': 'available'})
+        assigned = await db.bonanza_records.count_documents({'database_id': db_id, 'status': 'assigned'})
+        archived = await db.bonanza_records.count_documents({'database_id': db_id, 'status': 'invalid_archived'})
+        
+        current_stats.append({
+            'database_name': database['name'],
+            'product_id': database.get('product_id'),
+            'available': available,
+            'assigned': assigned,
+            'archived': archived,
+            'total': available + assigned + archived
+        })
+    
+    diagnosis['current_stats'] = current_stats
+    
+    return diagnosis
+
+
 @router.get("/bonanza/admin/data-health")
 async def get_bonanza_data_health(user: User = Depends(get_admin_user)):
     """
