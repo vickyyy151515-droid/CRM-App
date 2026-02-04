@@ -120,6 +120,29 @@ async def delete_admin_notification(notification_id: str, user: User = Depends(g
         raise HTTPException(status_code=404, detail="Notification not found")
     return {'message': 'Notification deleted'}
 
+@router.delete("/notifications/admin/invalid-database")
+async def delete_all_admin_invalid_notifications(user: User = Depends(get_admin_user)):
+    """Delete ALL admin invalid database notifications (both resolved and unresolved)"""
+    db = get_db()
+    result = await db.admin_notifications.delete_many({})
+    return {
+        'message': f'Deleted {result.deleted_count} notifications',
+        'deleted_count': result.deleted_count
+    }
+
+
+@router.post("/notifications/admin/invalid-database/resolve-all")
+async def resolve_all_admin_notifications(user: User = Depends(get_admin_user)):
+    """Mark ALL admin invalid database notifications as resolved"""
+    db = get_db()
+    result = await db.admin_notifications.update_many(
+        {'is_resolved': False},
+        {'$set': {'is_resolved': True}}
+    )
+    return {
+        'message': f'Resolved {result.modified_count} notifications',
+        'resolved_count': result.modified_count
+    }
 # Helper function to create notification (can be imported by other modules)
 async def create_notification(user_id: str, type: str, title: str, message: str, data: dict = None):
     """Create a notification for a user and send it via WebSocket"""
