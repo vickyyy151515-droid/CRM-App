@@ -13,14 +13,29 @@ Both modules support:
 - Recall assigned records
 - Reserved member filtering
 
-## Latest Update: Grace Period Cleanup Fix (2026-02-04)
+## Latest Update: RDP Count Mismatch Fix (2026-02-04)
 
-### ✅ Bug Fix: Reserved Member Cleanup Not Deleting Members
+### ✅ Bug Fix: Staff RDP vs Product RDP Mismatch
+- **Issue:** Staff's total RDP count didn't match sum of Product Summary RDP counts
+- **Root Cause:** Product Summary used `is_global_ndp` while Staff used `is_staff_ndp`
+  - Global NDP = customer's first deposit EVER
+  - Staff NDP = customer's first deposit WITH THIS STAFF
+- **Fix:** Changed Product Summary to use `is_staff_ndp` for consistency
+- **Files Fixed:**
+  - `/app/backend/routes/daily_summary.py` - lines 201-209
+  - `/app/backend/routes/omset.py` - lines 596-604
+- **Result:** Staff RDP sum now equals Product RDP sum
+
+### ✅ Bug Fix: Reserved Member Cleanup (2026-02-04)
 - **Root Cause 1:** Old reserved member records used `customer_name` field instead of `customer_id`
   - Fix: Now supports both field names: `customer_id` OR `customer_name`
 - **Root Cause 2:** Days calculation used datetime comparison instead of date-only
   - Fix: Now uses `.date()` comparison for accurate day count
 - **Result:** Members with `days_since >= grace_period` are now correctly deleted
+
+### ✅ No-Deposit Cleanup (2026-02-04)
+- Members with NO deposit record are now deleted immediately on cleanup
+- Stored with reason: `no_deposit`
 
 ### Data Sync Dashboard (2026-02-03)
 - **Health Check System** - Real-time monitoring of data integrity
