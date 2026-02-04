@@ -381,10 +381,28 @@ export default function NotificationBell({ userRole }) {
           {/* Invalid Database Alerts Section (for admin only) */}
           {isAdmin && invalidDbAlerts.length > 0 && (
             <div className="border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-red-50 to-amber-50 dark:from-red-900/30 dark:to-amber-900/30">
-              <div className="px-4 py-2 border-b border-red-100 dark:border-red-800">
+              <div className="px-4 py-2 border-b border-red-100 dark:border-red-800 flex items-center justify-between">
                 <span className="text-xs font-semibold text-red-700 dark:text-red-400 uppercase tracking-wider">
                   Database Validasi Tidak Valid ({invalidDbCount})
                 </span>
+                <button
+                  onClick={async () => {
+                    if (!window.confirm('Hapus semua notifikasi database tidak valid?')) return;
+                    try {
+                      await api.delete('/notifications/admin/invalid-database');
+                      setInvalidDbAlerts([]);
+                      setInvalidDbCount(0);
+                      toast.success('Semua notifikasi dihapus');
+                    } catch (error) {
+                      toast.error('Gagal menghapus notifikasi');
+                    }
+                  }}
+                  className="text-xs text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium flex items-center gap-1"
+                  data-testid="clear-all-invalid-db-btn"
+                >
+                  <Trash2 size={12} />
+                  Hapus Semua
+                </button>
               </div>
               {invalidDbAlerts.slice(0, 5).map((alert, index) => (
                 <div key={alert.id || index} className="p-3 flex items-start gap-3 hover:bg-red-100/50 dark:hover:bg-red-900/40" data-testid={`invalid-db-alert-${index}`}>
@@ -400,6 +418,22 @@ export default function NotificationBell({ userRole }) {
                       {formatTime(alert.created_at)}
                     </p>
                   </div>
+                  <button
+                    onClick={async () => {
+                      try {
+                        await api.delete(`/notifications/admin/invalid-database/${alert.id}`);
+                        setInvalidDbAlerts(prev => prev.filter(a => a.id !== alert.id));
+                        setInvalidDbCount(prev => Math.max(0, prev - 1));
+                        toast.success('Notifikasi dihapus');
+                      } catch (error) {
+                        toast.error('Gagal menghapus notifikasi');
+                      }
+                    }}
+                    className="p-1 text-slate-400 hover:text-red-500 dark:hover:text-red-400"
+                    title="Hapus notifikasi ini"
+                  >
+                    <X size={14} />
+                  </button>
                 </div>
               ))}
               {invalidDbAlerts.length > 5 && (
