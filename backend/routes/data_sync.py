@@ -444,29 +444,85 @@ async def get_sync_status(user: User = Depends(get_admin_user)):
     sync_features = []
     
     # 1. Attendance <-> Leave Sync
-    recent_attendance = await db.attendance_records.find(
-        {'is_late': True},
-        {'_id': 0, 'has_approved_leave': 1}
-    ).limit(100).to_list(100)
+    # Check: How many attendance records exist for days with approved leave?
+    leave_records = await db.leave_requests.find(
+        {'status': 'approved'},
+        {'staff_id': 1, 'date': 1}
+    ).to_list(10000)
+    leave_set = {(l['staff_id'], l['date']) for l in leave_records}
     
-    leave_aware_count = sum(1 for a in recent_attendance if a.get('has_approved_leave') is not None)
+    # Count attendance records that SHOULD have has_approved_leave flag
+    attendance_with_leave = 0
+    attendance_properly_flagged = 0
     
-    sync_features.append({
-        'feature': 'Attendance + Leave',
-        'description': 'Staff with approved leave are not marked late',
-        'status': 'synced' if leave_aware_count == len(recent_attendance) else 'partial',
-        'details': f'{leave_aware_count}/{len(recent_attendance)} records have leave flag'
-    })
+    for staff_id, date in leave_set:
+        records = await db.attendance_records.find(
+            {'staff_id': staff_id, 'date': date},
+            {'_id': 0, 'has_approved_leave': 1}
+        ).to_list(100)
+        
+        for r in records:
+            attendance_with_leave += 1
+            if r.get('has_approved_leave') == True:
+                attendance_properly_flagged += 1
+    
+    if attendance_with_leave > 0:
+        sync_features.append({
+            'feature': 'Attendance + Leave',
+            'description': 'Staff with approved leave are not marked late',
+            'status': 'synced' if attendance_properly_flagged == attendance_with_leave else 'partial',
+            'details': f'{attendance_properly_flagged}/{attendance_with_leave} records have leave flag'
+        })
+    else:
+        # No attendance records on leave days - check general flag presence
+        recent_attendance = await db.attendance_records.find(
+            {},
+            {'_id': 0, 'has_approved_leave': 1}
+        ).limit(100).to_list(100)
+        
+        leave_aware_count = sum(1 for a in recent_attendance if a.get('has_approved_leave') is not None)
+        
+        sync_features.append({
+            'feature': 'Attendance + Leave',
+            'description': 'Staff with approved leave are not marked late',
+            'status': 'synced' if leave_aware_count == len(recent_attendance) or len(recent_attendance) == 0 else 'partial',
+            'details': f'{leave_aware_count}/{len(recent_attendance)} records have leave flag'
+        })
     
     # 2. Reserved Members <-> Last Omset Sync
-    reserved = await db.reserved_members.find({}, {'_id': 0, 'last_omset_date': 1}).to_list(1000)
+    reserved = await db.reserved_members.find(
+        {}, 
+        {'_id': 0, 'last_omset_date': 1, 'customer_id': 1, 'customer_name': 1}
+    ).to_list(10000)
     has_omset_date = sum(1 for r in reserved if r.get('last_omset_date'))
+    total_reserved = len(reserved)
+    
+    # For reserved members without date, check if they have any omset records
+    can_sync = 0
+    for r in reserved:
+        if not r.get('last_omset_date'):
+            cid = r.get('customer_id') or r.get('customer_name')
+            if cid:
+                has_omset = await db.omset_records.count_documents({
+                    'customer_id': {'$regex': f'^{cid.strip()}$', '$options': 'i'}
+                })
+                if has_omset > 0:
+                    can_sync += 1
+    
+    if total_reserved > 0:
+        status = 'synced' if has_omset_date == total_reserved else 'partial'
+        details = f'{has_omset_date}/{total_reserved} members have last_omset_date'
+        if can_sync > 0:
+            details += f' ({can_sync} can be synced)'
+    else:
+        status = 'synced'
+        details = 'No reserved members'
     
     sync_features.append({
         'feature': 'Reserved Members + Omset',
         'description': 'Reserved members track last deposit date',
-        'status': 'synced' if has_omset_date >= len(reserved) * 0.8 else 'partial' if has_omset_date > 0 else 'not_synced',
-        'details': f'{has_omset_date}/{len(reserved)} members have last_omset_date'
+        'status': status,
+        'details': details
     })
     
     # 3. User Delete Cascade
