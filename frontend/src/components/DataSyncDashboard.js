@@ -218,13 +218,27 @@ export default function DataSyncDashboard() {
       {syncStatus && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <Zap className="w-5 h-5 mr-2 text-yellow-500" />
-              Feature Sync Status
-            </CardTitle>
-            <CardDescription>
-              {syncStatus.synced_features}/{syncStatus.total_features} features properly synchronized
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center">
+                  <Zap className="w-5 h-5 mr-2 text-yellow-500" />
+                  Feature Sync Status
+                </CardTitle>
+                <CardDescription>
+                  {syncStatus.synced_features}/{syncStatus.total_features} features properly synchronized
+                </CardDescription>
+              </div>
+              {syncStatus.synced_features < syncStatus.total_features && (
+                <Button 
+                  onClick={() => handleRepair('all')}
+                  disabled={repairing}
+                  size="sm"
+                >
+                  <Wrench className="w-4 h-4 mr-2" />
+                  {repairing ? 'Repairing...' : 'Sync All'}
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <div className="grid gap-3">
