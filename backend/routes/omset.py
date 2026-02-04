@@ -593,8 +593,8 @@ async def get_omset_summary(
         product_summary[product_id_rec]['total_depo'] += depo_total
         product_summary[product_id_rec]['count'] += 1
         
-        # Use global NDP/RDP for product summary (consistent with daily totals)
-        if is_global_ndp:
+        # Use STAFF-SPECIFIC NDP/RDP for product summary (to match staff breakdown totals)
+        if is_staff_ndp:
             if cid_normalized not in product_ndp_customers[product_id_rec]:
                 product_ndp_customers[product_id_rec].add(cid_normalized)
                 product_summary[product_id_rec]['ndp_count'] += 1
