@@ -13,9 +13,52 @@ Both modules support:
 - Recall assigned records
 - Reserved member filtering
 
-## Latest Update: Real-Time Invalidation of Conflicting Assignments (2026-02-05)
+## Latest Update: Frontend Refactoring & Proactive Monitoring (2026-02-05)
 
-### ✅ NEW FEATURE: Automatic Conflict Resolution
+### ✅ NEW: Proactive Monitoring System
+
+**New Endpoints:**
+| Endpoint | Purpose |
+|----------|---------|
+| `POST /api/data-sync/proactive-check` | Run health check and notify admins if critical issues found |
+| `GET /api/data-sync/monitoring-config` | Get monitoring configuration |
+| `PUT /api/data-sync/monitoring-config` | Update monitoring config (enabled, interval, thresholds) |
+
+**Features:**
+- Automatically sends notifications to all admins when critical data issues are detected
+- Configurable check interval (default: 6 hours)
+- Option to notify on warnings or only critical issues
+- Activity logging for all proactive checks
+
+**UI Enhancement:**
+- "Run Proactive Check" button added to Data Sync Dashboard header
+- Shows results: health score, issues found, notifications sent
+
+### ✅ NEW: Shared AdminActionsPanel Component
+
+**Location:** `/app/frontend/src/components/shared/AdminActionsPanel.js`
+
+**Features:**
+- Reusable component for both DB Bonanza and Member WD CRM
+- Includes: Fix Product Mismatch, Fix Reserved Conflicts, Settings buttons
+- Supports both `bonanza` and `memberwd` module types
+
+**Code Reduction:**
+- `AdminDBBonanza.js`: 1425 → 1331 lines (-94 lines)
+
+### ✅ NEW: Member WD Product Mismatch Endpoints
+
+**New Endpoints (parity with Bonanza):**
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/memberwd/admin/diagnose-product-mismatch` | Preview records in wrong databases |
+| `POST /api/memberwd/admin/repair-product-mismatch` | Move records to correct databases |
+
+---
+
+## Previous Update: Real-Time Invalidation of Conflicting Assignments (2026-02-05)
+
+### ✅ Automatic Conflict Resolution
 
 **When a reservation is approved:**
 1. System finds all records for that customer assigned to OTHER staff
