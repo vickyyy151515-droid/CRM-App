@@ -919,13 +919,3 @@ async def get_conflict_resolution_stats(user: User = Depends(get_admin_user)):
         'top_reserved_by_staff': [{'name': k, 'count': v} for k, v in top_reserved],
         'generated_at': jakarta_now.isoformat()
     }
-
-    
-    return {
-        'message': 'Monitoring config updated',
-        'enabled': enabled,
-        'check_interval_hours': check_interval_hours,
-        'notify_on_warning': notify_on_warning,
-        'notify_on_critical': notify_on_critical
-    }
-
