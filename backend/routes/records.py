@@ -18,6 +18,99 @@ ROOT_DIR = Path(__file__).parent.parent
 UPLOAD_DIR = ROOT_DIR / 'uploads'
 UPLOAD_DIR.mkdir(exist_ok=True)
 
+
+# ==================== HELPER FUNCTIONS ====================
+
+async def invalidate_customer_records_for_other_staff(
+    db, 
+    customer_id: str, 
+    reserved_by_staff_id: str, 
+    reserved_by_staff_name: str
+):
+    """
+    When a customer is reserved by a staff member, invalidate all records
+    for that customer that are assigned to OTHER staff members.
+    
+    This handles the case where the same customer exists in multiple databases
+    and was assigned to multiple staff before one reserved the customer.
+    
+    Returns: (invalidated_count, notified_staff_ids)
+    """
+    now = get_jakarta_now()
+    invalidated_count = 0
+    notified_staff = set()
+    customer_id_normalized = str(customer_id).strip().upper() if customer_id else ''
+    
+    if not customer_id_normalized:
+        return 0, set()
+    
+    # Check all three record collections
+    collections_to_check = [
+        ('customer_records', 'normal database'),
+        ('bonanza_records', 'DB Bonanza'),
+        ('memberwd_records', 'Member WD')
+    ]
+    
+    for collection_name, source_name in collections_to_check:
+        collection = db[collection_name]
+        
+        # Find assigned records for this customer that belong to OTHER staff
+        assigned_records = await collection.find(
+            {'status': 'assigned', 'assigned_to': {'$ne': reserved_by_staff_id}},
+            {'_id': 0, 'id': 1, 'row_data': 1, 'assigned_to': 1, 'assigned_to_name': 1, 'database_name': 1}
+        ).to_list(100000)
+        
+        for record in assigned_records:
+            row_data = record.get('row_data', {})
+            
+            # Check all possible customer ID fields
+            record_customer_id = None
+            for key in ['Username', 'username', 'USER', 'user', 'ID', 'id', 
+                       'Nama Lengkap', 'nama_lengkap', 'Name', 'name', 
+                       'CUSTOMER', 'customer', 'Customer', 'customer_id', 'Customer_ID']:
+                if key in row_data and row_data[key]:
+                    record_customer_id = str(row_data[key]).strip().upper()
+                    break
+            
+            # If this record matches the reserved customer
+            if record_customer_id == customer_id_normalized:
+                other_staff_id = record.get('assigned_to')
+                other_staff_name = record.get('assigned_to_name', 'Unknown')
+                database_name = record.get('database_name', 'Unknown')
+                
+                # Mark as invalid
+                await collection.update_one(
+                    {'id': record['id']},
+                    {'$set': {
+                        'status': 'invalid',
+                        'invalid_reason': f'Customer reserved by {reserved_by_staff_name}',
+                        'invalidated_at': now.isoformat(),
+                        'invalidated_by': 'system',
+                        'reserved_by_staff_id': reserved_by_staff_id,
+                        'reserved_by_staff_name': reserved_by_staff_name
+                    }}
+                )
+                invalidated_count += 1
+                
+                # Send notification to the affected staff (only once per staff)
+                if other_staff_id and other_staff_id not in notified_staff:
+                    await create_notification(
+                        user_id=other_staff_id,
+                        type='record_invalidated_reserved',
+                        title='Record Invalid - Customer Reserved',
+                        message=f'Customer "{customer_id}" from {database_name} ({source_name}) has been reserved by {reserved_by_staff_name}. This record is now invalid.',
+                        data={
+                            'customer_id': customer_id,
+                            'reserved_by': reserved_by_staff_name,
+                            'database_name': database_name,
+                            'source': source_name
+                        }
+                    )
+                    notified_staff.add(other_staff_id)
+    
+    return invalidated_count, notified_staff
+
+
 # ==================== PYDANTIC MODELS ====================
 
 class Database(BaseModel):
