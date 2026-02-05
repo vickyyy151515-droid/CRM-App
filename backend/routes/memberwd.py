@@ -1563,6 +1563,144 @@ async def repair_memberwd_data(user: User = Depends(get_admin_user)):
     }
 
 
+@router.get("/memberwd/admin/diagnose-reserved-conflicts")
+async def diagnose_memberwd_reserved_conflicts(user: User = Depends(get_admin_user)):
+    """
+    Find records that are assigned to staff A but are reserved by staff B.
+    This is a CRITICAL issue that should not happen.
+    """
+    db = get_db()
+    
+    # Get ALL reserved members
+    reserved_members = await db.reserved_members.find(
+        {'status': 'approved'}, 
+        {'_id': 0, 'customer_id': 1, 'customer_name': 1, 'staff_id': 1, 'staff_name': 1}
+    ).to_list(100000)
+    
+    # Build a map: normalized_customer_id -> {staff_id, staff_name}
+    reserved_map = {}
+    for m in reserved_members:
+        cid = m.get('customer_id') or m.get('customer_name')
+        if cid:
+            normalized = str(cid).strip().upper()
+            reserved_map[normalized] = {
+                'staff_id': m.get('staff_id'),
+                'staff_name': m.get('staff_name', 'Unknown')
+            }
+    
+    # Get all assigned records
+    assigned_records = await db.memberwd_records.find(
+        {'status': 'assigned'},
+        {'_id': 0, 'id': 1, 'row_data': 1, 'assigned_to': 1, 'assigned_to_name': 1, 'database_name': 1}
+    ).to_list(100000)
+    
+    conflicts = []
+    
+    for record in assigned_records:
+        row_data = record.get('row_data', {})
+        assigned_to = record.get('assigned_to')
+        assigned_to_name = record.get('assigned_to_name', 'Unknown')
+        
+        # Check all possible username fields
+        for key in ['Username', 'username', 'USER', 'user', 'ID', 'id', 'Nama Lengkap', 'nama_lengkap', 'Name', 'name', 'CUSTOMER', 'customer', 'Customer']:
+            if key in row_data and row_data[key]:
+                normalized = str(row_data[key]).strip().upper()
+                if normalized in reserved_map:
+                    reserved_info = reserved_map[normalized]
+                    # Only flag if assigned to DIFFERENT staff than who reserved
+                    if reserved_info['staff_id'] != assigned_to:
+                        conflicts.append({
+                            'record_id': record['id'],
+                            'customer_id': row_data[key],
+                            'database_name': record.get('database_name', 'Unknown'),
+                            'assigned_to': assigned_to_name,
+                            'assigned_to_id': assigned_to,
+                            'reserved_by': reserved_info['staff_name'],
+                            'reserved_by_id': reserved_info['staff_id']
+                        })
+                break
+    
+    return {
+        'total_conflicts': len(conflicts),
+        'conflicts': conflicts,
+        'message': f'Found {len(conflicts)} records assigned to wrong staff (should be assigned to who reserved them)'
+    }
+
+
+@router.post("/memberwd/admin/fix-reserved-conflicts")
+async def fix_memberwd_reserved_conflicts(user: User = Depends(get_admin_user)):
+    """
+    Fix records that are assigned to staff A but reserved by staff B.
+    This reassigns them to the correct staff (who reserved them).
+    """
+    db = get_db()
+    now = get_jakarta_now()
+    
+    # Get ALL reserved members
+    reserved_members = await db.reserved_members.find(
+        {'status': 'approved'}, 
+        {'_id': 0, 'customer_id': 1, 'customer_name': 1, 'staff_id': 1, 'staff_name': 1}
+    ).to_list(100000)
+    
+    # Build a map: normalized_customer_id -> {staff_id, staff_name}
+    reserved_map = {}
+    for m in reserved_members:
+        cid = m.get('customer_id') or m.get('customer_name')
+        if cid:
+            normalized = str(cid).strip().upper()
+            reserved_map[normalized] = {
+                'staff_id': m.get('staff_id'),
+                'staff_name': m.get('staff_name', 'Unknown')
+            }
+    
+    # Get all assigned records
+    assigned_records = await db.memberwd_records.find(
+        {'status': 'assigned'},
+        {'_id': 0, 'id': 1, 'row_data': 1, 'assigned_to': 1, 'assigned_to_name': 1, 'batch_id': 1}
+    ).to_list(100000)
+    
+    fixed = []
+    
+    for record in assigned_records:
+        row_data = record.get('row_data', {})
+        assigned_to = record.get('assigned_to')
+        
+        # Check all possible username fields
+        for key in ['Username', 'username', 'USER', 'user', 'ID', 'id', 'Nama Lengkap', 'nama_lengkap', 'Name', 'name', 'CUSTOMER', 'customer', 'Customer']:
+            if key in row_data and row_data[key]:
+                normalized = str(row_data[key]).strip().upper()
+                if normalized in reserved_map:
+                    reserved_info = reserved_map[normalized]
+                    # Only fix if assigned to DIFFERENT staff than who reserved
+                    if reserved_info['staff_id'] != assigned_to:
+                        # Reassign to the correct staff
+                        await db.memberwd_records.update_one(
+                            {'id': record['id']},
+                            {'$set': {
+                                'assigned_to': reserved_info['staff_id'],
+                                'assigned_to_name': reserved_info['staff_name'],
+                                'reassigned_at': now.isoformat(),
+                                'reassigned_reason': 'reserved_conflict_fix',
+                                'previous_assigned_to': assigned_to,
+                                'previous_assigned_to_name': record.get('assigned_to_name')
+                            }}
+                        )
+                        fixed.append({
+                            'record_id': record['id'],
+                            'customer_id': row_data[key],
+                            'from_staff': record.get('assigned_to_name'),
+                            'to_staff': reserved_info['staff_name']
+                        })
+                break
+    
+    return {
+        'success': True,
+        'total_fixed': len(fixed),
+        'fixed_records': fixed,
+        'message': f'Reassigned {len(fixed)} records to their correct staff (who reserved them)'
+    }
+
+
 @router.get("/memberwd/admin/data-health")
 async def get_memberwd_data_health(user: User = Depends(get_admin_user)):
     """Check the health of memberwd data without making changes."""
