@@ -290,8 +290,60 @@ async def assign_bonanza_records(assignment: BonanzaAssignment, user: User = Dep
     if not staff:
         raise HTTPException(status_code=404, detail="Staff not found")
     
-    result = await db.bonanza_records.update_many(
+    # CRITICAL: Check for reserved members BEFORE assigning
+    reserved_members = await db.reserved_members.find(
+        {'status': 'approved'}, 
+        {'_id': 0, 'customer_id': 1, 'customer_name': 1, 'staff_id': 1, 'staff_name': 1}
+    ).to_list(100000)
+    
+    reserved_ids = {}  # Maps normalized ID -> staff_name who reserved it
+    for m in reserved_members:
+        cid = m.get('customer_id') or m.get('customer_name')
+        if cid:
+            reserved_ids[str(cid).strip().upper()] = m.get('staff_name', 'Another staff')
+    
+    # Get the records to be assigned
+    records = await db.bonanza_records.find(
         {'id': {'$in': assignment.record_ids}, 'status': 'available'},
+        {'_id': 0}
+    ).to_list(len(assignment.record_ids))
+    
+    # Check each record against reserved members
+    blocked_records = []
+    allowed_ids = []
+    
+    for record in records:
+        row_data = record.get('row_data', {})
+        is_reserved = False
+        reserved_by = None
+        
+        # Check all possible username fields
+        for key in ['Username', 'username', 'USER', 'user', 'ID', 'id', 'Nama Lengkap', 'nama_lengkap', 'Name', 'name', 'CUSTOMER', 'customer', 'Customer']:
+            if key in row_data and row_data[key]:
+                normalized = str(row_data[key]).strip().upper()
+                if normalized in reserved_ids:
+                    is_reserved = True
+                    reserved_by = reserved_ids[normalized]
+                    break
+        
+        if is_reserved:
+            blocked_records.append({
+                'record_id': record['id'],
+                'customer': row_data.get('Username') or row_data.get('username') or row_data.get('Name') or 'Unknown',
+                'reserved_by': reserved_by
+            })
+        else:
+            allowed_ids.append(record['id'])
+    
+    if not allowed_ids:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Cannot assign: All {len(blocked_records)} records are reserved members. Reserved by: {', '.join(set(b['reserved_by'] for b in blocked_records))}"
+        )
+    
+    # Only assign non-reserved records
+    result = await db.bonanza_records.update_many(
+        {'id': {'$in': allowed_ids}},
         {'$set': {
             'status': 'assigned',
             'assigned_to': staff['id'],
@@ -302,7 +354,16 @@ async def assign_bonanza_records(assignment: BonanzaAssignment, user: User = Dep
         }}
     )
     
-    return {'message': f'{result.modified_count} records assigned to {staff["name"]}'}
+    response = {
+        'message': f'{result.modified_count} records assigned to {staff["name"]}',
+        'assigned_count': result.modified_count
+    }
+    
+    if blocked_records:
+        response['warning'] = f'{len(blocked_records)} records were SKIPPED because they are reserved members'
+        response['blocked_records'] = blocked_records
+    
+    return response
 
 @router.post("/bonanza/assign-random")
 async def assign_random_bonanza_records(assignment: RandomBonanzaAssignment, user: User = Depends(get_admin_user)):
