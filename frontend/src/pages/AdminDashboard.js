@@ -36,7 +36,7 @@ import AdminBonusCheck from '../components/AdminBonusCheck';
 import DataSyncDashboard from '../components/DataSyncDashboard';
 import ConflictResolutionLog from '../components/ConflictResolutionLog';
 import { useLanguage } from '../contexts/LanguageContext';
-import { LayoutDashboard, Upload, FileSpreadsheet, Clock, Users, Package, List, BarChart, UserCheck, DollarSign, UserCog, Gift, CreditCard, PieChart, Download, FileText, Calculator, CalendarOff, Calendar, Timer, Trophy, CalendarDays, Filter, Heart, Send, Boxes, Activity, ScanLine, Trash2, Award, Shield } from 'lucide-react';
+import { LayoutDashboard, Upload, FileSpreadsheet, Clock, Users, Package, List, BarChart, UserCheck, DollarSign, UserCog, Gift, CreditCard, PieChart, Download, FileText, Calculator, CalendarOff, Calendar, Timer, Trophy, CalendarDays, Filter, Heart, Send, Boxes, Activity, ScanLine, Trash2, Award, Shield, AlertTriangle } from 'lucide-react';
 
 export default function AdminDashboard({ user, onLogout }) {
   const { t, language } = useLanguage();
