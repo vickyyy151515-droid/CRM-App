@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { User, Package, ChevronLeft, FileSpreadsheet, Edit2, Check, X, Search, ExternalLink, Pin } from 'lucide-react';
+import { User, Package, ChevronLeft, FileSpreadsheet, Edit2, Check, X, Search, ExternalLink, Pin, UserX } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 export default function MyAssignedRecords() {
@@ -16,10 +16,13 @@ export default function MyAssignedRecords() {
   const [editingBatchId, setEditingBatchId] = useState(null);
   const [editTitle, setEditTitle] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [invalidatedRecords, setInvalidatedRecords] = useState([]);
+  const [showInvalidatedSection, setShowInvalidatedSection] = useState(false);
 
   useEffect(() => {
     loadProducts();
     loadBatches();
+    loadInvalidatedRecords();
   }, []);
 
   const loadProducts = async () => {
@@ -40,6 +43,26 @@ export default function MyAssignedRecords() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadInvalidatedRecords = async () => {
+    try {
+      const response = await api.get('/my-invalidated-by-reservation');
+      setInvalidatedRecords(response.data.records || []);
+    } catch (error) {
+      console.error('Failed to load invalidated records');
+    }
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '-';
+    return new Date(dateStr).toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   const handleEditTitle = (e, batch) => {
