@@ -1747,7 +1747,6 @@ async def repair_memberwd_product_mismatch(user: User = Depends(get_admin_user))
     
     # Get all databases and create maps
     databases = await db.memberwd_databases.find({}, {'_id': 0}).to_list(1000)
-    db_by_id = {d['id']: d for d in databases}
     db_by_product = {}
     
     for database in databases:
