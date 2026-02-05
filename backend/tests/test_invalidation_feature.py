@@ -70,43 +70,23 @@ class TestInvalidationFeature:
     
     @pytest.fixture(scope="class")
     def staff_a(self, admin_headers):
-        """Create Staff A for testing"""
-        staff_data = {
-            "email": f"test_staff_a_{uuid.uuid4().hex[:6]}@test.com",
-            "password": "testpass123",
-            "name": "TEST_Staff_A_Invalidation",
-            "role": "staff"
-        }
-        response = requests.post(f"{BASE_URL}/api/users", json=staff_data, headers=admin_headers)
-        if response.status_code == 409:  # User exists
-            # Get existing users and find one
-            users_resp = requests.get(f"{BASE_URL}/api/users", headers=admin_headers)
-            users = users_resp.json()
-            staff_users = [u for u in users if u['role'] == 'staff']
-            if staff_users:
-                return staff_users[0]
-        assert response.status_code in [200, 201], f"Failed to create Staff A: {response.text}"
-        return response.json()
+        """Get Staff A for testing (use existing staff user)"""
+        users_resp = requests.get(f"{BASE_URL}/api/users", headers=admin_headers)
+        assert users_resp.status_code == 200, f"Failed to get users: {users_resp.text}"
+        users = users_resp.json()
+        staff_users = [u for u in users if u['role'] == 'staff']
+        assert len(staff_users) >= 1, "Need at least 1 staff user for testing"
+        return staff_users[0]
     
     @pytest.fixture(scope="class")
     def staff_b(self, admin_headers):
-        """Create Staff B for testing"""
-        staff_data = {
-            "email": f"test_staff_b_{uuid.uuid4().hex[:6]}@test.com",
-            "password": "testpass123",
-            "name": "TEST_Staff_B_Invalidation",
-            "role": "staff"
-        }
-        response = requests.post(f"{BASE_URL}/api/users", json=staff_data, headers=admin_headers)
-        if response.status_code == 409:  # User exists
-            # Get existing users and find another one
-            users_resp = requests.get(f"{BASE_URL}/api/users", headers=admin_headers)
-            users = users_resp.json()
-            staff_users = [u for u in users if u['role'] == 'staff']
-            if len(staff_users) >= 2:
-                return staff_users[1]
-        assert response.status_code in [200, 201], f"Failed to create Staff B: {response.text}"
-        return response.json()
+        """Get Staff B for testing (use existing staff user)"""
+        users_resp = requests.get(f"{BASE_URL}/api/users", headers=admin_headers)
+        assert users_resp.status_code == 200, f"Failed to get users: {users_resp.text}"
+        users = users_resp.json()
+        staff_users = [u for u in users if u['role'] == 'staff']
+        assert len(staff_users) >= 2, "Need at least 2 staff users for testing"
+        return staff_users[1]
     
     # ==================== TEST 1: Approve Reserved Member Endpoint ====================
     
