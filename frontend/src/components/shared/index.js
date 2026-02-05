@@ -8,6 +8,8 @@ export { default as RecordsTable } from './RecordsTable';
 export { default as DatabaseCard } from './DatabaseCard';
 export { default as ArchivedRecordsTable } from './ArchivedRecordsTable';
 export { default as AssignmentPanel } from './AssignmentPanel';
+export { default as AdminActionsPanel } from './AdminActionsPanel';
+export { default as ProactiveMonitoringAlert } from './ProactiveMonitoringAlert';
 
 // Utility functions
 export const formatDate = (dateStr) => {
