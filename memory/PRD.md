@@ -33,8 +33,19 @@ Both modules support:
 - `notified_staff_count` - Number of staff notified
 - `invalidated_conflicts` - (bulk endpoint) Total conflicts resolved
 
+### ✅ UI Enhancement: Visual Feedback for Invalidation
+
+**Toast notifications now show:**
+- ✓ Request/Reservation approved
+- 📋 X conflicting record(s) invalidated
+- 🔔 Y staff member(s) notified
+
+**Updated components:**
+- `/app/frontend/src/components/AdminReservedMembers.js` - `handleApprove`, `handleAddMember`, `handleBulkAdd`
+- `/app/frontend/src/components/ReservedMemberCRM.js` - `handleApprove`
+
 ### Helper Function: `invalidate_customer_records_for_other_staff`
-- Location: `/app/backend/routes/records.py` (lines 24-111)
+- Location: `/app/backend/routes/records.py` (lines 24-110)
 - Checks all 3 collections: `customer_records`, `bonanza_records`, `memberwd_records`
 - Uses case-insensitive matching on customer ID fields
 - Supports multiple customer ID field names (Username, USERNAME, USER, ID, etc.)
