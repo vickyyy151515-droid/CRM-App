@@ -129,10 +129,33 @@ export default function DataSyncDashboard() {
             Monitor and repair data synchronization across all features
           </p>
         </div>
-        <Button onClick={loadData} variant="outline" disabled={loading}>
-          <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button 
+            onClick={async () => {
+              try {
+                const res = await api.post('/data-sync/proactive-check');
+                if (res.data.notifications_sent > 0) {
+                  toast.success(`Sent ${res.data.notifications_sent} notifications to admins`);
+                } else {
+                  toast.info('No critical issues - no notifications needed');
+                }
+                await loadData();
+              } catch (error) {
+                toast.error('Failed to run proactive check');
+              }
+            }}
+            variant="outline"
+            className="text-amber-600 border-amber-300 hover:bg-amber-50"
+            data-testid="proactive-check-btn"
+          >
+            <Bell className="w-4 h-4 mr-2" />
+            Run Proactive Check
+          </Button>
+          <Button onClick={loadData} variant="outline" disabled={loading}>
+            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Health Score Card */}
