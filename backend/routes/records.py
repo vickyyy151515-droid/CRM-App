@@ -1627,6 +1627,7 @@ async def approve_reserved_member(member_id: str, user: User = Depends(get_admin
     customer_id = member.get('customer_id') or member.get('customer_name')
     reserved_by_staff_id = member['staff_id']
     reserved_by_staff_name = member.get('staff_name', 'Unknown')
+    product_id = member.get('product_id')  # Get product_id for same-product invalidation
     product_name = member.get('product_name', 'Unknown')
     
     # Update the reserved member status
@@ -1650,8 +1651,9 @@ async def approve_reserved_member(member_id: str, user: User = Depends(get_admin
     )
     
     # CRITICAL: Invalidate this customer in OTHER staff's assigned records
+    # IMPORTANT: Only invalidate records for the SAME PRODUCT
     invalidated_count, notified_staff = await invalidate_customer_records_for_other_staff(
-        db, customer_id, reserved_by_staff_id, reserved_by_staff_name
+        db, customer_id, reserved_by_staff_id, reserved_by_staff_name, product_id
     )
     
     response = {'message': 'Reserved member approved'}
