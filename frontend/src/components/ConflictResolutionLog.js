@@ -299,7 +299,7 @@ export default function ConflictResolutionLog() {
             <div className="text-center py-8 text-gray-500 dark:text-gray-400">
               <AlertTriangle className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
               <p>No conflict resolutions found</p>
-              <p className="text-sm">Records will appear here when reservations invalidate other staff's assignments</p>
+              <p className="text-sm">Records will appear here when reservations invalidate other staff assignments</p>
             </div>
           ) : (
             <>
