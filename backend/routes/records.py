@@ -1530,11 +1530,13 @@ async def bulk_create_reserved_members(bulk_data: BulkReservedMemberCreate, user
         })
         
         # CRITICAL: Invalidate conflicting records for other staff
+        # IMPORTANT: Only invalidate records for the SAME PRODUCT
         invalidated_count, _ = await invalidate_customer_records_for_other_staff(
             db, 
             customer_id, 
             bulk_data.staff_id, 
-            staff['name']
+            staff['name'],
+            bulk_data.product_id  # Pass product_id to only invalidate same-product records
         )
         
         added.append(customer_id)
