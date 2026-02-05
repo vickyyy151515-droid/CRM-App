@@ -1,4 +1,21 @@
 # DB Bonanza Routes
+#
+# IMPORTANT: Reserved Member Handling
+# ===================================
+# When assigning records, ALWAYS check against ACTIVE reserved members only:
+#   - Query: {'status': 'approved'}
+#   - This ensures deleted reserved members (grace period expired) are NOT excluded
+#   - When a customer is removed from reserved_members, they become available for new assignments
+#
+# When a reserved member is deleted (grace period cleanup):
+#   1. Record moved from reserved_members -> deleted_reserved_members
+#   2. bonus_check_submissions are cleaned up
+#   3. Customer becomes available for new assignments in ALL systems
+#
+# Fields to check for customer ID:
+#   - customer_id (new field)
+#   - customer_name (old field, for backwards compatibility)
+#
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel
