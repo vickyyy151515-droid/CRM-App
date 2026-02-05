@@ -133,8 +133,29 @@ export default function AdminReservedMembers({ onUpdate }) {
 
   const handleApprove = async (memberId) => {
     try {
-      await api.patch(`/reserved-members/${memberId}/approve`);
-      toast.success('Request approved');
+      const response = await api.patch(`/reserved-members/${memberId}/approve`);
+      const data = response.data;
+      
+      // Show success with invalidation info if any conflicts were resolved
+      if (data.invalidated_records > 0) {
+        toast.success(
+          <div className="space-y-1">
+            <div className="font-medium">✓ Request approved</div>
+            <div className="text-sm opacity-90">
+              📋 {data.invalidated_records} conflicting record{data.invalidated_records > 1 ? 's' : ''} invalidated
+            </div>
+            {data.notified_staff_count > 0 && (
+              <div className="text-sm opacity-90">
+                🔔 {data.notified_staff_count} staff member{data.notified_staff_count > 1 ? 's' : ''} notified
+              </div>
+            )}
+          </div>,
+          { duration: 5000 }
+        );
+      } else {
+        toast.success('Request approved');
+      }
+      
       loadData();
       onUpdate?.();
     } catch (error) {
