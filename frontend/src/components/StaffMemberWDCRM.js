@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { CreditCard, Calendar, Package, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronUp, Users, RefreshCw, Edit2, Check, X } from 'lucide-react';
+import { CreditCard, Calendar, Package, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronUp, Users, RefreshCw, Edit2, Check, X, UserX } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 export default function StaffMemberWDCRM() {
   const { t } = useLanguage();
   const [batches, setBatches] = useState([]);
+  const [invalidatedRecords, setInvalidatedRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedBatches, setExpandedBatches] = useState({});
   const [selectedRecords, setSelectedRecords] = useState([]);
@@ -14,12 +15,14 @@ export default function StaffMemberWDCRM() {
   const [invalidReason, setInvalidReason] = useState('');
   const [processing, setProcessing] = useState(false);
   const [activeBatchId, setActiveBatchId] = useState(null);
+  const [showInvalidatedSection, setShowInvalidatedSection] = useState(false);
   // Rename state
   const [editingBatchId, setEditingBatchId] = useState(null);
   const [editingName, setEditingName] = useState('');
 
   useEffect(() => {
     loadBatches();
+    loadInvalidatedRecords();
   }, []);
 
   const loadBatches = async () => {
@@ -35,6 +38,15 @@ export default function StaffMemberWDCRM() {
       toast.error('Gagal memuat data batch');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadInvalidatedRecords = async () => {
+    try {
+      const response = await api.get('/memberwd/staff/invalidated-by-reservation');
+      setInvalidatedRecords(response.data.records || []);
+    } catch (error) {
+      console.error('Failed to load invalidated records');
     }
   };
 
