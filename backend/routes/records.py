@@ -1321,7 +1321,7 @@ async def update_auto_approve_settings(settings: AutoApproveSettings, user: User
 
 # ==================== RESERVED MEMBERS ENDPOINTS ====================
 
-@router.post("/reserved-members", response_model=ReservedMember)
+@router.post("/reserved-members")
 async def create_reserved_member(member_data: ReservedMemberCreate, user: User = Depends(get_current_user)):
     db = get_db()
     
