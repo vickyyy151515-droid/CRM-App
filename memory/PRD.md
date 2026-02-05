@@ -1,11 +1,12 @@
 # CRM Boost PRD
 
 ## Original Problem Statement
-CRM system for managing member data with two main modules:
-1. **Member WD CRM** - Batch-based assignment system
-2. **DB Bonanza** - Database-based assignment system
+CRM system for managing member data with three main modules:
+1. **Normal Database** - Staff request records from admin-uploaded databases
+2. **Member WD CRM** - Batch-based assignment system
+3. **DB Bonanza** - Database-based assignment system
 
-Both modules support:
+All modules support:
 - Database upload (CSV/Excel)
 - Random/manual assignment to staff
 - Validation workflow (valid/invalid)
@@ -13,7 +14,37 @@ Both modules support:
 - Recall assigned records
 - Reserved member filtering
 
-## Latest Update: Same-Product Invalidation Fix (2026-02-05)
+## Latest Update: Invalidated Records Visibility (2026-02-05)
+
+### ✅ Staff Can Now See Records Taken by Reservation
+
+**Problem:** When a record was invalidated due to reservation, it disappeared completely from staff's view (query only fetched `status: 'assigned'`).
+
+**Solution:** Added "Records Taken by Reservation" section to ALL THREE modules:
+
+**New Backend Endpoints:**
+| Endpoint | Module |
+|----------|--------|
+| `GET /api/my-invalidated-by-reservation` | Normal Database |
+| `GET /api/bonanza/staff/invalidated-by-reservation` | DB Bonanza |
+| `GET /api/memberwd/staff/invalidated-by-reservation` | Member WD CRM |
+
+**Frontend Updates:**
+| Component | Section Added |
+|-----------|---------------|
+| `MyAssignedRecords.js` | Collapsible "Records Taken by Reservation" section |
+| `StaffDBBonanza.js` | Collapsible "Records Taken by Reservation" section |
+| `StaffMemberWDCRM.js` | Collapsible "Records Taken by Reservation" section |
+
+**UI Features:**
+- Red-themed collapsible section (only shows if records exist)
+- Shows count badge: "Records Taken by Reservation (X)"
+- Displays: Customer ID, Database, Product, Invalid Reason, Invalidated Date
+- Explains: "These records were assigned to you but another staff has reserved the customer"
+
+---
+
+## Previous Update: Same-Product Invalidation Fix (2026-02-05)
 
 ### 🐛 BUG FIX: Cross-Product Invalidation Issue
 
