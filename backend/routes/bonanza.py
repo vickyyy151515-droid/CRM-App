@@ -454,6 +454,11 @@ async def assign_random_bonanza_records(assignment: RandomBonanzaAssignment, use
     eligible_records = []
     skipped_count = 0
     for record in available_records:
+        # Skip if record is flagged as reserved during upload
+        if record.get('is_reserved_member'):
+            skipped_count += 1
+            continue
+            
         username = record.get('row_data', {}).get(assignment.username_field, '')
         # Normalize to UPPERCASE for case-insensitive comparison
         username_str = str(username).strip().upper() if username else ''
