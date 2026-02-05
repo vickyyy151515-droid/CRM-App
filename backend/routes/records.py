@@ -75,7 +75,6 @@ async def invalidate_customer_records_for_other_staff(
             # If this record matches the reserved customer
             if record_customer_id == customer_id_normalized:
                 other_staff_id = record.get('assigned_to')
-                other_staff_name = record.get('assigned_to_name', 'Unknown')
                 database_name = record.get('database_name', 'Unknown')
                 
                 # Mark as invalid
