@@ -13,7 +13,35 @@ Both modules support:
 - Recall assigned records
 - Reserved member filtering
 
-## Latest Update: Reserved Member Assignment Protection (2026-02-05)
+## Latest Update: Real-Time Invalidation of Conflicting Assignments (2026-02-05)
+
+### ✅ NEW FEATURE: Automatic Conflict Resolution
+
+**When a reservation is approved:**
+1. System finds all records for that customer assigned to OTHER staff
+2. Records in `customer_records`, `bonanza_records`, and `memberwd_records` are marked as `invalid`
+3. Invalid reason: "Customer reserved by {staff_name}"
+4. Affected staff receive a notification of type `record_invalidated_reserved`
+
+**Implemented in 3 endpoints:**
+- `PATCH /api/reserved-members/{id}/approve` - Manual approval by admin
+- `POST /api/reserved-members` - Admin auto-approved reservations
+- `POST /api/reserved-members/bulk` - Bulk reservation creation
+
+**Response includes:**
+- `invalidated_records` - Count of records marked invalid
+- `notified_staff_count` - Number of staff notified
+- `invalidated_conflicts` - (bulk endpoint) Total conflicts resolved
+
+### Helper Function: `invalidate_customer_records_for_other_staff`
+- Location: `/app/backend/routes/records.py` (lines 24-111)
+- Checks all 3 collections: `customer_records`, `bonanza_records`, `memberwd_records`
+- Uses case-insensitive matching on customer ID fields
+- Supports multiple customer ID field names (Username, USERNAME, USER, ID, etc.)
+
+---
+
+## Previous Update: Reserved Member Assignment Protection (2026-02-05)
 
 ### 🚨 CRITICAL Bug Fixes
 
@@ -41,14 +69,17 @@ Both modules support:
    - Member WD random assignment ✅
    - Manual assignment ✅
 5. Bonus check submissions cleaned up ✅
+6. **NEW:** Conflicting records auto-invalidated when reservation approved ✅
 
-### New Endpoints
+### Key Endpoints
 | Endpoint | Purpose |
 |----------|---------|
 | `GET /api/bonanza/admin/diagnose-reserved-conflicts` | Find conflicts |
 | `POST /api/bonanza/admin/fix-reserved-conflicts` | Reassign to correct staff |
 | `GET /api/memberwd/admin/diagnose-reserved-conflicts` | Find conflicts |
 | `POST /api/memberwd/admin/fix-reserved-conflicts` | Reassign to correct staff |
+| `PATCH /api/reserved-members/{id}/approve` | Approve reservation + auto-invalidate conflicts |
+| `POST /api/reserved-members/bulk` | Bulk create + auto-invalidate conflicts |
 
 ## Previous Updates
 
