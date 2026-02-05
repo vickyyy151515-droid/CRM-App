@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Gift, FileSpreadsheet, Calendar, Package, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Gift, FileSpreadsheet, Calendar, Package, CheckCircle, XCircle, AlertTriangle, UserX } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 export default function StaffDBBonanza() {
   const { t } = useLanguage();
   const [records, setRecords] = useState([]);
+  const [invalidatedRecords, setInvalidatedRecords] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -15,6 +16,7 @@ export default function StaffDBBonanza() {
   const [showInvalidModal, setShowInvalidModal] = useState(false);
   const [invalidReason, setInvalidReason] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [showInvalidatedSection, setShowInvalidatedSection] = useState(false);
 
   useEffect(() => {
     loadProducts();
@@ -22,6 +24,7 @@ export default function StaffDBBonanza() {
 
   useEffect(() => {
     loadRecords();
+    loadInvalidatedRecords();
   }, [filterProduct]);
 
   const loadProducts = async () => {
@@ -42,6 +45,16 @@ export default function StaffDBBonanza() {
       toast.error(t('messages.loadFailed'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadInvalidatedRecords = async () => {
+    try {
+      const params = filterProduct ? `?product_id=${filterProduct}` : '';
+      const response = await api.get(`/bonanza/staff/invalidated-by-reservation${params}`);
+      setInvalidatedRecords(response.data.records || []);
+    } catch (error) {
+      console.error('Failed to load invalidated records');
     }
   };
 
