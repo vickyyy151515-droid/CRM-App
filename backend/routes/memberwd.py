@@ -375,6 +375,22 @@ async def upload_memberwd_database(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error reading file: {str(e)}")
     
+    # CRITICAL: Get ACTIVE reserved members to flag during upload
+    reserved_members = await db.reserved_members.find(
+        {'status': 'approved'}, 
+        {'_id': 0, 'customer_id': 1, 'customer_name': 1, 'staff_id': 1, 'staff_name': 1}
+    ).to_list(100000)
+    
+    reserved_map = {}  # Maps normalized ID -> {staff_id, staff_name}
+    for m in reserved_members:
+        cid = m.get('customer_id') or m.get('customer_name')
+        if cid:
+            normalized = str(cid).strip().lower()
+            reserved_map[normalized] = {
+                'staff_id': m.get('staff_id'),
+                'staff_name': m.get('staff_name', 'Unknown')
+            }
+    
     database_id = str(uuid.uuid4())
     database_doc = {
         'id': database_id,
@@ -392,6 +408,8 @@ async def upload_memberwd_database(
     await db.memberwd_databases.insert_one(database_doc)
     
     records = []
+    reserved_count = 0
+    
     for idx, row in df.iterrows():
         # Sanitize row data to handle NaN, NaT, and other special values
         row_data = {}
@@ -410,6 +428,22 @@ async def upload_memberwd_database(
                 except Exception:
                     row_data[str(col)] = ''
         
+        # Check if this record is a reserved member
+        is_reserved = False
+        reserved_by = None
+        reserved_by_name = None
+        
+        # Check all possible username fields
+        for key in ['Username', 'username', 'USER', 'user', 'ID', 'id', 'Nama Lengkap', 'nama_lengkap', 'Name', 'name', 'CUSTOMER', 'customer', 'Customer']:
+            if key in row_data and row_data[key]:
+                normalized = str(row_data[key]).strip().lower()
+                if normalized in reserved_map:
+                    is_reserved = True
+                    reserved_by = reserved_map[normalized]['staff_id']
+                    reserved_by_name = reserved_map[normalized]['staff_name']
+                    reserved_count += 1
+                    break
+        
         record = {
             'id': str(uuid.uuid4()),
             'database_id': database_id,
@@ -424,6 +458,9 @@ async def upload_memberwd_database(
             'assigned_at': None,
             'assigned_by': None,
             'assigned_by_name': None,
+            'is_reserved_member': is_reserved,
+            'reserved_by': reserved_by,
+            'reserved_by_name': reserved_by_name,
             'created_at': get_jakarta_now().isoformat()
         }
         records.append(record)
@@ -431,7 +468,7 @@ async def upload_memberwd_database(
     if records:
         await db.memberwd_records.insert_many(records)
     
-    return {
+    response = {
         'id': database_id,
         'name': name,
         'product_id': product_id,
@@ -439,6 +476,12 @@ async def upload_memberwd_database(
         'total_records': len(df),
         'columns': list(df.columns)
     }
+    
+    if reserved_count > 0:
+        response['warning'] = f'{reserved_count} records are reserved members and will be excluded from random assignment'
+        response['reserved_count'] = reserved_count
+    
+    return response
 
 @router.get("/memberwd/databases")
 async def get_memberwd_databases(product_id: Optional[str] = None, user: User = Depends(get_admin_user)):
