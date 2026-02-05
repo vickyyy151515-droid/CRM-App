@@ -1408,15 +1408,25 @@ async def create_reserved_member(member_data: ReservedMemberCreate, user: User =
     })
     
     # CRITICAL: If admin auto-approved, invalidate conflicting records for other staff
+    invalidated_count = 0
+    notified_staff_count = 0
     if member.status == 'approved':
-        await invalidate_customer_records_for_other_staff(
+        invalidated_count, notified_staff = await invalidate_customer_records_for_other_staff(
             db, 
             member_data.customer_id, 
             member.staff_id, 
             member.staff_name
         )
+        notified_staff_count = len(notified_staff)
     
-    return member
+    # Return member data with invalidation info
+    result = doc.copy()
+    result.pop('_id', None)  # Remove MongoDB _id if present
+    if invalidated_count > 0:
+        result['invalidated_records'] = invalidated_count
+        result['notified_staff_count'] = notified_staff_count
+    
+    return result
 
 
 @router.post("/reserved-members/bulk")
