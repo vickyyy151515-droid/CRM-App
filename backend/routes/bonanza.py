@@ -525,6 +525,34 @@ async def get_staff_bonanza_records(product_id: Optional[str] = None, user: User
     return records
 
 
+@router.get("/bonanza/staff/invalidated-by-reservation")
+async def get_staff_invalidated_by_reservation(
+    product_id: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
+    """Get records that were invalidated because another staff reserved the customer.
+    These records were previously assigned to this staff but are now invalid.
+    """
+    db = get_db()
+    if user.role != 'staff':
+        raise HTTPException(status_code=403, detail="Only staff can access this endpoint")
+    
+    query = {
+        'assigned_to': user.id,
+        'status': 'invalid',
+        'invalid_reason': {'$regex': '^Customer reserved by', '$options': 'i'}
+    }
+    if product_id:
+        query['product_id'] = product_id
+    
+    records = await db.bonanza_records.find(query, {'_id': 0}).sort('invalidated_at', -1).to_list(1000)
+    
+    return {
+        'count': len(records),
+        'records': records
+    }
+
+
 @router.post("/bonanza/staff/validate")
 async def validate_bonanza_records(data: RecordValidation, user: User = Depends(get_current_user)):
     """Staff marks records as valid or invalid. Auto-replaces if enabled in settings."""
