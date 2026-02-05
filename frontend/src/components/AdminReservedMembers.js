@@ -61,13 +61,35 @@ export default function AdminReservedMembers({ onUpdate }) {
 
     setSubmitting(true);
     try {
-      await api.post('/reserved-members', {
+      const response = await api.post('/reserved-members', {
         customer_id: customerId.trim(),
         phone_number: phoneNumber.trim() || null,
         staff_id: selectedStaff,
         product_id: selectedProduct
       });
-      toast.success('Customer reserved successfully');
+      
+      const data = response.data;
+      
+      // Show success with invalidation info if any conflicts were resolved
+      if (data.invalidated_records > 0) {
+        toast.success(
+          <div className="space-y-1">
+            <div className="font-medium">✓ Customer reserved successfully</div>
+            <div className="text-sm opacity-90">
+              📋 {data.invalidated_records} conflicting record{data.invalidated_records > 1 ? 's' : ''} invalidated
+            </div>
+            {data.notified_staff_count > 0 && (
+              <div className="text-sm opacity-90">
+                🔔 {data.notified_staff_count} staff member{data.notified_staff_count > 1 ? 's' : ''} notified
+              </div>
+            )}
+          </div>,
+          { duration: 5000 }
+        );
+      } else {
+        toast.success('Customer reserved successfully');
+      }
+      
       setCustomerId('');
       setPhoneNumber('');
       setSelectedStaff('');
