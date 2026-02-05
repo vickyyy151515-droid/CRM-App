@@ -373,9 +373,18 @@ async def assign_random_bonanza_records(assignment: RandomBonanzaAssignment, use
     if not staff:
         raise HTTPException(status_code=404, detail="Staff not found")
     
-    # Get reserved members and normalize to UPPERCASE for case-insensitive comparison
-    reserved_members = await db.reserved_members.find({}, {'_id': 0, 'customer_id': 1}).to_list(100000)
-    reserved_ids = set(str(m['customer_id']).strip().upper() for m in reserved_members if m.get('customer_id'))
+    # Get ACTIVE reserved members only (approved status)
+    # Deleted reserved members should NOT be excluded - their customers are available again
+    reserved_members = await db.reserved_members.find(
+        {'status': 'approved'}, 
+        {'_id': 0, 'customer_id': 1, 'customer_name': 1}
+    ).to_list(100000)
+    
+    reserved_ids = set()
+    for m in reserved_members:
+        cid = m.get('customer_id') or m.get('customer_name')
+        if cid:
+            reserved_ids.add(str(cid).strip().upper())
     
     available_records = await db.bonanza_records.find(
         {'database_id': assignment.database_id, 'status': 'available'},
