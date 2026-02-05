@@ -1511,7 +1511,7 @@ async def bulk_create_reserved_members(bulk_data: BulkReservedMemberCreate, user
         })
         
         # CRITICAL: Invalidate conflicting records for other staff
-        await invalidate_customer_records_for_other_staff(
+        invalidated_count, _ = await invalidate_customer_records_for_other_staff(
             db, 
             customer_id, 
             bulk_data.staff_id, 
