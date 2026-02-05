@@ -54,17 +54,6 @@ export default function MyAssignedRecords() {
     }
   };
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
   const handleEditTitle = (e, batch) => {
     e.stopPropagation();
     setEditingBatchId(batch.id);
