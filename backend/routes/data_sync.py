@@ -449,7 +449,7 @@ async def get_sync_status(user: User = Depends(get_admin_user)):
         {'status': 'approved'},
         {'staff_id': 1, 'date': 1}
     ).to_list(10000)
-    leave_set = {(l['staff_id'], l['date']) for l in leave_records}
+    leave_set = {(rec['staff_id'], rec['date']) for rec in leave_records}
     
     # Count attendance records that SHOULD have has_approved_leave flag
     attendance_with_leave = 0
@@ -463,7 +463,7 @@ async def get_sync_status(user: User = Depends(get_admin_user)):
         
         for r in records:
             attendance_with_leave += 1
-            if r.get('has_approved_leave') == True:
+            if r.get('has_approved_leave'):
                 attendance_properly_flagged += 1
     
     if attendance_with_leave > 0:
