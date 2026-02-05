@@ -718,6 +718,208 @@ async def update_monitoring_config(
         }},
         upsert=True
     )
+
+
+@router.get("/data-sync/conflict-resolution-log")
+async def get_conflict_resolution_log(
+    limit: int = 100,
+    skip: int = 0,
+    staff_id: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    user: User = Depends(get_admin_user)
+):
+    """
+    Get history of all auto-invalidated records due to reservation conflicts.
+    Shows customer ID, affected staff, timestamp, source database, and who reserved.
+    """
+    db = get_db()
+    
+    # Build query for invalidated records with reservation reason
+    base_query = {
+        'status': 'invalid',
+        'invalid_reason': {'$regex': '^Customer reserved by', '$options': 'i'}
+    }
+    
+    # Add filters
+    if staff_id:
+        base_query['assigned_to'] = staff_id
+    
+    if date_from:
+        base_query['invalidated_at'] = {'$gte': date_from}
+    
+    if date_to:
+        if 'invalidated_at' in base_query:
+            base_query['invalidated_at']['$lte'] = date_to
+        else:
+            base_query['invalidated_at'] = {'$lte': date_to}
+    
+    # Fetch from all 3 collections
+    collections = [
+        ('customer_records', 'Normal Database'),
+        ('bonanza_records', 'DB Bonanza'),
+        ('memberwd_records', 'Member WD CRM')
+    ]
+    
+    all_records = []
+    
+    for collection_name, source_label in collections:
+        records = await db[collection_name].find(
+            base_query,
+            {
+                '_id': 0,
+                'id': 1,
+                'database_name': 1,
+                'assigned_to': 1,
+                'assigned_to_name': 1,
+                'invalid_reason': 1,
+                'invalidated_at': 1,
+                'invalidated_by': 1,
+                'reserved_by_staff_id': 1,
+                'reserved_by_staff_name': 1,
+                'row_data': 1
+            }
+        ).sort('invalidated_at', -1).to_list(1000)
+        
+        for record in records:
+            # Extract customer ID from row_data
+            row_data = record.get('row_data', {})
+            customer_id = None
+            for key in ['Username', 'username', 'USERNAME', 'USER', 'user', 'CUSTOMER_ID', 'customer_id', 'ID', 'id']:
+                if key in row_data:
+                    customer_id = str(row_data[key]).strip()
+                    break
+            
+            all_records.append({
+                'record_id': record.get('id'),
+                'customer_id': customer_id or 'Unknown',
+                'source_type': source_label,
+                'database_name': record.get('database_name', 'Unknown'),
+                'affected_staff_id': record.get('assigned_to'),
+                'affected_staff_name': record.get('assigned_to_name', 'Unknown'),
+                'reserved_by_staff_id': record.get('reserved_by_staff_id'),
+                'reserved_by_staff_name': record.get('reserved_by_staff_name', 'Unknown'),
+                'invalid_reason': record.get('invalid_reason'),
+                'invalidated_at': record.get('invalidated_at'),
+                'invalidated_by': record.get('invalidated_by', 'system')
+            })
+    
+    # Sort all records by invalidated_at descending
+    all_records.sort(key=lambda x: x.get('invalidated_at') or '', reverse=True)
+    
+    # Get total count before pagination
+    total_count = len(all_records)
+    
+    # Apply pagination
+    paginated_records = all_records[skip:skip + limit]
+    
+    # Get summary stats
+    affected_staff_ids = set(r['affected_staff_id'] for r in all_records if r['affected_staff_id'])
+    reserved_by_ids = set(r['reserved_by_staff_id'] for r in all_records if r['reserved_by_staff_id'])
+    
+    # Count by source type
+    by_source = {}
+    for record in all_records:
+        source = record['source_type']
+        by_source[source] = by_source.get(source, 0) + 1
+    
+    # Count by date (last 7 days)
+    from collections import defaultdict
+    by_date = defaultdict(int)
+    for record in all_records:
+        if record.get('invalidated_at'):
+            date_str = record['invalidated_at'][:10]  # Get YYYY-MM-DD
+            by_date[date_str] += 1
+    
+    return {
+        'total_count': total_count,
+        'returned_count': len(paginated_records),
+        'skip': skip,
+        'limit': limit,
+        'summary': {
+            'total_invalidated': total_count,
+            'affected_staff_count': len(affected_staff_ids),
+            'reserved_by_count': len(reserved_by_ids),
+            'by_source': by_source,
+            'by_date': dict(sorted(by_date.items(), reverse=True)[:7])
+        },
+        'records': paginated_records
+    }
+
+
+@router.get("/data-sync/conflict-resolution-stats")
+async def get_conflict_resolution_stats(user: User = Depends(get_admin_user)):
+    """
+    Get aggregated statistics for conflict resolutions.
+    Useful for dashboard widgets.
+    """
+    db = get_db()
+    jakarta_now = get_jakarta_now()
+    
+    # Query for invalidated records due to reservation
+    base_query = {
+        'status': 'invalid',
+        'invalid_reason': {'$regex': '^Customer reserved by', '$options': 'i'}
+    }
+    
+    collections = ['customer_records', 'bonanza_records', 'memberwd_records']
+    
+    total_count = 0
+    today_count = 0
+    this_week_count = 0
+    this_month_count = 0
+    
+    today_str = jakarta_now.strftime('%Y-%m-%d')
+    week_ago = (jakarta_now - timedelta(days=7)).strftime('%Y-%m-%d')
+    month_ago = (jakarta_now - timedelta(days=30)).strftime('%Y-%m-%d')
+    
+    # Staff breakdown
+    affected_staff = {}
+    reserved_by_staff = {}
+    
+    for collection_name in collections:
+        # Total count
+        count = await db[collection_name].count_documents(base_query)
+        total_count += count
+        
+        # Today count
+        today_query = {**base_query, 'invalidated_at': {'$gte': today_str}}
+        today_count += await db[collection_name].count_documents(today_query)
+        
+        # This week count
+        week_query = {**base_query, 'invalidated_at': {'$gte': week_ago}}
+        this_week_count += await db[collection_name].count_documents(week_query)
+        
+        # This month count
+        month_query = {**base_query, 'invalidated_at': {'$gte': month_ago}}
+        this_month_count += await db[collection_name].count_documents(month_query)
+        
+        # Get staff breakdown
+        records = await db[collection_name].find(
+            base_query,
+            {'_id': 0, 'assigned_to_name': 1, 'reserved_by_staff_name': 1}
+        ).to_list(10000)
+        
+        for r in records:
+            affected = r.get('assigned_to_name', 'Unknown')
+            reserved = r.get('reserved_by_staff_name', 'Unknown')
+            affected_staff[affected] = affected_staff.get(affected, 0) + 1
+            reserved_by_staff[reserved] = reserved_by_staff.get(reserved, 0) + 1
+    
+    # Sort staff by count
+    top_affected = sorted(affected_staff.items(), key=lambda x: x[1], reverse=True)[:5]
+    top_reserved = sorted(reserved_by_staff.items(), key=lambda x: x[1], reverse=True)[:5]
+    
+    return {
+        'total_invalidated': total_count,
+        'today': today_count,
+        'this_week': this_week_count,
+        'this_month': this_month_count,
+        'top_affected_staff': [{'name': k, 'count': v} for k, v in top_affected],
+        'top_reserved_by_staff': [{'name': k, 'count': v} for k, v in top_reserved],
+        'generated_at': jakarta_now.isoformat()
+    }
+
     
     return {
         'message': 'Monitoring config updated',
