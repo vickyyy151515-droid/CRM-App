@@ -13,7 +13,44 @@ Both modules support:
 - Recall assigned records
 - Reserved member filtering
 
-## Latest Update: RDP Count Mismatch Fix (2026-02-04)
+## Latest Update: Reserved Member Assignment Protection (2026-02-05)
+
+### 🚨 CRITICAL Bug Fixes
+
+**Bug #1: Manual Assignment Not Checking Reserved Members**
+- `/bonanza/assign` and `/memberwd/assign` did NOT check reserved members
+- ✅ FIXED: Now blocks assignment of reserved members and shows warning
+
+**Bug #2: Random Assignment Including Deleted Reserved Members**  
+- `/bonanza/assign-random` and `/memberwd/assign-random` checked ALL reserved members
+- This meant deleted reserved members were still being excluded
+- ✅ FIXED: Now only checks `status: 'approved'` reserved members
+- Customers removed from reserved members are now available for new assignments
+
+**Bug #3: Reserved Member Conflicts (Assigned to Wrong Staff)**
+- Records were being assigned to staff A while reserved by staff B
+- ✅ NEW: Added diagnose & fix endpoints
+- ✅ NEW: "Fix Reserved Conflicts" button in UI
+
+### Reserved Member Lifecycle (Fully Synced)
+1. Customer reserved by Staff A → Added to `reserved_members` with `status: 'approved'`
+2. Customer excluded from random assignment to other staff
+3. Grace period expires (no omset in X days) → Moved to `deleted_reserved_members`
+4. Customer becomes available for new assignments in ALL systems:
+   - DB Bonanza random assignment ✅
+   - Member WD random assignment ✅
+   - Manual assignment ✅
+5. Bonus check submissions cleaned up ✅
+
+### New Endpoints
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/bonanza/admin/diagnose-reserved-conflicts` | Find conflicts |
+| `POST /api/bonanza/admin/fix-reserved-conflicts` | Reassign to correct staff |
+| `GET /api/memberwd/admin/diagnose-reserved-conflicts` | Find conflicts |
+| `POST /api/memberwd/admin/fix-reserved-conflicts` | Reassign to correct staff |
+
+## Previous Updates
 
 ### ✅ Bug Fix: Staff RDP vs Product RDP Mismatch
 - **Issue:** Staff's total RDP count didn't match sum of Product Summary RDP counts
