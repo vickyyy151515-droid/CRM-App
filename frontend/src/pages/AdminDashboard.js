@@ -256,6 +256,8 @@ export default function AdminDashboard({ user, onLogout }) {
         return <AdminBonusCheck />;
       case 'data-sync':
         return <DataSyncDashboard />;
+      case 'conflict-log':
+        return <ConflictResolutionLog />;
       default:
         return null;
     }
