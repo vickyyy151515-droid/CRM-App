@@ -1407,6 +1407,15 @@ async def create_reserved_member(member_data: ReservedMemberCreate, user: User =
         ]
     })
     
+    # CRITICAL: If admin auto-approved, invalidate conflicting records for other staff
+    if member.status == 'approved':
+        await invalidate_customer_records_for_other_staff(
+            db, 
+            member_data.customer_id, 
+            member.staff_id, 
+            member.staff_name
+        )
+    
     return member
 
 
