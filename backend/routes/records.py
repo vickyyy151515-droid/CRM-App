@@ -430,19 +430,22 @@ async def create_download_request(request_data: DownloadRequestCreate, user: Use
     if request_data.record_count <= 0:
         raise HTTPException(status_code=400, detail="Record count must be greater than 0")
     
-    # Get all reserved member IDs for this product (case-insensitive)
+    # Get all ACTIVE reserved member IDs for this product (case-insensitive)
+    # Only check 'approved' status - deleted reserved members should be available again
+    # Note: 'pending' can also be excluded as those are awaiting approval
     product_id = database.get('product_id')
     reserved_members = await db.reserved_members.find(
         {'product_id': product_id, 'status': {'$in': ['pending', 'approved']}},
-        {'_id': 0, 'customer_id': 1}
+        {'_id': 0, 'customer_id': 1, 'customer_name': 1}
     ).to_list(10000)
     
     # Create a set of reserved IDs (normalized to uppercase for case-insensitive comparison)
+    # Support both customer_id and customer_name (old field) for backwards compatibility
     reserved_ids = set()
     for member in reserved_members:
-        cid = member.get('customer_id', '').strip().upper()
+        cid = member.get('customer_id') or member.get('customer_name') or ''
         if cid:
-            reserved_ids.add(cid)
+            reserved_ids.add(str(cid).strip().upper())
     
     # Get all available records from the database (get more than needed to account for duplicates)
     # Fetch up to 3x the requested amount to have enough replacements
