@@ -6,6 +6,7 @@ import ErrorBoundary from './ErrorBoundary';
 import SettingsPanel from './shared/SettingsPanel';
 import ReplaceModal from './shared/ReplaceModal';
 import InvalidRecordsPanel from './shared/InvalidRecordsPanel';
+import AdminActionsPanel from './shared/AdminActionsPanel';
 
 export default function AdminDBBonanza() {
   const [databases, setDatabases] = useState([]);
