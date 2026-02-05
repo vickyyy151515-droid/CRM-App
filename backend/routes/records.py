@@ -1519,20 +1519,7 @@ async def bulk_create_reserved_members(bulk_data: BulkReservedMemberCreate, user
         )
         
         added.append(customer_id)
-    
-    # Calculate total invalidations for response
-    total_invalidated = 0
-    if added:
-        # Get count of invalidated records (for summary)
-        for cid in added:
-            cid_normalized = str(cid).strip().upper()
-            for collection_name in ['customer_records', 'bonanza_records', 'memberwd_records']:
-                count = await db[collection_name].count_documents({
-                    'status': 'invalid',
-                    'invalid_reason': {'$regex': f'^Customer reserved by', '$options': 'i'},
-                    'reserved_by_staff_id': bulk_data.staff_id
-                })
-                total_invalidated += count
+        total_invalidated += invalidated_count
     
     return {
         'success': True,
@@ -1544,7 +1531,7 @@ async def bulk_create_reserved_members(bulk_data: BulkReservedMemberCreate, user
         'product_name': product['name'],
         'staff_name': staff['name'],
         'invalidated_conflicts': total_invalidated,
-        'note': f'Conflicting records for these customers assigned to other staff have been invalidated' if total_invalidated > 0 else None
+        'note': 'Conflicting records for these customers assigned to other staff have been invalidated' if total_invalidated > 0 else None
     }
 
 
