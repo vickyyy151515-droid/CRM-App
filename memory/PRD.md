@@ -13,9 +13,44 @@ Both modules support:
 - Recall assigned records
 - Reserved member filtering
 
-## Latest Update: Frontend Refactoring & Proactive Monitoring (2026-02-05)
+## Latest Update: Conflict Resolution Log (2026-02-05)
 
-### ✅ NEW: Proactive Monitoring System
+### ✅ NEW: Conflict Resolution Log Dashboard
+
+**New Admin Page:** `Conflict Resolution Log` - accessible from sidebar
+
+**Features:**
+- Track all auto-invalidated records due to reservation conflicts
+- Stats cards: Total Invalidated, Today, This Week, This Month
+- Top affected staff breakdown (who lost the most records)
+- Top reserved by staff breakdown (who made the most reservations)
+- Filter by staff member
+- Export to CSV functionality
+- Paginated history table with details:
+  - Customer ID
+  - Source (Normal Database / DB Bonanza / Member WD CRM)
+  - Database name
+  - Affected staff (who lost the record)
+  - Reserved by staff (who made the reservation)
+  - Timestamp
+
+**New API Endpoints:**
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/data-sync/conflict-resolution-log` | Fetch paginated conflict history |
+| `GET /api/data-sync/conflict-resolution-stats` | Get aggregated statistics |
+
+**Query Parameters (log endpoint):**
+- `limit` - Number of records per page (default: 100)
+- `skip` - Pagination offset
+- `staff_id` - Filter by affected staff
+- `date_from` / `date_to` - Date range filter
+
+---
+
+## Previous Update: Frontend Refactoring & Proactive Monitoring (2026-02-05)
+
+### ✅ Proactive Monitoring System
 
 **New Endpoints:**
 | Endpoint | Purpose |
