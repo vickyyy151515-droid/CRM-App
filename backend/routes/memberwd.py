@@ -644,8 +644,18 @@ async def assign_random_memberwd_records(assignment: RandomMemberWDAssignment, u
     
     now = get_jakarta_now()
     
-    reserved_members = await db.reserved_members.find({}, {'_id': 0, 'customer_name': 1}).to_list(100000)
-    reserved_names = set(str(m['customer_name']).lower().strip() for m in reserved_members if m.get('customer_name'))
+    # Get ACTIVE reserved members only (approved status)
+    # Deleted reserved members should NOT be excluded - their customers are available again
+    reserved_members = await db.reserved_members.find(
+        {'status': 'approved'}, 
+        {'_id': 0, 'customer_id': 1, 'customer_name': 1}
+    ).to_list(100000)
+    
+    reserved_names = set()
+    for m in reserved_members:
+        cid = m.get('customer_id') or m.get('customer_name')
+        if cid:
+            reserved_names.add(str(cid).lower().strip())
     
     available_records = await db.memberwd_records.find(
         {'database_id': assignment.database_id, 'status': 'available'},
