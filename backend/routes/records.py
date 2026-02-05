@@ -1599,78 +1599,10 @@ async def approve_reserved_member(member_id: str, user: User = Depends(get_admin
         data={'member_id': member_id, 'customer_id': customer_id}
     )
     
-    # CRITICAL: Find and invalidate this customer in OTHER staff's assigned records
-    # This handles the case where the same customer exists in multiple databases
-    # and was assigned to multiple staff before one of them reserved the customer
-    
-    invalidated_count = 0
-    notified_staff = set()
-    customer_id_normalized = str(customer_id).strip().upper() if customer_id else ''
-    
-    if customer_id_normalized:
-        # Check all three record collections: customer_records, bonanza_records, memberwd_records
-        collections_to_check = [
-            ('customer_records', 'normal database'),
-            ('bonanza_records', 'DB Bonanza'),
-            ('memberwd_records', 'Member WD')
-        ]
-        
-        for collection_name, source_name in collections_to_check:
-            collection = db[collection_name]
-            
-            # Find assigned records for this customer that belong to OTHER staff
-            assigned_records = await collection.find(
-                {'status': 'assigned', 'assigned_to': {'$ne': reserved_by_staff_id}},
-                {'_id': 0, 'id': 1, 'row_data': 1, 'assigned_to': 1, 'assigned_to_name': 1, 'database_name': 1}
-            ).to_list(100000)
-            
-            for record in assigned_records:
-                row_data = record.get('row_data', {})
-                
-                # Check all possible customer ID fields
-                record_customer_id = None
-                for key in ['Username', 'username', 'USER', 'user', 'ID', 'id', 
-                           'Nama Lengkap', 'nama_lengkap', 'Name', 'name', 
-                           'CUSTOMER', 'customer', 'Customer', 'customer_id', 'Customer_ID']:
-                    if key in row_data and row_data[key]:
-                        record_customer_id = str(row_data[key]).strip().upper()
-                        break
-                
-                # If this record matches the reserved customer
-                if record_customer_id == customer_id_normalized:
-                    other_staff_id = record.get('assigned_to')
-                    other_staff_name = record.get('assigned_to_name', 'Unknown')
-                    database_name = record.get('database_name', 'Unknown')
-                    
-                    # Mark as invalid
-                    await collection.update_one(
-                        {'id': record['id']},
-                        {'$set': {
-                            'status': 'invalid',
-                            'invalid_reason': f'Customer reserved by {reserved_by_staff_name}',
-                            'invalidated_at': now.isoformat(),
-                            'invalidated_by': 'system',
-                            'reserved_by_staff_id': reserved_by_staff_id,
-                            'reserved_by_staff_name': reserved_by_staff_name
-                        }}
-                    )
-                    invalidated_count += 1
-                    
-                    # Send notification to the affected staff (only once per staff)
-                    if other_staff_id and other_staff_id not in notified_staff:
-                        await create_notification(
-                            user_id=other_staff_id,
-                            type='record_invalidated_reserved',
-                            title='Record Invalid - Customer Reserved',
-                            message=f'Customer "{customer_id}" from {database_name} ({source_name}) has been reserved by {reserved_by_staff_name}. This record is now invalid.',
-                            data={
-                                'customer_id': customer_id,
-                                'reserved_by': reserved_by_staff_name,
-                                'database_name': database_name,
-                                'source': source_name
-                            }
-                        )
-                        notified_staff.add(other_staff_id)
+    # CRITICAL: Invalidate this customer in OTHER staff's assigned records
+    invalidated_count, notified_staff = await invalidate_customer_records_for_other_staff(
+        db, customer_id, reserved_by_staff_id, reserved_by_staff_name
+    )
     
     response = {'message': 'Reserved member approved'}
     if invalidated_count > 0:
