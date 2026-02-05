@@ -13,9 +13,37 @@ Both modules support:
 - Recall assigned records
 - Reserved member filtering
 
-## Latest Update: Conflict Resolution Log (2026-02-05)
+## Latest Update: Same-Product Invalidation Fix (2026-02-05)
 
-### ✅ NEW: Conflict Resolution Log Dashboard
+### 🐛 BUG FIX: Cross-Product Invalidation Issue
+
+**Problem:** When a reservation was approved, the system was invalidating ALL records for that customer, regardless of product. This was wrong because a customer can legitimately be assigned to different staff for different products.
+
+**Example of the bug:**
+- Novi reserves "rustam" for product ISTANA2000 → Approved
+- Juli has "rustam" assigned for product PUCUK33 → Was wrongly invalidated
+- Rory has "rustam" assigned for product ISTANA2000 → Correctly invalidated
+
+**Fix:** Updated `invalidate_customer_records_for_other_staff()` function to:
+1. Accept `product_id` as a required parameter
+2. Only invalidate records that match BOTH:
+   - Same customer ID
+   - Same product ID
+3. Skip invalidation if product_id is not provided (safety check)
+
+**Files Modified:**
+- `/app/backend/routes/records.py` - Updated helper function and all 3 call sites
+
+**New Repair Tool:**
+- `POST /api/data-sync/repair?repair_type=fix_cross_product_invalidations`
+- Restores records that were wrongly invalidated due to cross-product reservation
+- Can be run via Data Sync Dashboard → Repair All
+
+---
+
+## Previous Update: Conflict Resolution Log (2026-02-05)
+
+### ✅ Conflict Resolution Log Dashboard
 
 **New Admin Page:** `Conflict Resolution Log` - accessible from sidebar
 
