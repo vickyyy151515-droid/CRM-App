@@ -1423,6 +1423,7 @@ async def create_reserved_member(member_data: ReservedMemberCreate, user: User =
     })
     
     # CRITICAL: If admin auto-approved, invalidate conflicting records for other staff
+    # IMPORTANT: Only invalidate records for the SAME PRODUCT
     invalidated_count = 0
     notified_staff_count = 0
     if member.status == 'approved':
@@ -1430,7 +1431,8 @@ async def create_reserved_member(member_data: ReservedMemberCreate, user: User =
             db, 
             member_data.customer_id, 
             member.staff_id, 
-            member.staff_name
+            member.staff_name,
+            member_data.product_id  # Pass product_id to only invalidate same-product records
         )
         notified_staff_count = len(notified_staff)
     
