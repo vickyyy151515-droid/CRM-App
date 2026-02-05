@@ -65,7 +65,7 @@ async def invalidate_customer_records_for_other_staff(
             
             # Check all possible customer ID fields
             record_customer_id = None
-            for key in ['Username', 'username', 'USER', 'user', 'ID', 'id', 
+            for key in ['Username', 'username', 'USERNAME', 'USER', 'user', 'ID', 'id', 
                        'Nama Lengkap', 'nama_lengkap', 'Name', 'name', 
                        'CUSTOMER', 'customer', 'Customer', 'customer_id', 'Customer_ID']:
                 if key in row_data and row_data[key]:
