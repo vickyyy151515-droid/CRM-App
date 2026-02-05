@@ -25,14 +25,18 @@ async def invalidate_customer_records_for_other_staff(
     db, 
     customer_id: str, 
     reserved_by_staff_id: str, 
-    reserved_by_staff_name: str
+    reserved_by_staff_name: str,
+    product_id: str = None
 ):
     """
     When a customer is reserved by a staff member, invalidate all records
-    for that customer that are assigned to OTHER staff members.
+    for that customer that are assigned to OTHER staff members FOR THE SAME PRODUCT.
     
     This handles the case where the same customer exists in multiple databases
     and was assigned to multiple staff before one reserved the customer.
+    
+    IMPORTANT: Only invalidates records for the SAME product. A customer can be
+    assigned to different staff for different products - that's valid.
     
     Returns: (invalidated_count, notified_staff_ids)
     """
@@ -42,6 +46,10 @@ async def invalidate_customer_records_for_other_staff(
     customer_id_normalized = str(customer_id).strip().upper() if customer_id else ''
     
     if not customer_id_normalized:
+        return 0, set()
+    
+    # If no product_id provided, skip invalidation (safety check)
+    if not product_id:
         return 0, set()
     
     # Check all three record collections
@@ -55,9 +63,16 @@ async def invalidate_customer_records_for_other_staff(
         collection = db[collection_name]
         
         # Find assigned records for this customer that belong to OTHER staff
+        # AND have the SAME product_id
+        query = {
+            'status': 'assigned', 
+            'assigned_to': {'$ne': reserved_by_staff_id},
+            'product_id': product_id  # CRITICAL: Only same product
+        }
+        
         assigned_records = await collection.find(
-            {'status': 'assigned', 'assigned_to': {'$ne': reserved_by_staff_id}},
-            {'_id': 0, 'id': 1, 'row_data': 1, 'assigned_to': 1, 'assigned_to_name': 1, 'database_name': 1}
+            query,
+            {'_id': 0, 'id': 1, 'row_data': 1, 'assigned_to': 1, 'assigned_to_name': 1, 'database_name': 1, 'product_id': 1}
         ).to_list(100000)
         
         for record in assigned_records:
@@ -72,7 +87,7 @@ async def invalidate_customer_records_for_other_staff(
                     record_customer_id = str(row_data[key]).strip().upper()
                     break
             
-            # If this record matches the reserved customer
+            # If this record matches the reserved customer (same customer + same product already filtered in query)
             if record_customer_id == customer_id_normalized:
                 other_staff_id = record.get('assigned_to')
                 database_name = record.get('database_name', 'Unknown')
@@ -102,7 +117,8 @@ async def invalidate_customer_records_for_other_staff(
                             'customer_id': customer_id,
                             'reserved_by': reserved_by_staff_name,
                             'database_name': database_name,
-                            'source': source_name
+                            'source': source_name,
+                            'product_id': product_id
                         }
                     )
                     notified_staff.add(other_staff_id)
