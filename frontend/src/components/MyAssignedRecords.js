@@ -646,9 +646,70 @@ export default function MyAssignedRecords() {
     );
   };
 
+  // Render invalidated by reservation section
+  const renderInvalidatedSection = () => {
+    if (invalidatedRecords.length === 0) return null;
+    
+    return (
+      <div className="mt-8" data-testid="invalidated-by-reservation-section">
+        <button
+          onClick={() => setShowInvalidatedSection(!showInvalidatedSection)}
+          className="w-full flex items-center justify-between p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <UserX className="w-5 h-5 text-red-500" />
+            <div className="text-left">
+              <span className="font-medium text-red-700 dark:text-red-400">
+                Records Taken by Reservation ({invalidatedRecords.length})
+              </span>
+              <p className="text-xs text-red-600 dark:text-red-500">
+                These records were assigned to you but another staff has reserved the customer
+              </p>
+            </div>
+          </div>
+          <span className="text-red-500">{showInvalidatedSection ? '▲' : '▼'}</span>
+        </button>
+        
+        {showInvalidatedSection && (
+          <div className="mt-4 space-y-4">
+            {invalidatedRecords.map(record => (
+              <div 
+                key={record.id}
+                className="p-4 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg"
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-slate-900 dark:text-white">
+                        {record.row_data?.Username || record.row_data?.username || record.row_data?.Name || record.row_data?.name || record.row_data?.ID || 'Unknown Customer'}
+                      </span>
+                      <span className="px-2 py-0.5 text-xs bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 rounded">
+                        INVALID
+                      </span>
+                    </div>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                      {record.database_name} • {record.product_name}
+                    </p>
+                    <p className="text-sm text-red-600 dark:text-red-400 mt-2 font-medium">
+                      {record.invalid_reason}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
+                      Invalidated: {formatDate(record.invalidated_at)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div data-testid="my-assigned-records">
       {selectedBatch ? renderRecordsView() : renderBatchList()}
+      {!selectedBatch && renderInvalidatedSection()}
     </div>
   );
 }
