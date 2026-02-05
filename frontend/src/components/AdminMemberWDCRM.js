@@ -647,14 +647,13 @@ export default function AdminMemberWDCRM() {
             <RefreshCw size={16} />
             Repair Data
           </button>
-          <button
-            onClick={() => setShowSettingsPanel(!showSettingsPanel)}
-            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg flex items-center gap-2 transition-colors"
-            data-testid="memberwd-settings-btn"
-          >
-            <Settings size={18} />
-            Settings
-          </button>
+          <AdminActionsPanel
+            api={api}
+            moduleType="memberwd"
+            onDataRefresh={loadDatabases}
+            onShowSettings={() => setShowSettingsPanel(!showSettingsPanel)}
+            showSettingsBtn={true}
+          />
         </div>
       </div>
 
