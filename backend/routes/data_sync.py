@@ -578,3 +578,152 @@ async def get_sync_status(user: User = Depends(get_admin_user)):
         'features': sync_features,
         'checked_at': jakarta_now.isoformat()
     }
+
+
+@router.post("/data-sync/proactive-check")
+async def proactive_health_check(user: User = Depends(get_admin_user)):
+    """
+    Run a health check and send notifications to admins if critical issues are found.
+    This can be triggered manually or by a scheduled job.
+    """
+    from .notifications import create_notification
+    
+    db = get_db()
+    jakarta_now = get_jakarta_now()
+    
+    # Run the health check
+    health_result = await run_health_check(user)
+    
+    issues = health_result.get('issues', [])
+    warnings = health_result.get('warnings', [])
+    health_score = health_result.get('health_score', 100)
+    
+    # Determine if we should notify admins
+    critical_issues = [i for i in issues if i.get('severity') == 'high']
+    medium_issues = [i for i in issues if i.get('severity') == 'medium']
+    
+    notifications_sent = 0
+    
+    # Only send notifications if there are issues worth reporting
+    if critical_issues or (medium_issues and health_score < 80):
+        # Get all admins
+        admins = await db.users.find(
+            {'role': {'$in': ['admin', 'master_admin']}},
+            {'_id': 0, 'id': 1, 'name': 1}
+        ).to_list(100)
+        
+        # Build notification message
+        if critical_issues:
+            title = f'🚨 Critical Data Issues Detected ({len(critical_issues)})'
+            message_parts = [f'Health Score: {health_score}%']
+            for issue in critical_issues[:3]:
+                message_parts.append(f"• {issue['message']}")
+            if len(critical_issues) > 3:
+                message_parts.append(f"... and {len(critical_issues) - 3} more")
+            message = '\n'.join(message_parts)
+            notification_type = 'data_health_critical'
+        else:
+            title = f'⚠️ Data Health Warning ({len(medium_issues)} issues)'
+            message_parts = [f'Health Score: {health_score}%']
+            for issue in medium_issues[:3]:
+                message_parts.append(f"• {issue['message']}")
+            if len(medium_issues) > 3:
+                message_parts.append(f"... and {len(medium_issues) - 3} more")
+            message = '\n'.join(message_parts)
+            notification_type = 'data_health_warning'
+        
+        # Send notification to all admins
+        for admin in admins:
+            await create_notification(
+                user_id=admin['id'],
+                type=notification_type,
+                title=title,
+                message=message,
+                data={
+                    'health_score': health_score,
+                    'critical_count': len(critical_issues),
+                    'warning_count': len(medium_issues),
+                    'checked_at': jakarta_now.isoformat()
+                }
+            )
+            notifications_sent += 1
+        
+        # Log this proactive check
+        await db.system_logs.insert_one({
+            'type': 'proactive_health_check',
+            'health_score': health_score,
+            'issues_found': len(issues),
+            'warnings_found': len(warnings),
+            'notifications_sent': notifications_sent,
+            'performed_at': jakarta_now.isoformat(),
+            'performed_by': user.id
+        })
+    
+    return {
+        'health_score': health_score,
+        'issues_found': len(issues),
+        'critical_issues': len(critical_issues),
+        'medium_issues': len(medium_issues),
+        'warnings_found': len(warnings),
+        'notifications_sent': notifications_sent,
+        'message': f'Sent {notifications_sent} notifications to admins' if notifications_sent > 0 else 'No critical issues - no notifications sent',
+        'checked_at': jakarta_now.isoformat()
+    }
+
+
+@router.get("/data-sync/monitoring-config")
+async def get_monitoring_config(user: User = Depends(get_admin_user)):
+    """Get proactive monitoring configuration"""
+    db = get_db()
+    
+    config = await db.system_settings.find_one(
+        {'key': 'proactive_monitoring'},
+        {'_id': 0}
+    )
+    
+    if not config:
+        config = {
+            'enabled': False,
+            'check_interval_hours': 6,
+            'notify_on_warning': False,
+            'notify_on_critical': True,
+            'last_check': None
+        }
+    
+    return config
+
+
+@router.put("/data-sync/monitoring-config")
+async def update_monitoring_config(
+    enabled: bool = True,
+    check_interval_hours: int = 6,
+    notify_on_warning: bool = False,
+    notify_on_critical: bool = True,
+    user: User = Depends(get_admin_user)
+):
+    """Update proactive monitoring configuration"""
+    db = get_db()
+    jakarta_now = get_jakarta_now()
+    
+    await db.system_settings.update_one(
+        {'key': 'proactive_monitoring'},
+        {'$set': {
+            'key': 'proactive_monitoring',
+            'enabled': enabled,
+            'check_interval_hours': check_interval_hours,
+            'notify_on_warning': notify_on_warning,
+            'notify_on_critical': notify_on_critical,
+            'updated_at': jakarta_now.isoformat(),
+            'updated_by': user.id
+        }},
+        upsert=True
+    )
+    
+    return {
+        'message': 'Monitoring config updated',
+        'enabled': enabled,
+        'check_interval_hours': check_interval_hours,
+        'notify_on_warning': notify_on_warning,
+        'notify_on_critical': notify_on_critical
+    }
+
