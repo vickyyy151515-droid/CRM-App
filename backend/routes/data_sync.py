@@ -390,6 +390,73 @@ async def repair_data(repair_type: str, user: User = Depends(get_admin_user)):
             'message': f'Updated {updated_count} reserved members. {already_has_date} already had date. {no_omset_found} have no omset records.'
         }
     
+    if repair_type in ['fix_cross_product_invalidations', 'all']:
+        # Fix records that were wrongly invalidated due to cross-product reservation conflicts
+        # These are records that were marked invalid because the customer was reserved by another staff,
+        # but for a DIFFERENT product - which should NOT have caused invalidation
+        
+        fix_count = 0
+        collections = ['customer_records', 'bonanza_records', 'memberwd_records']
+        
+        for collection_name in collections:
+            # Find records that were invalidated due to reservation
+            invalidated_records = await db[collection_name].find({
+                'status': 'invalid',
+                'invalid_reason': {'$regex': '^Customer reserved by', '$options': 'i'},
+                'reserved_by_staff_id': {'$exists': True}
+            }, {'_id': 0, 'id': 1, 'product_id': 1, 'reserved_by_staff_id': 1, 'row_data': 1}).to_list(100000)
+            
+            for record in invalidated_records:
+                record_product_id = record.get('product_id')
+                reserved_by_staff_id = record.get('reserved_by_staff_id')
+                
+                # Get customer ID from row_data
+                row_data = record.get('row_data', {})
+                customer_id = None
+                for key in ['Username', 'username', 'USERNAME', 'USER', 'user', 'ID', 'id', 
+                           'Nama Lengkap', 'nama_lengkap', 'Name', 'name', 
+                           'CUSTOMER', 'customer', 'Customer', 'customer_id', 'Customer_ID']:
+                    if key in row_data and row_data[key]:
+                        customer_id = str(row_data[key]).strip().upper()
+                        break
+                
+                if not customer_id or not record_product_id or not reserved_by_staff_id:
+                    continue
+                
+                # Check if there's actually a reservation for this customer + product by this staff
+                reservation = await db.reserved_members.find_one({
+                    '$or': [
+                        {'customer_id': {'$regex': f'^{customer_id}$', '$options': 'i'}},
+                        {'customer_name': {'$regex': f'^{customer_id}$', '$options': 'i'}}
+                    ],
+                    'product_id': record_product_id,
+                    'staff_id': reserved_by_staff_id,
+                    'status': 'approved'
+                })
+                
+                # If no matching reservation exists for this product, this was wrongly invalidated
+                if not reservation:
+                    # Restore the record to assigned status
+                    await db[collection_name].update_one(
+                        {'id': record['id']},
+                        {'$set': {
+                            'status': 'assigned',
+                            'invalid_reason': None,
+                            'invalidated_at': None,
+                            'invalidated_by': None,
+                            'reserved_by_staff_id': None,
+                            'reserved_by_staff_name': None,
+                            'restored_at': jakarta_now.isoformat(),
+                            'restored_reason': 'Cross-product invalidation fix'
+                        }}
+                    )
+                    fix_count += 1
+        
+        results['fix_cross_product_invalidations'] = {
+            'fixed': fix_count,
+            'message': f'Restored {fix_count} records that were wrongly invalidated due to cross-product reservation'
+        }
+    
     # Log the repair action
     await db.system_logs.insert_one({
         'type': 'data_repair',
