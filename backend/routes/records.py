@@ -1029,6 +1029,44 @@ async def get_my_assigned_records(product_id: Optional[str] = None, user: User =
     
     return records
 
+
+@router.get("/my-invalidated-by-reservation")
+async def get_my_invalidated_by_reservation(
+    product_id: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
+    """Get records that were invalidated because another staff reserved the customer.
+    These records were previously assigned to this staff but are now invalid.
+    For the normal database (customer_records).
+    """
+    db = get_db()
+    
+    if user.role != 'staff':
+        raise HTTPException(status_code=403, detail="Only staff can access this endpoint")
+    
+    query = {
+        'assigned_to': user.id,
+        'status': 'invalid',
+        'invalid_reason': {'$regex': '^Customer reserved by', '$options': 'i'}
+    }
+    if product_id:
+        query['product_id'] = product_id
+    
+    records = await db.customer_records.find(query, {'_id': 0}).sort('invalidated_at', -1).to_list(1000)
+    
+    # Convert datetime fields
+    for record in records:
+        if isinstance(record.get('created_at'), str):
+            record['created_at'] = datetime.fromisoformat(record['created_at'])
+        if record.get('assigned_at') and isinstance(record['assigned_at'], str):
+            record['assigned_at'] = datetime.fromisoformat(record['assigned_at'])
+    
+    return {
+        'count': len(records),
+        'records': records
+    }
+
+
 # ==================== STATUS UPDATE ENDPOINTS ====================
 
 @router.patch("/customer-records/{record_id}/whatsapp-status")
