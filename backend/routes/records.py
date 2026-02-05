@@ -1460,6 +1460,7 @@ async def bulk_create_reserved_members(bulk_data: BulkReservedMemberCreate, user
     # Process each customer ID
     added = []
     skipped = []
+    total_invalidated = 0
     
     for customer_id in customer_ids:
         # Check for existing reservation (case-insensitive) - check both customer_id and legacy customer_name
