@@ -131,15 +131,29 @@ export default function AdminReservedMembers({ onUpdate }) {
       });
       
       setBulkResult(response.data);
+      const data = response.data;
       
-      if (response.data.added_count > 0) {
-        toast.success(`Successfully added ${response.data.added_count} reservations`);
+      if (data.added_count > 0) {
+        // Show success with invalidation info if any conflicts were resolved
+        if (data.invalidated_conflicts > 0) {
+          toast.success(
+            <div className="space-y-1">
+              <div className="font-medium">✓ Added {data.added_count} reservations</div>
+              <div className="text-sm opacity-90">
+                📋 {data.invalidated_conflicts} conflicting record{data.invalidated_conflicts > 1 ? 's' : ''} invalidated
+              </div>
+            </div>,
+            { duration: 5000 }
+          );
+        } else {
+          toast.success(`Successfully added ${data.added_count} reservations`);
+        }
         loadData();
         onUpdate?.();
       }
       
-      if (response.data.skipped_count > 0) {
-        toast.warning(`${response.data.skipped_count} IDs were skipped (duplicates)`);
+      if (data.skipped_count > 0) {
+        toast.warning(`${data.skipped_count} IDs were skipped (duplicates)`);
       }
       
       // Clear the form on success
