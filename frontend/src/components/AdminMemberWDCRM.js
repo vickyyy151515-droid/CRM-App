@@ -1055,13 +1055,24 @@ export default function AdminMemberWDCRM() {
                                 <td key={col} className="px-3 py-2 text-sm text-slate-700 dark:text-slate-200">{record.row_data[col] || '-'}</td>
                               ))}
                               <td className="px-3 py-2">
-                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                                  record.status === 'available' 
-                                    ? 'bg-emerald-100 text-emerald-800' 
-                                    : 'bg-blue-100 text-blue-800'
-                                }`}>
-                                  {record.status === 'available' ? 'Available' : 'Assigned'}
-                                </span>
+                                <div className="flex items-center gap-1">
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                    record.status === 'available' 
+                                      ? 'bg-emerald-100 text-emerald-800' 
+                                      : 'bg-blue-100 text-blue-800'
+                                  }`}>
+                                    {record.status === 'available' ? 'Available' : 'Assigned'}
+                                  </span>
+                                  {record.is_reservation_conflict && (
+                                    <span 
+                                      className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800"
+                                      title={record.invalid_reason || 'Customer reserved by another staff'}
+                                    >
+                                      <AlertTriangle size={10} className="mr-0.5" />
+                                      Conflict
+                                    </span>
+                                  )}
+                                </div>
                               </td>
                               <td className="px-3 py-2 text-sm text-slate-600 dark:text-slate-400">
                                 {record.assigned_to_name || '-'}
