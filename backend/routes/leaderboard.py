@@ -65,21 +65,10 @@ async def get_leaderboard(
     records = await db.omset_records.find(query, {'_id': 0}).to_list(100000)
     today_records = await db.omset_records.find({'record_date': today}, {'_id': 0}).to_list(10000)
     
-    # Build customer_first_date for NDP detection (need all records for this)
-    # IMPORTANT: Exclude records with "tambahan" from first_date calculation
-    all_records = await db.omset_records.find({}, {'_id': 0, 'customer_id': 1, 'customer_id_normalized': 1, 'product_id': 1, 'record_date': 1, 'keterangan': 1, 'staff_id': 1}).to_list(100000)
-    
-    # STAFF-SPECIFIC customer_first_date (SINGLE SOURCE OF TRUTH for NDP/RDP)
-    # Key: (staff_id, customer_id_normalized, product_id) -> first_date
-    staff_customer_first_date = {}
-    for record in sorted(all_records, key=lambda x: x['record_date']):
-        if is_tambahan_record(record):
-            continue
-        staff_id_rec = record['staff_id']
-        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-        key = (staff_id_rec, cid_normalized, record['product_id'])
-        if key not in staff_customer_first_date:
-            staff_customer_first_date[key] = record['record_date']
+    # Build customer_first_date for NDP detection
+    # Use MongoDB aggregation for efficiency
+    from utils.db_operations import build_staff_first_date_map
+    staff_customer_first_date = await build_staff_first_date_map(db)
     
     # Get all staff users
     staff_users = await db.users.find({'role': 'staff'}, {'_id': 0}).to_list(100)
