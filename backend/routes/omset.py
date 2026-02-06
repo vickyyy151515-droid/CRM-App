@@ -834,8 +834,8 @@ async def export_omset_summary(
         writer.writerow([
             date,
             data['total_form'],
-            len(data['ndp_customers']),
-            data['rdp_count'],
+            len(data['ndp_tuples']),
+            len(data['rdp_tuples']),
             data['total_depo']
         ])
     
