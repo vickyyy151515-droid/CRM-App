@@ -11,11 +11,9 @@ from datetime import datetime, timezone, timedelta
 import uuid
 from routes.deps import get_db
 from routes.auth import get_current_user, User
+from utils.helpers import get_jakarta_now, get_jakarta_date_string, JAKARTA_TZ
 
 router = APIRouter(tags=["Lateness Fees"])
-
-# Jakarta timezone (UTC+7)
-JAKARTA_TZ = timezone(timedelta(hours=7))
 
 # Fee configuration
 LATENESS_FEE_PER_MINUTE = 5  # $5 per minute
@@ -26,14 +24,6 @@ DEFAULT_CURRENCY_RATES = {
     'THB': 3100,  # $1 = 3100 THB
     'IDR': 16700  # $1 = 16700 IDR
 }
-
-def get_jakarta_now():
-    """Get current datetime in Jakarta timezone"""
-    return datetime.now(JAKARTA_TZ)
-
-def get_jakarta_date_string():
-    """Get current date string in Jakarta timezone (YYYY-MM-DD)"""
-    return get_jakarta_now().strftime('%Y-%m-%d')
 
 # ==================== MODELS ====================
 
