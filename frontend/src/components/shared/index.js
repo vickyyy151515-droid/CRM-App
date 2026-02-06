@@ -20,6 +20,11 @@ export { useAdminModule } from './useAdminModule';
 // Shared components for analytics and reporting
 export { default as DateRangeSelector } from './DateRangeSelector';
 export { default as SummaryStatsCards, StatsCard } from './SummaryStatsCards';
+export { default as AnalyticsFilterBar } from './AnalyticsFilterBar';
+export { ChartCard, TrendLineChart, MultiLineChart, SimpleBarChart, SimpleAreaChart, CHART_COLORS } from './ChartComponents';
+
+// Shared components for staff-facing pages
+export { default as InvalidatedByReservationSection } from './InvalidatedByReservationSection';
 
 // Utility functions
 export const formatDate = (dateStr) => {
