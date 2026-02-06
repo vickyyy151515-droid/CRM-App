@@ -1156,7 +1156,8 @@ async def repair_bonanza_data(user: User = Depends(get_admin_user)):
     1. Fixes records with missing database_id or database_name
     2. Resets corrupted status values
     3. Clears orphaned assignments
-    4. Reports detailed statistics
+    4. Fixes records with status='invalid' by restoring to 'assigned' with is_reservation_conflict flag
+    5. Reports detailed statistics
     """
     db = get_db()
     now = get_jakarta_now()
@@ -1164,7 +1165,8 @@ async def repair_bonanza_data(user: User = Depends(get_admin_user)):
     repair_log = {
         'timestamp': now.isoformat(),
         'fixed_missing_db_info': 0,
-        'fixed_invalid_status': 0,
+        'fixed_invalid_status_restored': 0,
+        'fixed_invalid_status_cleared': 0,
         'fixed_orphaned_assignments': 0,
         'databases_checked': [],
         'errors': []
@@ -1172,30 +1174,11 @@ async def repair_bonanza_data(user: User = Depends(get_admin_user)):
     
     # Get all databases
     databases = await db.bonanza_databases.find({}, {'_id': 0}).to_list(1000)
-    db_map = {d['id']: d for d in databases}
     
     for database in databases:
         db_id = database['id']
         db_name = database['name']
         product_name = database.get('product_name', 'Unknown')
-        
-        # Get all records for this database
-        records = await db.bonanza_records.find({'database_id': db_id}, {'_id': 0}).to_list(100000)
-        
-        # Count actual statuses
-        status_counts = {
-            'available': 0,
-            'assigned': 0,
-            'invalid_archived': 0,
-            'unknown': 0
-        }
-        
-        for record in records:
-            status = record.get('status', 'unknown')
-            if status in status_counts:
-                status_counts[status] += 1
-            else:
-                status_counts['unknown'] += 1
         
         # Fix records with missing database_name
         result = await db.bonanza_records.update_many(
@@ -1213,14 +1196,55 @@ async def repair_bonanza_data(user: User = Depends(get_admin_user)):
         if result.modified_count > 0:
             repair_log['fixed_missing_db_info'] += result.modified_count
         
-        # Fix invalid status values (not one of the valid statuses)
-        valid_statuses = ['available', 'assigned', 'invalid_archived']
-        result = await db.bonanza_records.update_many(
-            {'database_id': db_id, 'status': {'$nin': valid_statuses}},
-            {'$set': {'status': 'available'}}
-        )
-        if result.modified_count > 0:
-            repair_log['fixed_invalid_status'] += result.modified_count
+        # CRITICAL FIX: Handle records with status='invalid' (caused by reservation conflicts)
+        # These records should have status='assigned' with is_reservation_conflict=True
+        invalid_with_assignment = await db.bonanza_records.find({
+            'database_id': db_id,
+            'status': 'invalid',
+            'assigned_to': {'$exists': True, '$ne': None}
+        }, {'_id': 0}).to_list(10000)
+        
+        for record in invalid_with_assignment:
+            # Restore to 'assigned' status and mark as reservation conflict
+            await db.bonanza_records.update_one(
+                {'id': record['id']},
+                {'$set': {
+                    'status': 'assigned',
+                    'is_reservation_conflict': True
+                }}
+            )
+            repair_log['fixed_invalid_status_restored'] += 1
+        
+        # Handle remaining 'invalid' status records without proper assignment
+        invalid_without_assignment = await db.bonanza_records.find({
+            'database_id': db_id,
+            'status': 'invalid',
+            '$or': [
+                {'assigned_to': {'$exists': False}},
+                {'assigned_to': None}
+            ]
+        }, {'_id': 0}).to_list(10000)
+        
+        if invalid_without_assignment:
+            record_ids = [r['id'] for r in invalid_without_assignment]
+            result = await db.bonanza_records.update_many(
+                {'id': {'$in': record_ids}},
+                {'$set': {'status': 'available'}}
+            )
+            repair_log['fixed_invalid_status_cleared'] += result.modified_count
+        
+        # Fix other invalid status values (anything not in valid list)
+        valid_statuses = ['available', 'assigned', 'invalid_archived', 'invalid']
+        other_invalid = await db.bonanza_records.count_documents({
+            'database_id': db_id, 
+            'status': {'$nin': valid_statuses}
+        })
+        if other_invalid > 0:
+            result = await db.bonanza_records.update_many(
+                {'database_id': db_id, 'status': {'$nin': valid_statuses}},
+                {'$set': {'status': 'available'}}
+            )
+            repair_log['fixed_invalid_status_cleared'] += result.modified_count
         
         # Fix orphaned assignments (assigned but no assigned_to)
         result = await db.bonanza_records.update_many(
@@ -1263,7 +1287,8 @@ async def repair_bonanza_data(user: User = Depends(get_admin_user)):
     
     total_fixed = (
         repair_log['fixed_missing_db_info'] + 
-        repair_log['fixed_invalid_status'] + 
+        repair_log['fixed_invalid_status_restored'] + 
+        repair_log['fixed_invalid_status_cleared'] +
         repair_log['fixed_orphaned_assignments']
     )
     
