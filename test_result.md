@@ -102,192 +102,133 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Backend refactoring P2 - Replace inline repair/health-check/product-mismatch/reserved-conflicts logic in memberwd.py and bonanza.py with shared utility functions from repair_helpers.py"
+user_problem_statement: "Test and verify Reserved Member Conflict (pending omset workflow) and Duplicate Customer Log features"
 
 backend:
-  - task: "MemberWD data-health endpoint uses shared utilities"
-    implemented: true
-    working: true
-    file: "backend/routes/memberwd.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: true
-    status_history:
-        - working: true
-          agent: "main"
-          comment: "Refactored get_memberwd_data_health to use run_full_health_check + check_batch_health. Curl test passed: returns is_healthy, databases, batches."
-
-  - task: "MemberWD diagnose-product-mismatch uses shared utilities"
-    implemented: true
-    working: true
-    file: "backend/routes/memberwd.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: true
-    status_history:
-        - working: true
-          agent: "main"
-          comment: "Refactored diagnose_memberwd_product_mismatch to use shared diagnose_product_mismatch. Curl test passed."
-
-  - task: "MemberWD repair-product-mismatch uses shared utilities"
-    implemented: true
-    working: true
-    file: "backend/routes/memberwd.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: true
-    status_history:
-        - working: true
-          agent: "main"
-          comment: "Refactored repair_memberwd_product_mismatch to use shared repair_product_mismatch."
-
-  - task: "MemberWD diagnose-reserved-conflicts uses shared utilities"
-    implemented: true
-    working: true
-    file: "backend/routes/memberwd.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: true
-    status_history:
-        - working: true
-          agent: "main"
-          comment: "Refactored diagnose_memberwd_reserved_conflicts to use shared diagnose_reserved_conflicts. Curl test passed."
-
-  - task: "MemberWD fix-reserved-conflicts uses shared utilities"
-    implemented: true
-    working: true
-    file: "backend/routes/memberwd.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: true
-    status_history:
-        - working: true
-          agent: "main"
-          comment: "Refactored fix_memberwd_reserved_conflicts to use shared fix_reserved_conflicts."
-
-  - task: "Bonanza diagnose-product-mismatch uses shared utilities"
-    implemented: true
-    working: true
-    file: "backend/routes/bonanza.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: true
-    status_history:
-        - working: true
-          agent: "main"
-          comment: "Refactored diagnose_product_mismatch to use shared utility. Curl test passed."
-
-  - task: "Bonanza repair-product-mismatch uses shared utilities"
-    implemented: true
-    working: true
-    file: "backend/routes/bonanza.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: true
-    status_history:
-        - working: true
-          agent: "main"
-          comment: "Refactored repair_product_mismatch to use shared utility."
-
-  - task: "Bonanza diagnose-reserved-conflicts uses shared utilities"
-    implemented: true
-    working: true
-    file: "backend/routes/bonanza.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: true
-    status_history:
-        - working: true
-          agent: "main"
-          comment: "Refactored diagnose_reserved_conflicts to use shared utility. Curl test passed."
-
-  - task: "Bonanza fix-reserved-conflicts uses shared utilities"
-    implemented: true
-    working: true
-    file: "backend/routes/bonanza.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: true
-    status_history:
-        - working: true
-          agent: "main"
-          comment: "Refactored fix_reserved_conflicts to use shared utility."
-
-  - task: "MemberWD repair-data still works (already uses shared utils)"
-    implemented: true
-    working: true
-    file: "backend/routes/memberwd.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: true
-    status_history:
-        - working: true
-          agent: "main"
-          comment: "Was already refactored. Curl test confirmed: success=True, Fixed 0 issues."
-
-  - task: "Bonanza repair-data still works (already uses shared utils)"
-    implemented: true
-    working: true
-    file: "backend/routes/bonanza.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: true
-    status_history:
-        - working: true
-          agent: "main"
-          comment: "Was already refactored. Curl test confirmed: success=True, Fixed 0 issues."
-
-  - task: "Bonanza data-health still works (already uses shared utils)"
-    implemented: true
-    working: true
-    file: "backend/routes/bonanza.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: true
-    status_history:
-        - working: true
-          agent: "main"
-          comment: "Was already refactored. Curl test confirmed: is_healthy=True."
-
-frontend:
-  - task: "OfficeInventory page renders correctly after refactoring"
-    implemented: true
-    working: true
-    file: "frontend/src/components/OfficeInventory.js"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: true
-    status_history:
-        - working: true
-          agent: "main"
-          comment: "Refactored from 1070 to 275 lines by extracting 8 sub-components into /inventory/ folder. Screenshot confirmed page renders with stats, filters, table."
-
-  - task: "OfficeInventory modals work (Add, Edit, Assign, Return, History, Bulk Add)"
+  - task: "POST /api/omset creates record with pending status when customer is on another staff reserved list"
     implemented: true
     working: "NA"
-    file: "frontend/src/components/OfficeInventory.js"
+    file: "backend/routes/omset.py"
     stuck_count: 0
     priority: "high"
     needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
-          comment: "Modals extracted to separate components. Need frontend testing to verify modal interactions."
+          comment: "Code implemented. When creating omset, checks reserved_members collection for conflicts. If customer is reserved by another staff, sets approval_status to 'pending' and creates a notification for admin."
+
+  - task: "POST /api/omset creates record with approved status when no reserved member conflict"
+    implemented: true
+    working: "NA"
+    file: "backend/routes/omset.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Code implemented. Non-conflicting omset records should get approval_status='approved' by default."
+
+  - task: "GET /api/omset/pending returns all pending omset records (admin only)"
+    implemented: true
+    working: true
+    file: "backend/routes/omset.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Curl test passed - returns empty list [] when no pending records. Returns 200."
+
+  - task: "POST /api/omset/{id}/approve approves a pending record (admin only)"
+    implemented: true
+    working: "NA"
+    file: "backend/routes/omset.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Code implemented. Sets approval_status to 'approved', updates reserved_members last_omset_date, and sends notification to staff."
+
+  - task: "POST /api/omset/{id}/decline declines and deletes a pending record (admin only)"
+    implemented: true
+    working: "NA"
+    file: "backend/routes/omset.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Code implemented. Deletes the record and sends notification to staff."
+
+  - task: "GET /api/omset/duplicates returns duplicate customer records by different staff (admin only)"
+    implemented: true
+    working: true
+    file: "backend/routes/omset.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Curl test passed - returns {total_duplicates: 0, total_records_involved: 0, duplicates: []}. Uses MongoDB aggregation to find same customer+product recorded by multiple staff."
+
+frontend:
+  - task: "Admin OMSET CRM Pending tab shows pending records with approve/decline actions"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/components/shared/OmsetPendingApprovals.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Screenshot verified: Pending tab renders correctly, shows 'No pending approvals' when empty. Has approve/decline buttons per record."
+
+  - task: "Admin OMSET CRM Duplicates tab shows duplicate records with expandable details"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/components/shared/OmsetDuplicates.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Screenshot verified: Duplicate tab renders, shows stats cards (Duplicate Groups, Records Involved), date filters, and 'No duplicates found' when empty."
+
+  - task: "Staff OMSET CRM shows pending status warning when omset conflicts with reserved member"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/components/StaffOmsetCRM.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Code shows toast warning when record has approval_status='pending'. Also shows pending badge on records in list."
 
 metadata:
   created_by: "main_agent"
-  version: "1.1"
-  test_sequence: 2
+  version: "2.0"
+  test_sequence: 3
   run_ui: true
 
 test_plan:
   current_focus:
-    - "NDP/RDP consistency fix across all calculation endpoints"
-    - "Verify all omset/daily-summary/leaderboard/bonus/analytics endpoints return consistent NDP/RDP"
+    - "Reserved Member Conflict pending workflow (end-to-end)"
+    - "Duplicate Customer Log feature"
+    - "Approve and Decline pending omset actions"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
     - agent: "main"
-      message: "Fixed NDP/RDP count mismatch across ALL views. Root causes: 1) Daily Summary used GLOBAL NDP (customer's first-ever deposit across ALL staff) while Staff Performance used STAFF-SPECIFIC NDP. 2) Staff total tracked unique customers, but product breakdown tracked unique (customer,product) pairs causing sum mismatch. 3) Product summary had dedup bug preventing correct counting. Fix: Changed ALL NDP/RDP to use SINGLE SOURCE OF TRUTH: per (staff_id, customer_id, product_id) first_date. Staff total now tracks (customer,product) pairs instead of just customer_id. Files changed: omset.py, daily_summary.py, leaderboard.py, bonus.py, analytics.py, retention.py, report.py. Login: vicky@crm.com / vicky123. No test data in DB (production data only), so test that endpoints respond 200 and return consistent structure."
+      message: "Two new features implemented and need comprehensive testing: 1) Reserved Member Conflict - when staff creates omset for customer reserved by another staff, it should be set to 'pending' and require admin approval. 2) Duplicate Customer Log - admin can view all instances where same customer/product is recorded by multiple staff. Test workflow: First create a reserved member for Staff User (staff-user-1), then login as a different staff and create an omset for that reserved customer to trigger 'pending'. Then login as admin to test approve/decline. For duplicates: create omset records for the same customer+product by different staff. Admin credentials: vicky@crm.com / vicky123. Staff credentials: staff@crm.com / staff123. Product IDs: prod-istana2000, prod-liga2000. Create test data via API. Test files should be in /app/backend/tests/."
