@@ -57,20 +57,30 @@ async def get_retention_overview(
         keterangan = record.get('keterangan', '') or ''
         return 'tambahan' in keterangan.lower()
     
-    # Get ALL omset records to determine first deposit dates
-    all_records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
-    
-    # Build customer first deposit map - USE NORMALIZED CUSTOMER ID
-    # IMPORTANT: Exclude records with "tambahan" in notes from first_date calculation
-    customer_first_date = {}
-    for record in sorted(all_records, key=lambda x: x['record_date']):
-        # Skip "tambahan" records when determining first deposit date
-        if is_tambahan_record(record):
-            continue
-        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-        key = (cid_normalized, record.get('product_id'))
-        if key not in customer_first_date:
-            customer_first_date[key] = record['record_date']
+    # Get first deposit dates efficiently using MongoDB aggregation
+    # Retention uses (customer_id, product_id) key — business-level customer acquisition
+    pipeline = [
+        {'$match': {'$and': [
+            {'$or': [
+                {'keterangan': {'$exists': False}},
+                {'keterangan': None},
+                {'keterangan': ''},
+                {'keterangan': {'$not': {'$regex': 'tambahan', '$options': 'i'}}}
+            ]}
+        ]}},
+        {'$group': {
+            '_id': {
+                'c': {'$ifNull': ['$customer_id_normalized', '$customer_id']},
+                'p': '$product_id'
+            },
+            'first_date': {'$min': '$record_date'}
+        }}
+    ]
+    agg_results = await db.omset_records.aggregate(pipeline).to_list(None)
+    customer_first_date = {
+        ((r['_id']['c'] or '').strip().upper(), r['_id']['p']): r['first_date']
+        for r in agg_results if r['_id']['c'] and r['_id']['p']
+    }
     
     # Analyze customers in date range - USE NORMALIZED CUSTOMER ID
     customer_stats = defaultdict(lambda: {
