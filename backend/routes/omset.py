@@ -575,6 +575,10 @@ async def get_omset_summary(
                 staff_rdp_customers[staff_id_rec].add(cid_normalized)
                 staff_summary[staff_id_rec]['rdp_count'] += 1
         
+        # CRITICAL FIX: Track (staff, customer) pairs that have been counted
+        # to prevent double-counting when same customer deposits to multiple products
+        staff_customer_key = (staff_id_rec, cid_normalized)
+        
         # Initialize product summary with tracking sets
         if product_id_rec not in product_summary:
             product_summary[product_id_rec] = {
