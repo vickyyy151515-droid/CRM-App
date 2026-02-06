@@ -172,13 +172,176 @@ export default function DownloadRequests({ onUpdate }) {
 
   const pendingRequests = requests.filter(r => r.status === 'pending');
   const reviewedRequests = requests.filter(r => r.status !== 'pending');
+  
+  const hasActiveFilters = filterStaff || filterProduct || filterDateFrom || filterDateTo || filterStatus;
 
   return (
     <div>
-      <h2 className="text-3xl font-semibold tracking-tight text-slate-900 mb-6">Download Requests</h2>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">Download Requests</h2>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`h-9 px-4 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
+              showFilters || hasActiveFilters
+                ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300'
+            }`}
+            data-testid="toggle-filters-btn"
+          >
+            <Filter size={16} />
+            Filters {hasActiveFilters && `(${[filterStaff, filterProduct, filterDateFrom, filterDateTo, filterStatus].filter(Boolean).length})`}
+          </button>
+          <button
+            onClick={() => { loadRequests(); loadStats(); }}
+            className="h-9 px-3 text-sm font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 rounded-lg transition-colors"
+          >
+            <RefreshCw size={16} />
+          </button>
+        </div>
+      </div>
+
+      {/* Filter Panel */}
+      {showFilters && (
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 mb-6" data-testid="filters-panel">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <Users size={14} className="inline mr-1" /> Staff
+              </label>
+              <select
+                value={filterStaff}
+                onChange={(e) => setFilterStaff(e.target.value)}
+                className="w-full h-9 px-3 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                data-testid="filter-staff"
+              >
+                <option value="">All Staff</option>
+                {staffList.map(staff => (
+                  <option key={staff.id} value={staff.id}>{staff.name}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <Package size={14} className="inline mr-1" /> Product
+              </label>
+              <select
+                value={filterProduct}
+                onChange={(e) => setFilterProduct(e.target.value)}
+                className="w-full h-9 px-3 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                data-testid="filter-product"
+              >
+                <option value="">All Products</option>
+                {productList.map(product => (
+                  <option key={product.id} value={product.id}>{product.name}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <Calendar size={14} className="inline mr-1" /> From Date
+              </label>
+              <input
+                type="date"
+                value={filterDateFrom}
+                onChange={(e) => setFilterDateFrom(e.target.value)}
+                className="w-full h-9 px-3 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                data-testid="filter-date-from"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <Calendar size={14} className="inline mr-1" /> To Date
+              </label>
+              <input
+                type="date"
+                value={filterDateTo}
+                onChange={(e) => setFilterDateTo(e.target.value)}
+                className="w-full h-9 px-3 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                data-testid="filter-date-to"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Status
+              </label>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="w-full h-9 px-3 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                data-testid="filter-status"
+              >
+                <option value="">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+          </div>
+          
+          {hasActiveFilters && (
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={clearFilters}
+                className="h-8 px-3 text-sm font-medium text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+              >
+                Clear All Filters
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Stats Cards */}
+      {stats && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4 mb-6" data-testid="stats-cards">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
+            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Total Requests</div>
+            <div className="text-2xl font-bold text-slate-900 dark:text-white">{stats.total_requests}</div>
+          </div>
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
+            <div className="text-xs font-medium text-amber-600 dark:text-amber-400 uppercase mb-1">Pending</div>
+            <div className="text-2xl font-bold text-amber-700 dark:text-amber-300">{stats.pending}</div>
+          </div>
+          <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4">
+            <div className="text-xs font-medium text-emerald-600 dark:text-emerald-400 uppercase mb-1">Approved</div>
+            <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{stats.approved}</div>
+          </div>
+          <div className="bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-xl p-4">
+            <div className="text-xs font-medium text-rose-600 dark:text-rose-400 uppercase mb-1">Rejected</div>
+            <div className="text-2xl font-bold text-rose-700 dark:text-rose-300">{stats.rejected}</div>
+          </div>
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+            <div className="text-xs font-medium text-blue-600 dark:text-blue-400 uppercase mb-1">Today</div>
+            <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{stats.today?.requests || 0}</div>
+            <div className="text-xs text-blue-500">{stats.today?.records || 0} records</div>
+          </div>
+          <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4">
+            <div className="text-xs font-medium text-purple-600 dark:text-purple-400 uppercase mb-1">This Week</div>
+            <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">{stats.this_week?.requests || 0}</div>
+            <div className="text-xs text-purple-500">{stats.this_week?.records || 0} records</div>
+          </div>
+          <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl p-4">
+            <div className="text-xs font-medium text-indigo-600 dark:text-indigo-400 uppercase mb-1">This Month</div>
+            <div className="text-2xl font-bold text-indigo-700 dark:text-indigo-300">{stats.this_month?.requests || 0}</div>
+            <div className="text-xs text-indigo-500">{stats.this_month?.records || 0} records</div>
+          </div>
+        </div>
+      )}
+
+      {/* Results summary */}
+      {hasActiveFilters && (
+        <div className="mb-4 text-sm text-slate-600 dark:text-slate-400">
+          Showing {requests.length} request{requests.length !== 1 ? 's' : ''} with current filters
+        </div>
+      )}
 
       {loading ? (
-        <div className="text-center py-12 text-slate-600">Loading requests...</div>
+        <div className="text-center py-12 text-slate-600 dark:text-slate-400">Loading requests...</div>
       ) : (
         <div className="space-y-8">
           {pendingRequests.length > 0 && (
