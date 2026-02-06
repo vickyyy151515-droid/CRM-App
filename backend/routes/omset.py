@@ -434,10 +434,13 @@ async def get_omset_summary(
     all_query = {}
     if product_id:
         all_query['product_id'] = product_id
+    # CRITICAL: When filtered by staff, we still need ALL records to know the customer's
+    # first date with THIS staff. But we also need all records to compare across staff.
     all_records_for_ndp = await db.omset_records.find(all_query, {'_id': 0}).to_list(100000)
     
-    # Build customer_first_date PER STAFF (for staff-level NDP/RDP calculation)
+    # Build customer_first_date PER STAFF PER PRODUCT
     # Key: (staff_id, customer_id_normalized, product_id) -> first_date
+    # This is the SINGLE SOURCE OF TRUTH for NDP/RDP across ALL views
     staff_customer_first_date = {}
     for record in sorted(all_records_for_ndp, key=lambda x: x['record_date']):
         if is_tambahan_record(record):
@@ -448,17 +451,6 @@ async def get_omset_summary(
         if key not in staff_customer_first_date:
             staff_customer_first_date[key] = record['record_date']
     
-    # Build global customer_first_date (for daily totals - customer's first deposit ever)
-    # This is for the overall NDP/RDP totals shown in daily view
-    global_customer_first_date = {}
-    for record in sorted(all_records_for_ndp, key=lambda x: x['record_date']):
-        if is_tambahan_record(record):
-            continue
-        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-        key = (cid_normalized, record['product_id'])
-        if key not in global_customer_first_date:
-            global_customer_first_date[key] = record['record_date']
-    
     daily_summary = {}
     staff_summary = {}
     product_summary = {}
@@ -468,11 +460,12 @@ async def get_omset_summary(
     total_ndp = 0
     total_rdp = 0
     
-    # Tracking sets for staff and product unique customers
-    staff_ndp_customers = {}
-    staff_rdp_customers = {}
-    product_ndp_customers = {}
-    product_rdp_customers = {}
+    # Use (staff_id, customer_id, product_id) tuples for consistent tracking everywhere
+    # This ensures NDP/RDP counts ALWAYS match across daily, staff, and product views
+    staff_ndp_pairs = {}     # staff_id -> set of (customer_id, product_id)
+    staff_rdp_pairs = {}     # staff_id -> set of (customer_id, product_id)
+    product_ndp_pairs = {}   # product_id -> set of (staff_id, customer_id)
+    product_rdp_pairs = {}   # product_id -> set of (staff_id, customer_id)
     
     for record in records:
         date = record['record_date']
@@ -486,41 +479,29 @@ async def get_omset_summary(
         # Use normalized customer_id
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
         
-        # Determine global NDP/RDP (for daily totals - customer's first deposit EVER)
-        global_key = (cid_normalized, product_id_rec)
-        global_first_date = global_customer_first_date.get(global_key)
-        
-        # Determine staff-specific NDP/RDP (for staff breakdown - customer's first deposit WITH THIS STAFF)
+        # SINGLE NDP/RDP definition: per (staff, customer, product)
         staff_key = (staff_id_rec, cid_normalized, product_id_rec)
         staff_first_date = staff_customer_first_date.get(staff_key)
         
-        # Check if tambahan record
         is_tambahan = is_tambahan_record(record)
         
-        # Global NDP/RDP (for daily summary)
         if is_tambahan:
-            is_global_ndp = False
+            is_ndp = False
         else:
-            is_global_ndp = global_first_date == date
-        
-        # Staff-specific NDP/RDP (for staff breakdown)
-        if is_tambahan:
-            is_staff_ndp = False
-        else:
-            is_staff_ndp = staff_first_date == date
+            is_ndp = staff_first_date == date
         
         total_nominal += nominal
         total_depo += depo_total
         
-        # Initialize daily summary with tracking sets
+        # --- Daily Summary ---
         if date not in daily_summary:
             daily_summary[date] = {
                 'date': date, 
                 'total_nominal': 0, 
                 'total_depo': 0, 
                 'count': 0,
-                'ndp_customers': set(),  # Track unique NDP customers
-                'rdp_customers': set(),  # Track unique RDP customers
+                'ndp_tuples': set(),   # Track (staff_id, customer_id, product_id)
+                'rdp_tuples': set(),   # Track (staff_id, customer_id, product_id)
                 'ndp_total': 0,
                 'rdp_total': 0
             }
@@ -528,14 +509,17 @@ async def get_omset_summary(
         daily_summary[date]['total_depo'] += depo_total
         daily_summary[date]['count'] += 1
         
-        if is_global_ndp:
-            daily_summary[date]['ndp_customers'].add(cid_normalized)
-            daily_summary[date]['ndp_total'] += depo_total
+        ndp_tuple = (staff_id_rec, cid_normalized, product_id_rec)
+        if is_ndp:
+            if ndp_tuple not in daily_summary[date]['ndp_tuples']:
+                daily_summary[date]['ndp_tuples'].add(ndp_tuple)
+                daily_summary[date]['ndp_total'] += depo_total
         else:
-            daily_summary[date]['rdp_customers'].add(cid_normalized)
-            daily_summary[date]['rdp_total'] += depo_total
+            if ndp_tuple not in daily_summary[date]['rdp_tuples']:
+                daily_summary[date]['rdp_tuples'].add(ndp_tuple)
+                daily_summary[date]['rdp_total'] += depo_total
         
-        # Initialize staff summary with tracking sets
+        # --- Staff Summary ---
         if staff_id_rec not in staff_summary:
             staff_summary[staff_id_rec] = {
                 'staff_id': staff_id_rec, 
@@ -546,28 +530,25 @@ async def get_omset_summary(
                 'ndp_count': 0,
                 'rdp_count': 0
             }
-            staff_ndp_customers[staff_id_rec] = set()
-            staff_rdp_customers[staff_id_rec] = set()
+            staff_ndp_pairs[staff_id_rec] = set()
+            staff_rdp_pairs[staff_id_rec] = set()
         
         staff_summary[staff_id_rec]['total_nominal'] += nominal
         staff_summary[staff_id_rec]['total_depo'] += depo_total
         staff_summary[staff_id_rec]['count'] += 1
         
-        # Use STAFF-SPECIFIC NDP/RDP for staff breakdown
-        if is_staff_ndp:
-            if cid_normalized not in staff_ndp_customers[staff_id_rec]:
-                staff_ndp_customers[staff_id_rec].add(cid_normalized)
+        # Track (customer_id, product_id) per staff — each product is independent
+        customer_product_pair = (cid_normalized, product_id_rec)
+        if is_ndp:
+            if customer_product_pair not in staff_ndp_pairs[staff_id_rec]:
+                staff_ndp_pairs[staff_id_rec].add(customer_product_pair)
                 staff_summary[staff_id_rec]['ndp_count'] += 1
         else:
-            if cid_normalized not in staff_rdp_customers[staff_id_rec]:
-                staff_rdp_customers[staff_id_rec].add(cid_normalized)
+            if customer_product_pair not in staff_rdp_pairs[staff_id_rec]:
+                staff_rdp_pairs[staff_id_rec].add(customer_product_pair)
                 staff_summary[staff_id_rec]['rdp_count'] += 1
         
-        # CRITICAL FIX: Track (staff, customer) pairs that have been counted
-        # to prevent double-counting when same customer deposits to multiple products
-        staff_customer_key = (staff_id_rec, cid_normalized)
-        
-        # Initialize product summary with tracking sets
+        # --- Product Summary ---
         if product_id_rec not in product_summary:
             product_summary[product_id_rec] = {
                 'product_id': product_id_rec, 
@@ -578,21 +559,22 @@ async def get_omset_summary(
                 'ndp_count': 0,
                 'rdp_count': 0
             }
-            product_ndp_customers[product_id_rec] = set()
-            product_rdp_customers[product_id_rec] = set()
+            product_ndp_pairs[product_id_rec] = set()
+            product_rdp_pairs[product_id_rec] = set()
         
         product_summary[product_id_rec]['total_nominal'] += nominal
         product_summary[product_id_rec]['total_depo'] += depo_total
         product_summary[product_id_rec]['count'] += 1
         
-        # Use STAFF-SPECIFIC NDP/RDP for product summary (to match staff breakdown totals)
-        if is_staff_ndp:
-            if cid_normalized not in product_ndp_customers[product_id_rec]:
-                product_ndp_customers[product_id_rec].add(cid_normalized)
+        # Track (staff_id, customer_id) per product — each staff is independent
+        staff_customer_pair = (staff_id_rec, cid_normalized)
+        if is_ndp:
+            if staff_customer_pair not in product_ndp_pairs[product_id_rec]:
+                product_ndp_pairs[product_id_rec].add(staff_customer_pair)
                 product_summary[product_id_rec]['ndp_count'] += 1
         else:
-            if cid_normalized not in product_rdp_customers[product_id_rec]:
-                product_rdp_customers[product_id_rec].add(cid_normalized)
+            if staff_customer_pair not in product_rdp_pairs[product_id_rec]:
+                product_rdp_pairs[product_id_rec].add(staff_customer_pair)
                 product_summary[product_id_rec]['rdp_count'] += 1
     
     daily_list = []
