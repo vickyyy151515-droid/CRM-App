@@ -463,6 +463,9 @@ async def get_retention_by_product(
         
         key = (staff_id_rec, cid_normalized, prod_id)
         first_date = staff_customer_first_date.get(key)
+        if first_date is None:
+            # Customer only has tambahan records — use their earliest record date
+            first_date = record['record_date']
         if first_date and start_date <= first_date <= end_date:
             prod['ndp_customers'].add(staff_cid_pair)
         else:
