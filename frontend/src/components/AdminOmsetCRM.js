@@ -33,6 +33,7 @@ export default function AdminOmsetCRM() {
   const [viewMode, setViewMode] = useState('summary');
   const [serverDate, setServerDate] = useState(null); // Jakarta timezone date from server
   const [deletingRecord, setDeletingRecord] = useState(null);
+  const [pendingCount, setPendingCount] = useState(0);
   const [trashRecords, setTrashRecords] = useState([]);
   const [showTrash, setShowTrash] = useState(false);
   const [restoringRecord, setRestoringRecord] = useState(null);
