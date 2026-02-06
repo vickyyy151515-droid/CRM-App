@@ -282,22 +282,14 @@ metadata:
 
 test_plan:
   current_focus:
-    - "MemberWD data-health endpoint uses shared utilities"
-    - "MemberWD diagnose-product-mismatch uses shared utilities"
-    - "MemberWD repair-product-mismatch uses shared utilities"
-    - "MemberWD diagnose-reserved-conflicts uses shared utilities"
-    - "MemberWD fix-reserved-conflicts uses shared utilities"
-    - "Bonanza diagnose-product-mismatch uses shared utilities"
-    - "Bonanza repair-product-mismatch uses shared utilities"
-    - "Bonanza diagnose-reserved-conflicts uses shared utilities"
-    - "Bonanza fix-reserved-conflicts uses shared utilities"
-    - "MemberWD repair-data still works"
-    - "Bonanza repair-data still works"
-    - "Bonanza data-health still works"
+    - "OfficeInventory page renders correctly after refactoring"
+    - "OfficeInventory modals work (Add, Edit, Assign, Return, History, Bulk Add)"
   stuck_tasks: []
-  test_all: true
+  test_all: false
   test_priority: "high_first"
 
 agent_communication:
     - agent: "main"
-      message: "Completed P2 backend refactoring for both memberwd.py and bonanza.py. Extracted 5 shared functions (check_batch_health, diagnose_product_mismatch, repair_product_mismatch, diagnose_reserved_conflicts, fix_reserved_conflicts) into repair_helpers.py. Also added helper functions (_build_reserved_map, _find_customer_id_in_row) and centralized USERNAME_FIELDS constant. All curl tests pass. Need full regression test of all admin endpoints for both modules."
+      message: "Completed P2 backend refactoring. All 12 backend endpoints tested and passing."
+    - agent: "main"
+      message: "Completed P1 frontend refactoring of OfficeInventory.js (1070->275 lines). Extracted 8 components to /inventory/ subfolder: InventoryStatsCards, InventoryFilters, InventoryTable, InventoryItemModal, InventoryAssignModal, InventoryReturnModal, InventoryHistoryModal, InventoryBulkAddModal. Screenshot confirmed page renders. Need frontend testing of all modal interactions (add item, edit item, assign, return, history, bulk add). Login: vicky@crm.com / vicky123. Navigate to Office Inventory page from sidebar."
