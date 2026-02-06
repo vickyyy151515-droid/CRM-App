@@ -138,7 +138,7 @@ export default function StaffOmsetCRM() {
         });
         toast.success(t('omset.recordUpdated'));
       } else {
-        await api.post('/omset', {
+        const response = await api.post('/omset', {
           product_id: selectedProduct,
           record_date: selectedDate,
           customer_name: formData.customer_id,
