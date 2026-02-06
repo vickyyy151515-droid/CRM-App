@@ -974,25 +974,24 @@ async def migrate_normalize_customer_ids(user: User = Depends(get_admin_user)):
     # Get all omset records
     all_records = await db.omset_records.find({}).to_list(500000)
     
-    # Build customer first deposit map using normalized IDs
-    # Exclude "tambahan" records from first_date calculation
-    customer_first_date = {}
+    # Build STAFF-SPECIFIC customer first deposit map (SINGLE SOURCE OF TRUTH)
+    # Key: (staff_id, customer_id_normalized, product_id) -> first_date
+    staff_customer_first_date = {}
     for record in sorted(all_records, key=lambda x: x['record_date']):
-        # Skip "tambahan" records when determining first deposit date
         keterangan = record.get('keterangan', '') or ''
         if 'tambahan' in keterangan.lower():
             continue
         cid_normalized = normalize_customer_id(record['customer_id'])
-        key = (cid_normalized, record['product_id'])
-        if key not in customer_first_date:
-            customer_first_date[key] = record['record_date']
+        key = (record['staff_id'], cid_normalized, record['product_id'])
+        if key not in staff_customer_first_date:
+            staff_customer_first_date[key] = record['record_date']
     
     # Update all records
     updated_count = 0
     for record in all_records:
         cid_normalized = normalize_customer_id(record['customer_id'])
-        key = (cid_normalized, record['product_id'])
-        first_date = customer_first_date.get(key)
+        key = (record['staff_id'], cid_normalized, record['product_id'])
+        first_date = staff_customer_first_date.get(key)
         
         # Check if "tambahan" in notes - if so, always RDP
         keterangan = record.get('keterangan', '') or ''
