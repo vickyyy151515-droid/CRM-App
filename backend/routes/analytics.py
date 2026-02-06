@@ -175,20 +175,9 @@ async def get_business_analytics(period: str = 'month', product_id: Optional[str
     # IMPORTANT: Exclude records with "tambahan" from first_date calculation
     # When filtering by staff_id, still need global first_date to determine NDP/RDP correctly
     # But for the omset totals, we only show the selected staff's records
-    all_records_query = {}
-    if product_id:
-        all_records_query['product_id'] = product_id
-    all_records = await db.omset_records.find(all_records_query, {'_id': 0, 'customer_id': 1, 'customer_id_normalized': 1, 'product_id': 1, 'record_date': 1, 'keterangan': 1, 'staff_id': 1}).to_list(100000)
-    
-    # Build STAFF-SPECIFIC customer first deposit map (SINGLE SOURCE OF TRUTH)
-    staff_customer_first_date = {}
-    for record in sorted(all_records, key=lambda x: x['record_date']):
-        if is_tambahan_record(record):
-            continue
-        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-        key = (record['staff_id'], cid_normalized, record['product_id'])
-        if key not in staff_customer_first_date:
-            staff_customer_first_date[key] = record['record_date']
+    # Build STAFF-SPECIFIC customer first deposit map using MongoDB aggregation
+    from utils.db_operations import build_staff_first_date_map
+    staff_customer_first_date = await build_staff_first_date_map(db, product_id=product_id)
     
     # Calculate daily stats with unique (staff, customer, product) tuples
     daily_stats = {}
