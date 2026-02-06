@@ -751,25 +751,35 @@ async def get_download_requests(
 async def get_download_requests_stats(
     staff_id: Optional[str] = None,
     product_id: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
     user: User = Depends(get_admin_user)
 ):
     """Get aggregated statistics for download requests - useful for reporting"""
     db = get_db()
     jakarta_now = get_jakarta_now()
     
-    # Base query
+    # Base query with all filters
     query = {}
     if staff_id:
         query['requested_by'] = staff_id
     if product_id:
         query['product_id'] = product_id
     
-    # Time periods
+    # Apply date range filter if provided
+    if date_from or date_to:
+        query['requested_at'] = {}
+        if date_from:
+            query['requested_at']['$gte'] = date_from
+        if date_to:
+            query['requested_at']['$lte'] = date_to + 'T23:59:59'
+    
+    # Time periods (for quick stats cards)
     today_str = jakarta_now.strftime('%Y-%m-%d')
     week_ago = (jakarta_now - timedelta(days=7)).strftime('%Y-%m-%d')
     month_ago = (jakarta_now - timedelta(days=30)).strftime('%Y-%m-%d')
     
-    # Total counts
+    # Total counts (with all filters including date)
     total_requests = await db.download_requests.count_documents(query)
     approved_query = {**query, 'status': 'approved'}
     rejected_query = {**query, 'status': 'rejected'}
@@ -779,10 +789,17 @@ async def get_download_requests_stats(
     rejected_count = await db.download_requests.count_documents(rejected_query)
     pending_count = await db.download_requests.count_documents(pending_query)
     
-    # Time-based counts
-    today_query = {**query, 'requested_at': {'$gte': today_str}}
-    week_query = {**query, 'requested_at': {'$gte': week_ago}}
-    month_query = {**query, 'requested_at': {'$gte': month_ago}}
+    # Time-based counts (these ignore the date_from/date_to filters to show real-time stats)
+    # Base query without date filters for time-based cards
+    time_base_query = {}
+    if staff_id:
+        time_base_query['requested_by'] = staff_id
+    if product_id:
+        time_base_query['product_id'] = product_id
+    
+    today_query = {**time_base_query, 'requested_at': {'$gte': today_str}}
+    week_query = {**time_base_query, 'requested_at': {'$gte': week_ago}}
+    month_query = {**time_base_query, 'requested_at': {'$gte': month_ago}}
     
     today_count = await db.download_requests.count_documents(today_query)
     week_count = await db.download_requests.count_documents(week_query)
