@@ -18,6 +18,9 @@ async def build_staff_first_date_map(db, product_id: str = None) -> Dict[Tuple[s
     This is the SINGLE SOURCE OF TRUTH for NDP/RDP across all views.
     Excludes "tambahan" records from first_date calculation.
     
+    IMPORTANT: The customer_id normalization must match normalize_customer_id() from helpers.py:
+    - lowercase, strip whitespace, remove special chars except alphanumeric/hyphens/underscores
+    
     Args:
         db: Database connection
         product_id: Optional product filter
@@ -25,6 +28,8 @@ async def build_staff_first_date_map(db, product_id: str = None) -> Dict[Tuple[s
     Returns:
         Dict mapping (staff_id, customer_id, product_id) to first record date
     """
+    from utils.helpers import normalize_customer_id
+    
     match_stage = {
         '$match': {
             '$and': [
@@ -41,6 +46,7 @@ async def build_staff_first_date_map(db, product_id: str = None) -> Dict[Tuple[s
     if product_id:
         match_stage['$match']['$and'].append({'product_id': product_id})
     
+    # Use customer_id_normalized if available, otherwise fall back to customer_id
     pipeline = [
         match_stage,
         {
@@ -57,11 +63,26 @@ async def build_staff_first_date_map(db, product_id: str = None) -> Dict[Tuple[s
     
     results = await db.omset_records.aggregate(pipeline).to_list(None)
     
-    return {
-        (r['_id']['s'], (r['_id']['c'] or '').strip().upper(), r['_id']['p']): r['first_date']
-        for r in results
-        if r['_id']['s'] and r['_id']['c'] and r['_id']['p']
-    }
+    # Normalize customer IDs using the SAME function used in all endpoints
+    first_date_map = {}
+    for r in results:
+        staff_id = r['_id']['s']
+        raw_cid = r['_id']['c']
+        prod_id = r['_id']['p']
+        
+        if not staff_id or not raw_cid or not prod_id:
+            continue
+        
+        normalized_cid = normalize_customer_id(raw_cid)
+        if not normalized_cid:
+            continue
+        
+        key = (staff_id, normalized_cid, prod_id)
+        # Keep the earliest first_date if there are collisions after normalization
+        if key not in first_date_map or r['first_date'] < first_date_map[key]:
+            first_date_map[key] = r['first_date']
+    
+    return first_date_map
 
 
 
