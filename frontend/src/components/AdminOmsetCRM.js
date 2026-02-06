@@ -719,85 +719,15 @@ export default function AdminOmsetCRM() {
       )}
 
       {/* Trash Section */}
-      <div className="mt-6">
-        <button
-          onClick={() => setShowTrash(!showTrash)}
-          className="flex items-center gap-2 text-sm text-slate-600 hover:text-indigo-600 transition-colors"
-        >
-          <Trash2 size={16} />
-          Recently Deleted ({trashRecords.length})
-          {showTrash ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-        </button>
-        
-        {showTrash && (
-          <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl overflow-hidden">
-            <div className="px-4 py-3 bg-amber-100 border-b border-amber-200 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="text-amber-600" size={18} />
-                <span className="font-medium text-amber-800">Trash - Recently Deleted</span>
-              </div>
-              <button
-                onClick={loadTrash}
-                className="text-amber-700 hover:text-amber-900"
-                title="Refresh"
-              >
-                <RefreshCw size={16} />
-              </button>
-            </div>
-            
-            {trashRecords.length === 0 ? (
-              <div className="p-6 text-center text-amber-700">
-                No deleted records
-              </div>
-            ) : (
-              <div className="divide-y divide-amber-200">
-                {trashRecords.map((record) => (
-                  <div key={record.id} className="px-4 py-3 flex items-center justify-between hover:bg-amber-100/50">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3">
-                        <span className="font-medium text-amber-900">{record.customer_id}</span>
-                        <span className="text-xs px-2 py-0.5 bg-amber-200 text-amber-800 rounded">{record.product_name}</span>
-                      </div>
-                      <div className="text-sm text-amber-700 mt-1">
-                        <span>{record.staff_name}</span>
-                        <span className="mx-2">•</span>
-                        <span>Rp {formatCurrency(record.depo_total || 0)}</span>
-                        <span className="mx-2">•</span>
-                        <span>{record.record_date}</span>
-                      </div>
-                      <div className="text-xs text-amber-600 mt-1">
-                        Deleted by {record.deleted_by_name} on {new Date(record.deleted_at).toLocaleString('id-ID')}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 ml-4">
-                      <button
-                        onClick={() => handleRestoreRecord(record.id, record)}
-                        disabled={restoringRecord === record.id}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-                        title="Restore this record"
-                      >
-                        {restoringRecord === record.id ? (
-                          <RefreshCw size={14} className="animate-spin" />
-                        ) : (
-                          <RotateCcw size={14} />
-                        )}
-                        Restore
-                      </button>
-                      <button
-                        onClick={() => handlePermanentDelete(record.id)}
-                        className="p-1.5 text-red-500 hover:bg-red-100 rounded transition-colors"
-                        title="Permanently delete"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+      <TrashSection
+        showTrash={showTrash}
+        setShowTrash={setShowTrash}
+        trashRecords={trashRecords}
+        onRefresh={loadTrash}
+        onRestore={handleRestoreRecord}
+        onPermanentDelete={handlePermanentDelete}
+        restoringId={restoringRecord}
+      />
 
       {/* Legend */}
       <div className="mt-6 flex gap-4 text-sm text-slate-600">
