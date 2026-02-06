@@ -17,6 +17,10 @@ export { default as AdminActionsPanel } from './AdminActionsPanel';
 export { default as ProactiveMonitoringAlert } from './ProactiveMonitoringAlert';
 export { useAdminModule } from './useAdminModule';
 
+// Shared components for analytics and reporting
+export { default as DateRangeSelector } from './DateRangeSelector';
+export { default as SummaryStatsCards, StatsCard } from './SummaryStatsCards';
+
 // Utility functions
 export const formatDate = (dateStr) => {
   if (!dateStr) return '-';
