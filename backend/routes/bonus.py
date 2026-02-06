@@ -6,7 +6,8 @@ from typing import Optional, List
 import io
 import pandas as pd
 
-from .deps import get_db, get_admin_user, get_jakarta_now, User
+from .deps import get_db, get_admin_user, User
+from utils.helpers import normalize_customer_id, get_jakarta_now
 
 router = APIRouter(tags=["Bonus Calculation"])
 
@@ -48,13 +49,6 @@ class BonusConfigUpdate(BaseModel):
     rdp_tiers: List[dict]
 
 # ==================== HELPER FUNCTIONS ====================
-
-# Helper function to normalize customer ID for consistent NDP/RDP comparison
-def normalize_customer_id(customer_id: str) -> str:
-    """Normalize customer ID by removing leading/trailing spaces and converting to lowercase"""
-    if not customer_id:
-        return ""
-    return customer_id.strip().lower()
 
 async def get_bonus_config():
     """Get bonus configuration from database or return defaults"""
