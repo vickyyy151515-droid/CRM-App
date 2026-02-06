@@ -531,16 +531,21 @@ async def get_staff_invalidated_by_reservation(
     user: User = Depends(get_current_user)
 ):
     """Get records that were invalidated because another staff reserved the customer.
-    These records were previously assigned to this staff but are now invalid.
+    These records were previously assigned to this staff but are now marked as reservation conflicts.
     """
     db = get_db()
     if user.role != 'staff':
         raise HTTPException(status_code=403, detail="Only staff can access this endpoint")
     
+    # Query for both old format (status='invalid') and new format (is_reservation_conflict=True)
     query = {
         'assigned_to': user.id,
-        'status': 'invalid',
-        'invalid_reason': {'$regex': '^Customer reserved by', '$options': 'i'}
+        '$or': [
+            # New format: assigned records with reservation conflict flag
+            {'status': 'assigned', 'is_reservation_conflict': True},
+            # Old format: records with status='invalid' (backward compatibility)
+            {'status': 'invalid', 'invalid_reason': {'$regex': '^Customer reserved by', '$options': 'i'}}
+        ]
     }
     if product_id:
         query['product_id'] = product_id
