@@ -107,27 +107,36 @@ user_problem_statement: "Test and verify Reserved Member Conflict (pending omset
 backend:
   - task: "POST /api/omset creates record with pending status when customer is on another staff reserved list"
     implemented: true
-    working: "NA"
+    working: true
     file: "backend/routes/omset.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Code implemented. When creating omset, checks reserved_members collection for conflicts. If customer is reserved by another staff, sets approval_status to 'pending' and creates a notification for admin."
+        - working: true
+          agent: "testing"
+          comment: "Testing agent confirmed: POST /api/omset correctly sets approval_status=pending when customer is reserved by another staff."
+        - working: true
+          agent: "main"
+          comment: "Fixed bug: added approval_status and conflict_info fields to OmsetRecord model so they appear in API response. Staff can now see pending warning toast."
 
   - task: "POST /api/omset creates record with approved status when no reserved member conflict"
     implemented: true
-    working: "NA"
+    working: true
     file: "backend/routes/omset.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Code implemented. Non-conflicting omset records should get approval_status='approved' by default."
+        - working: true
+          agent: "testing"
+          comment: "Testing agent confirmed."
 
   - task: "GET /api/omset/pending returns all pending omset records (admin only)"
     implemented: true
