@@ -399,26 +399,14 @@ async def get_my_bonus_data(
     
     records = await db.omset_records.find(query, {'_id': 0}).to_list(100000)
     
-    # Need all-time records to determine NDP vs RDP
-    all_time_records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
-    
     def is_tambahan_record(record):
         """Check if record has 'tambahan' in keterangan field"""
         keterangan = record.get('keterangan', '') or ''
         return 'tambahan' in keterangan.lower()
     
-    # Build STAFF-SPECIFIC customer first deposit map (SINGLE SOURCE OF TRUTH)
-    # Since this endpoint is for a single staff, we use (staff_id, customer_id, product_id)
-    staff_customer_first_date = {}
-    for record in sorted(all_time_records, key=lambda x: x['record_date']):
-        if is_tambahan_record(record):
-            continue
-        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-        pid = record['product_id']
-        staff_id_rec = record['staff_id']
-        key = (staff_id_rec, cid_normalized, pid)
-        if key not in staff_customer_first_date:
-            staff_customer_first_date[key] = record['record_date']
+    # Build STAFF-SPECIFIC customer first deposit map using MongoDB aggregation
+    from utils.db_operations import build_staff_first_date_map
+    staff_customer_first_date = await build_staff_first_date_map(db)
     
     # Calculate staff's bonus data
     total_nominal = 0
