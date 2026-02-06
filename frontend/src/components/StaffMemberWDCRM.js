@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { CreditCard, Calendar, Package, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronUp, Users, RefreshCw, Edit2, Check, X, UserX } from 'lucide-react';
+import { CreditCard, Calendar, Package, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronUp, Users, RefreshCw, Edit2, Check, X } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import InvalidatedByReservationSection from './shared/InvalidatedByReservationSection';
 
 export default function StaffMemberWDCRM() {
   const { t } = useLanguage();
