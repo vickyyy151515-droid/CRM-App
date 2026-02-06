@@ -85,7 +85,7 @@ async def get_leaderboard(
     staff_users = await db.users.find({'role': 'staff'}, {'_id': 0}).to_list(100)
     staff_map = {s['id']: s for s in staff_users}
     
-    # Calculate stats for each staff - with unique RDP customers per day
+    # Calculate stats for each staff - track (customer, product) pairs for consistency
     staff_stats = {}
     for staff in staff_users:
         staff_stats[staff['id']] = {
@@ -97,8 +97,8 @@ async def get_leaderboard(
             'today_ndp': 0,
             'today_rdp': 0,
             'days_worked': set(),
-            'daily_ndp_customers': {},  # {date: set(customer_ids)}
-            'daily_rdp_customers': {}   # {date: set(customer_ids)}
+            'daily_ndp_pairs': {},  # {date: set((customer_id, product_id))}
+            'daily_rdp_pairs': {}   # {date: set((customer_id, product_id))}
         }
     
     # Process records
@@ -117,70 +117,74 @@ async def get_leaderboard(
                 'today_ndp': 0,
                 'today_rdp': 0,
                 'days_worked': set(),
-                'daily_ndp_customers': {},
-                'daily_rdp_customers': {}
+                'daily_ndp_pairs': {},
+                'daily_rdp_pairs': {}
             }
         
         staff_stats[staff_id]['total_omset'] += record.get('depo_total', 0) or 0
         staff_stats[staff_id]['days_worked'].add(date)
         
         # Initialize daily tracking sets
-        if date not in staff_stats[staff_id]['daily_ndp_customers']:
-            staff_stats[staff_id]['daily_ndp_customers'][date] = set()
-            staff_stats[staff_id]['daily_rdp_customers'][date] = set()
+        if date not in staff_stats[staff_id]['daily_ndp_pairs']:
+            staff_stats[staff_id]['daily_ndp_pairs'][date] = set()
+            staff_stats[staff_id]['daily_rdp_pairs'][date] = set()
         
         # Check NDP/RDP - use STAFF-SPECIFIC first_date
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-        staff_key = (staff_id, cid_normalized, record['product_id'])
+        product_id_rec = record['product_id']
+        staff_key = (staff_id, cid_normalized, product_id_rec)
         staff_first_date = staff_customer_first_date.get(staff_key)
+        
+        # Track by (customer, product) pair — each product counted independently
+        customer_product_pair = (cid_normalized, product_id_rec)
         
         # "tambahan" records are always RDP
         if is_tambahan_record(record):
-            # RDP - count unique per day
-            if cid_normalized not in staff_stats[staff_id]['daily_rdp_customers'][date]:
-                staff_stats[staff_id]['daily_rdp_customers'][date].add(cid_normalized)
+            if customer_product_pair not in staff_stats[staff_id]['daily_rdp_pairs'][date]:
+                staff_stats[staff_id]['daily_rdp_pairs'][date].add(customer_product_pair)
                 staff_stats[staff_id]['total_rdp'] += 1
         elif staff_first_date == date:
-            # NDP - count unique per day
-            if cid_normalized not in staff_stats[staff_id]['daily_ndp_customers'][date]:
-                staff_stats[staff_id]['daily_ndp_customers'][date].add(cid_normalized)
+            if customer_product_pair not in staff_stats[staff_id]['daily_ndp_pairs'][date]:
+                staff_stats[staff_id]['daily_ndp_pairs'][date].add(customer_product_pair)
                 staff_stats[staff_id]['total_ndp'] += 1
         else:
-            # RDP - count unique per day
-            if cid_normalized not in staff_stats[staff_id]['daily_rdp_customers'][date]:
-                staff_stats[staff_id]['daily_rdp_customers'][date].add(cid_normalized)
+            if customer_product_pair not in staff_stats[staff_id]['daily_rdp_pairs'][date]:
+                staff_stats[staff_id]['daily_rdp_pairs'][date].add(customer_product_pair)
                 staff_stats[staff_id]['total_rdp'] += 1
     
     # Calculate today's stats separately
-    today_ndp_customers = {}  # {staff_id: set(customer_ids)}
-    today_rdp_customers = {}  # {staff_id: set(customer_ids)}
+    today_ndp_pairs = {}  # {staff_id: set((customer_id, product_id))}
+    today_rdp_pairs = {}  # {staff_id: set((customer_id, product_id))}
     
     for record in today_records:
         staff_id = record['staff_id']
         
-        if staff_id not in today_ndp_customers:
-            today_ndp_customers[staff_id] = set()
-            today_rdp_customers[staff_id] = set()
+        if staff_id not in today_ndp_pairs:
+            today_ndp_pairs[staff_id] = set()
+            today_rdp_pairs[staff_id] = set()
         
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        product_id_rec = record['product_id']
         # Use STAFF-SPECIFIC first_date for today's stats too
-        staff_key = (staff_id, cid_normalized, record['product_id'])
+        staff_key = (staff_id, cid_normalized, product_id_rec)
         staff_first_date = staff_customer_first_date.get(staff_key)
+        
+        customer_product_pair = (cid_normalized, product_id_rec)
         
         # "tambahan" records are always RDP
         if is_tambahan_record(record):
-            if cid_normalized not in today_rdp_customers[staff_id]:
-                today_rdp_customers[staff_id].add(cid_normalized)
+            if customer_product_pair not in today_rdp_pairs[staff_id]:
+                today_rdp_pairs[staff_id].add(customer_product_pair)
                 if staff_id in staff_stats:
                     staff_stats[staff_id]['today_rdp'] += 1
         elif staff_first_date == today:
-            if cid_normalized not in today_ndp_customers[staff_id]:
-                today_ndp_customers[staff_id].add(cid_normalized)
+            if customer_product_pair not in today_ndp_pairs[staff_id]:
+                today_ndp_pairs[staff_id].add(customer_product_pair)
                 if staff_id in staff_stats:
                     staff_stats[staff_id]['today_ndp'] += 1
         else:
-            if cid_normalized not in today_rdp_customers[staff_id]:
-                today_rdp_customers[staff_id].add(cid_normalized)
+            if customer_product_pair not in today_rdp_pairs[staff_id]:
+                today_rdp_pairs[staff_id].add(customer_product_pair)
                 if staff_id in staff_stats:
                     staff_stats[staff_id]['today_rdp'] += 1
     
