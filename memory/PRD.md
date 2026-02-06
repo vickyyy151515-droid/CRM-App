@@ -229,9 +229,47 @@ All modules support:
 | `PATCH /api/reserved-members/{id}/approve` | Approve reservation + auto-invalidate conflicts |
 | `POST /api/reserved-members/bulk` | Bulk create + auto-invalidate conflicts |
 
+## Latest Update: RDP Double-Counting Fix (2026-02-06)
+
+### ✅ Bug Fix: RDP Mismatch When Customer Deposits to Multiple Products
+
+**Problem:** When a customer deposited into multiple products on the same day under the same staff:
+- Staff breakdown counted them as 1 RDP (correct)
+- Product breakdown counted them once per product, e.g., 2 RDPs for 2 products (WRONG)
+- This caused Staff RDP sum ≠ Product RDP sum
+
+**Root Cause:** Product RDP counting didn't track whether a (staff, customer) pair had already been counted globally across products.
+
+**Fix:** Added global tracking sets in `daily_summary.py`:
+```python
+global_staff_customer_counted_rdp = set()  # (staff_id, customer_id) pairs
+global_staff_customer_counted_ndp = set()  # (staff_id, customer_id) pairs
+```
+
+Before incrementing product RDP/NDP count, the code now:
+1. Creates key: `staff_customer_key = (staff_id, cid_normalized)`
+2. Checks if key already exists in global set
+3. Only counts if not already counted
+4. Adds key to global set after counting
+
+**Files Modified:**
+- `/app/backend/routes/daily_summary.py` - Lines 92-227
+- `/app/backend/routes/omset.py` - Lines 578-608
+
+**Test Results:** 12/12 tests passed (100%)
+- Test file: `/app/backend/tests/test_rdp_ndp_consistency_fix.py`
+- Test report: `/app/test_reports/iteration_37.json`
+
+**Result:** Staff RDP sum now equals Product RDP sum for all scenarios including:
+- Single customer depositing to multiple products
+- Multiple customers with multiple staff members
+- Mixed NDP and RDP customers
+
+---
+
 ## Previous Updates
 
-### ✅ Bug Fix: Staff RDP vs Product RDP Mismatch
+### ✅ Bug Fix: Staff RDP vs Product RDP Mismatch (Previous Attempt)
 - **Issue:** Staff's total RDP count didn't match sum of Product Summary RDP counts
 - **Root Cause:** Product Summary used `is_global_ndp` while Staff used `is_staff_ndp`
   - Global NDP = customer's first deposit EVER
@@ -240,7 +278,7 @@ All modules support:
 - **Files Fixed:**
   - `/app/backend/routes/daily_summary.py` - lines 201-209
   - `/app/backend/routes/omset.py` - lines 596-604
-- **Result:** Staff RDP sum now equals Product RDP sum
+- **Result:** Partial fix - full fix completed on 2026-02-06
 
 ### ✅ Bug Fix: Reserved Member Cleanup (2026-02-04)
 - **Root Cause 1:** Old reserved member records used `customer_name` field instead of `customer_id`
