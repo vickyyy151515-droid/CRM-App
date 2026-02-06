@@ -14,7 +14,32 @@ All modules support:
 - Recall assigned records
 - Reserved member filtering
 
-## Latest Update: Complete Backend & Frontend Optimization (2026-02-06)
+## Latest Update: Extended Optimization (2026-02-06)
+
+### ✅ Additional Components Created for Analytics & Staff Pages
+
+#### New Shared Components
+| Component | Purpose | Lines |
+|-----------|---------|-------|
+| `AnalyticsFilterBar.js` | Common filter controls for analytics pages | 135 |
+| `ChartComponents.js` | Reusable chart wrappers (LineChart, BarChart, AreaChart) | 210 |
+| `InvalidatedByReservationSection.js` | Staff view for records taken by reservation | 120 |
+
+#### Files Updated to Use Shared Components
+| File | Before | After | Reduction |
+|------|--------|-------|-----------|
+| `MyAssignedRecords.js` | 704 | 654 | -7% |
+| `StaffDBBonanza.js` | ~500 | 455 | ~9% |
+| `StaffMemberWDCRM.js` | ~600 | 552 | ~8% |
+
+#### Backend Cleanup Extended
+- Removed duplicate `normalize_customer_id` from 12 files total
+- Updated: `retention.py`, `analytics.py`, `report.py`, `scheduled_reports.py`, `followup.py`
+- All files now import from centralized `/app/backend/utils/`
+
+---
+
+## Previous Update: Complete Backend & Frontend Optimization (2026-02-06)
 
 ### ✅ Comprehensive Code Consolidation Completed
 
