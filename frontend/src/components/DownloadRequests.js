@@ -1,21 +1,59 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { CheckCircle, XCircle, Clock, CheckSquare, Square } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, CheckSquare, Square, Filter, Calendar, Users, Package, TrendingUp, RefreshCw } from 'lucide-react';
 
 export default function DownloadRequests({ onUpdate }) {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedRequests, setSelectedRequests] = useState([]);
   const [bulkProcessing, setBulkProcessing] = useState(false);
+  
+  // Filter states
+  const [staffList, setStaffList] = useState([]);
+  const [productList, setProductList] = useState([]);
+  const [filterStaff, setFilterStaff] = useState('');
+  const [filterProduct, setFilterProduct] = useState('');
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // Stats
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    loadStaffAndProducts();
+  }, []);
 
   useEffect(() => {
     loadRequests();
-  }, []);
+    loadStats();
+  }, [filterStaff, filterProduct, filterDateFrom, filterDateTo, filterStatus]);
+
+  const loadStaffAndProducts = async () => {
+    try {
+      const [staffRes, productsRes] = await Promise.all([
+        api.get('/users'),
+        api.get('/products')
+      ]);
+      setStaffList(staffRes.data.filter(u => u.role === 'staff') || []);
+      setProductList(productsRes.data || []);
+    } catch (error) {
+      console.error('Failed to load filters data');
+    }
+  };
 
   const loadRequests = async () => {
     try {
-      const response = await api.get('/download-requests');
+      const params = new URLSearchParams();
+      if (filterStaff) params.append('staff_id', filterStaff);
+      if (filterProduct) params.append('product_id', filterProduct);
+      if (filterDateFrom) params.append('date_from', filterDateFrom);
+      if (filterDateTo) params.append('date_to', filterDateTo);
+      if (filterStatus) params.append('status', filterStatus);
+      
+      const response = await api.get(`/download-requests?${params}`);
       setRequests(response.data);
       setSelectedRequests([]);
     } catch (error) {
@@ -23,6 +61,27 @@ export default function DownloadRequests({ onUpdate }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadStats = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (filterStaff) params.append('staff_id', filterStaff);
+      if (filterProduct) params.append('product_id', filterProduct);
+      
+      const response = await api.get(`/download-requests/stats?${params}`);
+      setStats(response.data);
+    } catch (error) {
+      console.error('Failed to load stats');
+    }
+  };
+
+  const clearFilters = () => {
+    setFilterStaff('');
+    setFilterProduct('');
+    setFilterDateFrom('');
+    setFilterDateTo('');
+    setFilterStatus('');
   };
 
   const handleApprove = async (id) => {
