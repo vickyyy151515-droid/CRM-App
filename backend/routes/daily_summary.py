@@ -205,16 +205,26 @@ async def generate_daily_summary(date_str: str = None):
         product_stats[product_id]['total_omset'] += depo_total
         product_stats[product_id]['form_count'] += 1
         
-        # Count unique customers per product (using STAFF-SPECIFIC NDP to match staff breakdown)
-        # This ensures product totals sum up to match staff totals
+        # CRITICAL FIX: Count unique customers per product, but ensure each (staff, customer) 
+        # pair is only counted ONCE across ALL products. This prevents the scenario where
+        # Customer A deposits to Product X and Product Y under Staff B, and gets counted 
+        # twice in product breakdown but only once in staff breakdown.
+        staff_customer_key = (staff_id, cid_normalized)
+        
         if is_staff_ndp:
-            if cid_normalized not in product_ndp_customers[product_id]:
-                product_ndp_customers[product_id].add(cid_normalized)
-                product_stats[product_id]['ndp_count'] += 1
+            # Only count this NDP if we haven't already counted this (staff, customer) pair
+            if staff_customer_key not in global_staff_customer_counted_ndp:
+                if cid_normalized not in product_ndp_customers[product_id]:
+                    product_ndp_customers[product_id].add(cid_normalized)
+                    product_stats[product_id]['ndp_count'] += 1
+                    global_staff_customer_counted_ndp.add(staff_customer_key)
         else:
-            if cid_normalized not in product_rdp_customers[product_id]:
-                product_rdp_customers[product_id].add(cid_normalized)
-                product_stats[product_id]['rdp_count'] += 1
+            # Only count this RDP if we haven't already counted this (staff, customer) pair
+            if staff_customer_key not in global_staff_customer_counted_rdp:
+                if cid_normalized not in product_rdp_customers[product_id]:
+                    product_rdp_customers[product_id].add(cid_normalized)
+                    product_stats[product_id]['rdp_count'] += 1
+                    global_staff_customer_counted_rdp.add(staff_customer_key)
     
     # Convert staff stats to list and sort by OMSET
     # Also clean up the internal tracking sets from product breakdown
