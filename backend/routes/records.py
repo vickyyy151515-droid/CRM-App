@@ -92,11 +92,12 @@ async def invalidate_customer_records_for_other_staff(
                 other_staff_id = record.get('assigned_to')
                 database_name = record.get('database_name', 'Unknown')
                 
-                # Mark as invalid
+                # Mark as invalid - keep status as 'assigned' but set is_reservation_conflict
+                # This preserves the assignment for counting purposes while flagging the conflict
                 await collection.update_one(
                     {'id': record['id']},
                     {'$set': {
-                        'status': 'invalid',
+                        'is_reservation_conflict': True,
                         'invalid_reason': f'Customer reserved by {reserved_by_staff_name}',
                         'invalidated_at': now.isoformat(),
                         'invalidated_by': 'system',
