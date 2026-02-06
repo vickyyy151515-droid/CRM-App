@@ -421,49 +421,56 @@ async def get_my_bonus_data(
         keterangan = record.get('keterangan', '') or ''
         return 'tambahan' in keterangan.lower()
     
-    # Build customer first deposit map
-    customer_first_date = {}
+    # Build STAFF-SPECIFIC customer first deposit map (SINGLE SOURCE OF TRUTH)
+    # Since this endpoint is for a single staff, we use (staff_id, customer_id, product_id)
+    staff_customer_first_date = {}
     for record in sorted(all_time_records, key=lambda x: x['record_date']):
         if is_tambahan_record(record):
             continue
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
         pid = record['product_id']
-        key = (cid_normalized, pid)
-        if key not in customer_first_date:
-            customer_first_date[key] = record['record_date']
+        staff_id_rec = record['staff_id']
+        key = (staff_id_rec, cid_normalized, pid)
+        if key not in staff_customer_first_date:
+            staff_customer_first_date[key] = record['record_date']
     
     # Calculate staff's bonus data
     total_nominal = 0
     daily_stats = {}
-    daily_rdp_customers = {}
-    daily_ndp_customers = {}
+    daily_rdp_pairs = {}
+    daily_ndp_pairs = {}
     
     for record in records:
         date = record['record_date']
+        sid = record['staff_id']
         
         nominal = record.get('depo_total', 0) or record.get('nominal', 0) or 0
         total_nominal += nominal
         
         if date not in daily_stats:
             daily_stats[date] = {'ndp': 0, 'rdp': 0}
-            daily_rdp_customers[date] = set()
-            daily_ndp_customers[date] = set()
+            daily_rdp_pairs[date] = set()
+            daily_ndp_pairs[date] = set()
         
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-        key = (cid_normalized, record['product_id'])
-        first_date = customer_first_date.get(key)
+        pid = record['product_id']
+        staff_key = (sid, cid_normalized, pid)
+        first_date = staff_customer_first_date.get(staff_key)
+        
+        # Track by (customer, product) pair
+        customer_product_pair = (cid_normalized, pid)
         
         if is_tambahan_record(record):
-            if cid_normalized not in daily_rdp_customers[date]:
-                daily_rdp_customers[date].add(cid_normalized)
+            if customer_product_pair not in daily_rdp_pairs[date]:
+                daily_rdp_pairs[date].add(customer_product_pair)
                 daily_stats[date]['rdp'] += 1
         elif first_date == date:
-            if cid_normalized not in daily_ndp_customers[date]:
-                daily_ndp_customers[date].add(cid_normalized)
+            if customer_product_pair not in daily_ndp_pairs[date]:
+                daily_ndp_pairs[date].add(customer_product_pair)
                 daily_stats[date]['ndp'] += 1
         else:
-            if cid_normalized not in daily_rdp_customers[date]:
-                daily_rdp_customers[date].add(cid_normalized)
+            if customer_product_pair not in daily_rdp_pairs[date]:
+                daily_rdp_pairs[date].add(customer_product_pair)
                 daily_stats[date]['rdp'] += 1
     
     bonus_config = await get_bonus_config()
