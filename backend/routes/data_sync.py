@@ -802,10 +802,14 @@ async def get_conflict_resolution_log(
     """
     db = get_db()
     
-    # Build query for invalidated records with reservation reason
+    # Build query for invalidated records - support both old and new format
     base_query = {
-        'status': 'invalid',
-        'invalid_reason': {'$regex': '^Customer reserved by', '$options': 'i'}
+        '$or': [
+            # New format: assigned records with reservation conflict flag
+            {'is_reservation_conflict': True},
+            # Old format: records with status='invalid' (backward compatibility)
+            {'status': 'invalid', 'invalid_reason': {'$regex': '^Customer reserved by', '$options': 'i'}}
+        ]
     }
     
     # Add filters
