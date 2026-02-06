@@ -3,7 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from typing import Optional, List
 from datetime import datetime, timedelta
 
-from .deps import get_db, get_current_user, get_jakarta_now, User
+from .deps import get_db, get_current_user, User
+from utils.helpers import get_jakarta_now, JAKARTA_TZ
 
 router = APIRouter(tags=["Follow-ups"])
 
