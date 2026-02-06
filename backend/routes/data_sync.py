@@ -927,10 +927,14 @@ async def get_conflict_resolution_stats(user: User = Depends(get_admin_user)):
     db = get_db()
     jakarta_now = get_jakarta_now()
     
-    # Query for invalidated records due to reservation
+    # Query for invalidated records - support both old and new format
     base_query = {
-        'status': 'invalid',
-        'invalid_reason': {'$regex': '^Customer reserved by', '$options': 'i'}
+        '$or': [
+            # New format: assigned records with reservation conflict flag
+            {'is_reservation_conflict': True},
+            # Old format: records with status='invalid' (backward compatibility)
+            {'status': 'invalid', 'invalid_reason': {'$regex': '^Customer reserved by', '$options': 'i'}}
+        ]
     }
     
     collections = ['customer_records', 'bonanza_records', 'memberwd_records']
