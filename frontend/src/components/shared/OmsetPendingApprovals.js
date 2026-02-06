@@ -64,7 +64,7 @@ export default function OmsetPendingApprovals() {
     <div className="space-y-3">
       <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
         <AlertTriangle size={14} className="inline mr-1 text-amber-500" />
-        These records need approval because the customer belongs to another staff's reserved list.
+        These records need approval because the customer belongs to another staff&apos;s reserved list.
       </p>
       {pending.map(record => (
         <div key={record.id} className="bg-white dark:bg-slate-800 rounded-xl border border-amber-200 dark:border-amber-800 p-4" data-testid={`pending-${record.id}`}>
