@@ -31,6 +31,29 @@ from .records_helpers import (
     get_assigned_records_count,
 )
 
+from .db_operations import (
+    COLLECTION_MAP,
+    get_collection_names,
+    count_records_by_status,
+    get_database_with_stats,
+    delete_database_with_records,
+    assign_records_to_staff,
+    recall_records_from_staff,
+    archive_records,
+    get_available_records,
+    validate_record,
+    get_staff_assigned_records,
+    create_notification,
+)
+
+from .repair_helpers import (
+    check_database_health,
+    repair_database_records,
+    run_full_health_check,
+    run_full_repair,
+    sync_batch_counts,
+)
+
 __all__ = [
     # From helpers
     'JAKARTA_TZ',
@@ -51,4 +74,23 @@ __all__ = [
     'extract_customer_name_from_record',
     'get_available_records_count',
     'get_assigned_records_count',
+    # From db_operations
+    'COLLECTION_MAP',
+    'get_collection_names',
+    'count_records_by_status',
+    'get_database_with_stats',
+    'delete_database_with_records',
+    'assign_records_to_staff',
+    'recall_records_from_staff',
+    'archive_records',
+    'get_available_records',
+    'validate_record',
+    'get_staff_assigned_records',
+    'create_notification',
+    # From repair_helpers
+    'check_database_health',
+    'repair_database_records',
+    'run_full_health_check',
+    'run_full_repair',
+    'sync_batch_counts',
 ]
