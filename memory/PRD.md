@@ -25,14 +25,29 @@ All modules support:
 2. Records with `status: 'invalid'` were NOT counted in the "assigned" total
 3. Batch counts (`current_count` in `memberwd_batches`) could get out of sync with actual record counts
 
-**Fix Applied:**
+**Fix Applied (Both Member WD CRM AND DB Bonanza):**
 
 | File | Change |
 |------|--------|
 | `records.py` | `invalidate_other_staff_records()` now keeps `status='assigned'` but sets `is_reservation_conflict=True` |
 | `memberwd.py` | `repair_memberwd_data()` now: 1) Restores `status='invalid'` records to `status='assigned'` with `is_reservation_conflict=True`, 2) Synchronizes batch counts with actual records |
 | `memberwd.py` | `get_memberwd_data_health()` now detects: records with `status='invalid'`, batch count mismatches |
+| `bonanza.py` | `repair_bonanza_data()` and `get_bonanza_data_health()` updated with same fixes |
 | `data_sync.py`, `bonanza.py`, `records.py` | Updated queries to support both old format (`status='invalid'`) and new format (`is_reservation_conflict=True`) |
+
+### ✅ Enhancement: Visual Conflict Indicators Added
+
+**Frontend Changes:**
+| Component | Enhancement |
+|-----------|-------------|
+| `AdminMemberWDCRM.js` | Shows conflict count in database summary and conflict badge on individual records |
+| `AdminDBBonanza.js` | Shows conflict count in database summary and conflict badge on individual records |
+
+**Backend Changes:**
+| Endpoint | Enhancement |
+|----------|-------------|
+| `GET /api/memberwd/databases` | Now returns `conflict_count` field |
+| `GET /api/bonanza/databases` | Now returns `conflict_count` field |
 
 **Testing:**
 - 18/18 backend tests passed
