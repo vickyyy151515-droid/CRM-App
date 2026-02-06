@@ -932,25 +932,24 @@ async def get_omset_record_types(
     
     all_records = await db.omset_records.find(query, {'_id': 0}).to_list(100000)
     
-    customer_first_date = {}
+    # Build STAFF-SPECIFIC first deposit map (per-staff, per-product is implicit from query filter)
+    staff_customer_first_date = {}
     for record in sorted(all_records, key=lambda x: x['record_date']):
-        # Skip "tambahan" records when determining first deposit date
         keterangan = record.get('keterangan', '') or ''
         if 'tambahan' in keterangan.lower():
             continue
-        # Use normalized customer_id for comparison
         cid = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-        if cid not in customer_first_date:
-            customer_first_date[cid] = record['record_date']
+        key = (record['staff_id'], cid)
+        if key not in staff_customer_first_date:
+            staff_customer_first_date[key] = record['record_date']
     
     date_records = [r for r in all_records if r['record_date'] == record_date]
     
     for record in date_records:
-        # Use normalized customer_id for comparison
         cid = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-        first_date = customer_first_date.get(cid)
+        key = (record['staff_id'], cid)
+        first_date = staff_customer_first_date.get(key)
         
-        # Check if "tambahan" in notes - if so, always RDP
         keterangan = record.get('keterangan', '') or ''
         if 'tambahan' in keterangan.lower():
             record['record_type'] = 'RDP'
