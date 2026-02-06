@@ -424,12 +424,6 @@ async def get_omset_summary(
     
     records = await db.omset_records.find(query, {'_id': 0}).to_list(100000)
     
-    # Helper function to normalize customer ID
-    def normalize_customer_id(customer_id: str) -> str:
-        if not customer_id:
-            return ""
-        return customer_id.strip().lower()
-    
     # Helper function to check if record has "tambahan" in notes
     def is_tambahan_record(record) -> bool:
         keterangan = record.get('keterangan', '') or ''
