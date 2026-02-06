@@ -204,25 +204,23 @@ async def get_retention_customers(
     if not records:
         return {'customers': [], 'total': 0}
     
-    # Get all records to determine first deposits
-    all_records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
+    # Get all records to determine first deposits - USE MONGODB AGGREGATION
+    pipeline = [
+        {'$match': {'$and': [
+            {'$or': [
+                {'keterangan': {'$exists': False}}, {'keterangan': None}, {'keterangan': ''},
+                {'keterangan': {'$not': {'$regex': 'tambahan', '$options': 'i'}}}
+            ]}
+        ]}},
+        {'$group': {'_id': {'c': {'$ifNull': ['$customer_id_normalized', '$customer_id']}, 'p': '$product_id'}, 'first_date': {'$min': '$record_date'}}}
+    ]
+    agg_results = await db.omset_records.aggregate(pipeline).to_list(None)
+    customer_first_date = {((r['_id']['c'] or '').strip().upper(), r['_id']['p']): r['first_date'] for r in agg_results if r['_id']['c'] and r['_id']['p']}
     
-    # Helper function to normalize customer ID
     # Helper function to check if record has "tambahan" in notes
     def is_tambahan_record(record) -> bool:
         keterangan = record.get('keterangan', '') or ''
         return 'tambahan' in keterangan.lower()
-    
-    # Build customer first deposit map - EXCLUDE "tambahan" records
-    customer_first_date = {}
-    for record in sorted(all_records, key=lambda x: x['record_date']):
-        # Skip "tambahan" records when determining first deposit date
-        if is_tambahan_record(record):
-            continue
-        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-        key = (cid_normalized, record.get('product_id'))
-        if key not in customer_first_date:
-            customer_first_date[key] = record['record_date']
     
     # Build customer stats
     customer_stats = defaultdict(lambda: {
