@@ -57,6 +57,27 @@ All modules support:
 
 ---
 
+## Previous Update: Frontend Refactoring - AdminOmsetCRM (2026-02-06)
+
+### ✅ AdminOmsetCRM.js Refactored: 965 → 745 lines (-23%)
+
+**New Shared Components Created:**
+
+| Component | Lines | Description |
+|-----------|-------|-------------|
+| `OmsetFilterPanel.js` | 107 | Date range, product, staff filters |
+| `ViewModeToggle.js` | 63 | Summary/Detail view toggle + export buttons |
+| `OmsetStatsGrid.js` | 142 | Product cards with NDP/RDP/Total stats |
+| `TrashSection.js` | 151 | Reusable trash/restore functionality |
+
+**Benefits:**
+- Reduced code duplication across OMSET-related pages
+- Easier maintenance - filter logic in one place
+- Consistent UI across modules
+- Components can be reused in StaffOmsetCRM and other pages
+
+---
+
 ## Previous Update: MongoDB Index Optimization (2026-02-06)
 
 ### ✅ 28 Database Indexes Created for Optimal Query Performance
