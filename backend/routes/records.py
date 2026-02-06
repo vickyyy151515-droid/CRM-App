@@ -694,11 +694,43 @@ async def create_download_request(request_data: DownloadRequestCreate, user: Use
     return request
 
 @router.get("/download-requests", response_model=List[DownloadRequest])
-async def get_download_requests(user: User = Depends(get_current_user)):
+async def get_download_requests(
+    staff_id: Optional[str] = None,
+    product_id: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    status: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
     db = get_db()
     query = {}
+    
+    # Staff can only see their own requests
     if user.role == 'staff':
         query['requested_by'] = user.id
+    elif staff_id:
+        # Admin filtering by staff
+        query['requested_by'] = staff_id
+    
+    # Filter by product
+    if product_id:
+        query['product_id'] = product_id
+    
+    # Filter by status
+    if status:
+        query['status'] = status
+    
+    # Filter by date range
+    if date_from:
+        if 'requested_at' not in query:
+            query['requested_at'] = {}
+        query['requested_at']['$gte'] = date_from
+    
+    if date_to:
+        if 'requested_at' not in query:
+            query['requested_at'] = {}
+        # Add one day to include the end date fully
+        query['requested_at']['$lte'] = date_to + 'T23:59:59'
     
     requests = await db.download_requests.find(query, {'_id': 0}).sort('requested_at', -1).to_list(1000)
     
@@ -709,6 +741,96 @@ async def get_download_requests(user: User = Depends(get_current_user)):
             req['reviewed_at'] = datetime.fromisoformat(req['reviewed_at'])
     
     return requests
+
+
+@router.get("/download-requests/stats")
+async def get_download_requests_stats(
+    staff_id: Optional[str] = None,
+    product_id: Optional[str] = None,
+    user: User = Depends(get_admin_user)
+):
+    """Get aggregated statistics for download requests - useful for reporting"""
+    db = get_db()
+    jakarta_now = get_jakarta_now()
+    
+    # Base query
+    query = {}
+    if staff_id:
+        query['requested_by'] = staff_id
+    if product_id:
+        query['product_id'] = product_id
+    
+    # Time periods
+    today_str = jakarta_now.strftime('%Y-%m-%d')
+    week_ago = (jakarta_now - timedelta(days=7)).strftime('%Y-%m-%d')
+    month_ago = (jakarta_now - timedelta(days=30)).strftime('%Y-%m-%d')
+    
+    # Total counts
+    total_requests = await db.download_requests.count_documents(query)
+    approved_query = {**query, 'status': 'approved'}
+    rejected_query = {**query, 'status': 'rejected'}
+    pending_query = {**query, 'status': 'pending'}
+    
+    approved_count = await db.download_requests.count_documents(approved_query)
+    rejected_count = await db.download_requests.count_documents(rejected_query)
+    pending_count = await db.download_requests.count_documents(pending_query)
+    
+    # Time-based counts
+    today_query = {**query, 'requested_at': {'$gte': today_str}}
+    week_query = {**query, 'requested_at': {'$gte': week_ago}}
+    month_query = {**query, 'requested_at': {'$gte': month_ago}}
+    
+    today_count = await db.download_requests.count_documents(today_query)
+    week_count = await db.download_requests.count_documents(week_query)
+    month_count = await db.download_requests.count_documents(month_query)
+    
+    # Total records requested (sum of record_count)
+    pipeline = [
+        {'$match': query},
+        {'$group': {'_id': None, 'total_records': {'$sum': '$record_count'}}}
+    ]
+    result = await db.download_requests.aggregate(pipeline).to_list(1)
+    total_records_requested = result[0]['total_records'] if result else 0
+    
+    # Records by time period
+    today_pipeline = [
+        {'$match': {**query, 'requested_at': {'$gte': today_str}}},
+        {'$group': {'_id': None, 'total': {'$sum': '$record_count'}}}
+    ]
+    week_pipeline = [
+        {'$match': {**query, 'requested_at': {'$gte': week_ago}}},
+        {'$group': {'_id': None, 'total': {'$sum': '$record_count'}}}
+    ]
+    month_pipeline = [
+        {'$match': {**query, 'requested_at': {'$gte': month_ago}}},
+        {'$group': {'_id': None, 'total': {'$sum': '$record_count'}}}
+    ]
+    
+    today_records = await db.download_requests.aggregate(today_pipeline).to_list(1)
+    week_records = await db.download_requests.aggregate(week_pipeline).to_list(1)
+    month_records = await db.download_requests.aggregate(month_pipeline).to_list(1)
+    
+    return {
+        'total_requests': total_requests,
+        'approved': approved_count,
+        'rejected': rejected_count,
+        'pending': pending_count,
+        'today': {
+            'requests': today_count,
+            'records': today_records[0]['total'] if today_records else 0
+        },
+        'this_week': {
+            'requests': week_count,
+            'records': week_records[0]['total'] if week_records else 0
+        },
+        'this_month': {
+            'requests': month_count,
+            'records': month_records[0]['total'] if month_records else 0
+        },
+        'total_records_requested': total_records_requested,
+        'generated_at': jakarta_now.isoformat()
+    }
+
 
 @router.patch("/download-requests/{request_id}/approve")
 async def approve_request(request_id: str, user: User = Depends(get_admin_user)):
