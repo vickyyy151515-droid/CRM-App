@@ -904,18 +904,16 @@ async def get_omset_record_types(
     if user.role == 'staff':
         query['staff_id'] = user.id
     
-    all_records = await db.omset_records.find(query, {'_id': 0}).to_list(100000)
+    # Build STAFF-SPECIFIC first deposit map using MongoDB aggregation
+    from utils.db_operations import build_staff_first_date_map
+    full_map = await build_staff_first_date_map(db, product_id=product_id)
     
-    # Build STAFF-SPECIFIC first deposit map (per-staff, per-product is implicit from query filter)
+    # Re-key to (staff_id, customer_id) since product is fixed
     staff_customer_first_date = {}
-    for record in sorted(all_records, key=lambda x: x['record_date']):
-        keterangan = record.get('keterangan', '') or ''
-        if 'tambahan' in keterangan.lower():
-            continue
-        cid = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-        key = (record['staff_id'], cid)
-        if key not in staff_customer_first_date:
-            staff_customer_first_date[key] = record['record_date']
+    for (sid, cid, pid), first_date in full_map.items():
+        key = (sid, cid)
+        if key not in staff_customer_first_date or first_date < staff_customer_first_date[key]:
+            staff_customer_first_date[key] = first_date
     
     date_records = [r for r in all_records if r['record_date'] == record_date]
     
