@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { User, Package, ChevronLeft, FileSpreadsheet, Edit2, Check, X, Search, ExternalLink, Pin, UserX } from 'lucide-react';
+import { User, Package, ChevronLeft, FileSpreadsheet, Edit2, Check, X, Search, ExternalLink, Pin } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import InvalidatedByReservationSection from './shared/InvalidatedByReservationSection';
 
 export default function MyAssignedRecords() {
   const { t } = useLanguage();
