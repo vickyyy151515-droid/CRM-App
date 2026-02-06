@@ -683,7 +683,7 @@ export default function AdvancedAnalytics() {
             ))}
           </div>
           <p className="mt-3 text-xs text-slate-500">
-            💡 Tip: Drag widgets by the grip handle to reorder them. Click "Save Layout" to persist changes.
+            Tip: Drag widgets by the grip handle to reorder them. Click Save Layout to persist changes.
           </p>
         </div>
       )}
