@@ -101,3 +101,178 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "Backend refactoring P2 - Replace inline repair/health-check/product-mismatch/reserved-conflicts logic in memberwd.py and bonanza.py with shared utility functions from repair_helpers.py"
+
+backend:
+  - task: "MemberWD data-health endpoint uses shared utilities"
+    implemented: true
+    working: true
+    file: "backend/routes/memberwd.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Refactored get_memberwd_data_health to use run_full_health_check + check_batch_health. Curl test passed: returns is_healthy, databases, batches."
+
+  - task: "MemberWD diagnose-product-mismatch uses shared utilities"
+    implemented: true
+    working: true
+    file: "backend/routes/memberwd.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Refactored diagnose_memberwd_product_mismatch to use shared diagnose_product_mismatch. Curl test passed."
+
+  - task: "MemberWD repair-product-mismatch uses shared utilities"
+    implemented: true
+    working: true
+    file: "backend/routes/memberwd.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Refactored repair_memberwd_product_mismatch to use shared repair_product_mismatch."
+
+  - task: "MemberWD diagnose-reserved-conflicts uses shared utilities"
+    implemented: true
+    working: true
+    file: "backend/routes/memberwd.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Refactored diagnose_memberwd_reserved_conflicts to use shared diagnose_reserved_conflicts. Curl test passed."
+
+  - task: "MemberWD fix-reserved-conflicts uses shared utilities"
+    implemented: true
+    working: true
+    file: "backend/routes/memberwd.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Refactored fix_memberwd_reserved_conflicts to use shared fix_reserved_conflicts."
+
+  - task: "Bonanza diagnose-product-mismatch uses shared utilities"
+    implemented: true
+    working: true
+    file: "backend/routes/bonanza.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Refactored diagnose_product_mismatch to use shared utility. Curl test passed."
+
+  - task: "Bonanza repair-product-mismatch uses shared utilities"
+    implemented: true
+    working: true
+    file: "backend/routes/bonanza.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Refactored repair_product_mismatch to use shared utility."
+
+  - task: "Bonanza diagnose-reserved-conflicts uses shared utilities"
+    implemented: true
+    working: true
+    file: "backend/routes/bonanza.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Refactored diagnose_reserved_conflicts to use shared utility. Curl test passed."
+
+  - task: "Bonanza fix-reserved-conflicts uses shared utilities"
+    implemented: true
+    working: true
+    file: "backend/routes/bonanza.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Refactored fix_reserved_conflicts to use shared utility."
+
+  - task: "MemberWD repair-data still works (already uses shared utils)"
+    implemented: true
+    working: true
+    file: "backend/routes/memberwd.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Was already refactored. Curl test confirmed: success=True, Fixed 0 issues."
+
+  - task: "Bonanza repair-data still works (already uses shared utils)"
+    implemented: true
+    working: true
+    file: "backend/routes/bonanza.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Was already refactored. Curl test confirmed: success=True, Fixed 0 issues."
+
+  - task: "Bonanza data-health still works (already uses shared utils)"
+    implemented: true
+    working: true
+    file: "backend/routes/bonanza.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Was already refactored. Curl test confirmed: is_healthy=True."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "MemberWD data-health endpoint uses shared utilities"
+    - "MemberWD diagnose-product-mismatch uses shared utilities"
+    - "MemberWD repair-product-mismatch uses shared utilities"
+    - "MemberWD diagnose-reserved-conflicts uses shared utilities"
+    - "MemberWD fix-reserved-conflicts uses shared utilities"
+    - "Bonanza diagnose-product-mismatch uses shared utilities"
+    - "Bonanza repair-product-mismatch uses shared utilities"
+    - "Bonanza diagnose-reserved-conflicts uses shared utilities"
+    - "Bonanza fix-reserved-conflicts uses shared utilities"
+    - "MemberWD repair-data still works"
+    - "Bonanza repair-data still works"
+    - "Bonanza data-health still works"
+  stuck_tasks: []
+  test_all: true
+  test_priority: "high_first"
+
+agent_communication:
+    - agent: "main"
+      message: "Completed P2 backend refactoring for both memberwd.py and bonanza.py. Extracted 5 shared functions (check_batch_health, diagnose_product_mismatch, repair_product_mismatch, diagnose_reserved_conflicts, fix_reserved_conflicts) into repair_helpers.py. Also added helper functions (_build_reserved_map, _find_customer_id_in_row) and centralized USERNAME_FIELDS constant. All curl tests pass. Need full regression test of all admin endpoints for both modules."
