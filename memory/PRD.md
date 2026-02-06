@@ -59,12 +59,16 @@ All modules support:
 
 ## Previous Update: Frontend Refactoring - Phase 2 (2026-02-06)
 
-### ✅ Multiple Large Files Refactored
+### ✅ Large Files Refactored
 
-**AdminOmsetCRM.js:** 965 → 745 lines (-23%)
-**CustomerRetention.js:** 944 → 910 lines (-4%)
+| File | Before | After | Reduction |
+|------|--------|-------|-----------|
+| `AdminOmsetCRM.js` | 965 | 745 | -23% |
+| `AdvancedAnalytics.js` | 947 | 740 | -22% |
+| `CustomerRetention.js` | 944 | 910 | -4% |
+| **Total** | **2,856** | **2,395** | **-16%** |
 
-**New Shared Components Created:**
+**New Shared Components Created (11 files):**
 
 | Component | Lines | Description |
 |-----------|-------|-------------|
@@ -74,15 +78,17 @@ All modules support:
 | `TrashSection.js` | 151 | Reusable trash/restore functionality |
 | `AnalyticsPeriodFilter.js` | 85 | Period/product/staff filters for analytics |
 | `WidgetComponents.js` | 145 | WidgetCard, MetricCard, ViewTabs, MetricsGrid |
-| `AnalyticsCharts.js` | 175 | MultiAreaChart, DonutChart, HorizontalBarChart, DualLineChart, ProgressBar |
+| `AnalyticsCharts.js` | 175 | MultiAreaChart, DonutChart, HorizontalBarChart |
 | `CommonComponents.js` | 145 | StatsCardRow, SearchFilterBar, Modal |
+| `AnalyticsWidgets.js` | 280 | OmsetTrendsWidget, ProductOmsetWidget, NdpRdpWidget, etc. |
 
-**Total Shared Components:** 30+ files (4,261 lines)
+**Total Shared Components:** 32 files (4,583 lines)
 
 **Benefits:**
 - Consistent UI patterns across the app
 - Easier maintenance and testing
 - Reduced duplication
+- Smaller bundle sizes per page
 - Consistent UI across modules
 - Components can be reused in StaffOmsetCRM and other pages
 
