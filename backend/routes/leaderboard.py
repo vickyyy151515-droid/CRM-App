@@ -4,7 +4,8 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 
-from .deps import get_db, get_current_user, get_admin_user, get_jakarta_now, User
+from .deps import get_db, get_current_user, get_admin_user, User
+from utils.helpers import normalize_customer_id, get_jakarta_now
 
 router = APIRouter(tags=["Leaderboard"])
 
@@ -24,12 +25,6 @@ DEFAULT_TARGETS = {
 }
 
 # ==================== HELPER FUNCTIONS ====================
-
-def normalize_customer_id(customer_id: str) -> str:
-    """Normalize customer ID for consistent comparison"""
-    if not customer_id:
-        return ""
-    return customer_id.strip().lower()
 
 async def get_targets():
     """Get current targets from database or return defaults"""
