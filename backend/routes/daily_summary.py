@@ -67,26 +67,21 @@ async def generate_daily_summary(date_str: str = None):
     total_rdp = 0
     total_forms = len(records)
     
-    # Track unique customers per day for NDP/RDP
-    daily_ndp_customers = set()
-    daily_rdp_customers = set()
+    # Track unique (staff, customer, product) tuples for NDP/RDP — SINGLE SOURCE OF TRUTH
+    daily_ndp_tuples = set()
+    daily_rdp_tuples = set()
     
-    # Staff breakdown
+    # Staff breakdown — track (customer, product) pairs per staff
     staff_stats = {}
-    staff_ndp_customers = {}
-    staff_rdp_customers = {}
+    staff_ndp_pairs = {}
+    staff_rdp_pairs = {}
     
-    # Product breakdown - track by (staff_id, customer_id) to match staff counting
-    # This ensures that if Customer A deposits to Product X and Product Y,
-    # the RDP is only counted ONCE in total (assigned to one product)
+    # Product breakdown within staff — track (customer) per (staff, product)
+    
+    # Overall product stats — track (staff, customer) pairs per product
     product_stats = {}
-    product_ndp_customers = {}
-    product_rdp_customers = {}
-    
-    # CRITICAL FIX: Track which (staff, customer) pairs have already been counted
-    # This prevents double-counting when same customer deposits to multiple products
-    global_staff_customer_counted_ndp = set()  # (staff_id, customer_id) already counted as NDP
-    global_staff_customer_counted_rdp = set()  # (staff_id, customer_id) already counted as RDP
+    product_ndp_pairs = {}
+    product_rdp_pairs = {}
     
     for record in records:
         staff_id = record['staff_id']
@@ -98,39 +93,30 @@ async def generate_daily_summary(date_str: str = None):
         # Normalized customer_id
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
         
-        # Global key for daily totals
-        global_key = (cid_normalized, record['product_id'])
-        global_first_date = global_customer_first_date.get(global_key)
-        
-        # Staff-specific key for staff breakdown
+        # SINGLE NDP definition: per (staff, customer, product)
         staff_key = (staff_id, cid_normalized, record['product_id'])
         staff_first_date = staff_customer_first_date.get(staff_key)
         
-        # Determine GLOBAL NDP/RDP (for daily totals)
+        # Determine NDP/RDP using staff-specific first date
         if is_tambahan_record(record):
-            is_global_ndp = False
+            is_ndp = False
         else:
-            is_global_ndp = global_first_date == date_str
-        
-        # Determine STAFF-SPECIFIC NDP/RDP (for staff breakdown)
-        if is_tambahan_record(record):
-            is_staff_ndp = False
-        else:
-            is_staff_ndp = staff_first_date == date_str
+            is_ndp = staff_first_date == date_str
         
         total_omset += depo_total
         
-        # Count unique customers for overall totals (using global NDP)
-        if is_global_ndp:
-            if cid_normalized not in daily_ndp_customers:
-                daily_ndp_customers.add(cid_normalized)
+        # --- Daily totals: track (staff, customer, product) tuples ---
+        ndp_tuple = (staff_id, cid_normalized, product_id)
+        if is_ndp:
+            if ndp_tuple not in daily_ndp_tuples:
+                daily_ndp_tuples.add(ndp_tuple)
                 total_ndp += 1
         else:
-            if cid_normalized not in daily_rdp_customers:
-                daily_rdp_customers.add(cid_normalized)
+            if ndp_tuple not in daily_rdp_tuples:
+                daily_rdp_tuples.add(ndp_tuple)
                 total_rdp += 1
         
-        # Staff stats - initialize if needed
+        # --- Staff stats ---
         if staff_id not in staff_stats:
             staff_stats[staff_id] = {
                 'staff_id': staff_id,
@@ -141,23 +127,24 @@ async def generate_daily_summary(date_str: str = None):
                 'form_count': 0,
                 'product_breakdown': {}
             }
-            staff_ndp_customers[staff_id] = set()
-            staff_rdp_customers[staff_id] = set()
+            staff_ndp_pairs[staff_id] = set()
+            staff_rdp_pairs[staff_id] = set()
         
         staff_stats[staff_id]['total_omset'] += depo_total
         staff_stats[staff_id]['form_count'] += 1
         
-        # Count unique customers per staff (using STAFF-SPECIFIC NDP)
-        if is_staff_ndp:
-            if cid_normalized not in staff_ndp_customers[staff_id]:
-                staff_ndp_customers[staff_id].add(cid_normalized)
+        # Track (customer, product) pairs per staff — each product is independent
+        customer_product_pair = (cid_normalized, product_id)
+        if is_ndp:
+            if customer_product_pair not in staff_ndp_pairs[staff_id]:
+                staff_ndp_pairs[staff_id].add(customer_product_pair)
                 staff_stats[staff_id]['ndp_count'] += 1
         else:
-            if cid_normalized not in staff_rdp_customers[staff_id]:
-                staff_rdp_customers[staff_id].add(cid_normalized)
+            if customer_product_pair not in staff_rdp_pairs[staff_id]:
+                staff_rdp_pairs[staff_id].add(customer_product_pair)
                 staff_stats[staff_id]['rdp_count'] += 1
         
-        # Staff's product breakdown - initialize if needed
+        # --- Staff's product breakdown ---
         if product_id not in staff_stats[staff_id]['product_breakdown']:
             staff_stats[staff_id]['product_breakdown'][product_id] = {
                 'product_id': product_id,
@@ -173,8 +160,8 @@ async def generate_daily_summary(date_str: str = None):
         pb = staff_stats[staff_id]['product_breakdown'][product_id]
         pb['total_omset'] += depo_total
         pb['form_count'] += 1
-        # Use staff-specific NDP for product breakdown within staff
-        if is_staff_ndp:
+        # Per-product within staff: track customer_id
+        if is_ndp:
             if cid_normalized not in pb['_ndp_customers']:
                 pb['_ndp_customers'].add(cid_normalized)
                 pb['ndp_count'] += 1
@@ -183,7 +170,7 @@ async def generate_daily_summary(date_str: str = None):
                 pb['_rdp_customers'].add(cid_normalized)
                 pb['rdp_count'] += 1
         
-        # Overall product stats - initialize if needed
+        # --- Overall product stats ---
         if product_id not in product_stats:
             product_stats[product_id] = {
                 'product_id': product_id,
@@ -193,32 +180,22 @@ async def generate_daily_summary(date_str: str = None):
                 'rdp_count': 0,
                 'form_count': 0
             }
-            product_ndp_customers[product_id] = set()
-            product_rdp_customers[product_id] = set()
+            product_ndp_pairs[product_id] = set()
+            product_rdp_pairs[product_id] = set()
         
         product_stats[product_id]['total_omset'] += depo_total
         product_stats[product_id]['form_count'] += 1
         
-        # CRITICAL FIX: Count unique customers per product, but ensure each (staff, customer) 
-        # pair is only counted ONCE across ALL products. This prevents the scenario where
-        # Customer A deposits to Product X and Product Y under Staff B, and gets counted 
-        # twice in product breakdown but only once in staff breakdown.
-        staff_customer_key = (staff_id, cid_normalized)
-        
-        if is_staff_ndp:
-            # Only count this NDP if we haven't already counted this (staff, customer) pair
-            if staff_customer_key not in global_staff_customer_counted_ndp:
-                if cid_normalized not in product_ndp_customers[product_id]:
-                    product_ndp_customers[product_id].add(cid_normalized)
-                    product_stats[product_id]['ndp_count'] += 1
-                    global_staff_customer_counted_ndp.add(staff_customer_key)
+        # Track (staff, customer) pairs per product — each staff is independent
+        staff_customer_pair = (staff_id, cid_normalized)
+        if is_ndp:
+            if staff_customer_pair not in product_ndp_pairs[product_id]:
+                product_ndp_pairs[product_id].add(staff_customer_pair)
+                product_stats[product_id]['ndp_count'] += 1
         else:
-            # Only count this RDP if we haven't already counted this (staff, customer) pair
-            if staff_customer_key not in global_staff_customer_counted_rdp:
-                if cid_normalized not in product_rdp_customers[product_id]:
-                    product_rdp_customers[product_id].add(cid_normalized)
-                    product_stats[product_id]['rdp_count'] += 1
-                    global_staff_customer_counted_rdp.add(staff_customer_key)
+            if staff_customer_pair not in product_rdp_pairs[product_id]:
+                product_rdp_pairs[product_id].add(staff_customer_pair)
+                product_stats[product_id]['rdp_count'] += 1
     
     # Convert staff stats to list and sort by OMSET
     # Also clean up the internal tracking sets from product breakdown
