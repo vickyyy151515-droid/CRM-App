@@ -65,20 +65,9 @@ async def get_report_crm_data(
         return 'tambahan' in keterangan.lower()
     
     # ==================== BUILD STAFF-SPECIFIC CUSTOMER FIRST DATE LOOKUP ====================
-    # Key: (staff_id, customer_id_normalized, product_id) -> first deposit date
-    # SINGLE SOURCE OF TRUTH: NDP/RDP is always per-staff, per-customer, per-product
-    # IMPORTANT: Exclude "tambahan" records from first_date calculation
-    
-    staff_customer_first_date = {}
-    for record in sorted(all_time_records, key=lambda x: x['record_date']):
-        if is_tambahan_record(record):
-            continue
-        cid_normalized = get_normalized_cid(record)
-        pid = record['product_id']
-        sid = record['staff_id']
-        key = (sid, cid_normalized, pid)
-        if key not in staff_customer_first_date:
-            staff_customer_first_date[key] = record['record_date']
+    # Use MongoDB aggregation for efficiency (instead of loading all records into memory)
+    from utils.db_operations import build_staff_first_date_map
+    staff_customer_first_date = await build_staff_first_date_map(db)
     
     # ==================== UNIFIED NDP/RDP DETERMINATION ====================
     # NDP = Customer's FIRST deposit for THIS PRODUCT with THIS STAFF matches record_date (AND not tambahan)
