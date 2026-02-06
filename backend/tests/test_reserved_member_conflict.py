@@ -102,28 +102,53 @@ class TestReservedMemberConflict:
         """When ADMIN (different from staff-user-1) creates omset for reserved customer, status should be pending"""
         # Note: staff@crm.com IS staff-user-1, so we use ADMIN (Vicky) to create conflict
         # Admin ID is 0cf8a86d-fbad-4966-b232-a49e4033e1d8 which is != staff-user-1
+        
+        # First create a fresh reserved member for this test
+        CONFLICT_CUSTOMER = "TEST_CONFLICT_VERIFY_001"
+        reserved_payload = {
+            "customer_id": CONFLICT_CUSTOMER,
+            "product_id": TEST_PRODUCT_ID,
+            "staff_id": STAFF_USER_1_ID
+        }
+        reserved_res = requests.post(f"{BASE_URL}/api/reserved-members", json=reserved_payload, headers=admin_headers)
+        print(f"Created reserved member: {reserved_res.status_code}")
+        
         today = datetime.now().strftime('%Y-%m-%d')
         payload = {
             "product_id": TEST_PRODUCT_ID,
             "record_date": today,
-            "customer_name": TEST_CUSTOMER_ID,
-            "customer_id": TEST_CUSTOMER_ID,
+            "customer_name": CONFLICT_CUSTOMER,
+            "customer_id": CONFLICT_CUSTOMER,
             "nominal": 100000,
             "depo_kelipatan": 1,
             "keterangan": "Test conflict - admin creating for reserved customer"
         }
         response = requests.post(f"{BASE_URL}/api/omset", json=payload, headers=admin_headers)
-        print(f"Create omset with conflict response: {response.status_code} - {response.text}")
+        print(f"Create omset with conflict response: {response.status_code}")
         
         assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
-        # Check if approval_status is pending OR if conflict_info exists
-        is_pending = data.get('approval_status') == 'pending'
-        has_conflict = 'conflict_info' in data
-        assert is_pending or has_conflict, f"Expected pending status or conflict_info, got: {data}"
+        record_id = data.get('id')
+        
+        # The POST response uses OmsetRecord model which doesn't include approval_status
+        # We need to verify via GET /omset/pending endpoint
+        pending_res = requests.get(f"{BASE_URL}/api/omset/pending", headers=admin_headers)
+        assert pending_res.status_code == 200
+        pending_records = pending_res.json()
+        
+        # Find our record in pending list
+        our_pending = [r for r in pending_records if r.get('id') == record_id]
+        assert len(our_pending) > 0, f"Expected record {record_id} to be in pending list. Pending records: {[r.get('id') for r in pending_records]}"
+        
+        pending_record = our_pending[0]
+        assert pending_record.get('approval_status') == 'pending', f"Expected pending status, got: {pending_record.get('approval_status')}"
+        assert 'conflict_info' in pending_record, "Expected conflict_info in pending record"
+        assert pending_record['conflict_info'].get('reserved_by_staff_id') == STAFF_USER_1_ID
+        
+        print(f"Verified: Record is pending with conflict_info: {pending_record.get('conflict_info')}")
         
         # Store record ID for later tests
-        TestReservedMemberConflict.pending_record_id = data.get('id')
+        TestReservedMemberConflict.pending_record_id = record_id
     
     def test_omset_approved_when_same_staff_creates(self, staff_headers):
         """When SAME staff (staff-user-1) creates omset for their own reserved customer, status should be approved"""
