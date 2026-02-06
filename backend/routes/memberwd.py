@@ -1566,173 +1566,35 @@ async def get_memberwd_staff_list(user: User = Depends(get_admin_user)):
 async def repair_memberwd_data(user: User = Depends(get_admin_user)):
     """
     Repair and synchronize memberwd record data.
-    This fixes inconsistencies caused by pre-update code.
+    Uses shared repair utilities + MemberWD-specific batch sync.
     """
+    from utils.repair_helpers import run_full_repair, sync_batch_counts
+    
     db = get_db()
-    now = get_jakarta_now()
     
-    repair_log = {
-        'timestamp': now.isoformat(),
-        'fixed_missing_db_info': 0,
-        'fixed_invalid_status_restored': 0,
-        'fixed_invalid_status_cleared': 0,
-        'fixed_orphaned_assignments': 0,
-        'fixed_batch_counts': 0,
-        'databases_checked': [],
-        'batches_synchronized': [],
-        'errors': []
-    }
+    # Run standard repair
+    result = await run_full_repair(db, module='memberwd')
     
-    # Get all databases
-    databases = await db.memberwd_databases.find({}, {'_id': 0}).to_list(1000)
+    # Also sync batch counts (MemberWD specific)
+    batch_sync = await sync_batch_counts(db)
     
-    for database in databases:
-        db_id = database['id']
-        db_name = database['name']
-        product_name = database.get('product_name', 'Unknown')
-        
-        # Fix records with missing database_name
-        result = await db.memberwd_records.update_many(
-            {'database_id': db_id, 'database_name': {'$exists': False}},
-            {'$set': {'database_name': db_name, 'product_name': product_name}}
-        )
-        if result.modified_count > 0:
-            repair_log['fixed_missing_db_info'] += result.modified_count
-        
-        # Fix records with None database_name
-        result = await db.memberwd_records.update_many(
-            {'database_id': db_id, 'database_name': None},
-            {'$set': {'database_name': db_name, 'product_name': product_name}}
-        )
-        if result.modified_count > 0:
-            repair_log['fixed_missing_db_info'] += result.modified_count
-        
-        # CRITICAL FIX: Handle records with status='invalid' (caused by reservation conflicts)
-        # These records should have status='assigned' with is_reservation_conflict=True
-        invalid_with_assignment = await db.memberwd_records.find({
-            'database_id': db_id,
-            'status': 'invalid',
-            'assigned_to': {'$exists': True, '$ne': None}
-        }, {'_id': 0}).to_list(10000)
-        
-        for record in invalid_with_assignment:
-            # Restore to 'assigned' status and mark as reservation conflict
-            await db.memberwd_records.update_one(
-                {'id': record['id']},
-                {'$set': {
-                    'status': 'assigned',
-                    'is_reservation_conflict': True
-                }}
-            )
-            repair_log['fixed_invalid_status_restored'] += 1
-        
-        # Handle remaining 'invalid' status records without proper assignment
-        invalid_without_assignment = await db.memberwd_records.find({
-            'database_id': db_id,
-            'status': 'invalid',
-            '$or': [
-                {'assigned_to': {'$exists': False}},
-                {'assigned_to': None}
-            ]
-        }, {'_id': 0}).to_list(10000)
-        
-        if invalid_without_assignment:
-            record_ids = [r['id'] for r in invalid_without_assignment]
-            result = await db.memberwd_records.update_many(
-                {'id': {'$in': record_ids}},
-                {'$set': {'status': 'available'}}
-            )
-            repair_log['fixed_invalid_status_cleared'] += result.modified_count
-        
-        # Fix other invalid status values (anything not in valid list)
-        valid_statuses = ['available', 'assigned', 'invalid_archived', 'invalid']
-        other_invalid = await db.memberwd_records.count_documents({
-            'database_id': db_id, 
-            'status': {'$nin': valid_statuses}
-        })
-        if other_invalid > 0:
-            result = await db.memberwd_records.update_many(
-                {'database_id': db_id, 'status': {'$nin': valid_statuses}},
-                {'$set': {'status': 'available'}}
-            )
-            repair_log['fixed_invalid_status_cleared'] += result.modified_count
-        
-        # Fix orphaned assignments (status=assigned but no assigned_to)
-        result = await db.memberwd_records.update_many(
-            {'database_id': db_id, 'status': 'assigned', 'assigned_to': None},
-            {'$set': {
-                'status': 'available',
-                'assigned_to': None,
-                'assigned_to_name': None,
-                'assigned_at': None
-            }}
-        )
-        if result.modified_count > 0:
-            repair_log['fixed_orphaned_assignments'] += result.modified_count
-        
-        # Recalculate counts
-        available = await db.memberwd_records.count_documents({'database_id': db_id, 'status': 'available'})
-        assigned = await db.memberwd_records.count_documents({'database_id': db_id, 'status': 'assigned'})
-        archived = await db.memberwd_records.count_documents({'database_id': db_id, 'status': 'invalid_archived'})
-        total = await db.memberwd_records.count_documents({'database_id': db_id})
-        
-        repair_log['databases_checked'].append({
-            'database_id': db_id,
-            'database_name': db_name,
-            'total_records': total,
-            'available': available,
-            'assigned': assigned,
-            'archived': archived,
-            'sum_check': available + assigned + archived,
-            'is_consistent': total == (available + assigned + archived)
-        })
+    # Merge batch sync results into repair log
+    result['repair_log']['fixed_batch_counts'] = batch_sync['fixed_batch_counts']
+    result['repair_log']['batches_synchronized'] = batch_sync['batches_synchronized']
+    if 'empty_batches_deleted' in batch_sync:
+        result['repair_log']['empty_batches_deleted'] = batch_sync['empty_batches_deleted']
     
-    # CRITICAL: Synchronize batch counts with actual records
-    all_batches = await db.memberwd_batches.find({}, {'_id': 0}).to_list(10000)
-    
-    for batch in all_batches:
-        batch_id = batch.get('id')
-        stored_count = batch.get('current_count', 0)
-        
-        # Count actual assigned records in this batch
-        actual_count = await db.memberwd_records.count_documents({
-            'batch_id': batch_id,
-            'status': 'assigned'
-        })
-        
-        if stored_count != actual_count:
-            # Synchronize the batch count
-            await db.memberwd_batches.update_one(
-                {'id': batch_id},
-                {'$set': {'current_count': actual_count}}
-            )
-            repair_log['fixed_batch_counts'] += 1
-            repair_log['batches_synchronized'].append({
-                'batch_id': batch_id[:8] + '...',
-                'staff_name': batch.get('staff_name', 'Unknown'),
-                'stored_count': stored_count,
-                'actual_count': actual_count,
-                'difference': actual_count - stored_count
-            })
-    
-    # Delete empty batches
-    deleted_batches = await db.memberwd_batches.delete_many({'current_count': {'$lte': 0}})
-    if deleted_batches.deleted_count > 0:
-        repair_log['empty_batches_deleted'] = deleted_batches.deleted_count
-    
+    # Update total fixed count
     total_fixed = (
-        repair_log['fixed_missing_db_info'] + 
-        repair_log['fixed_invalid_status_restored'] + 
-        repair_log['fixed_invalid_status_cleared'] +
-        repair_log['fixed_orphaned_assignments'] +
-        repair_log['fixed_batch_counts']
+        result['repair_log'].get('fixed_missing_db_info', 0) + 
+        result['repair_log'].get('fixed_invalid_status_restored', 0) + 
+        result['repair_log'].get('fixed_invalid_status_cleared', 0) +
+        result['repair_log'].get('fixed_orphaned_assignments', 0) +
+        batch_sync['fixed_batch_counts']
     )
+    result['message'] = f'Data repair completed. Fixed {total_fixed} issues.'
     
-    return {
-        'success': True,
-        'message': f'Data repair completed. Fixed {total_fixed} issues.',
-        'repair_log': repair_log
-    }
+    return result
 
 
 @router.get("/memberwd/admin/diagnose-product-mismatch")
