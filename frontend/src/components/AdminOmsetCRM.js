@@ -322,109 +322,15 @@ export default function AdminOmsetCRM() {
       />
 
       {/* Overall Summary - OMSET per Product + NDP/RDP */}
-      {summary && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
-          {summary.by_product.length === 0 ? (
-            <div className="col-span-full bg-white border border-slate-200 rounded-xl p-6 text-center text-slate-500">
-              No OMSET data for selected filters
-            </div>
-          ) : (
-            <>
-              {summary.by_product.map((product, idx) => {
-                const colors = [
-                  'from-indigo-500 to-indigo-600',
-                  'from-blue-500 to-blue-600',
-                  'from-purple-500 to-purple-600',
-                  'from-cyan-500 to-cyan-600',
-                  'from-teal-500 to-teal-600'
-                ];
-                const colorClass = colors[idx % colors.length];
-                
-                return (
-                  <div key={product.product_id} className={`bg-gradient-to-br ${colorClass} rounded-xl p-4 text-white shadow-lg`}>
-                    <div className="flex items-center justify-between mb-2">
-                      <Package className="opacity-80" size={20} />
-                      <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">{product.count} rec</span>
-                    </div>
-                    <p className="text-white/80 text-xs font-medium mb-1">{product.product_name}</p>
-                    <p className="text-xl font-bold">Rp {formatCurrency(product.total_depo)}</p>
-                  </div>
-                );
-              })}
-              
-              {/* NDP Card */}
-              <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 text-white shadow-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <UserPlus className="opacity-80" size={20} />
-                  <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">{summary.total.total_ndp} NDP</span>
-                </div>
-                <p className="text-white/80 text-xs font-medium mb-1">Total NDP (New Depo)</p>
-                <p className="text-xl font-bold">{summary.total.total_ndp}</p>
-              </div>
-              
-              {/* RDP Card */}
-              <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-4 text-white shadow-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <RefreshCw className="opacity-80" size={20} />
-                  <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">{summary.total.total_rdp} RDP</span>
-                </div>
-                <p className="text-white/80 text-xs font-medium mb-1">Total RDP (Redepo)</p>
-                <p className="text-xl font-bold">{summary.total.total_rdp}</p>
-              </div>
-              
-              {/* Grand Total Card */}
-              <div className="bg-gradient-to-br from-slate-700 to-slate-800 rounded-xl p-4 text-white shadow-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <TrendingUp className="opacity-80" size={20} />
-                  <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">{summary.total.total_records} total</span>
-                </div>
-                <p className="text-white/80 text-xs font-medium mb-1">GRAND TOTAL</p>
-                <p className="text-xl font-bold">Rp {formatCurrency(summary.total.total_depo)}</p>
-              </div>
-            </>
-          )}
-        </div>
-      )}
+      <OmsetStatsGrid summary={summary} />
 
       {/* View Toggle and Export */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex gap-2">
-          <button
-            onClick={() => setViewMode('summary')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              viewMode === 'summary' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            Summary View
-          </button>
-          <button
-            onClick={() => setViewMode('details')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              viewMode === 'details' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            Detail View
-          </button>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={handleExportSummary}
-            className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-2 transition-colors text-sm"
-            data-testid="btn-export-summary"
-          >
-            <Download size={16} />
-            Export Summary
-          </button>
-          <button
-            onClick={handleExportDetails}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-colors text-sm"
-            data-testid="btn-export-details"
-          >
-            <Download size={16} />
-            Export Details
-          </button>
-        </div>
-      </div>
+      <ViewModeToggle
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        onExportSummary={handleExportSummary}
+        onExportDetails={handleExportDetails}
+      />
 
       {viewMode === 'summary' && summary && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
