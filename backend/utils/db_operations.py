@@ -10,6 +10,61 @@ import uuid
 from utils.helpers import get_jakarta_now, normalize_customer_id
 
 
+async def build_staff_first_date_map(db, product_id: str = None) -> Dict[Tuple[str, str, str], str]:
+    """
+    Build a map of (staff_id, customer_id_normalized, product_id) -> first_date
+    using MongoDB aggregation instead of loading all records into memory.
+    
+    This is the SINGLE SOURCE OF TRUTH for NDP/RDP across all views.
+    Excludes "tambahan" records from first_date calculation.
+    
+    Args:
+        db: Database connection
+        product_id: Optional product filter
+    
+    Returns:
+        Dict mapping (staff_id, customer_id, product_id) to first record date
+    """
+    match_stage = {
+        '$match': {
+            '$and': [
+                {'$or': [
+                    {'keterangan': {'$exists': False}},
+                    {'keterangan': None},
+                    {'keterangan': ''},
+                    {'keterangan': {'$not': {'$regex': 'tambahan', '$options': 'i'}}}
+                ]}
+            ]
+        }
+    }
+    
+    if product_id:
+        match_stage['$match']['$and'].append({'product_id': product_id})
+    
+    pipeline = [
+        match_stage,
+        {
+            '$group': {
+                '_id': {
+                    's': '$staff_id',
+                    'c': {'$ifNull': ['$customer_id_normalized', '$customer_id']},
+                    'p': '$product_id'
+                },
+                'first_date': {'$min': '$record_date'}
+            }
+        }
+    ]
+    
+    results = await db.omset_records.aggregate(pipeline).to_list(None)
+    
+    return {
+        (r['_id']['s'], (r['_id']['c'] or '').strip().upper(), r['_id']['p']): r['first_date']
+        for r in results
+        if r['_id']['s'] and r['_id']['c'] and r['_id']['p']
+    }
+
+
+
 # Collection name mapping
 COLLECTION_MAP = {
     'records': {
