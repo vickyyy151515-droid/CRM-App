@@ -558,56 +558,20 @@ export default function AdminDBBonanza() {
 
   return (
     <div data-testid="admin-db-bonanza">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">DB Bonanza</h2>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={async () => {
-              try {
-                const response = await api.get('/bonanza/admin/data-health');
-                if (response.data.is_healthy) {
-                  toast.success(`Data healthy! ${response.data.databases?.length || 0} databases checked.`);
-                } else {
-                  toast.error(`Found ${response.data.total_issues} issues. Check console for details.`);
-                  console.log('Data Health Report:', response.data);
-                }
-              } catch (error) {
-                toast.error('Failed to check data health');
-              }
-            }}
-            className="px-3 py-2 bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-900/50 dark:hover:bg-emerald-900 text-emerald-700 dark:text-emerald-300 rounded-lg flex items-center gap-2 transition-colors text-sm"
-            title="Check data consistency"
-          >
-            <Check size={16} />
-            Health Check
-          </button>
-          <button
-            onClick={async () => {
-              if (!window.confirm('Run data repair? This will fix orphaned records and missing data.')) return;
-              try {
-                const response = await api.post('/bonanza/admin/repair-data');
-                toast.success(response.data.message);
-                loadDatabases();
-                console.log('Repair Log:', response.data.repair_log);
-              } catch (error) {
-                toast.error('Failed to repair data');
-              }
-            }}
-            className="px-3 py-2 bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/50 dark:hover:bg-amber-900 text-amber-700 dark:text-amber-300 rounded-lg flex items-center gap-2 transition-colors text-sm"
-            title="Repair data inconsistencies"
-          >
-            <RefreshCw size={16} />
-            Repair Data
-          </button>
-          <AdminActionsPanel
-            api={api}
-            moduleType="bonanza"
-            onDataRefresh={loadDatabases}
-            onShowSettings={() => setShowSettingsPanel(!showSettingsPanel)}
-            showSettingsBtn={true}
-          />
-        </div>
-      </div>
+      <ModuleHeader
+        title="DB Bonanza"
+        api={api}
+        moduleType="bonanza"
+        onDataRefresh={loadDatabases}
+      >
+        <AdminActionsPanel
+          api={api}
+          moduleType="bonanza"
+          onDataRefresh={loadDatabases}
+          onShowSettings={() => setShowSettingsPanel(!showSettingsPanel)}
+          showSettingsBtn={true}
+        />
+      </ModuleHeader>
 
       {/* Settings Panel */}
       {showSettingsPanel && (
