@@ -111,9 +111,12 @@ async def get_retention_overview(
             customer['last_deposit'] = record['record_date']
         
         # Check if NDP (first deposit is within date range)
-        # Note: Records with "tambahan" in notes are always RDP and excluded from first_date calc
-        # So is_ndp will correctly be False for tambahan records
+        # If customer has no non-tambahan records, first_ever will be None.
+        # In that case, fall back to their earliest record date (including tambahan).
         first_ever = customer_first_date.get(key)
+        if first_ever is None:
+            # Customer only has "tambahan" records — use their earliest record date
+            first_ever = customer['first_deposit']
         if first_ever and start_date <= first_ever <= end_date:
             customer['is_ndp'] = True
     
