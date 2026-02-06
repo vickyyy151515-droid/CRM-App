@@ -779,22 +779,25 @@ async def export_omset_summary(
     
     all_records = await db.omset_records.find({} if not product_id else {'product_id': product_id}, {'_id': 0}).to_list(100000)
     
-    # Build customer_first_date, excluding "tambahan" records
-    customer_first_date = {}
+    # Build STAFF-SPECIFIC customer first deposit map (SINGLE SOURCE OF TRUTH)
+    staff_customer_first_date = {}
     for record in sorted(all_records, key=lambda x: x['record_date']):
-        # Skip "tambahan" records when determining first deposit date
         keterangan = record.get('keterangan', '') or ''
         if 'tambahan' in keterangan.lower():
             continue
-        key = (record['customer_id'], record['product_id'])
-        if key not in customer_first_date:
-            customer_first_date[key] = record['record_date']
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (record['staff_id'], cid_normalized, record['product_id'])
+        if key not in staff_customer_first_date:
+            staff_customer_first_date[key] = record['record_date']
     
     daily_summary = {}
     for record in records:
         date = record['record_date']
-        key = (record['customer_id'], record['product_id'])
-        first_date = customer_first_date.get(key)
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        staff_id_rec = record['staff_id']
+        product_id_rec = record['product_id']
+        key = (staff_id_rec, cid_normalized, product_id_rec)
+        first_date = staff_customer_first_date.get(key)
         
         # Check if "tambahan" in notes - if so, always RDP
         keterangan = record.get('keterangan', '') or ''
