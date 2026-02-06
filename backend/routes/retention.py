@@ -248,8 +248,10 @@ async def get_retention_customers(
         if customer['last_deposit'] is None or record['record_date'] > customer['last_deposit']:
             customer['last_deposit'] = record['record_date']
         
-        # Check if NDP - "tambahan" records are excluded from first_date so they won't match
+        # Check if NDP - fall back to earliest record date if only tambahan records
         first_ever = customer_first_date.get(key)
+        if first_ever is None:
+            first_ever = customer['first_deposit']
         if first_ever and start_date <= first_ever <= end_date:
             customer['is_ndp'] = True
     
