@@ -547,116 +547,22 @@ export default function AdvancedAnalytics() {
 
       case 'dailyTrends':
         return staffData?.daily_chart?.length > 0 && (
-          <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-              <TrendingUp size={20} className="text-indigo-600" />
-              Daily Activity Trends
-            </h3>
-            <div className="h-64 sm:h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={staffData.daily_chart}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip />
-                  <Legend />
-                  <Area type="monotone" dataKey="assigned" name="Assigned" stroke="#6366f1" fill="#6366f1" fillOpacity={0.3} />
-                  <Area type="monotone" dataKey="wa_checked" name="WA Checked" stroke="#22c55e" fill="#22c55e" fillOpacity={0.3} />
-                  <Area type="monotone" dataKey="responded" name="Responded" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.3} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+          <DailyTrendsWidget data={{ daily_trends: staffData.daily_chart }} />
         );
 
       case 'whatsappDistribution':
         return (
-          <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-              <PieChart size={20} className="text-indigo-600" />
-              WhatsApp Status Distribution
-            </h3>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <RechartsPie>
-                  <Pie
-                    data={[
-                      { name: 'Ada', value: staffData?.summary?.whatsapp_ada || 0 },
-                      { name: 'Tidak', value: staffData?.summary?.whatsapp_tidak || 0 },
-                      { name: 'Ceklis1', value: staffData?.summary?.whatsapp_ceklis1 || 0 }
-                    ]}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    dataKey="value"
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  >
-                    <Cell fill="#22c55e" />
-                    <Cell fill="#ef4444" />
-                    <Cell fill="#f59e0b" />
-                  </Pie>
-                  <Tooltip />
-                </RechartsPie>
-              </ResponsiveContainer>
-            </div>
-          </div>
+          <WhatsappDistributionWidget data={staffData} />
         );
 
       case 'responseRate':
         return staffData?.staff_metrics?.length > 0 && (
-          <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-              <BarChart3 size={20} className="text-indigo-600" />
-              Response Rate by Staff
-            </h3>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={staffData.staff_metrics.slice(0, 8)} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 12 }} />
-                  <YAxis type="category" dataKey="staff_name" tick={{ fontSize: 12 }} width={80} />
-                  <Tooltip formatter={(value) => `${value}%`} />
-                  <Bar dataKey="respond_rate" name="Response Rate %" fill="#6366f1" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+          <ResponseRateWidget data={staffData} />
         );
 
       case 'omsetTrends':
-        const hasOmsetData = businessData?.omset_chart?.length > 0;
         return (
-          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 sm:p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-              <TrendingUp size={20} className="text-purple-600" />
-              OMSET Trends
-            </h3>
-            {hasOmsetData ? (
-              <div className="h-64 sm:h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={businessData.omset_chart}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip formatter={(value) => formatNumber(value)} />
-                    <Legend />
-                    <Line type="monotone" dataKey="total" name="Total OMSET" stroke="#8b5cf6" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="count" name="Records" stroke="#06b6d4" strokeWidth={2} dot={false} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            ) : (
-              <div className="h-64 sm:h-80 flex items-center justify-center text-slate-500 dark:text-slate-400">
-                <div className="text-center">
-                  <TrendingUp size={48} className="mx-auto mb-2 opacity-30" />
-                  <p>No OMSET trends data available</p>
-                  <p className="text-sm mt-1">OMSET trends will appear after daily records are added</p>
-                </div>
-              </div>
-            )}
-          </div>
+          <OmsetTrendsWidget data={businessData} />
         );
 
       case 'productOmset':
