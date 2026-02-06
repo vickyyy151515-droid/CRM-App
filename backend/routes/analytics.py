@@ -178,18 +178,19 @@ async def get_business_analytics(period: str = 'month', product_id: Optional[str
     all_records_query = {}
     if product_id:
         all_records_query['product_id'] = product_id
-    all_records = await db.omset_records.find(all_records_query, {'_id': 0, 'customer_id': 1, 'customer_id_normalized': 1, 'product_id': 1, 'record_date': 1, 'keterangan': 1}).to_list(100000)
-    customer_first_date = {}
+    all_records = await db.omset_records.find(all_records_query, {'_id': 0, 'customer_id': 1, 'customer_id_normalized': 1, 'product_id': 1, 'record_date': 1, 'keterangan': 1, 'staff_id': 1}).to_list(100000)
+    
+    # Build STAFF-SPECIFIC customer first deposit map (SINGLE SOURCE OF TRUTH)
+    staff_customer_first_date = {}
     for record in sorted(all_records, key=lambda x: x['record_date']):
-        # Skip "tambahan" records when determining first deposit date
         if is_tambahan_record(record):
             continue
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-        key = (cid_normalized, record['product_id'])
-        if key not in customer_first_date:
-            customer_first_date[key] = record['record_date']
+        key = (record['staff_id'], cid_normalized, record['product_id'])
+        if key not in staff_customer_first_date:
+            staff_customer_first_date[key] = record['record_date']
     
-    # Calculate daily stats with unique customers
+    # Calculate daily stats with unique (staff, customer, product) tuples
     daily_stats = {}
     for record in records:
         date = record.get('record_date')
@@ -200,24 +201,27 @@ async def get_business_analytics(period: str = 'month', product_id: Optional[str
             daily_stats[date] = {
                 'total': 0,
                 'count': 0,
-                'ndp_customers': set(),
-                'rdp_customers': set()
+                'ndp_tuples': set(),
+                'rdp_tuples': set()
             }
         
         daily_stats[date]['total'] += record.get('depo_total', 0) or 0
         daily_stats[date]['count'] += 1
         
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-        key = (cid_normalized, record['product_id'])
-        first_date = customer_first_date.get(key)
+        staff_id_rec = record['staff_id']
+        product_id_rec = record['product_id']
+        key = (staff_id_rec, cid_normalized, product_id_rec)
+        first_date = staff_customer_first_date.get(key)
         
+        ndp_tuple = (staff_id_rec, cid_normalized, product_id_rec)
         # "tambahan" records are always RDP
         if is_tambahan_record(record):
-            daily_stats[date]['rdp_customers'].add(cid_normalized)
+            daily_stats[date]['rdp_tuples'].add(ndp_tuple)
         elif first_date == date:
-            daily_stats[date]['ndp_customers'].add(cid_normalized)
+            daily_stats[date]['ndp_tuples'].add(ndp_tuple)
         else:
-            daily_stats[date]['rdp_customers'].add(cid_normalized)
+            daily_stats[date]['rdp_tuples'].add(ndp_tuple)
     
     # Build omset_chart
     omset_chart = []
