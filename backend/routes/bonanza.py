@@ -1195,64 +1195,12 @@ async def diagnose_product_mismatch(user: User = Depends(get_admin_user)):
 async def diagnose_reserved_conflicts(user: User = Depends(get_admin_user)):
     """
     Find records that are assigned to staff A but are reserved by staff B.
-    This is a CRITICAL issue that should not happen.
+    Uses shared diagnosis utility.
     """
+    from utils.repair_helpers import diagnose_reserved_conflicts as _diagnose
+    
     db = get_db()
-    
-    # Get ALL reserved members
-    reserved_members = await db.reserved_members.find(
-        {'status': 'approved'}, 
-        {'_id': 0, 'customer_id': 1, 'customer_name': 1, 'staff_id': 1, 'staff_name': 1}
-    ).to_list(100000)
-    
-    # Build a map: normalized_customer_id -> {staff_id, staff_name}
-    reserved_map = {}
-    for m in reserved_members:
-        cid = m.get('customer_id') or m.get('customer_name')
-        if cid:
-            normalized = str(cid).strip().upper()
-            reserved_map[normalized] = {
-                'staff_id': m.get('staff_id'),
-                'staff_name': m.get('staff_name', 'Unknown')
-            }
-    
-    # Get all assigned records
-    assigned_records = await db.bonanza_records.find(
-        {'status': 'assigned'},
-        {'_id': 0, 'id': 1, 'row_data': 1, 'assigned_to': 1, 'assigned_to_name': 1, 'database_name': 1}
-    ).to_list(100000)
-    
-    conflicts = []
-    
-    for record in assigned_records:
-        row_data = record.get('row_data', {})
-        assigned_to = record.get('assigned_to')
-        assigned_to_name = record.get('assigned_to_name', 'Unknown')
-        
-        # Check all possible username fields
-        for key in ['Username', 'username', 'USER', 'user', 'ID', 'id', 'Nama Lengkap', 'nama_lengkap', 'Name', 'name', 'CUSTOMER', 'customer', 'Customer']:
-            if key in row_data and row_data[key]:
-                normalized = str(row_data[key]).strip().upper()
-                if normalized in reserved_map:
-                    reserved_info = reserved_map[normalized]
-                    # Only flag if assigned to DIFFERENT staff than who reserved
-                    if reserved_info['staff_id'] != assigned_to:
-                        conflicts.append({
-                            'record_id': record['id'],
-                            'customer_id': row_data[key],
-                            'database_name': record.get('database_name', 'Unknown'),
-                            'assigned_to': assigned_to_name,
-                            'assigned_to_id': assigned_to,
-                            'reserved_by': reserved_info['staff_name'],
-                            'reserved_by_id': reserved_info['staff_id']
-                        })
-                break
-    
-    return {
-        'total_conflicts': len(conflicts),
-        'conflicts': conflicts,
-        'message': f'Found {len(conflicts)} records assigned to wrong staff (should be assigned to who reserved them)'
-    }
+    return await _diagnose(db, module='bonanza')
 
 
 @router.post("/bonanza/admin/fix-reserved-conflicts")
