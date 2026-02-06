@@ -147,7 +147,12 @@ export default function StaffOmsetCRM() {
           depo_kelipatan: parseFloat(formData.depo_kelipatan) || 1,
           keterangan: formData.keterangan
         });
-        toast.success(t('omset.recordAdded'));
+        // Check if record was set to pending
+        if (response.data.approval_status === 'pending' || response.data?.conflict_info) {
+          toast.warning('Your omset is pending admin approval because this customer is reserved by another staff.', { duration: 8000 });
+        } else {
+          toast.success(t('omset.recordAdded'));
+        }
       }
       
       resetForm();
