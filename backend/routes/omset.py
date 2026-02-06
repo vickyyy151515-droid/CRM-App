@@ -584,13 +584,13 @@ async def get_omset_summary(
             'total_nominal': data['total_nominal'],
             'total_depo': data['total_depo'],
             'count': data['count'],
-            'ndp_count': len(data['ndp_customers']),
-            'rdp_count': len(data['rdp_customers']),  # Count unique RDP customers
+            'ndp_count': len(data['ndp_tuples']),
+            'rdp_count': len(data['rdp_tuples']),
             'ndp_total': data['ndp_total'],
             'rdp_total': data['rdp_total']
         })
-        total_ndp += len(data['ndp_customers'])
-        total_rdp += len(data['rdp_customers'])  # Sum unique RDP customers
+        total_ndp += len(data['ndp_tuples'])
+        total_rdp += len(data['rdp_tuples'])
     
     return {
         'total': {
