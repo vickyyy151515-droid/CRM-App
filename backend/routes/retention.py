@@ -425,24 +425,14 @@ async def get_retention_by_product(
     if not records:
         return {'products': []}
     
-    # Get all records for first deposit calculation
-    all_records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
-    
-    # Helper function to normalize customer ID
     # Helper function to check if record has "tambahan" in notes
     def is_tambahan_record(record) -> bool:
         keterangan = record.get('keterangan', '') or ''
         return 'tambahan' in keterangan.lower()
     
-    # Build STAFF-SPECIFIC customer first deposit map (SINGLE SOURCE OF TRUTH)
-    staff_customer_first_date = {}
-    for record in sorted(all_records, key=lambda x: x['record_date']):
-        if is_tambahan_record(record):
-            continue
-        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-        key = (record['staff_id'], cid_normalized, record.get('product_id'))
-        if key not in staff_customer_first_date:
-            staff_customer_first_date[key] = record['record_date']
+    # Build STAFF-SPECIFIC customer first deposit map using MongoDB aggregation
+    from utils.db_operations import build_staff_first_date_map
+    staff_customer_first_date = await build_staff_first_date_map(db)
     
     # Group by product — track (staff_id, customer_id) pairs for each product
     products = defaultdict(lambda: {
