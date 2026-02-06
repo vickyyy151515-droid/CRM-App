@@ -23,6 +23,12 @@ export { default as SummaryStatsCards, StatsCard } from './SummaryStatsCards';
 export { default as AnalyticsFilterBar } from './AnalyticsFilterBar';
 export { ChartCard, TrendLineChart, MultiLineChart, SimpleBarChart, SimpleAreaChart, CHART_COLORS } from './ChartComponents';
 
+// Shared components for OMSET pages
+export { default as OmsetFilterPanel } from './OmsetFilterPanel';
+export { default as ViewModeToggle } from './ViewModeToggle';
+export { default as OmsetStatsGrid, ProductCard, NDPCard, RDPCard, GrandTotalCard } from './OmsetStatsGrid';
+export { default as TrashSection } from './TrashSection';
+
 // Shared components for staff-facing pages
 export { default as InvalidatedByReservationSection } from './InvalidatedByReservationSection';
 
@@ -36,6 +42,11 @@ export const formatDate = (dateStr) => {
     hour: '2-digit',
     minute: '2-digit'
   });
+};
+
+export const formatCurrency = (num) => {
+  if (!num && num !== 0) return '0';
+  return Math.round(num).toLocaleString('id-ID');
 };
 
 // Hidden columns for records tables
