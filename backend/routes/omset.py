@@ -946,17 +946,9 @@ async def migrate_normalize_customer_ids(user: User = Depends(get_admin_user)):
     # Get all omset records
     all_records = await db.omset_records.find({}).to_list(500000)
     
-    # Build STAFF-SPECIFIC customer first deposit map (SINGLE SOURCE OF TRUTH)
-    # Key: (staff_id, customer_id_normalized, product_id) -> first_date
-    staff_customer_first_date = {}
-    for record in sorted(all_records, key=lambda x: x['record_date']):
-        keterangan = record.get('keterangan', '') or ''
-        if 'tambahan' in keterangan.lower():
-            continue
-        cid_normalized = normalize_customer_id(record['customer_id'])
-        key = (record['staff_id'], cid_normalized, record['product_id'])
-        if key not in staff_customer_first_date:
-            staff_customer_first_date[key] = record['record_date']
+    # Build STAFF-SPECIFIC customer first deposit map using MongoDB aggregation
+    from utils.db_operations import build_staff_first_date_map
+    staff_customer_first_date = await build_staff_first_date_map(db)
     
     # Update all records
     updated_count = 0
