@@ -64,31 +64,33 @@ async def get_report_crm_data(
         keterangan = record.get('keterangan', '') or ''
         return 'tambahan' in keterangan.lower()
     
-    # ==================== BUILD CUSTOMER FIRST DATE LOOKUP ====================
-    # Key: (customer_id_normalized, product_id) -> first deposit date
+    # ==================== BUILD STAFF-SPECIFIC CUSTOMER FIRST DATE LOOKUP ====================
+    # Key: (staff_id, customer_id_normalized, product_id) -> first deposit date
+    # SINGLE SOURCE OF TRUTH: NDP/RDP is always per-staff, per-customer, per-product
     # IMPORTANT: Exclude "tambahan" records from first_date calculation
     
-    customer_first_date = {}
+    staff_customer_first_date = {}
     for record in sorted(all_time_records, key=lambda x: x['record_date']):
         if is_tambahan_record(record):
             continue
         cid_normalized = get_normalized_cid(record)
         pid = record['product_id']
-        key = (cid_normalized, pid)
-        if key not in customer_first_date:
-            customer_first_date[key] = record['record_date']
+        sid = record['staff_id']
+        key = (sid, cid_normalized, pid)
+        if key not in staff_customer_first_date:
+            staff_customer_first_date[key] = record['record_date']
     
     # ==================== UNIFIED NDP/RDP DETERMINATION ====================
-    # NDP = Customer's FIRST deposit for THIS PRODUCT matches record_date (AND not tambahan)
-    # RDP = Not first deposit for this product OR is tambahan
+    # NDP = Customer's FIRST deposit for THIS PRODUCT with THIS STAFF matches record_date (AND not tambahan)
+    # RDP = Not first deposit for this staff+product combo OR is tambahan
     
     def is_ndp_record(record):
         """Determine if record counts as NDP"""
         if is_tambahan_record(record):
             return False
         cid_normalized = get_normalized_cid(record)
-        key = (cid_normalized, record['product_id'])
-        first_date = customer_first_date.get(key)
+        key = (record['staff_id'], cid_normalized, record['product_id'])
+        first_date = staff_customer_first_date.get(key)
         return first_date == record['record_date']
     
     # ==================== PRE-COMPUTE NDP/RDP FOR EACH RECORD ====================
