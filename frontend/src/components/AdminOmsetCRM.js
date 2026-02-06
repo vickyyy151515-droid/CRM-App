@@ -344,7 +344,14 @@ export default function AdminOmsetCRM() {
         setViewMode={setViewMode}
         onExportSummary={handleExportSummary}
         onExportDetails={handleExportDetails}
+        extraTabs={[
+          { value: 'pending', label: 'Pending', badge: pendingCount, activeClass: 'bg-amber-600 text-white' },
+          { value: 'duplicates', label: 'Duplicate', badge: 0, activeClass: 'bg-orange-600 text-white' }
+        ]}
       />
+
+      {viewMode === 'pending' && <OmsetPendingApprovals />}
+      {viewMode === 'duplicates' && <OmsetDuplicates />}
 
       {viewMode === 'summary' && summary && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
