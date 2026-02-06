@@ -12,6 +12,7 @@ export default function ViewModeToggle({
   showExports = true,
   summaryLabel = 'Summary View',
   detailsLabel = 'Detail View',
+  extraTabs = [],
   testIdPrefix = 'view-mode'
 }) {
   return (
@@ -40,6 +41,25 @@ export default function ViewModeToggle({
         >
           {detailsLabel}
         </button>
+        {extraTabs.map(tab => (
+          <button
+            key={tab.value}
+            onClick={() => setViewMode(tab.value)}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+              viewMode === tab.value
+                ? (tab.activeClass || 'bg-indigo-600 text-white')
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+            data-testid={`${testIdPrefix}-${tab.value}-btn`}
+          >
+            {tab.label}
+            {tab.badge > 0 && (
+              <span className={`px-1.5 py-0.5 text-xs rounded-full ${viewMode === tab.value ? 'bg-white/20 text-white' : 'bg-red-100 text-red-600'}`}>
+                {tab.badge}
+              </span>
+            )}
+          </button>
+        ))}
       </div>
 
       {/* Export Buttons */}
