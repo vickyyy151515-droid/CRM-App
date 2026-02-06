@@ -163,12 +163,6 @@ async def get_business_analytics(period: str = 'month', product_id: Optional[str
     if staff_id:
         omset_query['staff_id'] = staff_id
     
-    # Helper function to normalize customer ID
-    def normalize_customer_id(customer_id: str) -> str:
-        if not customer_id:
-            return ""
-        return customer_id.strip().lower()
-    
     def is_tambahan_record(record):
         """Check if record has 'tambahan' in keterangan field"""
         keterangan = record.get('keterangan', '') or ''
