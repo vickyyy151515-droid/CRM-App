@@ -282,14 +282,12 @@ metadata:
 
 test_plan:
   current_focus:
-    - "OfficeInventory page renders correctly after refactoring"
-    - "OfficeInventory modals work (Add, Edit, Assign, Return, History, Bulk Add)"
+    - "NDP/RDP consistency fix across all calculation endpoints"
+    - "Verify all omset/daily-summary/leaderboard/bonus/analytics endpoints return consistent NDP/RDP"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
     - agent: "main"
-      message: "Completed P2 backend refactoring. All 12 backend endpoints tested and passing."
-    - agent: "main"
-      message: "Completed P1 frontend refactoring of OfficeInventory.js (1070->275 lines). Extracted 8 components to /inventory/ subfolder: InventoryStatsCards, InventoryFilters, InventoryTable, InventoryItemModal, InventoryAssignModal, InventoryReturnModal, InventoryHistoryModal, InventoryBulkAddModal. Screenshot confirmed page renders. Need frontend testing of all modal interactions (add item, edit item, assign, return, history, bulk add). Login: vicky@crm.com / vicky123. Navigate to Office Inventory page from sidebar."
+      message: "Fixed NDP/RDP count mismatch across ALL views. Root causes: 1) Daily Summary used GLOBAL NDP (customer's first-ever deposit across ALL staff) while Staff Performance used STAFF-SPECIFIC NDP. 2) Staff total tracked unique customers, but product breakdown tracked unique (customer,product) pairs causing sum mismatch. 3) Product summary had dedup bug preventing correct counting. Fix: Changed ALL NDP/RDP to use SINGLE SOURCE OF TRUTH: per (staff_id, customer_id, product_id) first_date. Staff total now tracks (customer,product) pairs instead of just customer_id. Files changed: omset.py, daily_summary.py, leaderboard.py, bonus.py, analytics.py, retention.py, report.py. Login: vicky@crm.com / vicky123. No test data in DB (production data only), so test that endpoints respond 200 and return consistent structure."
