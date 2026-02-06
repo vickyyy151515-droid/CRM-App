@@ -187,6 +187,16 @@ async def startup_event():
                 import asyncio
                 await asyncio.sleep(2)  # Wait 2 seconds before retry
     
+    # Create indexes for performance-critical queries
+    try:
+        await db.omset_records.create_index([("staff_id", 1), ("customer_id_normalized", 1), ("product_id", 1), ("record_date", 1)])
+        await db.omset_records.create_index([("record_date", 1)])
+        await db.omset_records.create_index([("product_id", 1), ("record_date", 1)])
+        logger.info("✅ Database indexes created/verified")
+    except Exception as e:
+        logger.error(f"Error creating indexes: {e}")
+
+    
     # Ensure master admin user exists
     try:
         await ensure_master_admin_exists()
