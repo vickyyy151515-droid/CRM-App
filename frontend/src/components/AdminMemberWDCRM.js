@@ -781,6 +781,14 @@ export default function AdminMemberWDCRM() {
         </select>
       </div>
 
+      {/* Filter by Product - Using Shared Component */}
+      <ProductFilter
+        filterProduct={filterProduct}
+        setFilterProduct={setFilterProduct}
+        products={products}
+        testIdPrefix="memberwd-filter"
+      />
+
       {/* Databases List */}
       <div className="space-y-4">
         {loading ? (
