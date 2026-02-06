@@ -1207,74 +1207,12 @@ async def diagnose_reserved_conflicts(user: User = Depends(get_admin_user)):
 async def fix_reserved_conflicts(user: User = Depends(get_admin_user)):
     """
     Fix records that are assigned to staff A but reserved by staff B.
-    This reassigns them to the correct staff (who reserved them).
+    Uses shared fix utility.
     """
+    from utils.repair_helpers import fix_reserved_conflicts as _fix
+    
     db = get_db()
-    now = get_jakarta_now()
-    
-    # Get ALL reserved members
-    reserved_members = await db.reserved_members.find(
-        {'status': 'approved'}, 
-        {'_id': 0, 'customer_id': 1, 'customer_name': 1, 'staff_id': 1, 'staff_name': 1}
-    ).to_list(100000)
-    
-    # Build a map: normalized_customer_id -> {staff_id, staff_name}
-    reserved_map = {}
-    for m in reserved_members:
-        cid = m.get('customer_id') or m.get('customer_name')
-        if cid:
-            normalized = str(cid).strip().upper()
-            reserved_map[normalized] = {
-                'staff_id': m.get('staff_id'),
-                'staff_name': m.get('staff_name', 'Unknown')
-            }
-    
-    # Get all assigned records
-    assigned_records = await db.bonanza_records.find(
-        {'status': 'assigned'},
-        {'_id': 0, 'id': 1, 'row_data': 1, 'assigned_to': 1, 'assigned_to_name': 1}
-    ).to_list(100000)
-    
-    fixed = []
-    
-    for record in assigned_records:
-        row_data = record.get('row_data', {})
-        assigned_to = record.get('assigned_to')
-        
-        # Check all possible username fields
-        for key in ['Username', 'username', 'USER', 'user', 'ID', 'id', 'Nama Lengkap', 'nama_lengkap', 'Name', 'name', 'CUSTOMER', 'customer', 'Customer']:
-            if key in row_data and row_data[key]:
-                normalized = str(row_data[key]).strip().upper()
-                if normalized in reserved_map:
-                    reserved_info = reserved_map[normalized]
-                    # Only fix if assigned to DIFFERENT staff than who reserved
-                    if reserved_info['staff_id'] != assigned_to:
-                        # Reassign to the correct staff
-                        await db.bonanza_records.update_one(
-                            {'id': record['id']},
-                            {'$set': {
-                                'assigned_to': reserved_info['staff_id'],
-                                'assigned_to_name': reserved_info['staff_name'],
-                                'reassigned_at': now.isoformat(),
-                                'reassigned_reason': 'reserved_conflict_fix',
-                                'previous_assigned_to': assigned_to,
-                                'previous_assigned_to_name': record.get('assigned_to_name')
-                            }}
-                        )
-                        fixed.append({
-                            'record_id': record['id'],
-                            'customer_id': row_data[key],
-                            'from_staff': record.get('assigned_to_name'),
-                            'to_staff': reserved_info['staff_name']
-                        })
-                break
-    
-    return {
-        'success': True,
-        'total_fixed': len(fixed),
-        'fixed_records': fixed,
-        'message': f'Reassigned {len(fixed)} records to their correct staff (who reserved them)'
-    }
+    return await _fix(db, module='bonanza')
 
 
 @router.get("/bonanza/admin/data-health")
