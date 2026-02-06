@@ -283,61 +283,25 @@ export default function CustomerRetention({ isAdmin = false }) {
       </div>
 
       {/* View Tabs */}
-      <div className="flex gap-2 mb-6 flex-wrap">
-        <button
-          onClick={() => setActiveView('alerts')}
-          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
-            activeView === 'alerts' ? 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
-          }`}
-          data-testid="alerts-tab"
-        >
-          <AlertTriangle size={16} />
-          At-Risk
-          {alerts?.summary?.total > 0 && (
-            <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
-              {alerts.summary.total}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => setActiveView('overview')}
-          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-            activeView === 'overview' ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
-          }`}
-          data-testid="overview-tab"
-        >
-          Overview
-        </button>
-        <button
-          onClick={() => setActiveView('customers')}
-          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-            activeView === 'customers' ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
-          }`}
-          data-testid="customers-tab"
-        >
-          Customer List
-        </button>
-        <button
-          onClick={() => setActiveView('by-product')}
-          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-            activeView === 'by-product' ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
-          }`}
-          data-testid="by-product-tab"
-        >
-          By Product
-        </button>
-        {isAdmin && (
-          <button
-            onClick={() => setActiveView('by-staff')}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-              activeView === 'by-staff' ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
-            }`}
-            data-testid="by-staff-tab"
-          >
-            By Staff
-          </button>
-        )}
-      </div>
+      <ViewTabs
+        tabs={[
+          { 
+            id: 'alerts', 
+            label: 'At-Risk', 
+            icon: AlertTriangle,
+            badge: alerts?.summary?.total || 0,
+            activeClass: 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300',
+            badgeClass: 'bg-red-500 text-white'
+          },
+          { id: 'overview', label: 'Overview' },
+          { id: 'customers', label: 'Customer List' },
+          { id: 'by-product', label: 'By Product' },
+          ...(isAdmin ? [{ id: 'by-staff', label: 'By Staff' }] : [])
+        ]}
+        activeTab={activeView}
+        setActiveTab={setActiveView}
+        testIdPrefix="retention-tabs"
+      />
 
       {loading ? (
         <div className="text-center py-12 text-slate-600 dark:text-slate-400">Loading retention data...</div>
