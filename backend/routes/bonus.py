@@ -157,8 +157,6 @@ async def get_bonus_calculation_data(
     
     records = await db.omset_records.find(query, {'_id': 0}).to_list(100000)
     
-    all_time_records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
-    
     def is_tambahan_record(record):
         """Check if record has 'tambahan' in keterangan field"""
         keterangan = record.get('keterangan', '') or ''
