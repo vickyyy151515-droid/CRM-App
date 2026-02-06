@@ -126,12 +126,6 @@ async def generate_daily_report(target_date: datetime = None) -> str:
         keterangan = record.get('keterangan', '') or ''
         return 'tambahan' in keterangan.lower()
     
-    # Helper function to normalize customer ID
-    def normalize_customer_id(customer_id: str) -> str:
-        if not customer_id:
-            return ""
-        return customer_id.strip().lower()
-    
     # Get ALL omset records to build first deposit map properly
     # We need to exclude "tambahan" records from first deposit calculation
     all_omset_records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
