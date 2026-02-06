@@ -246,8 +246,10 @@ async def get_business_analytics(period: str = 'month', product_id: Optional[str
     # Calculate NDP/RDP OMSET separately
     for record in records:
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-        key = (cid_normalized, record['product_id'])
-        first_date = customer_first_date.get(key)
+        staff_id_rec = record['staff_id']
+        product_id_rec = record['product_id']
+        key = (staff_id_rec, cid_normalized, product_id_rec)
+        first_date = staff_customer_first_date.get(key)
         date = record.get('record_date')
         
         # "tambahan" records are always RDP
