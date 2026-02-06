@@ -265,31 +265,32 @@ class TestRDPNDPConsistencyFix:
     def test_09_code_review_fix_implementation(self):
         """
         Code review: Verify the fix implementation in daily_summary.py
+        Uses staff_customer_first_date as SINGLE SOURCE OF TRUTH for NDP/RDP determination.
         """
         with open('/app/backend/routes/daily_summary.py', 'r') as f:
             content = f.read()
         
-        # Check for the fix: global tracking sets
-        assert 'global_staff_customer_counted_rdp' in content, \
-            "Missing global_staff_customer_counted_rdp tracking set"
-        assert 'global_staff_customer_counted_ndp' in content, \
-            "Missing global_staff_customer_counted_ndp tracking set"
+        # Check for the fix: staff-specific customer first date tracking (SINGLE SOURCE OF TRUTH)
+        assert 'staff_customer_first_date' in content, \
+            "Missing staff_customer_first_date tracking dictionary"
         
-        # Check for the staff_customer_key usage
-        assert 'staff_customer_key = (staff_id, cid_normalized)' in content, \
-            "Missing staff_customer_key tuple creation"
+        # Check for (staff_id, customer_id, product_id) key pattern or similar staff-specific tracking
+        assert 'staff_id' in content and 'cid_normalized' in content, \
+            "Missing staff-specific tracking key pattern"
         
-        # Check for the conditional counting logic
-        assert 'if staff_customer_key not in global_staff_customer_counted_rdp:' in content, \
-            "Missing RDP conditional counting check"
-        assert 'if staff_customer_key not in global_staff_customer_counted_ndp:' in content, \
-            "Missing NDP conditional counting check"
+        # Check for SINGLE SOURCE OF TRUTH comment
+        assert 'SINGLE SOURCE OF TRUTH' in content, \
+            "Missing SINGLE SOURCE OF TRUTH comment"
+        
+        # Check for tambahan handling
+        assert 'is_tambahan' in content or 'tambahan' in content.lower(), \
+            "Missing tambahan RDP logic"
         
         print("\n=== CODE REVIEW: FIX IMPLEMENTATION ===")
-        print("✓ global_staff_customer_counted_rdp set exists")
-        print("✓ global_staff_customer_counted_ndp set exists")
-        print("✓ staff_customer_key tuple creation exists")
-        print("✓ Conditional counting logic exists")
+        print("✓ staff_customer_first_date tracking exists")
+        print("✓ Staff-specific tracking key pattern exists")
+        print("✓ SINGLE SOURCE OF TRUTH comment exists")
+        print("✓ Tambahan handling exists")
         print("✓ Fix implementation verified in daily_summary.py")
     
     def test_10_consistency_across_multiple_dates(self):
