@@ -1165,25 +1165,6 @@ async def repair_bonanza_data(user: User = Depends(get_admin_user)):
     
     db = get_db()
     return await run_full_repair(db, module='bonanza')
-    if orphan_records > 0:
-        repair_log['errors'].append(f'{orphan_records} records have no database_id - manual intervention needed')
-    
-    orphan_records_null = await db.bonanza_records.count_documents({'database_id': None})
-    if orphan_records_null > 0:
-        repair_log['errors'].append(f'{orphan_records_null} records have null database_id - manual intervention needed')
-    
-    total_fixed = (
-        repair_log['fixed_missing_db_info'] + 
-        repair_log['fixed_invalid_status_restored'] + 
-        repair_log['fixed_invalid_status_cleared'] +
-        repair_log['fixed_orphaned_assignments']
-    )
-    
-    return {
-        'success': True,
-        'message': f'Data repair completed. Fixed {total_fixed} issues.',
-        'repair_log': repair_log
-    }
 
 
 @router.post("/bonanza/admin/repair-product-mismatch")
