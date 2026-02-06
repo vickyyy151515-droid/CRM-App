@@ -68,6 +68,8 @@ export default function DownloadRequests({ onUpdate }) {
       const params = new URLSearchParams();
       if (filterStaff) params.append('staff_id', filterStaff);
       if (filterProduct) params.append('product_id', filterProduct);
+      if (filterDateFrom) params.append('date_from', filterDateFrom);
+      if (filterDateTo) params.append('date_to', filterDateTo);
       
       const response = await api.get(`/download-requests/stats?${params}`);
       setStats(response.data);
