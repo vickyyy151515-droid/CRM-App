@@ -429,27 +429,10 @@ async def get_omset_summary(
         keterangan = record.get('keterangan', '') or ''
         return 'tambahan' in keterangan.lower()
     
-    # Get ALL records (unfiltered by date) for building customer_first_date maps
-    # We need this to determine if a customer is NDP or RDP for each staff
-    all_query = {}
-    if product_id:
-        all_query['product_id'] = product_id
-    # CRITICAL: When filtered by staff, we still need ALL records to know the customer's
-    # first date with THIS staff. But we also need all records to compare across staff.
-    all_records_for_ndp = await db.omset_records.find(all_query, {'_id': 0}).to_list(100000)
-    
-    # Build customer_first_date PER STAFF PER PRODUCT
-    # Key: (staff_id, customer_id_normalized, product_id) -> first_date
-    # This is the SINGLE SOURCE OF TRUTH for NDP/RDP across ALL views
-    staff_customer_first_date = {}
-    for record in sorted(all_records_for_ndp, key=lambda x: x['record_date']):
-        if is_tambahan_record(record):
-            continue
-        staff_id_rec = record['staff_id']
-        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-        key = (staff_id_rec, cid_normalized, record['product_id'])
-        if key not in staff_customer_first_date:
-            staff_customer_first_date[key] = record['record_date']
+    # Get ALL records for building customer_first_date maps
+    # Use MongoDB aggregation for efficiency (instead of loading 500K records into memory)
+    from utils.db_operations import build_staff_first_date_map
+    staff_customer_first_date = await build_staff_first_date_map(db, product_id=product_id)
     
     daily_summary = {}
     staff_summary = {}
