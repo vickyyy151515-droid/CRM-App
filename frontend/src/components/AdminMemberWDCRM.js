@@ -610,238 +610,46 @@ export default function AdminMemberWDCRM() {
 
   return (
     <div data-testid="admin-db-memberwd">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">Member WD CRM</h2>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={async () => {
-              try {
-                const response = await api.get('/memberwd/admin/data-health');
-                if (response.data.is_healthy) {
-                  toast.success(`Data healthy! ${response.data.databases?.length || 0} databases checked.`);
-                } else {
-                  toast.error(`Found ${response.data.total_issues} issues. Check console for details.`);
-                  console.log('Data Health Report:', response.data);
-                }
-              } catch (error) {
-                toast.error('Failed to check data health');
-              }
-            }}
-            className="px-3 py-2 bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-900/50 dark:hover:bg-emerald-900 text-emerald-700 dark:text-emerald-300 rounded-lg flex items-center gap-2 transition-colors text-sm"
-            title="Check data consistency"
-          >
-            <Check size={16} />
-            Health Check
-          </button>
-          <button
-            onClick={async () => {
-              if (!window.confirm('Run data repair? This will fix orphaned records and missing data.')) return;
-              try {
-                const response = await api.post('/memberwd/admin/repair-data');
-                toast.success(response.data.message);
-                loadDatabases();
-                console.log('Repair Log:', response.data.repair_log);
-              } catch (error) {
-                toast.error('Failed to repair data');
-              }
-            }}
-            className="px-3 py-2 bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/50 dark:hover:bg-amber-900 text-amber-700 dark:text-amber-300 rounded-lg flex items-center gap-2 transition-colors text-sm"
-            title="Repair data inconsistencies"
-          >
-            <RefreshCw size={16} />
-            Repair Data
-          </button>
-          <AdminActionsPanel
-            api={api}
-            moduleType="memberwd"
-            onDataRefresh={loadDatabases}
-            onShowSettings={() => setShowSettingsPanel(!showSettingsPanel)}
-            showSettingsBtn={true}
-          />
-        </div>
-      </div>
+      <ModuleHeader
+        title="Member WD CRM"
+        api={api}
+        moduleType="memberwd"
+        onDataRefresh={loadDatabases}
+      >
+        <AdminActionsPanel
+          api={api}
+          moduleType="memberwd"
+          onDataRefresh={loadDatabases}
+          onShowSettings={() => setShowSettingsPanel(!showSettingsPanel)}
+          showSettingsBtn={true}
+        />
+      </ModuleHeader>
 
-      {/* Settings Panel */}
+      {/* Settings Panel - Using Shared Component */}
       {showSettingsPanel && (
-        <div className="mb-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6" data-testid="memberwd-settings-panel">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Member WD Settings</h3>
-          
-          <div className="space-y-4">
-            {/* Auto Replace Toggle */}
-            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-              <div>
-                <h4 className="font-medium text-slate-900 dark:text-white">Auto-Replace Invalid Records</h4>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  When staff marks a record as invalid, automatically assign a new replacement from the same database
-                </p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={memberWDSettings.auto_replace_invalid}
-                  onChange={(e) => setMemberWDSettings({...memberWDSettings, auto_replace_invalid: e.target.checked})}
-                  className="sr-only peer"
-                  data-testid="auto-replace-toggle"
-                />
-                <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-slate-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-500 peer-checked:bg-indigo-600"></div>
-              </label>
-            </div>
-
-            {/* Max Replacements Per Batch */}
-            <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium text-slate-900 dark:text-white">Max Replacements Per Batch Card</h4>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Maximum number of invalid records that can be replaced per batch. Example: if staff has 11 invalid records in 1 batch and limit is 10, only 10 can be replaced.
-                  </p>
-                </div>
-                <input
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={memberWDSettings.max_replacements_per_batch}
-                  onChange={(e) => setMemberWDSettings({...memberWDSettings, max_replacements_per_batch: parseInt(e.target.value) || 10})}
-                  className="w-20 h-10 px-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-center"
-                  data-testid="max-replacements-input"
-                />
-              </div>
-            </div>
-
-            {/* Current Status Info */}
-            <div className="p-4 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg border border-indigo-200 dark:border-indigo-800">
-              <div className="flex items-center gap-2 text-indigo-800 dark:text-indigo-300">
-                <AlertTriangle size={18} />
-                <span className="font-medium">Current Mode:</span>
-                <span className={`px-2 py-0.5 rounded text-sm ${
-                  memberWDSettings.auto_replace_invalid 
-                    ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' 
-                    : 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300'
-                }`}>
-                  {memberWDSettings.auto_replace_invalid ? 'Auto Replace' : 'Manual Admin Assign'}
-                </span>
-              </div>
-              <p className="text-sm text-indigo-600 dark:text-indigo-400 mt-2">
-                {memberWDSettings.auto_replace_invalid 
-                  ? `When staff marks records as invalid, system will auto-replace up to ${memberWDSettings.max_replacements_per_batch} records per batch from the same database.`
-                  : 'When staff marks records as invalid, admin must manually process and assign replacement records.'}
-              </p>
-            </div>
-
-            {/* Save Button */}
-            <div className="flex justify-end gap-3 pt-2">
-              <button
-                onClick={() => setShowSettingsPanel(false)}
-                className="px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveSettings}
-                disabled={savingSettings}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg disabled:opacity-50 flex items-center gap-2 transition-colors"
-                data-testid="save-settings-btn"
-              >
-                {savingSettings ? 'Saving...' : 'Save Settings'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <SettingsPanel
+          title="Member WD Settings"
+          settings={memberWDSettings}
+          onSettingsChange={setMemberWDSettings}
+          onSave={handleSaveSettings}
+          onClose={() => setShowSettingsPanel(false)}
+          saving={savingSettings}
+          testIdPrefix="memberwd-settings"
+        />
       )}
 
-      {/* Invalid Records Alert Banner */}
-      {invalidRecords && invalidRecords.total_invalid > 0 && (
-        <div className="mb-6 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-xl overflow-hidden" data-testid="invalid-records-alert">
-          <button
-            onClick={() => setShowInvalidPanel(!showInvalidPanel)}
-            className="w-full p-4 flex items-center justify-between hover:bg-red-100/50 dark:hover:bg-red-900/50 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center">
-                <AlertTriangle className="text-red-600 dark:text-red-400" size={20} />
-              </div>
-              <div className="text-left">
-                <h4 className="font-semibold text-red-800 dark:text-red-300">
-                  {invalidRecords.total_invalid} Record Tidak Valid
-                </h4>
-                <p className="text-sm text-red-600 dark:text-red-400">
-                  Staff telah menandai record ini sebagai tidak valid. Klik untuk detail dan tindakan.
-                </p>
-              </div>
-            </div>
-            {showInvalidPanel ? <ChevronUp className="text-red-600 dark:text-red-400" /> : <ChevronDown className="text-red-600 dark:text-red-400" />}
-          </button>
-          
-          {showInvalidPanel && (
-            <div className="border-t border-red-200 dark:border-red-800 p-4 space-y-4">
-              {/* Dismiss All Button */}
-              <div className="flex justify-end">
-                <button
-                  onClick={handleDismissInvalidAlerts}
-                  className="px-3 py-1.5 bg-slate-600 hover:bg-slate-700 text-white text-sm rounded-lg flex items-center gap-1.5"
-                  data-testid="dismiss-invalid-alerts"
-                >
-                  <X size={14} />
-                  Dismiss All Invalid Alerts
-                </button>
-              </div>
-              {invalidRecords.by_staff?.map((staffGroup) => (
-                <div key={staffGroup._id} className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
-                  <div className="p-3 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between">
-                    <div>
-                      <span className="font-semibold text-slate-900 dark:text-white">{staffGroup.staff_name || 'Unknown Staff'}</span>
-                      <span className="ml-2 px-2 py-0.5 bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 text-xs rounded-full">
-                        {staffGroup.count} record tidak valid
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => openReplaceModal(staffGroup._id, staffGroup.staff_name, staffGroup.count)}
-                      disabled={processing}
-                      className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg flex items-center gap-1.5 disabled:opacity-50"
-                      data-testid={`replace-invalid-${staffGroup._id}`}
-                    >
-                      <RefreshCw size={14} />
-                      Ganti dengan Record Baru
-                    </button>
-                  </div>
-                  <div className="max-h-64 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700">
-                    {(expandedInvalidStaff[staffGroup._id] 
-                      ? staffGroup.records 
-                      : staffGroup.records?.slice(0, 3)
-                    )?.map((record, idx) => (
-                      <div key={record.id || idx} className="p-3 text-sm">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <span className="font-medium text-slate-900 dark:text-white">
-                              {Object.values(record.row_data || {}).slice(0, 2).join(' - ')}
-                            </span>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                              Database: {record.database_name}
-                            </p>
-                          </div>
-                          <span className="text-xs text-red-600 dark:text-red-400 italic">
-                            {record.validation_reason || 'No reason'}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                    {staffGroup.records?.length > 3 && (
-                      <button
-                        onClick={() => toggleExpandInvalidStaff(staffGroup._id)}
-                        className="w-full p-2 text-center text-sm text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors cursor-pointer font-medium"
-                      >
-                        {expandedInvalidStaff[staffGroup._id] 
-                          ? '▲ Show less' 
-                          : `▼ +${staffGroup.records.length - 3} more records`}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      {/* Invalid Records Alert Banner - Using Shared Component */}
+      <InvalidRecordsAlertBanner
+        invalidRecords={invalidRecords}
+        showInvalidPanel={showInvalidPanel}
+        setShowInvalidPanel={setShowInvalidPanel}
+        expandedInvalidStaff={expandedInvalidStaff}
+        toggleExpandInvalidStaff={toggleExpandInvalidStaff}
+        onDismissAlerts={handleDismissInvalidAlerts}
+        onOpenReplaceModal={openReplaceModal}
+        processing={processing}
+        testIdPrefix="memberwd-invalid"
+      />
 
       {/* Replacement Modal - Using Shared Component */}
       <ReplaceModal
