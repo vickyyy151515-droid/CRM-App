@@ -52,12 +52,6 @@ async def get_report_crm_data(
     
     # ==================== HELPER FUNCTIONS ====================
     
-    def normalize_customer_id(customer_id: str) -> str:
-        """Normalize customer ID for consistent comparison"""
-        if not customer_id:
-            return ""
-        return str(customer_id).strip().lower()
-    
     def get_normalized_cid(record):
         """Get normalized customer ID from record - handles both stored and computed"""
         stored = record.get('customer_id_normalized')
