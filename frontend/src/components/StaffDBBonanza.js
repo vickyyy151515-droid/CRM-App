@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Gift, FileSpreadsheet, Calendar, Package, CheckCircle, XCircle, AlertTriangle, UserX } from 'lucide-react';
+import { Gift, FileSpreadsheet, Calendar, Package, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import InvalidatedByReservationSection from './shared/InvalidatedByReservationSection';
 
 export default function StaffDBBonanza() {
   const { t } = useLanguage();
