@@ -22,7 +22,17 @@ from .helpers import (
     format_currency,
 )
 
+from .records_helpers import (
+    invalidate_customer_records_for_other_staff,
+    parse_file_to_records,
+    extract_customer_id_from_record,
+    extract_customer_name_from_record,
+    get_available_records_count,
+    get_assigned_records_count,
+)
+
 __all__ = [
+    # From helpers
     'JAKARTA_TZ',
     'get_jakarta_now',
     'get_jakarta_date_string',
@@ -34,4 +44,11 @@ __all__ = [
     'safe_int',
     'safe_float',
     'format_currency',
+    # From records_helpers
+    'invalidate_customer_records_for_other_staff',
+    'parse_file_to_records',
+    'extract_customer_id_from_record',
+    'extract_customer_name_from_record',
+    'get_available_records_count',
+    'get_assigned_records_count',
 ]
