@@ -732,9 +732,9 @@ async def get_my_performance_trend(
         if records:
             total_omset = sum(r.get('depo_total', 0) or 0 for r in records)
             
-            # Track unique NDP and RDP customers for this day
-            ndp_customers = set()
-            rdp_customers = set()
+            # Track unique (customer, product) pairs for NDP and RDP
+            ndp_pairs = set()
+            rdp_pairs = set()
             
             for r in records:
                 cid_normalized = r.get('customer_id_normalized') or normalize_customer_id(r['customer_id'])
@@ -743,22 +743,22 @@ async def get_my_performance_trend(
                 
                 # Determine NDP/RDP:
                 # 1. If notes contain "tambahan" (case-insensitive), always RDP
-                # 2. Otherwise, NDP if this is the first deposit date for this customer
+                # 2. Otherwise, NDP if this is the first deposit date for this customer+product
                 if is_tambahan_record(r):
                     is_ndp = False
                 else:
                     is_ndp = first_date == date
                 
                 if is_ndp:
-                    ndp_customers.add(cid_normalized)
+                    ndp_pairs.add(key)
                 else:
-                    rdp_customers.add(cid_normalized)
+                    rdp_pairs.add(key)
             
             performance.append({
                 'date': date,
                 'total_omset': total_omset,
-                'ndp_count': len(ndp_customers),
-                'rdp_count': len(rdp_customers),
+                'ndp_count': len(ndp_pairs),
+                'rdp_count': len(rdp_pairs),
                 'form_count': len(records)
             })
     
