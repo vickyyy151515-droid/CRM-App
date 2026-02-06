@@ -14,7 +14,35 @@ All modules support:
 - Recall assigned records
 - Reserved member filtering
 
-## Latest Update: Extended Optimization (2026-02-06)
+## Latest Update: MongoDB Index Optimization (2026-02-06)
+
+### ✅ 28 Database Indexes Created for Optimal Query Performance
+
+**Index Creation Script:** `/app/backend/scripts/create_indexes.py`
+
+| Collection | Indexes Created | Key Fields |
+|------------|-----------------|------------|
+| `omset_records` | 4 | `staff_id+date`, `product_id+date`, `customer_staff`, `date` |
+| `customer_records` | 4 | `staff_id+status`, `database_id+status`, `customer_product`, `status` |
+| `bonanza_records` | 4 | `staff_id+status`, `database_id+status`, `customer_product`, `status` |
+| `memberwd_records` | 5 | `staff_id+status`, `batch_id+status`, `database_id+status`, `customer_product`, `status` |
+| `users` | 2 | `email` (unique), `role+status` |
+| `databases` | 1 | `product_id` |
+| `bonanza_databases` | 1 | `product_id` |
+| `memberwd_databases` | 1 | `product_id` |
+| `daily_summaries` | 1 | `date` (unique) |
+| `notifications` | 1 | `user_id+read+date` |
+| `attendance_records` | 2 | `staff_id+date`, `date` |
+| `download_requests` | 2 | `staff_status_date`, `status_date` |
+
+**Performance Impact:**
+- Query times improved from full collection scans to indexed lookups
+- Index size: ~500KB total (minimal storage overhead)
+- All endpoints verified working after index creation
+
+---
+
+## Previous Update: Extended Optimization (2026-02-06)
 
 ### ✅ Additional Components Created for Analytics & Staff Pages
 
