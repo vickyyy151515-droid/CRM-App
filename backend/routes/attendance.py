@@ -17,11 +17,9 @@ import io
 import base64
 from routes.deps import get_db
 from routes.auth import get_current_user, User
+from utils.helpers import get_jakarta_now, get_jakarta_date_string, JAKARTA_TZ
 
 router = APIRouter(tags=["Attendance"])
-
-# Jakarta timezone (UTC+7)
-JAKARTA_TZ = timezone(timedelta(hours=7))
 
 # Shift configuration
 SHIFT_START_HOUR = 11  # 11:00 AM
@@ -30,14 +28,6 @@ SHIFT_END_HOUR = 23    # 11:00 PM
 # TOTP Configuration
 TOTP_INTERVAL = 30  # Code changes every 30 seconds (Google Authenticator standard)
 TOTP_ISSUER = "CRM Attendance"
-
-def get_jakarta_now():
-    """Get current datetime in Jakarta timezone"""
-    return datetime.now(JAKARTA_TZ)
-
-def get_jakarta_date_string():
-    """Get current date string in Jakarta timezone (YYYY-MM-DD)"""
-    return get_jakarta_now().strftime('%Y-%m-%d')
 
 def get_database():
     return get_db()
