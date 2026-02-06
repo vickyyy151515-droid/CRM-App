@@ -1562,9 +1562,12 @@ async def repair_memberwd_data(user: User = Depends(get_admin_user)):
     repair_log = {
         'timestamp': now.isoformat(),
         'fixed_missing_db_info': 0,
-        'fixed_invalid_status': 0,
+        'fixed_invalid_status_restored': 0,
+        'fixed_invalid_status_cleared': 0,
         'fixed_orphaned_assignments': 0,
+        'fixed_batch_counts': 0,
         'databases_checked': [],
+        'batches_synchronized': [],
         'errors': []
     }
     
@@ -1592,16 +1595,57 @@ async def repair_memberwd_data(user: User = Depends(get_admin_user)):
         if result.modified_count > 0:
             repair_log['fixed_missing_db_info'] += result.modified_count
         
-        # Fix invalid status values
-        valid_statuses = ['available', 'assigned', 'invalid_archived']
-        result = await db.memberwd_records.update_many(
-            {'database_id': db_id, 'status': {'$nin': valid_statuses}},
-            {'$set': {'status': 'available'}}
-        )
-        if result.modified_count > 0:
-            repair_log['fixed_invalid_status'] += result.modified_count
+        # CRITICAL FIX: Handle records with status='invalid' (caused by reservation conflicts)
+        # These records should have status='assigned' with is_reservation_conflict=True
+        invalid_with_assignment = await db.memberwd_records.find({
+            'database_id': db_id,
+            'status': 'invalid',
+            'assigned_to': {'$exists': True, '$ne': None}
+        }, {'_id': 0}).to_list(10000)
         
-        # Fix orphaned assignments
+        for record in invalid_with_assignment:
+            # Restore to 'assigned' status and mark as reservation conflict
+            await db.memberwd_records.update_one(
+                {'id': record['id']},
+                {'$set': {
+                    'status': 'assigned',
+                    'is_reservation_conflict': True
+                }}
+            )
+            repair_log['fixed_invalid_status_restored'] += 1
+        
+        # Handle remaining 'invalid' status records without proper assignment
+        invalid_without_assignment = await db.memberwd_records.find({
+            'database_id': db_id,
+            'status': 'invalid',
+            '$or': [
+                {'assigned_to': {'$exists': False}},
+                {'assigned_to': None}
+            ]
+        }, {'_id': 0}).to_list(10000)
+        
+        if invalid_without_assignment:
+            record_ids = [r['id'] for r in invalid_without_assignment]
+            result = await db.memberwd_records.update_many(
+                {'id': {'$in': record_ids}},
+                {'$set': {'status': 'available'}}
+            )
+            repair_log['fixed_invalid_status_cleared'] += result.modified_count
+        
+        # Fix other invalid status values (anything not in valid list)
+        valid_statuses = ['available', 'assigned', 'invalid_archived', 'invalid']
+        other_invalid = await db.memberwd_records.count_documents({
+            'database_id': db_id, 
+            'status': {'$nin': valid_statuses}
+        })
+        if other_invalid > 0:
+            result = await db.memberwd_records.update_many(
+                {'database_id': db_id, 'status': {'$nin': valid_statuses}},
+                {'$set': {'status': 'available'}}
+            )
+            repair_log['fixed_invalid_status_cleared'] += result.modified_count
+        
+        # Fix orphaned assignments (status=assigned but no assigned_to)
         result = await db.memberwd_records.update_many(
             {'database_id': db_id, 'status': 'assigned', 'assigned_to': None},
             {'$set': {
@@ -1631,10 +1675,45 @@ async def repair_memberwd_data(user: User = Depends(get_admin_user)):
             'is_consistent': total == (available + assigned + archived)
         })
     
+    # CRITICAL: Synchronize batch counts with actual records
+    all_batches = await db.memberwd_batches.find({}, {'_id': 0}).to_list(10000)
+    
+    for batch in all_batches:
+        batch_id = batch.get('id')
+        stored_count = batch.get('current_count', 0)
+        
+        # Count actual assigned records in this batch
+        actual_count = await db.memberwd_records.count_documents({
+            'batch_id': batch_id,
+            'status': 'assigned'
+        })
+        
+        if stored_count != actual_count:
+            # Synchronize the batch count
+            await db.memberwd_batches.update_one(
+                {'id': batch_id},
+                {'$set': {'current_count': actual_count}}
+            )
+            repair_log['fixed_batch_counts'] += 1
+            repair_log['batches_synchronized'].append({
+                'batch_id': batch_id[:8] + '...',
+                'staff_name': batch.get('staff_name', 'Unknown'),
+                'stored_count': stored_count,
+                'actual_count': actual_count,
+                'difference': actual_count - stored_count
+            })
+    
+    # Delete empty batches
+    deleted_batches = await db.memberwd_batches.delete_many({'current_count': {'$lte': 0}})
+    if deleted_batches.deleted_count > 0:
+        repair_log['empty_batches_deleted'] = deleted_batches.deleted_count
+    
     total_fixed = (
         repair_log['fixed_missing_db_info'] + 
-        repair_log['fixed_invalid_status'] + 
-        repair_log['fixed_orphaned_assignments']
+        repair_log['fixed_invalid_status_restored'] + 
+        repair_log['fixed_invalid_status_cleared'] +
+        repair_log['fixed_orphaned_assignments'] +
+        repair_log['fixed_batch_counts']
     )
     
     return {
