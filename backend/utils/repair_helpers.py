@@ -763,4 +763,3 @@ async def fix_reserved_conflicts(db, module: str = 'records') -> Dict[str, Any]:
         'fixed_records': fixed,
         'message': f'Reassigned {len(fixed)} records to their correct staff (who reserved them)'
     }
-    return sync_report
