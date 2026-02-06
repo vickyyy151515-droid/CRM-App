@@ -7,6 +7,11 @@ import SettingsPanel from './shared/SettingsPanel';
 import ReplaceModal from './shared/ReplaceModal';
 import InvalidRecordsPanel from './shared/InvalidRecordsPanel';
 import AdminActionsPanel from './shared/AdminActionsPanel';
+import InvalidRecordsAlertBanner from './shared/InvalidRecordsAlertBanner';
+import ModuleHeader from './shared/ModuleHeader';
+import ModuleTabs from './shared/ModuleTabs';
+import ProductFilter from './shared/ProductFilter';
+import DatabaseUploadForm from './shared/DatabaseUploadForm';
 
 export default function AdminDBBonanza() {
   const [databases, setDatabases] = useState([]);
