@@ -6,6 +6,10 @@ import ReplaceModal from './shared/ReplaceModal';
 import SettingsPanel from './shared/SettingsPanel';
 import InvalidRecordsPanel from './shared/InvalidRecordsPanel';
 import AdminActionsPanel from './shared/AdminActionsPanel';
+import InvalidRecordsAlertBanner from './shared/InvalidRecordsAlertBanner';
+import ModuleHeader from './shared/ModuleHeader';
+import ModuleTabs from './shared/ModuleTabs';
+import ProductFilter from './shared/ProductFilter';
 
 export default function AdminMemberWDCRM() {
   const [databases, setDatabases] = useState([]);
