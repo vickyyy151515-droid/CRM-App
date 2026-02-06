@@ -5,16 +5,10 @@ from typing import Optional, List
 from datetime import datetime, timedelta
 import asyncio
 
-from .deps import get_db, get_current_user, get_admin_user, get_jakarta_now, User
+from .deps import get_db, get_current_user, get_admin_user, User
+from utils.helpers import normalize_customer_id, get_jakarta_now
 
 router = APIRouter(tags=["Daily Summary"])
-
-# Helper function to normalize customer ID for consistent NDP/RDP comparison
-def normalize_customer_id(customer_id: str) -> str:
-    """Normalize customer ID by removing leading/trailing spaces and converting to lowercase"""
-    if not customer_id:
-        return ""
-    return customer_id.strip().lower()
 
 # Helper function to check if record has "tambahan" in notes
 def is_tambahan_record(record) -> bool:
