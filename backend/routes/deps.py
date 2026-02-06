@@ -11,16 +11,14 @@ import uuid
 import jwt
 import bcrypt
 
-# Jakarta timezone (UTC+7)
-JAKARTA_TZ = timezone(timedelta(hours=7))
-
-def get_jakarta_now():
-    """Get current datetime in Jakarta timezone"""
-    return datetime.now(JAKARTA_TZ)
-
-def get_jakarta_date_string():
-    """Get current date string in Jakarta timezone (YYYY-MM-DD)"""
-    return get_jakarta_now().strftime('%Y-%m-%d')
+# Import shared utilities - re-export for backward compatibility
+from utils.helpers import (
+    JAKARTA_TZ,
+    get_jakarta_now,
+    get_jakarta_date_string,
+    get_jakarta_datetime_string,
+    normalize_customer_id,
+)
 
 # Database connection - will be initialized from server.py
 db = None
@@ -32,6 +30,10 @@ def set_database(database):
 
 def get_db():
     """Get the database instance"""
+    return db
+
+def get_database():
+    """Alias for get_db() for compatibility"""
     return db
 
 # Auth configuration - JWT_SECRET must be set in environment
