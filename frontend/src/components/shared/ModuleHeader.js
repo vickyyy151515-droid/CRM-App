@@ -19,8 +19,23 @@ export default function ModuleHeader({
       if (response.data.is_healthy) {
         toast.success(`Data healthy! ${response.data.databases?.length || 0} databases checked.`);
       } else {
-        toast.error(`Found ${response.data.total_issues} issues. Check console for details.`);
-        console.log('Data Health Report:', response.data);
+        const issues = [];
+        const dbs = response.data.databases || [];
+        for (const db of dbs) {
+          if (db.has_issues) {
+            const dbIssues = db.issues || {};
+            if (dbIssues.missing_db_name > 0) issues.push(`${db.database_name}: ${dbIssues.missing_db_name} records missing database name`);
+            if (dbIssues.orphaned_assignments > 0) issues.push(`${db.database_name}: ${dbIssues.orphaned_assignments} orphaned assignments`);
+            if (dbIssues.invalid_status > 0) issues.push(`${db.database_name}: ${dbIssues.invalid_status} records with invalid status`);
+            if (dbIssues.other_invalid_status > 0) issues.push(`${db.database_name}: ${dbIssues.other_invalid_status} records with unknown status`);
+          }
+        }
+        const batches = response.data.batches || [];
+        for (const batch of batches) {
+          if (batch.has_mismatch) issues.push(`Batch ${batch.staff_name}: count mismatch (stored=${batch.stored_count}, actual=${batch.actual_count})`);
+        }
+        const issueText = issues.length > 0 ? issues.join('. ') : `${response.data.total_issues} issue(s) detected`;
+        toast.error(`Found ${response.data.total_issues} issues: ${issueText}. Click "Repair Data" to fix.`, { duration: 10000 });
       }
     } catch (error) {
       toast.error('Failed to check data health');
