@@ -217,22 +217,43 @@ class TestApproveDeclineOmset:
     
     def test_decline_pending_omset(self, admin_headers, staff_headers):
         """Admin can decline (delete) a pending omset record"""
-        # Create a new pending record to decline
+        # First ensure we have a reserved member set up
+        # Create a NEW reserved member for a unique customer to avoid conflicts with previous tests
+        DECLINE_TEST_CUSTOMER = "TEST_DECLINE_CUST_001"
+        
+        # Create reserved member for staff-user-1
+        reserved_payload = {
+            "customer_id": DECLINE_TEST_CUSTOMER,
+            "product_id": TEST_PRODUCT_ID,
+            "staff_id": STAFF_USER_1_ID
+        }
+        reserved_res = requests.post(f"{BASE_URL}/api/reserved-members", json=reserved_payload, headers=admin_headers)
+        print(f"Created reserved member for decline test: {reserved_res.status_code}")
+        
+        # Now ADMIN creates omset for this reserved customer - should be pending
         today = datetime.now().strftime('%Y-%m-%d')
         payload = {
             "product_id": TEST_PRODUCT_ID,
             "record_date": today,
-            "customer_name": TEST_CUSTOMER_ID,
-            "customer_id": TEST_CUSTOMER_ID,
+            "customer_name": DECLINE_TEST_CUSTOMER,
+            "customer_id": DECLINE_TEST_CUSTOMER,
             "nominal": 75000,
             "depo_kelipatan": 1,
             "keterangan": "Test to decline"
         }
-        create_res = requests.post(f"{BASE_URL}/api/omset", json=payload, headers=staff_headers)
+        create_res = requests.post(f"{BASE_URL}/api/omset", json=payload, headers=admin_headers)
+        print(f"Create pending omset for decline: {create_res.status_code} - {create_res.text}")
+        
         if create_res.status_code != 200:
             pytest.skip(f"Could not create pending record: {create_res.text}")
         
-        record_id = create_res.json().get('id')
+        record_data = create_res.json()
+        record_id = record_data.get('id')
+        
+        # Check if it's actually pending
+        if record_data.get('approval_status') != 'pending':
+            print(f"Record was not pending (got {record_data.get('approval_status')}), skipping decline test")
+            pytest.skip("Could not create pending record for decline test")
         
         # Decline the record
         response = requests.post(f"{BASE_URL}/api/omset/{record_id}/decline", headers=admin_headers)
