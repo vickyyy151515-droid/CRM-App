@@ -23,6 +23,11 @@ export { default as SummaryStatsCards, StatsCard } from './SummaryStatsCards';
 export { default as AnalyticsFilterBar } from './AnalyticsFilterBar';
 export { ChartCard, TrendLineChart, MultiLineChart, SimpleBarChart, SimpleAreaChart, CHART_COLORS } from './ChartComponents';
 
+// Shared analytics components
+export { default as AnalyticsPeriodFilter } from './AnalyticsPeriodFilter';
+export { WidgetCard, MetricCard, ViewTabs, MetricsGrid } from './WidgetComponents';
+export { MultiAreaChart, DonutChart, HorizontalBarChart, DualLineChart, ProgressBar } from './AnalyticsCharts';
+
 // Shared components for OMSET pages
 export { default as OmsetFilterPanel } from './OmsetFilterPanel';
 export { default as ViewModeToggle } from './ViewModeToggle';
