@@ -575,7 +575,9 @@ async def get_retention_by_staff(
         staff['customer_deposits'][cid_normalized] += 1
         
         first_date = customer_first_date.get(customer_key)
-        # "tambahan" records are excluded from first_date calculation, so they will be RDP
+        if first_date is None:
+            # Customer only has tambahan records — use their earliest record date
+            first_date = record['record_date']
         if first_date and start_date <= first_date <= end_date:
             staff['ndp_customers'].add(customer_key)
         else:
