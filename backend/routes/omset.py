@@ -810,18 +810,19 @@ async def export_omset_summary(
             daily_summary[date] = {
                 'date': date,
                 'total_depo': 0,
-                'ndp_customers': set(),
-                'rdp_count': 0,
+                'ndp_tuples': set(),
+                'rdp_tuples': set(),
                 'total_form': 0
             }
         
         daily_summary[date]['total_depo'] += record.get('depo_total', 0)
         daily_summary[date]['total_form'] += record.get('depo_kelipatan', 1)
         
+        ndp_tuple = (staff_id_rec, cid_normalized, product_id_rec)
         if is_ndp:
-            daily_summary[date]['ndp_customers'].add(record['customer_id'])
+            daily_summary[date]['ndp_tuples'].add(ndp_tuple)
         else:
-            daily_summary[date]['rdp_count'] += 1
+            daily_summary[date]['rdp_tuples'].add(ndp_tuple)
     
     output = io.StringIO()
     writer = csv.writer(output)
