@@ -6,6 +6,8 @@ import OmsetFilterPanel from './shared/OmsetFilterPanel';
 import ViewModeToggle from './shared/ViewModeToggle';
 import OmsetStatsGrid, { formatCurrency } from './shared/OmsetStatsGrid';
 import TrashSection from './shared/TrashSection';
+import OmsetPendingApprovals from './shared/OmsetPendingApprovals';
+import OmsetDuplicates from './shared/OmsetDuplicates';
 
 // Helper function to get local date in YYYY-MM-DD format (fallback only)
 const getLocalDateString = (date = new Date()) => {
