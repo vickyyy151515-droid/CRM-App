@@ -83,7 +83,6 @@ async def get_leaderboard(
     
     # Get all staff users
     staff_users = await db.users.find({'role': 'staff'}, {'_id': 0}).to_list(100)
-    staff_map = {s['id']: s for s in staff_users}
     
     # Calculate stats for each staff - track (customer, product) pairs for consistency
     staff_stats = {}
