@@ -26,6 +26,16 @@ import {
   verticalListSortingStrategy
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import {
+  OmsetTrendsWidget,
+  ProductOmsetWidget,
+  NdpRdpWidget,
+  DatabaseUtilizationWidget,
+  DailyTrendsWidget,
+  WhatsappDistributionWidget,
+  ResponseRateWidget,
+  formatNumber
+} from './shared/AnalyticsWidgets';
 
 const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899'];
 const COMPARISON_COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
