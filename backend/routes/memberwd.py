@@ -514,6 +514,12 @@ async def get_memberwd_databases(product_id: Optional[str] = None, user: User = 
         total = await db.memberwd_records.count_documents({'database_id': database['id']})
         assigned = await db.memberwd_records.count_documents({'database_id': database['id'], 'status': 'assigned'})
         archived = await db.memberwd_records.count_documents({'database_id': database['id'], 'status': 'invalid_archived'})
+        # Count records with reservation conflicts
+        conflict_count = await db.memberwd_records.count_documents({
+            'database_id': database['id'], 
+            'status': 'assigned',
+            'is_reservation_conflict': True
+        })
         
         # Calculate excluded count
         excluded_count = 0
@@ -543,6 +549,7 @@ async def get_memberwd_databases(product_id: Optional[str] = None, user: User = 
         database['assigned_count'] = assigned
         database['archived_count'] = archived
         database['excluded_count'] = excluded_count
+        database['conflict_count'] = conflict_count
         database['available_count'] = available_raw - excluded_count
         if 'product_id' not in database:
             database['product_id'] = ''
