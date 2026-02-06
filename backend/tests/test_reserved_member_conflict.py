@@ -98,8 +98,10 @@ class TestReservedMemberConflict:
         assert data.get('staff_id') == STAFF_USER_1_ID
         assert data.get('status') == 'approved'
     
-    def test_omset_pending_when_conflict_exists(self, staff_headers):
-        """When staff (not staff-user-1) creates omset for reserved customer, status should be pending"""
+    def test_omset_pending_when_conflict_exists(self, admin_headers):
+        """When ADMIN (different from staff-user-1) creates omset for reserved customer, status should be pending"""
+        # Note: staff@crm.com IS staff-user-1, so we use ADMIN (Vicky) to create conflict
+        # Admin ID is 0cf8a86d-fbad-4966-b232-a49e4033e1d8 which is != staff-user-1
         today = datetime.now().strftime('%Y-%m-%d')
         payload = {
             "product_id": TEST_PRODUCT_ID,
@@ -108,22 +110,44 @@ class TestReservedMemberConflict:
             "customer_id": TEST_CUSTOMER_ID,
             "nominal": 100000,
             "depo_kelipatan": 1,
-            "keterangan": "Test conflict"
+            "keterangan": "Test conflict - admin creating for reserved customer"
         }
-        response = requests.post(f"{BASE_URL}/api/omset", json=payload, headers=staff_headers)
+        response = requests.post(f"{BASE_URL}/api/omset", json=payload, headers=admin_headers)
         print(f"Create omset with conflict response: {response.status_code} - {response.text}")
         
         assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
         # Check if approval_status is pending OR if conflict_info exists
         is_pending = data.get('approval_status') == 'pending'
-        has_conflict = 'conflict_info' in data or data.get('approval_status') == 'pending'
+        has_conflict = 'conflict_info' in data
         assert is_pending or has_conflict, f"Expected pending status or conflict_info, got: {data}"
         
         # Store record ID for later tests
         TestReservedMemberConflict.pending_record_id = data.get('id')
     
-    def test_omset_approved_when_no_conflict(self, admin_headers):
+    def test_omset_approved_when_same_staff_creates(self, staff_headers):
+        """When SAME staff (staff-user-1) creates omset for their own reserved customer, status should be approved"""
+        # staff@crm.com IS staff-user-1, so there's no conflict when they create for their own customer
+        today = datetime.now().strftime('%Y-%m-%d')
+        payload = {
+            "product_id": TEST_PRODUCT_ID,
+            "record_date": today,
+            "customer_name": TEST_CUSTOMER_ID,
+            "customer_id": TEST_CUSTOMER_ID,
+            "nominal": 75000,
+            "depo_kelipatan": 1,
+            "keterangan": "Test no conflict - same staff"
+        }
+        response = requests.post(f"{BASE_URL}/api/omset", json=payload, headers=staff_headers)
+        print(f"Create omset (same staff - no conflict) response: {response.status_code} - {response.text}")
+        
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+        data = response.json()
+        # Should be approved (same staff owns the reservation)
+        approval_status = data.get('approval_status', 'approved')
+        assert approval_status == 'approved', f"Expected approved status, got: {approval_status}"
+    
+    def test_omset_approved_when_no_reservation(self, admin_headers):
         """When admin creates omset for non-reserved customer, status should be approved"""
         today = datetime.now().strftime('%Y-%m-%d')
         payload = {
@@ -133,14 +157,14 @@ class TestReservedMemberConflict:
             "customer_id": "TEST_NO_CONFLICT_CUST",
             "nominal": 50000,
             "depo_kelipatan": 1,
-            "keterangan": "Test no conflict"
+            "keterangan": "Test no conflict - no reservation exists"
         }
         response = requests.post(f"{BASE_URL}/api/omset", json=payload, headers=admin_headers)
         print(f"Create omset without conflict response: {response.status_code} - {response.text}")
         
         assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
-        # Should be approved (no conflict)
+        # Should be approved (no reservation exists)
         approval_status = data.get('approval_status', 'approved')
         assert approval_status == 'approved', f"Expected approved status, got: {approval_status}"
         
