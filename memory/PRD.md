@@ -14,7 +14,31 @@ All modules support:
 - Recall assigned records
 - Reserved member filtering
 
-## Latest Update: Invalidated Records Visibility (2026-02-05)
+## Latest Update: Frontend Refactoring (2026-02-06)
+
+### ✅ Code Maintainability Improvement
+
+**Problem:** `AdminDBBonanza.js` (1331 lines) and `AdminMemberWDCRM.js` (1528 lines) were large, monolithic files with duplicate code patterns.
+
+**Solution:** Extracted common patterns into shared components:
+
+| New Shared Component | Purpose | Lines Saved |
+|---------------------|---------|-------------|
+| `InvalidRecordsAlertBanner.js` | Expandable invalid records alert | ~120 lines |
+| `ModuleHeader.js` | Title with Health Check & Repair buttons | ~50 lines |
+| `ModuleTabs.js` | Tab navigation (Databases, Invalid) | ~25 lines |
+| `ProductFilter.js` | Product dropdown filter | ~15 lines |
+
+**Results:**
+- `AdminDBBonanza.js`: 1331 → 1106 lines (-17%)
+- `AdminMemberWDCRM.js`: 1528 → 1329 lines (-13%)
+- Total shared components: 13 files in `/app/frontend/src/components/shared/`
+
+**Test Results:** 100% frontend tests passed (iteration_38)
+
+---
+
+## Previous Update: RDP Double-Counting Fix (2026-02-06)
 
 ### ✅ Staff Can Now See Records Taken by Reservation
 
