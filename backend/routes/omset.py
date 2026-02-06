@@ -186,7 +186,9 @@ async def create_omset_record(record_data: OmsetRecordCreate, user: User = Depen
         nominal=record_data.nominal,
         depo_kelipatan=record_data.depo_kelipatan,
         depo_total=depo_total,
-        keterangan=record_data.keterangan
+        keterangan=record_data.keterangan,
+        approval_status=approval_status,
+        conflict_info=conflict_info
     )
     
     doc = record.model_dump()
