@@ -52,6 +52,17 @@ export default function AdminOmsetCRM() {
     fetchServerTime();
   }, []);
 
+  // Fetch pending approval count
+  useEffect(() => {
+    const fetchPendingCount = async () => {
+      try {
+        const res = await api.get('/omset/pending');
+        setPendingCount(res.data?.length || 0);
+      } catch { /* ignore */ }
+    };
+    fetchPendingCount();
+  }, [viewMode]);
+
   useEffect(() => {
     loadInitialData();
   }, []);
