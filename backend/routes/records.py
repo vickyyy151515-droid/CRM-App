@@ -211,6 +211,8 @@ class DownloadRequest(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     database_id: str
     database_name: str
+    product_id: Optional[str] = None
+    product_name: Optional[str] = None
     record_ids: List[str]
     record_count: int
     requested_by: str
