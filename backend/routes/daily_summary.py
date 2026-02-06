@@ -36,20 +36,9 @@ async def generate_daily_summary(date_str: str = None):
         return None
     
     # Get all records for NDP/RDP calculation
-    all_records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
-    
-    # Build PER-STAFF customer first deposit date map (SINGLE SOURCE OF TRUTH)
-    # Key: (staff_id, customer_id_normalized, product_id) -> first_date
-    # IMPORTANT: Exclude records with "tambahan" in notes from first_date calculation
-    staff_customer_first_date = {}
-    for record in sorted(all_records, key=lambda x: x['record_date']):
-        if is_tambahan_record(record):
-            continue
-        staff_id_rec = record['staff_id']
-        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-        key = (staff_id_rec, cid_normalized, record['product_id'])
-        if key not in staff_customer_first_date:
-            staff_customer_first_date[key] = record['record_date']
+    # Use MongoDB aggregation to compute first_date efficiently (instead of loading 500K records)
+    from utils.db_operations import build_staff_first_date_map
+    staff_customer_first_date = await build_staff_first_date_map(db)
     
     # Calculate totals
     total_omset = 0
