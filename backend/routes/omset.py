@@ -122,24 +122,24 @@ async def create_omset_record(record_data: OmsetRecordCreate, user: User = Depen
     # Check if notes contain "tambahan" (case-insensitive) - if so, force RDP
     is_tambahan = record_data.keterangan and 'tambahan' in record_data.keterangan.lower()
     
-    # Determine if this is NDP or RDP
+    # Determine if this is NDP or RDP (PER-STAFF: only check this staff's history)
     if is_tambahan:
-        # If "tambahan" in notes, always count as RDP regardless of history
         customer_type = 'RDP'
     else:
-        # Normal logic: Check for existing records with same normalized customer_id before this date
         existing_record = await db.omset_records.find_one({
             'customer_id_normalized': normalized_cid,
             'product_id': record_data.product_id,
-            'record_date': {'$lt': record_data.record_date}
+            'staff_id': user.id,
+            'record_date': {'$lt': record_data.record_date},
+            'approval_status': {'$ne': 'declined'}
         })
         
-        # Also check old records that might not have normalized field
         if not existing_record:
-            # Query all records for this product and check normalized match
             potential_matches = await db.omset_records.find({
                 'product_id': record_data.product_id,
-                'record_date': {'$lt': record_data.record_date}
+                'staff_id': user.id,
+                'record_date': {'$lt': record_data.record_date},
+                'approval_status': {'$ne': 'declined'}
             }, {'customer_id': 1, 'customer_id_normalized': 1}).to_list(10000)
             
             for match in potential_matches:
@@ -150,14 +150,36 @@ async def create_omset_record(record_data: OmsetRecordCreate, user: User = Depen
         
         customer_type = 'RDP' if existing_record else 'NDP'
     
+    # Check reserved member conflict:
+    # If customer belongs to ANOTHER staff's reserved list → pending approval
+    approval_status = 'approved'
+    conflict_info = None
+    
+    reserved_conflict = await db.reserved_members.find_one({
+        'status': 'approved',
+        'staff_id': {'$ne': user.id},
+        '$or': [
+            {'customer_id': {'$regex': f'^{record_data.customer_id.strip()}$', '$options': 'i'}},
+            {'customer_name': {'$regex': f'^{record_data.customer_id.strip()}$', '$options': 'i'}}
+        ]
+    }, {'_id': 0})
+    
+    if reserved_conflict:
+        approval_status = 'pending'
+        conflict_info = {
+            'reserved_by_staff_id': reserved_conflict.get('staff_id'),
+            'reserved_by_staff_name': reserved_conflict.get('staff_name', 'Unknown'),
+            'reason': f"Customer '{record_data.customer_id.strip()}' is reserved by {reserved_conflict.get('staff_name', 'Unknown')}"
+        }
+    
     record = OmsetRecord(
         product_id=record_data.product_id,
         product_name=product['name'],
         staff_id=user.id,
         staff_name=user.name,
         record_date=record_data.record_date,
-        customer_name=record_data.customer_name.strip(),  # Trim whitespace from name
-        customer_id=record_data.customer_id.strip(),  # Trim whitespace from original ID
+        customer_name=record_data.customer_name.strip(),
+        customer_id=record_data.customer_id.strip(),
         nominal=record_data.nominal,
         depo_kelipatan=record_data.depo_kelipatan,
         depo_total=depo_total,
@@ -166,25 +188,38 @@ async def create_omset_record(record_data: OmsetRecordCreate, user: User = Depen
     
     doc = record.model_dump()
     doc['created_at'] = doc['created_at'].isoformat()
-    doc['customer_id_normalized'] = normalized_cid  # Store normalized version for comparison
-    doc['customer_type'] = customer_type  # Store NDP/RDP classification
+    doc['customer_id_normalized'] = normalized_cid
+    doc['customer_type'] = customer_type
+    doc['approval_status'] = approval_status
+    if conflict_info:
+        doc['conflict_info'] = conflict_info
     
     await db.omset_records.insert_one(doc)
     
-    # SYNC: Update reserved_members last_omset_date if this customer is reserved
-    # This ensures grace period cleanup uses the correct date
-    await db.reserved_members.update_many(
-        {
-            'customer_id': {'$regex': f'^{record_data.customer_id.strip()}$', '$options': 'i'},
-            'staff_id': user.id,
-            'status': 'approved'
-        },
-        {
-            '$set': {
-                'last_omset_date': record_data.record_date  # Use actual deposit date, not created_at
-            }
-        }
-    )
+    # If pending, notify admin
+    if approval_status == 'pending':
+        now = get_jakarta_now()
+        await db.notifications.insert_one({
+            'id': str(uuid4()),
+            'type': 'omset_pending_approval',
+            'title': 'Omset Pending Approval',
+            'message': f"{user.name} recorded omset for customer '{record_data.customer_id.strip()}' ({product['name']}), but this customer is reserved by {conflict_info['reserved_by_staff_name']}. Please approve or decline.",
+            'data': {'omset_record_id': record.id, 'staff_name': user.name, 'customer_id': record_data.customer_id.strip(), 'product_name': product['name'], 'reserved_by': conflict_info['reserved_by_staff_name']},
+            'target_role': 'admin',
+            'read': False,
+            'created_at': now.isoformat()
+        })
+    
+    # SYNC: Update reserved_members last_omset_date if this customer is reserved by THIS staff
+    if approval_status == 'approved':
+        await db.reserved_members.update_many(
+            {
+                'customer_id': {'$regex': f'^{record_data.customer_id.strip()}$', '$options': 'i'},
+                'staff_id': user.id,
+                'status': 'approved'
+            },
+            {'$set': {'last_omset_date': record_data.record_date}}
+        )
     
     return record
 
