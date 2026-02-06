@@ -302,8 +302,20 @@ export default function DownloadRequests({ onUpdate }) {
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4 mb-6" data-testid="stats-cards">
           <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
-            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Total Requests</div>
+            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">
+              {(filterDateFrom || filterDateTo) ? 'Filtered Total' : 'Total Requests'}
+            </div>
             <div className="text-2xl font-bold text-slate-900 dark:text-white">{stats.total_requests}</div>
+            {(filterDateFrom || filterDateTo) && (
+              <div className="text-xs text-slate-400 mt-1">
+                {filterDateFrom && filterDateTo 
+                  ? `${filterDateFrom} - ${filterDateTo}`
+                  : filterDateFrom 
+                    ? `From ${filterDateFrom}`
+                    : `Until ${filterDateTo}`
+                }
+              </div>
+            )}
           </div>
           <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
             <div className="text-xs font-medium text-amber-600 dark:text-amber-400 uppercase mb-1">Pending</div>
@@ -349,7 +361,7 @@ export default function DownloadRequests({ onUpdate }) {
           {pendingRequests.length > 0 && (
             <div>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-                <h3 className="text-xl font-semibold text-slate-900 flex items-center gap-2">
+                <h3 className="text-xl font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                   <Clock className="text-amber-600" size={20} />
                   Pending Requests ({pendingRequests.length})
                 </h3>
