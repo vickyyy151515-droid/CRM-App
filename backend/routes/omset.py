@@ -31,6 +31,8 @@ class OmsetRecord(BaseModel):
     depo_kelipatan: float = 1.0
     depo_total: float
     keterangan: Optional[str] = None
+    approval_status: Optional[str] = 'approved'
+    conflict_info: Optional[dict] = None
     created_at: datetime = Field(default_factory=lambda: get_jakarta_now())
     updated_at: Optional[datetime] = None
 
