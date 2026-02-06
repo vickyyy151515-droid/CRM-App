@@ -753,6 +753,11 @@ export default function AdminDBBonanza() {
                       )}
                       {database.excluded_count > 0 && ' excluded • '}
                       <span className="text-blue-600 font-medium ml-1">{database.assigned_count}</span> assigned
+                      {database.conflict_count > 0 && (
+                        <span className="text-amber-600 font-medium ml-1" title="Records with reservation conflicts">
+                          • <AlertTriangle size={10} className="inline mb-0.5" /> {database.conflict_count} conflicts
+                        </span>
+                      )}
                     </p>
                   </div>
                   <button
