@@ -223,6 +223,147 @@ async def create_omset_record(record_data: OmsetRecordCreate, user: User = Depen
     
     return record
 
+
+@router.get("/omset/pending")
+async def get_pending_omset(user: User = Depends(get_admin_user)):
+    """Get all omset records pending approval (reserved member conflicts)."""
+    db = get_db()
+    records = await db.omset_records.find(
+        {'approval_status': 'pending'},
+        {'_id': 0}
+    ).sort('created_at', -1).to_list(1000)
+    return records
+
+
+@router.post("/omset/{record_id}/approve")
+async def approve_omset(record_id: str, user: User = Depends(get_admin_user)):
+    """Admin approves a pending omset record."""
+    db = get_db()
+    record = await db.omset_records.find_one({'id': record_id}, {'_id': 0})
+    if not record:
+        raise HTTPException(status_code=404, detail="Record not found")
+    if record.get('approval_status') != 'pending':
+        raise HTTPException(status_code=400, detail="Record is not pending approval")
+    
+    await db.omset_records.update_one(
+        {'id': record_id},
+        {'$set': {'approval_status': 'approved', 'approved_by': user.id, 'approved_at': get_jakarta_now().isoformat()}}
+    )
+    
+    # Update reserved_members last_omset_date
+    await db.reserved_members.update_many(
+        {'customer_id': {'$regex': f'^{record["customer_id"]}$', '$options': 'i'}, 'staff_id': record['staff_id'], 'status': 'approved'},
+        {'$set': {'last_omset_date': record['record_date']}}
+    )
+    
+    # Notify staff
+    await db.notifications.insert_one({
+        'id': str(uuid4()),
+        'type': 'omset_approved',
+        'title': 'Omset Approved',
+        'message': f"Your omset for customer '{record['customer_id']}' ({record['product_name']}) has been approved by admin.",
+        'data': {'omset_record_id': record_id},
+        'target_user_id': record['staff_id'],
+        'read': False,
+        'created_at': get_jakarta_now().isoformat()
+    })
+    
+    return {'success': True, 'message': 'Omset record approved'}
+
+
+@router.post("/omset/{record_id}/decline")
+async def decline_omset(record_id: str, user: User = Depends(get_admin_user)):
+    """Admin declines a pending omset record (deletes it)."""
+    db = get_db()
+    record = await db.omset_records.find_one({'id': record_id}, {'_id': 0})
+    if not record:
+        raise HTTPException(status_code=404, detail="Record not found")
+    if record.get('approval_status') != 'pending':
+        raise HTTPException(status_code=400, detail="Record is not pending approval")
+    
+    await db.omset_records.delete_one({'id': record_id})
+    
+    # Notify staff
+    await db.notifications.insert_one({
+        'id': str(uuid4()),
+        'type': 'omset_declined',
+        'title': 'Omset Declined',
+        'message': f"Your omset for customer '{record['customer_id']}' ({record['product_name']}) was declined by admin because this customer is reserved by another staff.",
+        'data': {'customer_id': record['customer_id'], 'product_name': record['product_name']},
+        'target_user_id': record['staff_id'],
+        'read': False,
+        'created_at': get_jakarta_now().isoformat()
+    })
+    
+    return {'success': True, 'message': 'Omset record declined and deleted'}
+
+
+@router.get("/omset/duplicates")
+async def get_omset_duplicates(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    product_id: Optional[str] = None,
+    user: User = Depends(get_admin_user)
+):
+    """Get duplicate omset records — same customer recorded by different staff for same product."""
+    db = get_db()
+    
+    match_stage = {'approval_status': {'$ne': 'declined'}}
+    if start_date:
+        match_stage['record_date'] = {'$gte': start_date}
+    if end_date:
+        match_stage.setdefault('record_date', {})['$lte'] = end_date
+    if product_id:
+        match_stage['product_id'] = product_id
+    
+    pipeline = [
+        {'$match': match_stage},
+        {'$group': {
+            '_id': {
+                'cid': {'$ifNull': ['$customer_id_normalized', '$customer_id']},
+                'pid': '$product_id'
+            },
+            'staff_ids': {'$addToSet': '$staff_id'},
+            'staff_names': {'$addToSet': '$staff_name'},
+            'product_name': {'$first': '$product_name'},
+            'records': {'$push': {
+                'id': '$id',
+                'staff_id': '$staff_id',
+                'staff_name': '$staff_name',
+                'record_date': '$record_date',
+                'customer_id': '$customer_id',
+                'customer_name': '$customer_name',
+                'nominal': '$nominal',
+                'depo_total': '$depo_total',
+                'keterangan': '$keterangan'
+            }},
+            'total_records': {'$sum': 1},
+            'total_depo': {'$sum': '$depo_total'}
+        }},
+        {'$match': {'staff_ids.1': {'$exists': True}}},
+        {'$sort': {'total_records': -1}},
+        {'$project': {
+            '_id': 0,
+            'customer_id': '$_id.cid',
+            'product_id': '$_id.pid',
+            'product_name': 1,
+            'staff_names': 1,
+            'staff_count': {'$size': '$staff_ids'},
+            'total_records': 1,
+            'total_depo': 1,
+            'records': 1
+        }}
+    ]
+    
+    duplicates = await db.omset_records.aggregate(pipeline).to_list(1000)
+    
+    return {
+        'total_duplicates': len(duplicates),
+        'total_records_involved': sum(d['total_records'] for d in duplicates),
+        'duplicates': duplicates
+    }
+
+
 @router.get("/omset")
 async def get_omset_records(
     product_id: Optional[str] = None,
