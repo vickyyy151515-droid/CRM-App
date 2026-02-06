@@ -57,6 +57,34 @@ All modules support:
 
 ---
 
+## Previous Update: Backend Refactoring - P2 (2026-02-06)
+
+### ✅ New Shared Backend Utilities Created
+
+**New Utility Files:**
+
+| File | Lines | Description |
+|------|-------|-------------|
+| `db_operations.py` | 422 | Common CRUD operations (assign, recall, archive, validate) |
+| `repair_helpers.py` | 348 | Health check and repair functions for all modules |
+| `helpers.py` | 169 | Timezone, normalization, parsing utilities |
+| `records_helpers.py` | 224 | Record-specific operations |
+| `__init__.py` | 96 | Central exports |
+| **Total** | **1,259** | Shared across all route modules |
+
+**Functions Available in Utils:**
+- **DB Operations:** `assign_records_to_staff`, `recall_records_from_staff`, `archive_records`, `validate_record`, `get_available_records`, `delete_database_with_records`
+- **Health/Repair:** `check_database_health`, `repair_database_records`, `run_full_health_check`, `run_full_repair`, `sync_batch_counts`
+- **Helpers:** `normalize_customer_id`, `get_jakarta_now`, `parse_file_to_records`
+
+**Benefits:**
+- DRY code - same operations no longer duplicated across modules
+- Easier to add new modules in future
+- Centralized bug fixes apply to all modules
+- Better testability
+
+---
+
 ## Previous Update: Frontend Refactoring - Phase 2 (2026-02-06)
 
 ### ✅ Large Files Refactored
