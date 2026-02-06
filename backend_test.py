@@ -8,7 +8,7 @@ from datetime import datetime
 from pathlib import Path
 
 class CRMAPITester:
-    def __init__(self, base_url="https://rdp-solution.preview.emergentagent.com"):
+    def __init__(self, base_url="https://crm-count-fix.preview.emergentagent.com"):
         self.base_url = base_url
         self.admin_token = None
         self.staff_token = None
