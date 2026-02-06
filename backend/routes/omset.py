@@ -908,6 +908,8 @@ async def get_omset_record_types(
     from utils.db_operations import build_staff_first_date_map
     full_map = await build_staff_first_date_map(db, product_id=product_id)
     
+    all_records = await db.omset_records.find(query, {'_id': 0}).to_list(100000)
+    
     # Re-key to (staff_id, customer_id) since product is fixed
     staff_customer_first_date = {}
     for (sid, cid, pid), first_date in full_map.items():
