@@ -82,10 +82,17 @@ async def generate_daily_summary(date_str: str = None):
     staff_ndp_customers = {}
     staff_rdp_customers = {}
     
-    # Product breakdown
+    # Product breakdown - track by (staff_id, customer_id) to match staff counting
+    # This ensures that if Customer A deposits to Product X and Product Y,
+    # the RDP is only counted ONCE in total (assigned to one product)
     product_stats = {}
     product_ndp_customers = {}
     product_rdp_customers = {}
+    
+    # CRITICAL FIX: Track which (staff, customer) pairs have already been counted
+    # This prevents double-counting when same customer deposits to multiple products
+    global_staff_customer_counted_ndp = set()  # (staff_id, customer_id) already counted as NDP
+    global_staff_customer_counted_rdp = set()  # (staff_id, customer_id) already counted as RDP
     
     for record in records:
         staff_id = record['staff_id']
