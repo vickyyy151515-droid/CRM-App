@@ -440,6 +440,8 @@ Before incrementing product RDP/NDP count, the code now:
 
 ## Pending Tasks
 - P1: Further frontend refactoring of `AdminDBBonanza.js` (1331 lines) and `AdminMemberWDCRM.js` (1526 lines) - could be broken down further
+- P2: Automate proactive monitoring (convert manual checks to scheduled jobs with automatic notifications)
+- P3: Email digests for conflict summaries (daily/weekly admin digest)
 
 ## Future Enhancements
 - Real-time WebSocket alerts for data inconsistencies
