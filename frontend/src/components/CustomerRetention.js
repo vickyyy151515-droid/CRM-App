@@ -3,6 +3,8 @@ import { api } from '../App';
 import { toast } from 'sonner';
 import { Users, UserPlus, RefreshCcw, Heart, TrendingUp, DollarSign, Calendar, Award, ChevronDown, ChevronUp, Star, Package, BarChart3, AlertTriangle, Clock, X, Bell, Copy, Phone, Filter } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, AreaChart, Area } from 'recharts';
+import { ViewTabs, MetricCard, MetricsGrid } from './shared/WidgetComponents';
+import AnalyticsPeriodFilter from './shared/AnalyticsPeriodFilter';
 
 export default function CustomerRetention({ isAdmin = false }) {
   const [overview, setOverview] = useState(null);
