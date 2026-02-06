@@ -503,7 +503,14 @@ export default function StaffOmsetCRM() {
                         {record.record_type}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm font-medium text-slate-900">{record.customer_id}</td>
+                    <td className="px-4 py-3 text-sm font-medium text-slate-900">
+                      {record.customer_id}
+                      {record.approval_status === 'pending' && (
+                        <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">
+                          Pending
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-sm text-right text-slate-900">Rp {formatCurrency(record.nominal)}</td>
                     <td className="px-4 py-3 text-sm text-right text-slate-600">{record.depo_kelipatan}x</td>
                     <td className="px-4 py-3 text-sm text-right font-semibold text-emerald-600">Rp {formatCurrency(record.depo_total)}</td>
