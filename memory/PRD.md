@@ -14,31 +14,43 @@ All modules support:
 - Recall assigned records
 - Reserved member filtering
 
-## Latest Update: Frontend Refactoring (2026-02-06)
+## Latest Update: High-Impact App Optimization (2026-02-06)
 
-### ✅ Code Maintainability Improvement
+### ✅ Three Major Improvements Implemented
 
-**Problem:** `AdminDBBonanza.js` (1331 lines) and `AdminMemberWDCRM.js` (1528 lines) were large, monolithic files with duplicate code patterns.
+#### 1. Shared Backend Utilities (`/app/backend/utils/`)
+**Problem:** Duplicate functions scattered across 10+ route files (e.g., `normalize_customer_id`, `get_jakarta_now`)
 
-**Solution:** Extracted common patterns into shared components:
+**Solution:** Created centralized utility modules:
+| File | Functions | Impact |
+|------|-----------|--------|
+| `helpers.py` | `normalize_customer_id`, `get_jakarta_now`, `get_jakarta_date_string`, `safe_int`, `safe_float` | Single source of truth |
+| `records_helpers.py` | `invalidate_customer_records_for_other_staff`, `parse_file_to_records`, `extract_customer_id_from_record` | Reusable across modules |
 
-| New Shared Component | Purpose | Lines Saved |
-|---------------------|---------|-------------|
-| `InvalidRecordsAlertBanner.js` | Expandable invalid records alert | ~120 lines |
-| `ModuleHeader.js` | Title with Health Check & Repair buttons | ~50 lines |
-| `ModuleTabs.js` | Tab navigation (Databases, Invalid) | ~25 lines |
-| `ProductFilter.js` | Product dropdown filter | ~15 lines |
+**Files Updated:** `daily_summary.py`, `omset.py`, `leaderboard.py`, `bonus.py`, `attendance.py`, `fees.py`, `deps.py`
+
+#### 2. Frontend Shared Components (18 files in `/app/frontend/src/components/shared/`)
+| New Component | Purpose | Lines |
+|--------------|---------|-------|
+| `InvalidRecordsAlertBanner.js` | Expandable invalid records alert | 130 |
+| `ModuleHeader.js` | Title + Health Check + Repair buttons | 68 |
+| `ModuleTabs.js` | Tab navigation | 65 |
+| `ProductFilter.js` | Product dropdown filter | 35 |
+| `DatabaseListSection.js` | Complete database list with expand/search/assign | 449 |
+| `useAdminModule.js` | Custom hook for shared state management | 393 |
 
 **Results:**
 - `AdminDBBonanza.js`: 1331 → 1106 lines (-17%)
 - `AdminMemberWDCRM.js`: 1528 → 1329 lines (-13%)
-- Total shared components: 13 files in `/app/frontend/src/components/shared/`
 
-**Test Results:** 100% frontend tests passed (iteration_38)
+#### 3. Architecture Improvements
+- Backend utilities importable as: `from utils.helpers import normalize_customer_id`
+- Frontend components importable as: `import { useAdminModule } from './shared'`
+- Consistent code patterns across all three CRM modules
 
 ---
 
-## Previous Update: RDP Double-Counting Fix (2026-02-06)
+## Previous Update: Frontend Refactoring (2026-02-06)
 
 ### ✅ Staff Can Now See Records Taken by Reservation
 
