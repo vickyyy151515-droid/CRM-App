@@ -869,49 +869,50 @@ async def get_omset_ndp_rdp(
     
     all_records = await db.omset_records.find(query, {'_id': 0}).to_list(100000)
     
-    customer_first_date = {}
-    
+    # Build STAFF-SPECIFIC customer first deposit map
+    # Since we're already filtered to a single product, key is (staff_id, customer_id)
+    staff_customer_first_date = {}
     for record in sorted(all_records, key=lambda x: x['record_date']):
-        # Skip "tambahan" records when determining first deposit date
         keterangan = record.get('keterangan', '') or ''
         if 'tambahan' in keterangan.lower():
             continue
-        # Use normalized customer_id for comparison (handle old records without normalized field)
         cid = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-        if cid not in customer_first_date:
-            customer_first_date[cid] = record['record_date']
+        staff_id_rec = record['staff_id']
+        key = (staff_id_rec, cid)
+        if key not in staff_customer_first_date:
+            staff_customer_first_date[key] = record['record_date']
     
     date_records = [r for r in all_records if r['record_date'] == record_date]
     
-    ndp_customers = set()
-    rdp_customers = set()  # Track unique RDP customers (NEW)
+    # Track (staff_id, customer_id) pairs for consistent NDP/RDP
+    ndp_pairs = set()
+    rdp_pairs = set()
     ndp_total = 0
     rdp_total = 0
     
     for record in date_records:
-        # Use normalized customer_id for comparison
         cid = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-        first_date = customer_first_date.get(cid)
+        staff_id_rec = record['staff_id']
+        staff_cid_pair = (staff_id_rec, cid)
+        first_date = staff_customer_first_date.get(staff_cid_pair)
         
-        # Check if "tambahan" in notes - if so, always RDP
         keterangan = record.get('keterangan', '') or ''
         if 'tambahan' in keterangan.lower():
-            rdp_customers.add(cid)
+            rdp_pairs.add(staff_cid_pair)
             rdp_total += record.get('depo_total', 0)
         elif first_date == record_date:
-            ndp_customers.add(cid)
+            ndp_pairs.add(staff_cid_pair)
             ndp_total += record.get('depo_total', 0)
         else:
-            # RDP - count unique customers (NEW LOGIC)
-            rdp_customers.add(cid)
+            rdp_pairs.add(staff_cid_pair)
             rdp_total += record.get('depo_total', 0)
     
     return {
         'date': record_date,
         'product_id': product_id,
-        'ndp_count': len(ndp_customers),
+        'ndp_count': len(ndp_pairs),
         'ndp_total': ndp_total,
-        'rdp_count': len(rdp_customers),  # Count unique RDP customers
+        'rdp_count': len(rdp_pairs),
         'rdp_total': rdp_total,
         'total_records': len(date_records)
     }
