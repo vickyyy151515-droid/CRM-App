@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
 import { Calendar, Package, DollarSign, TrendingUp, Users, Filter, ChevronDown, ChevronUp, UserPlus, RefreshCw, Download, Trash2, Clock, RotateCcw, AlertTriangle } from 'lucide-react';
+import DateRangeSelector from './shared/DateRangeSelector';
+import SummaryStatsCards from './shared/SummaryStatsCards';
 
 // Helper function to get local date in YYYY-MM-DD format (fallback only)
 const getLocalDateString = (date = new Date()) => {
