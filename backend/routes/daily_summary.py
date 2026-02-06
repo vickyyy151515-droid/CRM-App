@@ -255,22 +255,16 @@ async def generate_daily_summary_filtered(date_str: str, filter_product_id: str)
         return None
     
     # Get all records for NDP/RDP calculation (for this product only)
-    all_records = await db.omset_records.find(
-        {'product_id': filter_product_id},
-        {'_id': 0}
-    ).to_list(500000)
+    # Use MongoDB aggregation for efficiency
+    from utils.db_operations import build_staff_first_date_map
+    full_first_date_map = await build_staff_first_date_map(db, product_id=filter_product_id)
     
-    # Build PER-STAFF customer first deposit date map (SINGLE SOURCE OF TRUTH)
-    # Since we're already filtered to a single product, key is (staff_id, customer_id)
+    # Re-key to (staff_id, customer_id) since product is fixed
     staff_customer_first_date = {}
-    for record in sorted(all_records, key=lambda x: x['record_date']):
-        if is_tambahan_record(record):
-            continue
-        staff_id = record['staff_id']
-        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-        key = (staff_id, cid_normalized)
-        if key not in staff_customer_first_date:
-            staff_customer_first_date[key] = record['record_date']
+    for (sid, cid, pid), first_date in full_first_date_map.items():
+        key = (sid, cid)
+        if key not in staff_customer_first_date or first_date < staff_customer_first_date[key]:
+            staff_customer_first_date[key] = first_date
     
     # Calculate statistics
     total_omset = 0
