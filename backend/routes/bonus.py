@@ -165,6 +165,8 @@ async def get_bonus_calculation_data(
     # Build STAFF-SPECIFIC customer first deposit map using MongoDB aggregation
     from utils.db_operations import build_staff_first_date_map
     staff_customer_first_date = await build_staff_first_date_map(db)
+    
+    staff_data = {}
     for record in records:
         sid = record['staff_id']
         sname = record['staff_name']
