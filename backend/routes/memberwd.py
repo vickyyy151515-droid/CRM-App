@@ -2095,6 +2095,7 @@ async def get_memberwd_data_health(user: User = Depends(get_admin_user)):
     
     health_report = {
         'databases': [],
+        'batches': [],
         'total_issues': 0,
         'issues': []
     }
@@ -2108,6 +2109,8 @@ async def get_memberwd_data_health(user: User = Depends(get_admin_user)):
         available = await db.memberwd_records.count_documents({'database_id': db_id, 'status': 'available'})
         assigned = await db.memberwd_records.count_documents({'database_id': db_id, 'status': 'assigned'})
         archived = await db.memberwd_records.count_documents({'database_id': db_id, 'status': 'invalid_archived'})
+        # Count records with 'invalid' status (old bug - should be fixed)
+        invalid_status_count = await db.memberwd_records.count_documents({'database_id': db_id, 'status': 'invalid'})
         total = await db.memberwd_records.count_documents({'database_id': db_id})
         
         missing_db_name = await db.memberwd_records.count_documents({
@@ -2121,12 +2124,12 @@ async def get_memberwd_data_health(user: User = Depends(get_admin_user)):
             'assigned_to': None
         })
         
-        invalid_status = await db.memberwd_records.count_documents({
+        other_invalid_status = await db.memberwd_records.count_documents({
             'database_id': db_id, 
-            'status': {'$nin': ['available', 'assigned', 'invalid_archived']}
+            'status': {'$nin': ['available', 'assigned', 'invalid_archived', 'invalid']}
         })
         
-        db_issues = missing_db_name + orphaned_assignments + invalid_status
+        db_issues = missing_db_name + orphaned_assignments + invalid_status_count + other_invalid_status
         
         health_report['databases'].append({
             'database_id': db_id,
@@ -2135,17 +2138,48 @@ async def get_memberwd_data_health(user: User = Depends(get_admin_user)):
             'available': available,
             'assigned': assigned,
             'archived': archived,
-            'sum_matches': total == (available + assigned + archived),
+            'invalid_status_records': invalid_status_count,
+            'sum_matches': total == (available + assigned + archived + invalid_status_count),
             'issues': {
                 'missing_db_name': missing_db_name,
                 'orphaned_assignments': orphaned_assignments,
-                'invalid_status': invalid_status
+                'invalid_status': invalid_status_count,
+                'other_invalid_status': other_invalid_status
             },
             'has_issues': db_issues > 0
         })
         
         health_report['total_issues'] += db_issues
     
+    # Check batch count mismatches
+    all_batches = await db.memberwd_batches.find({}, {'_id': 0}).to_list(10000)
+    batch_mismatches = 0
+    
+    for batch in all_batches:
+        batch_id = batch.get('id')
+        stored_count = batch.get('current_count', 0)
+        
+        actual_count = await db.memberwd_records.count_documents({
+            'batch_id': batch_id,
+            'status': 'assigned'
+        })
+        
+        has_mismatch = stored_count != actual_count
+        if has_mismatch:
+            batch_mismatches += 1
+            health_report['total_issues'] += 1
+        
+        health_report['batches'].append({
+            'batch_id': batch_id[:8] + '...',
+            'staff_name': batch.get('staff_name', 'Unknown'),
+            'product_name': batch.get('product_name', 'Unknown'),
+            'stored_count': stored_count,
+            'actual_count': actual_count,
+            'has_mismatch': has_mismatch,
+            'difference': actual_count - stored_count
+        })
+    
+    health_report['batch_mismatches'] = batch_mismatches
     health_report['is_healthy'] = health_report['total_issues'] == 0
     
     return health_report
