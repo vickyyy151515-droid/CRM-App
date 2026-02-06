@@ -628,6 +628,8 @@ async def create_download_request(request_data: DownloadRequestCreate, user: Use
     request = DownloadRequest(
         database_id=request_data.database_id,
         database_name=database['filename'],
+        product_id=database.get('product_id'),
+        product_name=database.get('product_name'),
         record_ids=record_ids,
         record_count=len(record_ids),
         requested_by=user.id,
