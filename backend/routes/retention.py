@@ -421,18 +421,17 @@ async def get_retention_by_product(
         keterangan = record.get('keterangan', '') or ''
         return 'tambahan' in keterangan.lower()
     
-    # Build customer first deposit map - EXCLUDE "tambahan" records
-    customer_first_date = {}
+    # Build STAFF-SPECIFIC customer first deposit map (SINGLE SOURCE OF TRUTH)
+    staff_customer_first_date = {}
     for record in sorted(all_records, key=lambda x: x['record_date']):
-        # Skip "tambahan" records when determining first deposit date
         if is_tambahan_record(record):
             continue
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-        key = (cid_normalized, record.get('product_id'))
-        if key not in customer_first_date:
-            customer_first_date[key] = record['record_date']
+        key = (record['staff_id'], cid_normalized, record.get('product_id'))
+        if key not in staff_customer_first_date:
+            staff_customer_first_date[key] = record['record_date']
     
-    # Group by product
+    # Group by product — track (staff_id, customer_id) pairs for each product
     products = defaultdict(lambda: {
         'product_id': '',
         'product_name': '',
@@ -451,17 +450,18 @@ async def get_retention_by_product(
         prod['product_name'] = record.get('product_name', 'Unknown')
         
         cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-        prod['total_customers'].add(cid_normalized)
+        staff_id_rec = record['staff_id']
+        staff_cid_pair = (staff_id_rec, cid_normalized)
+        prod['total_customers'].add(staff_cid_pair)
         prod['total_deposits'] += 1
         prod['total_omset'] += record.get('depo_total', 0) or 0
         
-        key = (cid_normalized, prod_id)
-        first_date = customer_first_date.get(key)
-        # "tambahan" records are excluded from first_date calculation, so they will be RDP
+        key = (staff_id_rec, cid_normalized, prod_id)
+        first_date = staff_customer_first_date.get(key)
         if first_date and start_date <= first_date <= end_date:
-            prod['ndp_customers'].add(cid_normalized)
+            prod['ndp_customers'].add(staff_cid_pair)
         else:
-            prod['rdp_customers'].add(cid_normalized)
+            prod['rdp_customers'].add(staff_cid_pair)
     
     # Format result
     result = []
