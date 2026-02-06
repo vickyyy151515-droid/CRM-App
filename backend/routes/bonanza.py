@@ -1712,6 +1712,8 @@ async def get_bonanza_data_health(user: User = Depends(get_admin_user)):
         available = await db.bonanza_records.count_documents({'database_id': db_id, 'status': 'available'})
         assigned = await db.bonanza_records.count_documents({'database_id': db_id, 'status': 'assigned'})
         archived = await db.bonanza_records.count_documents({'database_id': db_id, 'status': 'invalid_archived'})
+        # Count records with 'invalid' status (old bug - should be fixed)
+        invalid_status_count = await db.bonanza_records.count_documents({'database_id': db_id, 'status': 'invalid'})
         total = await db.bonanza_records.count_documents({'database_id': db_id})
         
         # Check for issues
@@ -1726,12 +1728,12 @@ async def get_bonanza_data_health(user: User = Depends(get_admin_user)):
             'assigned_to': None
         })
         
-        invalid_status = await db.bonanza_records.count_documents({
+        other_invalid_status = await db.bonanza_records.count_documents({
             'database_id': db_id, 
-            'status': {'$nin': ['available', 'assigned', 'invalid_archived']}
+            'status': {'$nin': ['available', 'assigned', 'invalid_archived', 'invalid']}
         })
         
-        db_issues = missing_db_name + orphaned_assignments + invalid_status
+        db_issues = missing_db_name + orphaned_assignments + invalid_status_count + other_invalid_status
         
         health_report['databases'].append({
             'database_id': db_id,
@@ -1740,11 +1742,13 @@ async def get_bonanza_data_health(user: User = Depends(get_admin_user)):
             'available': available,
             'assigned': assigned,
             'archived': archived,
-            'sum_matches': total == (available + assigned + archived),
+            'invalid_status_records': invalid_status_count,
+            'sum_matches': total == (available + assigned + archived + invalid_status_count),
             'issues': {
                 'missing_db_name': missing_db_name,
                 'orphaned_assignments': orphaned_assignments,
-                'invalid_status': invalid_status
+                'invalid_status': invalid_status_count,
+                'other_invalid_status': other_invalid_status
             },
             'has_issues': db_issues > 0
         })
@@ -1756,8 +1760,10 @@ async def get_bonanza_data_health(user: User = Depends(get_admin_user)):
                 health_report['issues'].append(f'{db_name}: {missing_db_name} records missing database_name')
             if orphaned_assignments > 0:
                 health_report['issues'].append(f'{db_name}: {orphaned_assignments} orphaned assignments')
-            if invalid_status > 0:
-                health_report['issues'].append(f'{db_name}: {invalid_status} invalid status values')
+            if invalid_status_count > 0:
+                health_report['issues'].append(f'{db_name}: {invalid_status_count} records with status=invalid (should be assigned with is_reservation_conflict)')
+            if other_invalid_status > 0:
+                health_report['issues'].append(f'{db_name}: {other_invalid_status} invalid status values')
     
     # Check for completely orphaned records
     orphan_no_db = await db.bonanza_records.count_documents({'database_id': {'$exists': False}})
