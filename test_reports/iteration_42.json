@@ -1,0 +1,108 @@
+{
+  "summary": "Backend testing for NDP/RDP consistency bug fix complete. All 41 tests passed across two test suites. The fix unifies NDP/RDP tracking to use per (staff_id, customer_id, product_id) first_date as SINGLE SOURCE OF TRUTH across all endpoints.",
+  
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  
+  "passed_tests": [
+    "✓ GET /api/omset/summary - returns 200 with consistent NDP/RDP structure",
+    "✓ Omset summary has ndp_count/rdp_count in daily, staff, and product breakdowns",
+    "✓ Omset summary consistency check: total_ndp equals daily_ndp_sum",
+    "✓ POST /api/daily-summary/generate - returns 200 with consistent NDP/RDP",
+    "✓ Generated daily summary has consistent staff/product NDP/RDP counts",
+    "✓ GET /api/leaderboard - returns 200 with today_ndp/today_rdp and total_ndp/total_rdp",
+    "✓ GET /api/bonus-calculation/data - returns 200 with NDP/RDP in daily breakdown",
+    "✓ GET /api/analytics/business - returns 200 with ndp/rdp in chart_data",
+    "✓ GET /api/omset/ndp-rdp - returns 200 with ndp_count/rdp_count for specific date",
+    "✓ GET /api/omset/record-types - returns 200 with NDP/RDP record classification",
+    "✓ GET /api/report-crm/data - returns 200 with new_id (NDP) and rdp fields",
+    "✓ GET /api/retention/overview - returns 200 with ndp_customers/rdp_customers",
+    "✓ GET /api/retention/by-product - returns 200 with NDP/RDP structure",
+    "✓ GET /api/daily-summary - returns 200 with proper structure",
+    "✓ Empty date range handling - graceful handling of no data",
+    "✓ Product filter consistency - maintains correct structure",
+    "✓ Staff filter consistency - maintains correct structure",
+    "✓ Code review: omset.py uses staff_customer_first_date tracking",
+    "✓ Code review: daily_summary.py uses staff_customer_first_date tracking",
+    "✓ Code review: leaderboard.py uses staff_customer_first_date tracking",
+    "✓ Code review: bonus.py uses staff_customer_first_date tracking",
+    "✓ Code review: analytics.py uses staff_customer_first_date tracking",
+    "✓ Code review: 'tambahan' records are handled correctly as RDP",
+    "✓ RDP consistency across dates 2026-02-20 and 2026-02-21",
+    "✓ NDP consistency across dates 2026-02-20 and 2026-02-21",
+    "✓ Customer depositing to multiple products counted correctly",
+    "✓ Form count vs customer count relationship verified"
+  ],
+  
+  "test_report_links": [
+    "/app/backend/tests/test_ndp_rdp_consistency.py",
+    "/app/backend/tests/test_rdp_ndp_consistency_fix.py",
+    "/app/test_reports/pytest/ndp_rdp_consistency_results.xml"
+  ],
+  
+  "action_items": [],
+  
+  "critical_code_review_comments": [
+    "✓ All routes use staff_customer_first_date as SINGLE SOURCE OF TRUTH for NDP/RDP",
+    "✓ Key pattern: (staff_id, customer_id_normalized, product_id) -> first_date",
+    "✓ 'tambahan' records are correctly excluded from first_date calculation and always counted as RDP",
+    "✓ Unique tracking sets prevent double counting across daily/staff/product views",
+    "✓ Fix applied consistently across: omset.py, daily_summary.py, leaderboard.py, bonus.py, analytics.py, report.py, retention.py"
+  ],
+  
+  "updated_files": [
+    "/app/backend/tests/test_ndp_rdp_consistency.py",
+    "/app/backend/tests/test_rdp_ndp_consistency_fix.py"
+  ],
+  
+  "success_rate": {
+    "backend": "100% (41/41 tests passed)",
+    "frontend": "N/A (backend only testing)"
+  },
+  
+  "test_credentials": {
+    "admin": {"email": "vicky@crm.com", "password": "vicky123"}
+  },
+  
+  "seed_data_creation": "No seed data created - tests use existing production data",
+  
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  
+  "context_for_next_testing_agent": "NDP/RDP consistency bug fix verified. The fix changes NDP/RDP definition from GLOBAL (customer, product) to PER-STAFF (staff_id, customer_id, product_id). All endpoints now use staff_customer_first_date dictionary as SINGLE SOURCE OF TRUTH. Tests cover: /api/omset/summary, /api/daily-summary/generate, /api/leaderboard, /api/bonus-calculation/data, /api/analytics/business, /api/omset/ndp-rdp, /api/omset/record-types, /api/report-crm/data, /api/retention/overview, /api/retention/by-product. All 41 tests passed.",
+  
+  "verified_endpoints": {
+    "/api/omset/summary": "Returns 200 with total_ndp/total_rdp, staff_summary[].ndp_count/rdp_count, product_summary[].ndp_count/rdp_count, daily_summary[].ndp_count/rdp_count",
+    "/api/daily-summary/generate": "Returns 200 with consistent total_ndp/total_rdp = sum of staff = sum of product",
+    "/api/leaderboard": "Returns 200 with today_ndp/today_rdp and total_ndp/total_rdp per staff",
+    "/api/bonus-calculation/data": "Returns 200 with NDP/RDP in daily_breakdown",
+    "/api/analytics/business": "Returns 200 with ndp/rdp in chart_data and summary",
+    "/api/omset/ndp-rdp": "Returns 200 with ndp_count/rdp_count for specific date and product",
+    "/api/omset/record-types": "Returns 200 with record_type (NDP/RDP) classification",
+    "/api/report-crm/data": "Returns 200 with new_id (NDP) and rdp fields",
+    "/api/retention/overview": "Returns 200 with ndp_customers/rdp_customers",
+    "/api/retention/by-product": "Returns 200 with ndp_customers/rdp_customers per product"
+  },
+  
+  "fix_summary": {
+    "root_cause": "Different NDP definitions used across views (GLOBAL vs STAFF-SPECIFIC vs customer-only)",
+    "fix_approach": "Unified all NDP/RDP to use per (staff_id, customer_id, product_id) first_date as SINGLE SOURCE OF TRUTH",
+    "files_modified": [
+      "backend/routes/omset.py",
+      "backend/routes/daily_summary.py",
+      "backend/routes/leaderboard.py",
+      "backend/routes/bonus.py",
+      "backend/routes/analytics.py",
+      "backend/routes/report.py",
+      "backend/routes/retention.py"
+    ]
+  }
+}
