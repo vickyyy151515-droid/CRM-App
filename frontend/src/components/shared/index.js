@@ -1,9 +1,13 @@
 // Shared components for AdminDBBonanza and AdminMemberWDCRM
 export { default as SettingsPanel, SettingsButton } from './SettingsPanel';
 export { default as InvalidRecordsPanel } from './InvalidRecordsPanel';
+export { default as InvalidRecordsAlertBanner } from './InvalidRecordsAlertBanner';
 export { default as ReplaceModal } from './ReplaceModal';
 export { default as DatabaseUploadForm } from './DatabaseUploadForm';
 export { default as TabsNavigation } from './TabsNavigation';
+export { default as ModuleTabs } from './ModuleTabs';
+export { default as ModuleHeader } from './ModuleHeader';
+export { default as ProductFilter } from './ProductFilter';
 export { default as RecordsTable } from './RecordsTable';
 export { default as DatabaseCard } from './DatabaseCard';
 export { default as ArchivedRecordsTable } from './ArchivedRecordsTable';
