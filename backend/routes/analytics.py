@@ -231,8 +231,8 @@ async def get_business_analytics(period: str = 'month', product_id: Optional[str
     rdp_omset = 0
     
     for date, stats in sorted(daily_stats.items()):
-        ndp_count = len(stats['ndp_customers'])
-        rdp_count = len(stats['rdp_customers'])
+        ndp_count = len(stats['ndp_tuples'])
+        rdp_count = len(stats['rdp_tuples'])
         total_ndp += ndp_count
         total_rdp += rdp_count
         omset_chart.append({
