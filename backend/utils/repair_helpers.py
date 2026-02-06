@@ -352,6 +352,7 @@ async def sync_batch_counts(db) -> Dict[str, Any]:
     if deleted.deleted_count > 0:
         sync_report['empty_batches_deleted'] = deleted.deleted_count
     
+    return sync_report
 
 
 async def check_batch_health(db) -> Dict[str, Any]:
