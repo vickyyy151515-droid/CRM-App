@@ -4,7 +4,8 @@ from typing import Optional, List
 from datetime import datetime, timedelta
 from collections import defaultdict
 
-from .deps import get_db, get_current_user, get_admin_user, get_jakarta_now, User
+from .deps import get_db, get_current_user, get_admin_user, User
+from utils.helpers import get_jakarta_now, normalize_customer_id
 
 router = APIRouter(tags=["Retention"])
 
