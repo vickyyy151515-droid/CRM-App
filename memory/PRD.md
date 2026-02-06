@@ -448,3 +448,12 @@ Before incrementing product RDP/NDP count, the code now:
 
 ## Known Issues
 None - all sync features verified working (100% health score)
+
+## Test Files
+| Test File | Purpose |
+|-----------|---------|
+| `/app/backend/tests/test_rdp_ndp_consistency_fix.py` | RDP/NDP consistency verification |
+| `/app/backend/tests/test_rdp_consistency.py` | Additional RDP consistency tests |
+| `/app/backend/tests/test_invalidation_e2e.py` | Reservation invalidation tests |
+| `/app/backend/tests/test_sync_features.py` | Data sync feature tests |
+| `/app/backend/tests/test_grace_period_and_counts.py` | Grace period cleanup tests |
