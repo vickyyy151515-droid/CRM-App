@@ -52,11 +52,6 @@ async def get_retention_overview(
         }
     
     # Helper function to normalize customer ID
-    def normalize_customer_id(customer_id: str) -> str:
-        if not customer_id:
-            return ""
-        return customer_id.strip().lower()
-    
     # Helper function to check if record has "tambahan" in notes
     def is_tambahan_record(record) -> bool:
         keterangan = record.get('keterangan', '') or ''
@@ -200,11 +195,6 @@ async def get_retention_customers(
     all_records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
     
     # Helper function to normalize customer ID
-    def normalize_customer_id(customer_id: str) -> str:
-        if not customer_id:
-            return ""
-        return customer_id.strip().lower()
-    
     # Helper function to check if record has "tambahan" in notes
     def is_tambahan_record(record) -> bool:
         keterangan = record.get('keterangan', '') or ''
@@ -328,11 +318,6 @@ async def get_retention_trend(
         return {'trend': [], 'summary': {'total_ndp': 0, 'total_rdp': 0}}
     
     # Helper function to normalize customer ID
-    def normalize_customer_id(customer_id: str) -> str:
-        if not customer_id:
-            return ""
-        return customer_id.strip().lower()
-    
     # Helper function to check if record has "tambahan" in notes
     def is_tambahan_record(record) -> bool:
         keterangan = record.get('keterangan', '') or ''
@@ -431,11 +416,6 @@ async def get_retention_by_product(
     all_records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
     
     # Helper function to normalize customer ID
-    def normalize_customer_id(customer_id: str) -> str:
-        if not customer_id:
-            return ""
-        return customer_id.strip().lower()
-    
     # Helper function to check if record has "tambahan" in notes
     def is_tambahan_record(record) -> bool:
         keterangan = record.get('keterangan', '') or ''
@@ -539,11 +519,6 @@ async def get_retention_by_staff(
     all_records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
     
     # Helper function to normalize customer ID
-    def normalize_customer_id(customer_id: str) -> str:
-        if not customer_id:
-            return ""
-        return customer_id.strip().lower()
-    
     # Helper function to check if record has "tambahan" in notes
     def is_tambahan_record(record) -> bool:
         keterangan = record.get('keterangan', '') or ''
@@ -656,11 +631,6 @@ async def get_customer_alerts(
     today = jakarta_now.strftime('%Y-%m-%d')
     
     # Helper function to normalize customer ID
-    def normalize_customer_id(customer_id: str) -> str:
-        if not customer_id:
-            return ""
-        return customer_id.strip().lower()
-    
     # Get all OMSET records
     query = {}
     if product_id:
@@ -888,11 +858,6 @@ async def get_alerts_by_staff(
     today = jakarta_now.strftime('%Y-%m-%d')
     
     # Helper function to normalize customer ID
-    def normalize_customer_id(customer_id: str) -> str:
-        if not customer_id:
-            return ""
-        return customer_id.strip().lower()
-    
     records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
     
     if not records:
