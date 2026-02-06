@@ -271,17 +271,8 @@ async def generate_daily_summary_filtered(date_str: str, filter_product_id: str)
         {'_id': 0}
     ).to_list(500000)
     
-    # Build GLOBAL customer first deposit date map
-    global_customer_first_date = {}
-    for record in sorted(all_records, key=lambda x: x['record_date']):
-        if is_tambahan_record(record):
-            continue
-        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
-        key = cid_normalized
-        if key not in global_customer_first_date:
-            global_customer_first_date[key] = record['record_date']
-    
-    # Build PER-STAFF customer first deposit date map
+    # Build PER-STAFF customer first deposit date map (SINGLE SOURCE OF TRUTH)
+    # Since we're already filtered to a single product, key is (staff_id, customer_id)
     staff_customer_first_date = {}
     for record in sorted(all_records, key=lambda x: x['record_date']):
         if is_tambahan_record(record):
@@ -302,8 +293,9 @@ async def generate_daily_summary_filtered(date_str: str, filter_product_id: str)
     staff_ndp_customers = {}
     staff_rdp_customers = {}
     
-    global_ndp_customers = set()
-    global_rdp_customers = set()
+    # Track (staff_id, customer_id) pairs for global totals to match staff sums
+    global_ndp_pairs = set()
+    global_rdp_pairs = set()
     
     # Get product name
     product_name = records[0].get('product_name', 'Unknown') if records else 'Unknown'
@@ -316,27 +308,25 @@ async def generate_daily_summary_filtered(date_str: str, filter_product_id: str)
         
         total_omset += depo_total
         
-        # Determine NDP/RDP
+        # Determine NDP/RDP using STAFF-SPECIFIC first date
         is_tambahan = is_tambahan_record(record)
-        global_first_date = global_customer_first_date.get(cid_normalized)
         staff_key = (staff_id, cid_normalized)
         staff_first_date = staff_customer_first_date.get(staff_key)
         
         if is_tambahan:
-            is_global_ndp = False
-            is_staff_ndp = False
+            is_ndp = False
         else:
-            is_global_ndp = global_first_date == date_str
-            is_staff_ndp = staff_first_date == date_str
+            is_ndp = staff_first_date == date_str
         
-        # Global NDP/RDP count
-        if is_global_ndp:
-            if cid_normalized not in global_ndp_customers:
-                global_ndp_customers.add(cid_normalized)
+        # Global NDP/RDP count — track (staff_id, customer_id) pairs
+        staff_cid_pair = (staff_id, cid_normalized)
+        if is_ndp:
+            if staff_cid_pair not in global_ndp_pairs:
+                global_ndp_pairs.add(staff_cid_pair)
                 total_ndp += 1
         else:
-            if cid_normalized not in global_rdp_customers:
-                global_rdp_customers.add(cid_normalized)
+            if staff_cid_pair not in global_rdp_pairs:
+                global_rdp_pairs.add(staff_cid_pair)
                 total_rdp += 1
         
         # Staff stats
@@ -356,7 +346,7 @@ async def generate_daily_summary_filtered(date_str: str, filter_product_id: str)
         staff_stats[staff_id]['total_omset'] += depo_total
         staff_stats[staff_id]['form_count'] += 1
         
-        if is_staff_ndp:
+        if is_ndp:
             if cid_normalized not in staff_ndp_customers[staff_id]:
                 staff_ndp_customers[staff_id].add(cid_normalized)
                 staff_stats[staff_id]['ndp_count'] += 1
