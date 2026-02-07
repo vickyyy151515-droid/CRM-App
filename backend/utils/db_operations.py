@@ -90,6 +90,62 @@ async def build_staff_first_date_map(db, product_id: str = None) -> Dict[Tuple[s
     return first_date_map
 
 
+async def recalculate_customer_type(db, staff_id: str, customer_id: str, product_id: str):
+    """
+    Recalculate and update the stored customer_type (NDP/RDP) for all records
+    matching a specific (staff_id, customer_id, product_id) combo.
+    
+    Call this after delete, approve, decline, or restore operations to keep
+    the stored customer_type in sync with the dynamic NDP/RDP calculation.
+    """
+    from utils.helpers import normalize_customer_id
+    
+    normalized_cid = normalize_customer_id(customer_id)
+    
+    # Find all approved records for this (staff, customer, product) combo
+    records = await db.omset_records.find(
+        {
+            'staff_id': staff_id,
+            'product_id': product_id,
+            '$or': [
+                {'customer_id_normalized': normalized_cid},
+                {'customer_id': {'$regex': f'^{customer_id.strip()}$', '$options': 'i'}}
+            ],
+            '$or': [
+                {'approval_status': 'approved'},
+                {'approval_status': {'$exists': False}}
+            ]
+        },
+        {'_id': 0, 'id': 1, 'record_date': 1, 'keterangan': 1, 'customer_id': 1, 'customer_id_normalized': 1}
+    ).sort('record_date', 1).to_list(10000)
+    
+    if not records:
+        return
+    
+    # Find first_date (earliest non-tambahan record)
+    first_date = None
+    for r in records:
+        keterangan = r.get('keterangan', '') or ''
+        if 'tambahan' not in keterangan.lower():
+            first_date = r['record_date']
+            break
+    
+    # Update each record's customer_type
+    for r in records:
+        keterangan = r.get('keterangan', '') or ''
+        if 'tambahan' in keterangan.lower():
+            new_type = 'RDP'
+        elif first_date and r['record_date'] == first_date:
+            new_type = 'NDP'
+        else:
+            new_type = 'RDP'
+        
+        await db.omset_records.update_one(
+            {'id': r['id']},
+            {'$set': {'customer_type': new_type}}
+        )
+
+
 
 # Collection name mapping
 COLLECTION_MAP = {
