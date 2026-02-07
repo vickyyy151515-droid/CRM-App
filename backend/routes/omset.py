@@ -627,6 +627,9 @@ async def get_omset_summary(
     elif end_date:
         query['record_date'] = {'$lte': end_date}
     
+    # Only count approved records in summary calculations
+    query['$or'] = [{'approval_status': 'approved'}, {'approval_status': {'$exists': False}}]
+    
     records = await db.omset_records.find(query, {'_id': 0}).to_list(100000)
     
     # Helper function to check if record has "tambahan" in notes
