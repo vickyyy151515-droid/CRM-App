@@ -63,20 +63,30 @@
         <script>
             if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
+                    // Force clear stale caches on page load to prevent blank page after deploy
+                    if (caches) {
+                        caches.keys().then(function(names) {
+                            for (var name of names) {
+                                if (name !== 'crm-hub-v4-deploy-fix') {
+                                    caches.delete(name);
+                                }
+                            }
+                        });
+                    }
+                    
                     navigator.serviceWorker.register('/service-worker.js')
                         .then(function(registration) {
                             console.log('SW registered:', registration.scope);
                             
-                            // Check for updates
+                            // Force update check on every page load
+                            registration.update();
+                            
                             registration.addEventListener('updatefound', () => {
                                 const newWorker = registration.installing;
                                 newWorker.addEventListener('statechange', () => {
                                     if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                        // New content available, show refresh prompt
-                                        if (confirm('New version available! Reload to update?')) {
-                                            newWorker.postMessage('skipWaiting');
-                                            window.location.reload();
-                                        }
+                                        newWorker.postMessage('skipWaiting');
+                                        window.location.reload();
                                     }
                                 });
                             });
