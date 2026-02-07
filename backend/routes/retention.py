@@ -34,8 +34,9 @@ async def get_retention_overview(
     if user.role == 'staff':
         query['staff_id'] = user.id
     
-    # Get all OMSET records in date range
-    records = await db.omset_records.find(query, {'_id': 0}).to_list(100000)
+    # Get all OMSET records in date range (only approved)
+    from utils.db_operations import add_approved_filter
+    records = await db.omset_records.find(add_approved_filter(query), {'_id': 0}).to_list(100000)
     
     if not records:
         return {
