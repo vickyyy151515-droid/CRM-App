@@ -44,6 +44,8 @@ export default function AdminDashboard({ user, onLogout }) {
   const [stats, setStats] = useState({
     pendingRequests: 0,
     pendingReservations: 0,
+    pendingOmset: 0,
+    pendingLeave: 0,
     totalOmsetYear: 0,
     omsetYear: new Date().getFullYear(),
     monthlyAth: { date: null, amount: 0 }
@@ -51,15 +53,19 @@ export default function AdminDashboard({ user, onLogout }) {
 
   const loadStats = useCallback(async () => {
     try {
-      const [requests, reservations, omsetStats] = await Promise.all([
+      const [requests, reservations, omsetStats, pendingOmset, leaveRequests] = await Promise.all([
         api.get('/download-requests'),
         api.get('/reserved-members'),
-        api.get('/omset/dashboard-stats')
+        api.get('/omset/dashboard-stats'),
+        api.get('/omset/pending').catch(() => ({ data: [] })),
+        api.get('/leave/all-requests?status=pending').catch(() => ({ data: { pending_count: 0 } }))
       ]);
 
       setStats({
         pendingRequests: requests.data.filter(r => r.status === 'pending').length,
         pendingReservations: reservations.data.filter(r => r.status === 'pending').length,
+        pendingOmset: Array.isArray(pendingOmset.data) ? pendingOmset.data.length : 0,
+        pendingLeave: leaveRequests.data?.pending_count || 0,
         totalOmsetYear: omsetStats.data.total_omset_year || 0,
         omsetYear: omsetStats.data.year || new Date().getFullYear(),
         monthlyAth: omsetStats.data.monthly_ath || { date: null, amount: 0 }
