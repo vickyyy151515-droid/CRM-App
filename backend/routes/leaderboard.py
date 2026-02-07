@@ -61,9 +61,10 @@ async def get_leaderboard(
         keterangan = record.get('keterangan', '') or ''
         return 'tambahan' in keterangan.lower()
     
-    # Fetch records for calculating unique customers
-    records = await db.omset_records.find(query, {'_id': 0}).to_list(100000)
-    today_records = await db.omset_records.find({'record_date': today}, {'_id': 0}).to_list(10000)
+    # Fetch records for calculating unique customers (only approved)
+    from utils.db_operations import add_approved_filter
+    records = await db.omset_records.find(add_approved_filter(query.copy()), {'_id': 0}).to_list(100000)
+    today_records = await db.omset_records.find(add_approved_filter({'record_date': today}), {'_id': 0}).to_list(10000)
     
     # Build customer_first_date for NDP detection
     # Use MongoDB aggregation for efficiency
