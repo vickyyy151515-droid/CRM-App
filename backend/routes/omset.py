@@ -89,11 +89,9 @@ async def get_omset_dashboard_stats(user: User = Depends(get_current_user)):
     
     ath_date = None
     ath_amount = 0
-    
-    for date, total in daily_totals.items():
-        if total > ath_amount:
-            ath_amount = total
-            ath_date = date
+    if daily_totals_agg:
+        ath_date = daily_totals_agg[0]['_id']
+        ath_amount = daily_totals_agg[0]['daily_total']
     
     return {
         'year': current_year,
