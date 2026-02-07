@@ -461,6 +461,12 @@ async def delete_omset_record(record_id: str, user: User = Depends(get_current_u
     await db.omset_trash.insert_one(trash_record)
     await db.omset_records.delete_one({'id': record_id})
     
+    # Recalculate NDP/RDP customer_type for remaining records of this (staff, customer, product)
+    from utils.db_operations import recalculate_customer_type
+    await recalculate_customer_type(
+        db, record['staff_id'], record['customer_id'], record['product_id']
+    )
+    
     return {
         'message': 'Record moved to trash',
         'deleted_id': record_id,
