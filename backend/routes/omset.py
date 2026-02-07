@@ -535,6 +535,12 @@ async def restore_omset_record(record_id: str, user: User = Depends(get_current_
             }
         )
     
+    # Recalculate NDP/RDP customer_type for this (staff, customer, product) after restore
+    product_id = restored_record.get('product_id', '')
+    if customer_id and staff_id and product_id:
+        from utils.db_operations import recalculate_customer_type
+        await recalculate_customer_type(db, staff_id, customer_id, product_id)
+    
     return {
         'message': 'Record restored successfully',
         'restored_id': record_id,
