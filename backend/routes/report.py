@@ -43,7 +43,8 @@ async def get_report_crm_data(
     year_end = f"{year}-12-31"
     year_query = {**base_query, 'record_date': {'$gte': year_start, '$lte': year_end}}
     
-    all_records = await db.omset_records.find(year_query, {'_id': 0}).to_list(100000)
+    from utils.db_operations import add_approved_filter
+    all_records = await db.omset_records.find(add_approved_filter(year_query), {'_id': 0}).to_list(100000)
     
     # ==================== HELPER FUNCTIONS ====================
     
