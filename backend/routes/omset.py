@@ -261,6 +261,12 @@ async def approve_omset(record_id: str, user: User = Depends(get_admin_user)):
         {'$set': {'last_omset_date': record['record_date']}}
     )
     
+    # Recalculate NDP/RDP customer_type now that this record is approved
+    from utils.db_operations import recalculate_customer_type
+    await recalculate_customer_type(
+        db, record['staff_id'], record['customer_id'], record['product_id']
+    )
+    
     # Notify staff
     await db.notifications.insert_one({
         'id': str(uuid4()),
