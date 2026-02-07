@@ -38,6 +38,11 @@ async def build_staff_first_date_map(db, product_id: str = None) -> Dict[Tuple[s
                     {'keterangan': None},
                     {'keterangan': ''},
                     {'keterangan': {'$not': {'$regex': 'tambahan', '$options': 'i'}}}
+                ]},
+                # Only count approved records in NDP/RDP calculations
+                {'$or': [
+                    {'approval_status': 'approved'},
+                    {'approval_status': {'$exists': False}}
                 ]}
             ]
         }
