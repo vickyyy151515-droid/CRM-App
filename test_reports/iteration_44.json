@@ -1,0 +1,97 @@
+{
+  "summary": "Backend testing completed for Delete Sync - NDP/RDP recalculation on delete/approve/decline/restore operations. All 9 tests passed. The fix correctly implements recalculate_customer_type() and add_approved_filter() functions.",
+  
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  
+  "passed_tests": [
+    "✓ test_01_delete_ndp_recalculates_customer_type - DELETE NDP record causes next record to become NDP",
+    "✓ test_02_delete_updates_summary_counts - Summary endpoint reflects correct counts after delete",
+    "✓ test_03_delete_updates_bonus_calculation - Bonus-calculation/data endpoint reflects correct NDP/RDP",
+    "✓ test_04_delete_updates_daily_summary - Daily-summary endpoint reflects correct NDP/RDP",
+    "✓ test_05_delete_updates_leaderboard - Leaderboard endpoint reflects correct NDP/RDP",
+    "✓ test_06_restore_recalculates_ndp_rdp - RESTORE from trash recalculates NDP/RDP (restored record becomes NDP if earliest)",
+    "✓ test_07_pending_excluded_from_summary - Pending records excluded from summary calculations",
+    "✓ test_08_pending_visible_in_omset_list - Pending records ARE visible in GET /api/omset list",
+    "✓ test_09_approve_pending_counts_in_summary - Approve pending record makes it count in summaries"
+  ],
+  
+  "test_report_links": [
+    "/app/backend/tests/test_delete_sync.py",
+    "/app/test_reports/pytest/delete_sync_results.xml"
+  ],
+  
+  "action_items": [],
+  
+  "critical_code_review_comments": [
+    "✓ recalculate_customer_type() in db_operations.py correctly updates stored customer_type after delete/approve/decline/restore",
+    "✓ add_approved_filter() helper correctly filters only approved records from calculations",
+    "✓ build_staff_first_date_map() excludes pending records from NDP/RDP first-date calculation",
+    "✓ DELETE endpoint (/api/omset/{id}) calls recalculate_customer_type() after moving record to trash",
+    "✓ RESTORE endpoint (/api/omset/restore/{id}) calls recalculate_customer_type() after restoring",
+    "✓ APPROVE endpoint (/api/omset/{id}/approve) calls recalculate_customer_type() after approval",
+    "✓ DECLINE endpoint (/api/omset/{id}/decline) calls recalculate_customer_type() after decline (delete)",
+    "✓ Summary, Bonus, Daily-Summary, Leaderboard, Analytics, Retention, Report routes all use add_approved_filter()"
+  ],
+  
+  "updated_files": [
+    "/app/backend/tests/test_delete_sync.py"
+  ],
+  
+  "success_rate": {
+    "backend": "100% (9/9 passed)",
+    "frontend": "N/A - backend-only testing requested"
+  },
+  
+  "test_credentials": {
+    "admin": {"email": "vicky@crm.com", "password": "vicky123"},
+    "staff": {"email": "staff@crm.com", "password": "staff123", "id": "staff-user-1"}
+  },
+  
+  "seed_data_creation": "Test data created with DELETETEST_ prefix and cleaned up after each test",
+  
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  
+  "context_for_next_testing_agent": "Delete Sync feature fully tested. Key workflow: 1) When admin deletes omset record, recalculate_customer_type() updates stored customer_type on remaining records. 2) If the deleted record was NDP (first deposit), the next oldest record becomes NDP. 3) Pending records (from reserved member conflicts) are excluded from all calculation endpoints via add_approved_filter(). 4) RESTORE brings record back and recalculates NDP/RDP. 5) APPROVE changes status from pending to approved and triggers recalculation.",
+  
+  "verified_endpoints": {
+    "DELETE /api/omset/{id}": "Soft deletes record to trash, calls recalculate_customer_type()",
+    "POST /api/omset/restore/{id}": "Restores record from trash, calls recalculate_customer_type()",
+    "POST /api/omset/{id}/approve": "Approves pending record, calls recalculate_customer_type()",
+    "POST /api/omset/{id}/decline": "Declines and deletes pending record, calls recalculate_customer_type()",
+    "GET /api/omset/summary": "Uses add_approved_filter() - excludes pending records",
+    "GET /api/bonus-calculation/data": "Uses add_approved_filter() - excludes pending records",
+    "GET /api/daily-summary": "Uses add_approved_filter() - excludes pending records",
+    "GET /api/leaderboard": "Uses add_approved_filter() - excludes pending records",
+    "GET /api/omset/trash": "Lists deleted records for potential restore",
+    "GET /api/omset/pending": "Lists pending approval records (admin only)"
+  },
+  
+  "feature_verification": {
+    "delete_sync": {
+      "status": "WORKING",
+      "details": "When omset record is deleted, stored customer_type is recalculated on remaining records. If NDP deleted, next oldest becomes NDP."
+    },
+    "restore_sync": {
+      "status": "WORKING",
+      "details": "When omset record is restored from trash, customer_type is recalculated. Restored record becomes NDP if it's the earliest."
+    },
+    "pending_exclusion": {
+      "status": "WORKING",
+      "details": "Pending omset records are excluded from summary/bonus/leaderboard/daily-summary calculations via add_approved_filter()."
+    },
+    "approve_inclusion": {
+      "status": "WORKING",
+      "details": "When pending record is approved, it's included in calculations and customer_type is recalculated."
+    }
+  }
+}
