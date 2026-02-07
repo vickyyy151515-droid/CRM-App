@@ -302,9 +302,10 @@ async def get_staff_target_progress(user: User = Depends(get_current_user)):
         keterangan = record.get('keterangan', '') or ''
         return 'tambahan' in keterangan.lower()
     
-    # Get all records for this staff
+    # Get all records for this staff (only approved)
+    from utils.db_operations import add_approved_filter
     all_records = await db.omset_records.find(
-        {'staff_id': staff_id},
+        add_approved_filter({'staff_id': staff_id}),
         {'_id': 0, 'customer_id': 1, 'customer_id_normalized': 1, 'product_id': 1, 'record_date': 1, 'keterangan': 1}
     ).to_list(100000)
     
