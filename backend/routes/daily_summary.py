@@ -247,9 +247,11 @@ async def generate_daily_summary_filtered(date_str: str, filter_product_id: str)
         jakarta_now = get_jakarta_now()
         date_str = jakarta_now.strftime('%Y-%m-%d')
     
-    # Get OMSET records for the date filtered by product
+    # Get OMSET records for the date filtered by product (only approved)
+    from utils.db_operations import add_approved_filter
+    filtered_query = add_approved_filter({'record_date': date_str, 'product_id': filter_product_id})
     records = await db.omset_records.find(
-        {'record_date': date_str, 'product_id': filter_product_id},
+        filtered_query,
         {'_id': 0}
     ).to_list(100000)
     
