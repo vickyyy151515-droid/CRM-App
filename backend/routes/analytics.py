@@ -168,8 +168,9 @@ async def get_business_analytics(period: str = 'month', product_id: Optional[str
         keterangan = record.get('keterangan', '') or ''
         return 'tambahan' in keterangan.lower()
     
-    # Fetch records for unique customer calculation
-    records = await db.omset_records.find(omset_query, {'_id': 0}).to_list(100000)
+    # Fetch records for unique customer calculation (only approved)
+    from utils.db_operations import add_approved_filter
+    records = await db.omset_records.find(add_approved_filter(omset_query), {'_id': 0}).to_list(100000)
     
     # Build customer_first_date for NDP detection
     # IMPORTANT: Exclude records with "tambahan" from first_date calculation
