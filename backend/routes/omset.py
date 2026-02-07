@@ -294,6 +294,12 @@ async def decline_omset(record_id: str, user: User = Depends(get_admin_user)):
     
     await db.omset_records.delete_one({'id': record_id})
     
+    # Recalculate NDP/RDP customer_type for remaining records of this (staff, customer, product)
+    from utils.db_operations import recalculate_customer_type
+    await recalculate_customer_type(
+        db, record['staff_id'], record['customer_id'], record['product_id']
+    )
+    
     # Notify staff
     await db.notifications.insert_one({
         'id': str(uuid4()),
