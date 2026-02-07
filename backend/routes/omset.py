@@ -64,34 +64,29 @@ async def get_omset_dashboard_stats(user: User = Depends(get_current_user)):
     current_year = jakarta_now.year
     current_month = jakarta_now.month
     
-    # Calculate total OMSET for the current year (all staff, all products)
+    # Calculate total OMSET for the current year using aggregation (memory-safe)
     year_start = f"{current_year}-01-01"
     year_end = f"{current_year}-12-31"
     
-    year_records = await db.omset_records.find(
-        {'record_date': {'$gte': year_start, '$lte': year_end}},
-        {'_id': 0, 'depo_total': 1}
-    ).to_list(500000)
+    year_total = await db.omset_records.aggregate([
+        {'$match': {'record_date': {'$gte': year_start, '$lte': year_end}}},
+        {'$group': {'_id': None, 'total': {'$sum': {'$ifNull': ['$depo_total', 0]}}}}
+    ]).to_list(1)
     
-    total_omset_year = sum(r.get('depo_total', 0) or 0 for r in year_records)
+    total_omset_year = year_total[0]['total'] if year_total else 0
     
-    # Calculate Monthly ATH (highest single day OMSET in current month)
+    # Calculate Monthly ATH using aggregation (group by date, find max)
     month_str = f"{current_year}-{str(current_month).zfill(2)}"
+    month_start = f"{month_str}-01"
+    month_end = f"{month_str}-31"
     
-    month_records = await db.omset_records.find(
-        {'record_date': {'$regex': f'^{month_str}'}},
-        {'_id': 0, 'record_date': 1, 'depo_total': 1}
-    ).to_list(100000)
+    daily_totals_agg = await db.omset_records.aggregate([
+        {'$match': {'record_date': {'$gte': month_start, '$lte': month_end}}},
+        {'$group': {'_id': '$record_date', 'daily_total': {'$sum': {'$ifNull': ['$depo_total', 0]}}}},
+        {'$sort': {'daily_total': -1}},
+        {'$limit': 1}
+    ]).to_list(1)
     
-    # Group by date and sum
-    daily_totals = {}
-    for record in month_records:
-        date = record['record_date']
-        if date not in daily_totals:
-            daily_totals[date] = 0
-        daily_totals[date] += record.get('depo_total', 0) or 0
-    
-    # Find the ATH (All-Time High) for the month
     ath_date = None
     ath_amount = 0
     
