@@ -103,19 +103,22 @@ async def recalculate_customer_type(db, staff_id: str, customer_id: str, product
     normalized_cid = normalize_customer_id(customer_id)
     
     # Find all approved records for this (staff, customer, product) combo
-    records = await db.omset_records.find(
-        {
-            'staff_id': staff_id,
-            'product_id': product_id,
-            '$or': [
+    query = {
+        'staff_id': staff_id,
+        'product_id': product_id,
+        '$and': [
+            {'$or': [
                 {'customer_id_normalized': normalized_cid},
                 {'customer_id': {'$regex': f'^{customer_id.strip()}$', '$options': 'i'}}
-            ],
-            '$or': [
+            ]},
+            {'$or': [
                 {'approval_status': 'approved'},
                 {'approval_status': {'$exists': False}}
-            ]
-        },
+            ]}
+        ]
+    }
+    records = await db.omset_records.find(
+        query,
         {'_id': 0, 'id': 1, 'record_date': 1, 'keterangan': 1, 'customer_id': 1, 'customer_id_normalized': 1}
     ).sort('record_date', 1).to_list(10000)
     
