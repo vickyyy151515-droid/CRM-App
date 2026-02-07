@@ -10,6 +10,26 @@ import uuid
 from utils.helpers import get_jakarta_now, normalize_customer_id
 
 
+# Reusable approval filter: only include approved records (or records without approval_status field)
+APPROVED_FILTER = {'$or': [{'approval_status': 'approved'}, {'approval_status': {'$exists': False}}]}
+
+
+def add_approved_filter(query: dict) -> dict:
+    """Add approval_status filter to only include approved records in calculations.
+    Safely handles queries that already have $or or $and conditions."""
+    approval_condition = {'$or': [{'approval_status': 'approved'}, {'approval_status': {'$exists': False}}]}
+    
+    if '$and' in query:
+        query['$and'].append(approval_condition)
+    elif '$or' in query:
+        existing_or = query.pop('$or')
+        query['$and'] = [{'$or': existing_or}, approval_condition]
+    else:
+        query['$or'] = approval_condition['$or']
+    return query
+
+
+
 async def build_staff_first_date_map(db, product_id: str = None) -> Dict[Tuple[str, str, str], str]:
     """
     Build a map of (staff_id, customer_id_normalized, product_id) -> first_date
