@@ -26,9 +26,11 @@ async def generate_daily_summary(date_str: str = None):
         jakarta_now = get_jakarta_now()
         date_str = jakarta_now.strftime('%Y-%m-%d')
     
-    # Get all OMSET records for the date
+    # Get all OMSET records for the date (only approved)
+    from utils.db_operations import add_approved_filter
+    day_query = add_approved_filter({'record_date': date_str})
     records = await db.omset_records.find(
-        {'record_date': date_str},
+        day_query,
         {'_id': 0}
     ).to_list(100000)
     
