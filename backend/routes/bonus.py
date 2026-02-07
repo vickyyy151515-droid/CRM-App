@@ -155,6 +155,9 @@ async def get_bonus_calculation_data(
     if staff_id:
         query['staff_id'] = staff_id
     
+    # Only count approved records in bonus calculations
+    query['$or'] = [{'approval_status': 'approved'}, {'approval_status': {'$exists': False}}]
+    
     records = await db.omset_records.find(query, {'_id': 0}).to_list(100000)
     
     def is_tambahan_record(record):
