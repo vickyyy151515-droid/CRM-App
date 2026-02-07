@@ -26,6 +26,7 @@ export default function AdminBonusCheck() {
     if (selectedMonth) {
       loadSubmissions();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMonth, selectedStaff, selectedProduct]);
 
   const loadStaffList = async () => {

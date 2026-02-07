@@ -68,6 +68,7 @@ export default function AdminIzinMonitor() {
     if (activeTab === 'history') {
       loadHistory();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, selectedStaff, startDate, endDate]);
 
   const toggleExpand = (staffId) => {

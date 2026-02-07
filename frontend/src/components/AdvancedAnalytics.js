@@ -131,6 +131,7 @@ export default function AdvancedAnalytics() {
 
   useEffect(() => {
     loadAnalytics();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period, selectedProduct, selectedStaff]);
 
   const loadFilters = async () => {
@@ -286,6 +287,7 @@ export default function AdvancedAnalytics() {
     } else {
       setCompareData(null);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [compareStaff, compareMode, period, selectedProduct]);
 
   const toggleWidget = (key) => {

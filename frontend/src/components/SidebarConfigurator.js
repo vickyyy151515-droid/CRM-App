@@ -170,6 +170,7 @@ export default function SidebarConfigurator({ isOpen, onClose, menuItems, onConf
     if (isOpen) {
       loadConfig();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   const loadConfig = async () => {

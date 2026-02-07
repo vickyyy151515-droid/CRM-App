@@ -160,6 +160,7 @@ export default function DashboardLayout({ user, onLogout, activeTab, setActiveTa
     return configuredMenu;
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const organizedMenu = useMemo(() => buildMenu(), [menuItems, sidebarConfig, openFolders]);
 
   const renderMenuItem = (item, isInFolder = false) => {

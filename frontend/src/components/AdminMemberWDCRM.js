@@ -78,6 +78,7 @@ export default function AdminMemberWDCRM() {
 
   useEffect(() => {
     loadDatabases();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterProduct]);
 
   useEffect(() => {

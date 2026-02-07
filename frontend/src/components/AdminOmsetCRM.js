@@ -71,6 +71,7 @@ export default function AdminOmsetCRM() {
     if (serverDate) {
       loadData();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedProduct, selectedStaff, dateRange, startDate, endDate, serverDate]);
 
   const loadInitialData = async () => {

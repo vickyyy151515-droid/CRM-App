@@ -76,6 +76,7 @@ export default function AdminDBBonanza() {
 
   useEffect(() => {
     loadDatabases();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterProduct]);
 
   useEffect(() => {

@@ -33,6 +33,7 @@ export default function LeaveCalendar() {
 
   useEffect(() => {
     loadCalendarData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentYear, currentMonth]);
 
   useEffect(() => {

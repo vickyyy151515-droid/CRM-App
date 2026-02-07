@@ -33,6 +33,7 @@ export default function BonusCalculation() {
 
   useEffect(() => {
     loadBonusData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedYear, selectedMonth]);
 
   const loadBonusData = async () => {

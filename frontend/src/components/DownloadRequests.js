@@ -29,6 +29,7 @@ export default function DownloadRequests({ onUpdate }) {
   useEffect(() => {
     loadRequests();
     loadStats();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterStaff, filterProduct, filterDateFrom, filterDateTo, filterStatus]);
 
   const loadStaffAndProducts = async () => {

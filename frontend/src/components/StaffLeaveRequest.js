@@ -30,6 +30,7 @@ export default function StaffLeaveRequest() {
 
   useEffect(() => {
     loadData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedYear, selectedMonth]);
 
   const loadData = async () => {

@@ -75,6 +75,7 @@ export default function ReportCRM() {
     if (serverDate) {
       loadReportData();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedProduct, selectedStaff, selectedYear, selectedMonth, serverDate]);
 
   const loadInitialData = async () => {

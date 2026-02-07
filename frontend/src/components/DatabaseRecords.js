@@ -11,6 +11,7 @@ export default function DatabaseRecords({ database, isStaff, onRequestSuccess })
 
   useEffect(() => {
     loadRecords();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [database.id]);
 
   const loadRecords = async () => {

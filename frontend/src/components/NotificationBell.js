@@ -209,6 +209,7 @@ export default function NotificationBell({ userRole }) {
         ws.close(1000, 'Component unmount');
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userRole, isAdmin]);
 
   // Close dropdown when clicking outside

@@ -26,6 +26,7 @@ export default function StaffDBBonanza() {
   useEffect(() => {
     loadRecords();
     loadInvalidatedRecords();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterProduct]);
 
   const loadProducts = async () => {

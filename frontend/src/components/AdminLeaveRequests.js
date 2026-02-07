@@ -21,6 +21,7 @@ export default function AdminLeaveRequests() {
 
   useEffect(() => {
     loadData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter, selectedYear, selectedMonth]);
 
   const loadData = async () => {

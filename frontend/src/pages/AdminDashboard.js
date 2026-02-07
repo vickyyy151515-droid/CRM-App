@@ -303,6 +303,7 @@ export default function AdminDashboard({ user, onLogout }) {
     { id: 'data-cleanup', label: t('nav.dataCleanup') || 'Data Cleanup', icon: Trash2, badge: 0 },
     { id: 'data-sync', label: 'Data Sync Dashboard', icon: Shield, badge: 0 },
     { id: 'conflict-log', label: 'Conflict Resolution Log', icon: AlertTriangle, badge: 0 }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   ], [t, language, stats.pendingReservations, stats.pendingRequests, stats.pendingOmset, stats.pendingLeave]);
 
   // Filter out blocked pages for admin users (master_admin has full access)

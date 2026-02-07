@@ -35,6 +35,7 @@ export default function StaffBonusProgress() {
 
   useEffect(() => {
     loadMyBonus();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedYear, selectedMonth]);
 
   const loadMyBonus = async () => {

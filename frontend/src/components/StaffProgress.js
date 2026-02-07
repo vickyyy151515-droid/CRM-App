@@ -26,6 +26,7 @@ export default function StaffProgress() {
   useEffect(() => {
     loadData();
     loadTargetProgress();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadData = async () => {

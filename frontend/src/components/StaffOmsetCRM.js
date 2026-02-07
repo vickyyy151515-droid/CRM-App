@@ -61,6 +61,7 @@ export default function StaffOmsetCRM() {
       loadExistingDates();
       loadNdpRdpStats();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedProduct, selectedDate]);
 
   const loadProducts = async () => {

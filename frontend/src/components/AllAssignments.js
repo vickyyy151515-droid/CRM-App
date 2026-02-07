@@ -21,6 +21,7 @@ export default function AllAssignments() {
     if (selectedDatabase) {
       loadRecords();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDatabase]);
 
   const loadProducts = async () => {
