@@ -1315,13 +1315,16 @@ async def process_invalid_memberwd_and_replace(staff_id: str, data: ProcessInval
                 reserved_ids.add(str(m['customer_name']).strip().upper())
         
         def is_reserved(record):
-            """Check if a record is reserved"""
+            """Check if a record is reserved using multiple safety checks"""
+            # Check 1: Upload-time flag
+            if record.get('is_reserved_member'):
+                return True
+            # Check 2: Runtime check against current reserved members
             row_data = record.get('row_data', {})
-            for key in ['Username', 'username', 'USER', 'user', 'ID', 'id']:
-                if key in row_data and row_data[key]:
-                    if str(row_data[key]).strip().upper() in reserved_ids:
-                        return True
-            for key in ['Nama Lengkap', 'nama_lengkap', 'Name', 'name', 'NAMA']:
+            for key in ['Username', 'username', 'USER', 'user', 'ID', 'id',
+                         'USERNAME', 'USERID', 'UserId', 'user_id',
+                         'Nama Lengkap', 'nama_lengkap', 'Name', 'name', 
+                         'NAMA', 'CUSTOMER', 'customer', 'Customer']:
                 if key in row_data and row_data[key]:
                     if str(row_data[key]).strip().upper() in reserved_ids:
                         return True
