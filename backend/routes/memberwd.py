@@ -695,30 +695,50 @@ async def assign_random_memberwd_records(assignment: RandomMemberWDAssignment, u
     now = get_jakarta_now()
     
     # Get ACTIVE reserved members only (approved status)
-    # Deleted reserved members should NOT be excluded - their customers are available again
     reserved_members = await db.reserved_members.find(
         {'status': 'approved'}, 
         {'_id': 0, 'customer_id': 1, 'customer_name': 1}
     ).to_list(100000)
     
-    reserved_names = set()
+    reserved_ids = set()
     for m in reserved_members:
         cid = m.get('customer_id') or m.get('customer_name')
         if cid:
-            reserved_names.add(str(cid).lower().strip())
+            reserved_ids.add(str(cid).strip().upper())
     
     available_records = await db.memberwd_records.find(
         {'database_id': assignment.database_id, 'status': 'available'},
         {'_id': 0}
     ).to_list(100000)
     
+    def is_record_reserved(record):
+        """Check if a record is reserved using MULTIPLE safety checks"""
+        # Check 1: Upload-time flag (set when database was uploaded)
+        if record.get('is_reserved_member'):
+            return True
+        
+        # Check 2: Runtime check against current reserved members using ALL possible fields
+        row_data = record.get('row_data', {})
+        for key in ['Username', 'username', 'USER', 'user', 'ID', 'id', 
+                     'Nama Lengkap', 'nama_lengkap', 'Name', 'name', 
+                     'NAMA', 'CUSTOMER', 'customer', 'Customer',
+                     'USERNAME', 'USERID', 'UserId', 'user_id']:
+            if key in row_data and row_data[key]:
+                if str(row_data[key]).strip().upper() in reserved_ids:
+                    return True
+        
+        # Check 3: Also check the specific username_field from frontend
+        if assignment.username_field:
+            username = row_data.get(assignment.username_field, '')
+            if username and str(username).strip().upper() in reserved_ids:
+                return True
+        
+        return False
+    
     eligible_records = []
     skipped_count = 0
     for record in available_records:
-        username = record.get('row_data', {}).get(assignment.username_field, '')
-        # Convert to string in case the value is a number
-        username_str = str(username).lower().strip() if username else ''
-        if username_str and username_str in reserved_names:
+        if is_record_reserved(record):
             skipped_count += 1
             continue
         eligible_records.append(record)
