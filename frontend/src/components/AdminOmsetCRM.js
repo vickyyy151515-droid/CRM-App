@@ -37,6 +37,21 @@ export default function AdminOmsetCRM() {
   const [trashRecords, setTrashRecords] = useState([]);
   const [showTrash, setShowTrash] = useState(false);
   const [restoringRecord, setRestoringRecord] = useState(null);
+  const [recalculating, setRecalculating] = useState(false);
+
+  const handleRecalculateNdpRdp = async () => {
+    if (!window.confirm('This will recalculate NDP/RDP status for ALL omset records. Continue?')) return;
+    setRecalculating(true);
+    try {
+      const res = await api.post('/omset/migrate-normalize');
+      toast.success(`Recalculated ${res.data.updated_count} records`);
+      fetchRecords();
+    } catch (err) {
+      toast.error('Failed to recalculate: ' + (err.response?.data?.detail || err.message));
+    } finally {
+      setRecalculating(false);
+    }
+  };
 
   // Fetch server time (Jakarta timezone) on mount
   useEffect(() => {
