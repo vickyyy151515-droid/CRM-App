@@ -633,6 +633,15 @@ export default function AdminOmsetCRM() {
                                     </td>
                                     <td className="px-4 py-2 text-sm text-slate-900 font-mono">{customer.customer_id}</td>
                                     <td className="px-4 py-2 text-center">
+                                      {customer.customer_type === 'NDP' ? (
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-700">NDP</span>
+                                      ) : customer.customer_type === 'RDP' ? (
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-700">RDP</span>
+                                      ) : (
+                                        <span className="text-xs text-slate-400">-</span>
+                                      )}
+                                    </td>
+                                    <td className="px-4 py-2 text-center">
                                       <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                                         customer.records.length > 1 
                                           ? 'bg-amber-100 text-amber-800' 
