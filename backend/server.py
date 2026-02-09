@@ -39,7 +39,6 @@ client = AsyncIOMotorClient(
     maxPoolSize=50,  # Connection pool size
     minPoolSize=5,  # Minimum connections to keep open
     heartbeatFrequencyMS=10000,  # Check connection health every 10s
-    serverMonitoringMode='auto',  # Auto-detect and recover from disconnects
 )
 db = client[os.environ['DB_NAME']]
 
