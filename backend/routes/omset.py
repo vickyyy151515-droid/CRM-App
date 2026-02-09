@@ -56,50 +56,157 @@ class OmsetRecordUpdate(BaseModel):
 
 @router.get("/omset/dashboard-stats")
 async def get_omset_dashboard_stats(user: User = Depends(get_current_user)):
-    """Get dashboard stats: Total OMSET for current year and Monthly ATH (All-Time High)"""
+    """Get dashboard stats with trend indicators comparing today vs yesterday, this month vs last month."""
     db = get_db()
     
-    # Get current year and month in Jakarta timezone
     jakarta_now = get_jakarta_now()
     current_year = jakarta_now.year
     current_month = jakarta_now.month
+    today = jakarta_now.strftime('%Y-%m-%d')
+    yesterday = (jakarta_now - timedelta(days=1)).strftime('%Y-%m-%d')
     
-    # Calculate total OMSET for the current year using aggregation (memory-safe)
+    # Approved-only filter for all aggregations
+    approved_match = {'$or': [{'approval_status': 'approved'}, {'approval_status': {'$exists': False}}]}
+    
+    # Run all aggregations in parallel via gather-style sequential calls (motor doesn't support true parallel)
+    # 1) Year total
     year_start = f"{current_year}-01-01"
     year_end = f"{current_year}-12-31"
-    
     year_total = await db.omset_records.aggregate([
-        {'$match': {'record_date': {'$gte': year_start, '$lte': year_end}}},
+        {'$match': {'record_date': {'$gte': year_start, '$lte': year_end}, **approved_match}},
+        {'$group': {'_id': None, 'total': {'$sum': {'$ifNull': ['$depo_total', 0]}}, 'count': {'$sum': 1}}}
+    ]).to_list(1)
+    
+    # 2) Last year same period (for YoY comparison)
+    last_year = current_year - 1
+    ly_start = f"{last_year}-01-01"
+    ly_end = (jakarta_now.replace(year=last_year)).strftime('%Y-%m-%d')
+    ly_total = await db.omset_records.aggregate([
+        {'$match': {'record_date': {'$gte': ly_start, '$lte': ly_end}, **approved_match}},
         {'$group': {'_id': None, 'total': {'$sum': {'$ifNull': ['$depo_total', 0]}}}}
     ]).to_list(1)
     
-    total_omset_year = year_total[0]['total'] if year_total else 0
-    
-    # Calculate Monthly ATH using aggregation (group by date, find max)
+    # 3) Monthly ATH (best day this month)
     month_str = f"{current_year}-{str(current_month).zfill(2)}"
     month_start = f"{month_str}-01"
     month_end = f"{month_str}-31"
-    
     daily_totals_agg = await db.omset_records.aggregate([
-        {'$match': {'record_date': {'$gte': month_start, '$lte': month_end}}},
+        {'$match': {'record_date': {'$gte': month_start, '$lte': month_end}, **approved_match}},
         {'$group': {'_id': '$record_date', 'daily_total': {'$sum': {'$ifNull': ['$depo_total', 0]}}}},
         {'$sort': {'daily_total': -1}},
         {'$limit': 1}
     ]).to_list(1)
     
-    ath_date = None
-    ath_amount = 0
-    if daily_totals_agg:
-        ath_date = daily_totals_agg[0]['_id']
-        ath_amount = daily_totals_agg[0]['daily_total']
+    # 4) Today's stats (omset + NDP/RDP counts)
+    today_stats = await db.omset_records.aggregate([
+        {'$match': {'record_date': today, **approved_match}},
+        {'$group': {'_id': None, 'total': {'$sum': {'$ifNull': ['$depo_total', 0]}}, 'count': {'$sum': 1}}}
+    ]).to_list(1)
+    
+    # 5) Yesterday's stats
+    yesterday_stats = await db.omset_records.aggregate([
+        {'$match': {'record_date': yesterday, **approved_match}},
+        {'$group': {'_id': None, 'total': {'$sum': {'$ifNull': ['$depo_total', 0]}}, 'count': {'$sum': 1}}}
+    ]).to_list(1)
+    
+    # 6) This month total
+    this_month_total = await db.omset_records.aggregate([
+        {'$match': {'record_date': {'$gte': month_start, '$lte': month_end}, **approved_match}},
+        {'$group': {'_id': None, 'total': {'$sum': {'$ifNull': ['$depo_total', 0]}}, 'count': {'$sum': 1}}}
+    ]).to_list(1)
+    
+    # 7) Last month total
+    if current_month == 1:
+        lm_year, lm_month = current_year - 1, 12
+    else:
+        lm_year, lm_month = current_year, current_month - 1
+    lm_str = f"{lm_year}-{str(lm_month).zfill(2)}"
+    last_month_total = await db.omset_records.aggregate([
+        {'$match': {'record_date': {'$gte': f'{lm_str}-01', '$lte': f'{lm_str}-31'}, **approved_match}},
+        {'$group': {'_id': None, 'total': {'$sum': {'$ifNull': ['$depo_total', 0]}}, 'count': {'$sum': 1}}}
+    ]).to_list(1)
+    
+    # 8) Today's NDP count (unique new customers today)
+    from utils.db_operations import build_staff_first_date_map
+    first_date_map = await build_staff_first_date_map(db)
+    
+    today_records = await db.omset_records.find(
+        {'record_date': today, **approved_match},
+        {'_id': 0, 'staff_id': 1, 'customer_id_normalized': 1, 'product_id': 1, 'keterangan': 1}
+    ).to_list(5000)
+    
+    yesterday_records = await db.omset_records.find(
+        {'record_date': yesterday, **approved_match},
+        {'_id': 0, 'staff_id': 1, 'customer_id_normalized': 1, 'product_id': 1, 'keterangan': 1}
+    ).to_list(5000)
+    
+    def count_ndp_rdp(records):
+        ndp, rdp = 0, 0
+        for r in records:
+            keterangan = r.get('keterangan', '') or ''
+            if 'tambahan' in keterangan.lower():
+                continue
+            key = (r.get('staff_id', ''), r.get('customer_id_normalized', ''), r.get('product_id', ''))
+            first = first_date_map.get(key)
+            if first and first == today:
+                ndp += 1
+            elif first and first == yesterday and r.get('staff_id'):
+                ndp += 1
+            else:
+                rdp += 1
+        return ndp, rdp
+    
+    # Simpler approach: count unique customer+product combos for today/yesterday
+    today_ndp = 0
+    today_rdp = 0
+    for r in today_records:
+        keterangan = r.get('keterangan', '') or ''
+        if 'tambahan' in keterangan.lower():
+            continue
+        key = (r.get('staff_id', ''), r.get('customer_id_normalized', ''), r.get('product_id', ''))
+        first = first_date_map.get(key)
+        if first and first == today:
+            today_ndp += 1
+        else:
+            today_rdp += 1
+    
+    yesterday_ndp = 0
+    yesterday_rdp = 0
+    for r in yesterday_records:
+        keterangan = r.get('keterangan', '') or ''
+        if 'tambahan' in keterangan.lower():
+            continue
+        key = (r.get('staff_id', ''), r.get('customer_id_normalized', ''), r.get('product_id', ''))
+        first = first_date_map.get(key)
+        if first and first == yesterday:
+            yesterday_ndp += 1
+        else:
+            yesterday_rdp += 1
+    
+    # Build response (keeping ALL existing fields + adding trends)
+    total_omset_year = year_total[0]['total'] if year_total else 0
+    ath_date = daily_totals_agg[0]['_id'] if daily_totals_agg else None
+    ath_amount = daily_totals_agg[0]['daily_total'] if daily_totals_agg else 0
     
     return {
+        # Existing fields (unchanged)
         'year': current_year,
         'month': current_month,
         'total_omset_year': total_omset_year,
-        'monthly_ath': {
-            'date': ath_date,
-            'amount': ath_amount
+        'monthly_ath': {'date': ath_date, 'amount': ath_amount},
+        # New trend data
+        'trends': {
+            'today_omset': today_stats[0]['total'] if today_stats else 0,
+            'yesterday_omset': yesterday_stats[0]['total'] if yesterday_stats else 0,
+            'today_records': today_stats[0]['count'] if today_stats else 0,
+            'yesterday_records': yesterday_stats[0]['count'] if yesterday_stats else 0,
+            'today_ndp': today_ndp,
+            'yesterday_ndp': yesterday_ndp,
+            'today_rdp': today_rdp,
+            'yesterday_rdp': yesterday_rdp,
+            'this_month_omset': this_month_total[0]['total'] if this_month_total else 0,
+            'last_month_omset': last_month_total[0]['total'] if last_month_total else 0,
+            'last_year_ytd': ly_total[0]['total'] if ly_total else 0,
         }
     }
 
