@@ -158,6 +158,26 @@ limiter = Limiter(key_func=get_remote_address, default_limits=["120/minute"])
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+# Global exception handler - catches ALL unhandled errors across ALL routes
+# Returns clean JSON instead of crashing with 500 Internal Server Error
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    # Don't catch HTTPException (those are intentional 400/401/403/404 etc.)
+    from fastapi.exceptions import HTTPException
+    if isinstance(exc, HTTPException):
+        raise exc
+    
+    error_id = str(id(exc))[-8:]
+    logger.error(f"[ERR-{error_id}] Unhandled error on {request.method} {request.url.path}: {type(exc).__name__}: {str(exc)[:500]}")
+    
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "An internal error occurred. Please try again.",
+            "error_id": error_id
+        }
+    )
+
 app.include_router(api_router)
 
 app.add_middleware(
