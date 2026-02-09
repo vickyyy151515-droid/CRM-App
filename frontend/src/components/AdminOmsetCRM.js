@@ -600,6 +600,7 @@ export default function AdminOmsetCRM() {
                               <th className="px-4 py-2 text-left text-xs font-semibold text-slate-700">Staff</th>
                               <th className="px-4 py-2 text-left text-xs font-semibold text-slate-700">Product</th>
                               <th className="px-4 py-2 text-left text-xs font-semibold text-slate-700">Customer ID</th>
+                              <th className="px-4 py-2 text-center text-xs font-semibold text-slate-700">Status</th>
                               <th className="px-4 py-2 text-center text-xs font-semibold text-slate-700">Deposits</th>
                               <th className="px-4 py-2 text-right text-xs font-semibold text-slate-700">Total OMSET</th>
                             </tr>
