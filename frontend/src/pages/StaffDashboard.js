@@ -1,27 +1,29 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
 import DashboardLayout from '../components/DashboardLayout';
 import StaffTargetBanner from '../components/StaffTargetBanner';
-import DatabaseList from '../components/DatabaseList';
-import MyRequests from '../components/MyRequests';
-import MyAssignedRecords from '../components/MyAssignedRecords';
-import StaffReservedMembers from '../components/StaffReservedMembers';
-import StaffOmsetCRM from '../components/StaffOmsetCRM';
-import StaffDBBonanza from '../components/StaffDBBonanza';
-import StaffMemberWDCRM from '../components/StaffMemberWDCRM';
-import StaffLeaveRequest from '../components/StaffLeaveRequest';
-import StaffIzin from '../components/StaffIzin';
-import Leaderboard from '../components/Leaderboard';
-import StaffFollowups from '../components/StaffFollowups';
-import DailySummary from '../components/DailySummary';
-import ConversionFunnel from '../components/ConversionFunnel';
-import CustomerRetention from '../components/CustomerRetention';
-import MessageVariationGenerator from '../components/MessageVariationGenerator';
-import StaffBonusProgress from '../components/StaffBonusProgress';
-import StaffBonusCheck from '../components/StaffBonusCheck';
 import { useLanguage } from '../contexts/LanguageContext';
 import { LayoutDashboard, FileSpreadsheet, Clock, User, UserCheck, DollarSign, Gift, CreditCard, CalendarOff, Timer, Trophy, Bell, CalendarDays, Filter, Heart, Sparkles, Calculator, Award } from 'lucide-react';
+
+// Lazy load all page components
+const DatabaseList = lazy(() => import('../components/DatabaseList'));
+const MyRequests = lazy(() => import('../components/MyRequests'));
+const MyAssignedRecords = lazy(() => import('../components/MyAssignedRecords'));
+const StaffReservedMembers = lazy(() => import('../components/StaffReservedMembers'));
+const StaffOmsetCRM = lazy(() => import('../components/StaffOmsetCRM'));
+const StaffDBBonanza = lazy(() => import('../components/StaffDBBonanza'));
+const StaffMemberWDCRM = lazy(() => import('../components/StaffMemberWDCRM'));
+const StaffLeaveRequest = lazy(() => import('../components/StaffLeaveRequest'));
+const StaffIzin = lazy(() => import('../components/StaffIzin'));
+const Leaderboard = lazy(() => import('../components/Leaderboard'));
+const StaffFollowups = lazy(() => import('../components/StaffFollowups'));
+const DailySummary = lazy(() => import('../components/DailySummary'));
+const ConversionFunnel = lazy(() => import('../components/ConversionFunnel'));
+const CustomerRetention = lazy(() => import('../components/CustomerRetention'));
+const MessageVariationGenerator = lazy(() => import('../components/MessageVariationGenerator'));
+const StaffBonusProgress = lazy(() => import('../components/StaffBonusProgress'));
+const StaffBonusCheck = lazy(() => import('../components/StaffBonusCheck'));
 
 export default function StaffDashboard({ user, onLogout }) {
   const { t, setDefaultLanguageForRole } = useLanguage();
