@@ -45,7 +45,7 @@ export default function AdminOmsetCRM() {
     try {
       const res = await api.post('/omset/migrate-normalize');
       toast.success(`Recalculated ${res.data.updated_count} records`);
-      fetchRecords();
+      loadData();
     } catch (err) {
       toast.error('Failed to recalculate: ' + (err.response?.data?.detail || err.message));
     } finally {
