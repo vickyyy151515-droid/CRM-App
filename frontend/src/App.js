@@ -177,16 +177,18 @@ function MainAppContent() {
 
 function App() {
   return (
-    <ThemeProvider>
-      <LanguageProvider>
-        <div className="App min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors">
-          <Toaster position="top-right" richColors />
-          <BrowserRouter>
-            <MainAppContent />
-          </BrowserRouter>
-        </div>
-      </LanguageProvider>
-    </ThemeProvider>
+    <ErrorBoundary fallbackMessage="The application encountered an unexpected error. Please reload the page.">
+      <ThemeProvider>
+        <LanguageProvider>
+          <div className="App min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors">
+            <Toaster position="top-right" richColors />
+            <BrowserRouter>
+              <MainAppContent />
+            </BrowserRouter>
+          </div>
+        </LanguageProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 
