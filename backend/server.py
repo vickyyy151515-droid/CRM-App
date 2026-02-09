@@ -189,9 +189,34 @@ async def startup_event():
     
     # Create indexes for performance-critical queries
     try:
+        # omset_records indexes
         await db.omset_records.create_index([("staff_id", 1), ("customer_id_normalized", 1), ("product_id", 1), ("record_date", 1)])
         await db.omset_records.create_index([("record_date", 1)])
         await db.omset_records.create_index([("product_id", 1), ("record_date", 1)])
+        await db.omset_records.create_index([("approval_status", 1)])
+        
+        # leave_requests indexes (queried by staff_id, status, date)
+        await db.leave_requests.create_index([("staff_id", 1), ("date", 1)])
+        await db.leave_requests.create_index([("status", 1), ("created_at", -1)])
+        
+        # izin_records indexes (queried by staff_id, status, date)
+        await db.izin_records.create_index([("staff_id", 1), ("status", 1)])
+        await db.izin_records.create_index([("date", 1), ("status", 1)])
+        
+        # memberwd_batches indexes (queried by staff_id, database_id)
+        await db.memberwd_batches.create_index([("staff_id", 1)])
+        await db.memberwd_batches.create_index([("database_id", 1)])
+        
+        # omset_trash indexes (queried by id, staff_id)
+        await db.omset_trash.create_index([("staff_id", 1), ("deleted_at", -1)])
+        
+        # admin_notifications indexes
+        await db.admin_notifications.create_index([("read", 1), ("created_at", -1)])
+        
+        # inventory indexes
+        await db.inventory_items.create_index([("status", 1)])
+        await db.inventory_assignments.create_index([("staff_id", 1), ("status", 1)])
+        
         logger.info("✅ Database indexes created/verified")
     except Exception as e:
         logger.error(f"Error creating indexes: {e}")
