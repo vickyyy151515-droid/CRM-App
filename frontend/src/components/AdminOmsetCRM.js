@@ -333,7 +333,18 @@ export default function AdminOmsetCRM() {
 
   return (
     <div data-testid="admin-omset-crm">
-      <h2 className="text-3xl font-semibold tracking-tight text-slate-900 mb-6">OMSET CRM - Admin View</h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-3xl font-semibold tracking-tight text-slate-900">OMSET CRM - Admin View</h2>
+        <button
+          onClick={handleRecalculateNdpRdp}
+          disabled={recalculating}
+          data-testid="recalculate-ndp-rdp-btn"
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-orange-700 bg-orange-50 border border-orange-200 rounded-lg hover:bg-orange-100 disabled:opacity-50 transition-colors"
+        >
+          <RefreshCw size={16} className={recalculating ? 'animate-spin' : ''} />
+          {recalculating ? 'Recalculating...' : 'Recalculate NDP/RDP'}
+        </button>
+      </div>
 
       {/* Filters */}
       <OmsetFilterPanel
