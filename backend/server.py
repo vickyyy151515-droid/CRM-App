@@ -153,6 +153,11 @@ async def get_server_time():
 
 # ==================== APP SETUP ====================
 
+# Rate limiter: 120 requests/minute per IP (generous for normal usage, blocks abuse)
+limiter = Limiter(key_func=get_remote_address, default_limits=["120/minute"])
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 app.include_router(api_router)
 
 app.add_middleware(
