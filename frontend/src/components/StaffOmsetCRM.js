@@ -456,11 +456,12 @@ export default function StaffOmsetCRM() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2 transition-colors"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   data-testid="btn-save-record"
                 >
                   <Save size={18} />
-                  {editingRecord ? t('common.edit') : t('common.save')}
+                  {isSubmitting ? 'Saving...' : (editingRecord ? t('common.edit') : t('common.save'))}
                 </button>
               </div>
             </form>
