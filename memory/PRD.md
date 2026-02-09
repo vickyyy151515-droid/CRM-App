@@ -650,6 +650,7 @@ Before incrementing product RDP/NDP count, the code now:
 - P3: Email digests for conflict summaries
 
 ## Completed Tasks (This Session)
+- ✅ Status Column in OMSET CRM - Added NDP/RDP status column between Customer ID and Deposits (verified 2026-02-09)
 - ✅ RDP Count Mismatch Fix - Staff RDP now equals Product RDP
 - ✅ Frontend Refactoring - Created shared components
 - ✅ Backend Utils - Centralized 10+ duplicate functions across 12 files
