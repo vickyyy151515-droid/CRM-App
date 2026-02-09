@@ -27,7 +27,7 @@ def get_jakarta_date_string():
     """Get current date string in Jakarta timezone (YYYY-MM-DD)"""
     return get_jakarta_now().strftime('%Y-%m-%d')
 
-# Database connection with resilience settings
+# Database connection with resilience and auto-recovery settings
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(
     mongo_url,
@@ -38,6 +38,8 @@ client = AsyncIOMotorClient(
     retryReads=True,  # Automatically retry failed reads
     maxPoolSize=50,  # Connection pool size
     minPoolSize=5,  # Minimum connections to keep open
+    heartbeatFrequencyMS=10000,  # Check connection health every 10s
+    serverMonitoringMode='auto',  # Auto-detect and recover from disconnects
 )
 db = client[os.environ['DB_NAME']]
 
