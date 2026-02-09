@@ -1146,8 +1146,12 @@ async def migrate_normalize_customer_ids(user: User = Depends(get_admin_user)):
     """
     db = get_db()
     
-    # Get all omset records
-    all_records = await db.omset_records.find({}).to_list(500000)
+    # Get all omset records (only fields needed for type recalculation)
+    all_records = await db.omset_records.find(
+        {},
+        {'_id': 0, 'id': 1, 'staff_id': 1, 'customer_id': 1, 'customer_id_normalized': 1,
+         'product_id': 1, 'record_date': 1, 'keterangan': 1, 'customer_type': 1}
+    ).to_list(50000)
     
     # Build STAFF-SPECIFIC customer first deposit map using MongoDB aggregation
     from utils.db_operations import build_staff_first_date_map
