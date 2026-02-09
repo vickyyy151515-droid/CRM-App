@@ -117,6 +117,8 @@ export default function StaffOmsetCRM() {
     }
   };
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -124,6 +126,9 @@ export default function StaffOmsetCRM() {
       toast.error(t('messages.validationError'));
       return;
     }
+    
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
     // Multiply nominal by 1000 (100 → 100,000)
     const actualNominal = parseFloat(formData.nominal) * 1000;
@@ -162,6 +167,8 @@ export default function StaffOmsetCRM() {
       loadNdpRdpStats();
     } catch (error) {
       toast.error(error.response?.data?.detail || t('messages.saveFailed'));
+    } finally {
+      setTimeout(() => setIsSubmitting(false), 1000);
     }
   };
 
