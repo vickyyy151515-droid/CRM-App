@@ -1262,7 +1262,7 @@ async def migrate_normalize_customer_ids(user: User = Depends(get_admin_user)):
     # Get all omset records (only fields needed for type recalculation)
     all_records = await db.omset_records.find(
         {},
-        {'_id': 0, 'id': 1, 'staff_id': 1, 'customer_id': 1, 'customer_id_normalized': 1,
+        {'id': 1, 'staff_id': 1, 'customer_id': 1, 'customer_id_normalized': 1,
          'product_id': 1, 'record_date': 1, 'keterangan': 1, 'customer_type': 1}
     ).to_list(50000)
     
