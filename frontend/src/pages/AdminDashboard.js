@@ -71,7 +71,8 @@ export default function AdminDashboard({ user, onLogout }) {
         pendingLeave: leaveRequests.data?.pending_count || 0,
         totalOmsetYear: omsetStats.data.total_omset_year || 0,
         omsetYear: omsetStats.data.year || new Date().getFullYear(),
-        monthlyAth: omsetStats.data.monthly_ath || { date: null, amount: 0 }
+        monthlyAth: omsetStats.data.monthly_ath || { date: null, amount: 0 },
+        trends: omsetStats.data.trends || null
       });
     } catch (error) {
       console.error('Error loading stats:', error);
