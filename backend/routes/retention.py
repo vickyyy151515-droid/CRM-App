@@ -865,7 +865,12 @@ async def get_alerts_by_staff(
     today = jakarta_now.strftime('%Y-%m-%d')
     
     # Helper function to normalize customer ID
-    records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
+    records = await db.omset_records.find(
+        {'$or': [{'approval_status': 'approved'}, {'approval_status': {'$exists': False}}]},
+        {'_id': 0, 'staff_id': 1, 'customer_id': 1, 'customer_id_normalized': 1,
+         'product_id': 1, 'product_name': 1, 'record_date': 1, 'keterangan': 1, 
+         'depo_total': 1, 'nominal': 1, 'staff_name': 1}
+    ).to_list(50000)
     
     if not records:
         return {'staff': []}
