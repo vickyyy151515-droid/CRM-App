@@ -142,14 +142,31 @@ export default function AdminDashboard({ user, onLogout }) {
   const renderContent = () => {
     switch (activeTab) {
       case 'overview':
+        const trends = stats.trends || {};
+        
+        const TrendBadge = ({ current, previous, suffix = '' }) => {
+          if (!previous && !current) return null;
+          if (!previous && current > 0) return <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">NEW</span>;
+          if (!previous) return null;
+          const pct = ((current - previous) / previous * 100).toFixed(0);
+          const isUp = current > previous;
+          const isFlat = current === previous;
+          if (isFlat) return <span className="text-xs text-slate-400">—</span>;
+          return (
+            <span className={`text-xs font-semibold ${isUp ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
+              {isUp ? '↑' : '↓'} {Math.abs(pct)}%{suffix}
+            </span>
+          );
+        };
+        
         return (
           <div>
             <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white mb-6">{t('dashboard.title')}</h2>
-            {/* Quick Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            {/* Quick Stats - Row 1: Pending items + ATH + Year */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
               {/* Pending DB Requests */}
               <div 
-                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm cursor-pointer hover:border-amber-300 dark:hover:border-amber-600 transition-colors" 
+                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm cursor-pointer hover:border-amber-300 dark:hover:border-amber-600 transition-colors" 
                 data-testid="stat-pending-requests"
                 onClick={() => setActiveTab('requests')}
               >
@@ -162,7 +179,7 @@ export default function AdminDashboard({ user, onLogout }) {
               
               {/* Pending Reservations */}
               <div 
-                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm cursor-pointer hover:border-amber-300 dark:hover:border-amber-600 transition-colors" 
+                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm cursor-pointer hover:border-amber-300 dark:hover:border-amber-600 transition-colors" 
                 data-testid="stat-pending-reservations"
                 onClick={() => setActiveTab('reserved')}
               >
@@ -174,7 +191,7 @@ export default function AdminDashboard({ user, onLogout }) {
               </div>
               
               {/* Monthly ATH Card */}
-              <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/30 border border-amber-200 dark:border-amber-800 rounded-xl p-6 shadow-sm" data-testid="stat-monthly-ath">
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/30 border border-amber-200 dark:border-amber-800 rounded-xl p-5 shadow-sm" data-testid="stat-monthly-ath">
                 <div className="flex items-center justify-between mb-2">
                   <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-lg">
                     <BarChart className="text-amber-600 dark:text-amber-400" size={20} />
@@ -189,15 +206,59 @@ export default function AdminDashboard({ user, onLogout }) {
               
               {/* OMSET Year Card */}
               <div 
-                className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-6 shadow-sm cursor-pointer hover:border-emerald-300 dark:hover:border-emerald-600 transition-colors" 
+                className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-5 shadow-sm cursor-pointer hover:border-emerald-300 dark:hover:border-emerald-600 transition-colors" 
                 data-testid="stat-omset-year"
                 onClick={() => setActiveTab('omset')}
               >
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-2">
                   <DollarSign className="text-emerald-600 dark:text-emerald-400" size={24} />
+                  <TrendBadge current={stats.totalOmsetYear} previous={trends.last_year_ytd} />
                 </div>
                 <p className="text-xl font-bold text-slate-900 dark:text-white">{formatCurrency(stats.totalOmsetYear)}</p>
                 <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{t('dashboard.omsetYear')} {stats.omsetYear}</p>
+              </div>
+            </div>
+            
+            {/* Row 2: Trend Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+              {/* Today's OMSET vs Yesterday */}
+              <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Today's OMSET</p>
+                  <TrendBadge current={trends.today_omset} previous={trends.yesterday_omset} />
+                </div>
+                <p className="text-lg font-bold text-slate-900 dark:text-white">{formatCurrency(trends.today_omset || 0)}</p>
+                <p className="text-xs text-slate-400 mt-1">Yesterday: {formatCurrency(trends.yesterday_omset || 0)}</p>
+              </div>
+              
+              {/* This Month vs Last Month */}
+              <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">This Month</p>
+                  <TrendBadge current={trends.this_month_omset} previous={trends.last_month_omset} />
+                </div>
+                <p className="text-lg font-bold text-slate-900 dark:text-white">{formatCurrency(trends.this_month_omset || 0)}</p>
+                <p className="text-xs text-slate-400 mt-1">Last month: {formatCurrency(trends.last_month_omset || 0)}</p>
+              </div>
+              
+              {/* Today's NDP */}
+              <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Today's NDP</p>
+                  <TrendBadge current={trends.today_ndp} previous={trends.yesterday_ndp} />
+                </div>
+                <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{trends.today_ndp || 0}</p>
+                <p className="text-xs text-slate-400 mt-1">Yesterday: {trends.yesterday_ndp || 0}</p>
+              </div>
+              
+              {/* Today's RDP */}
+              <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Today's RDP</p>
+                  <TrendBadge current={trends.today_rdp} previous={trends.yesterday_rdp} />
+                </div>
+                <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{trends.today_rdp || 0}</p>
+                <p className="text-xs text-slate-400 mt-1">Yesterday: {trends.yesterday_rdp || 0}</p>
               </div>
             </div>
             {/* Real-time Database Overview with Record Stats */}
