@@ -1,0 +1,91 @@
+{
+  "summary": "Bug fix verification complete for NDP/RDP out-of-order entry. All 8 backend tests passed. Frontend 'Recalculate NDP/RDP' button is visible and working. Fixed a minor frontend bug (fetchRecords -> loadData) during testing.",
+  
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  
+  "passed_tests": [
+    "✓ test_01_out_of_order_entry_later_date_first - Creating Feb 9 BEFORE Feb 7 correctly assigns Feb 7=NDP, Feb 9=RDP",
+    "✓ test_02_in_order_entry_works_correctly - Creating in chronological order still works (first=NDP, second=RDP)",
+    "✓ test_03_multiple_out_of_order_entries - Multiple out-of-order entries correctly identify earliest as NDP",
+    "✓ test_04_tambahan_record_is_always_rdp - Records with 'tambahan' in keterangan are always RDP",
+    "✓ test_05_migrate_normalize_endpoint - POST /api/omset/migrate-normalize recalculates all records correctly",
+    "✓ test_06_get_omset_returns_customer_type - GET /api/omset returns customer_type field for all records",
+    "✓ test_07_verify_no_duplicate_ndp_for_same_customer - Only ONE NDP per (staff, customer, product) combo",
+    "✓ test_08_delete_ndp_promotes_next_to_ndp - Deleting NDP promotes next oldest record to NDP",
+    "✓ Frontend: 'Recalculate NDP/RDP' button visible on Admin OMSET CRM page",
+    "✓ Frontend: Button click calls POST /api/omset/migrate-normalize and refreshes data"
+  ],
+  
+  "test_report_links": [
+    "/app/backend/tests/test_ndp_rdp_out_of_order.py",
+    "/app/test_reports/pytest/ndp_rdp_out_of_order_results.xml"
+  ],
+  
+  "action_items": [],
+  
+  "critical_code_review_comments": [
+    "✓ recalculate_customer_type() is correctly called after each INSERT in POST /api/omset (line 304-308)",
+    "✓ recalculate_customer_type() function in db_operations.py correctly finds earliest non-tambahan record and sets customer_type",
+    "✓ build_staff_first_date_map() aggregates first deposit date per (staff_id, customer_id, product_id)",
+    "✓ Out-of-order entry handling works: inserting Feb 9 first, then Feb 7 results in Feb 7=NDP, Feb 9=RDP",
+    "✓ Frontend button correctly calls POST /api/omset/migrate-normalize endpoint"
+  ],
+  
+  "updated_files": [
+    "/app/frontend/src/components/AdminOmsetCRM.js - Fixed fetchRecords() -> loadData() in handleRecalculateNdpRdp"
+  ],
+  
+  "success_rate": {
+    "backend": "100% (8/8 passed)",
+    "frontend": "100% (Recalculate button visible and functional)"
+  },
+  
+  "test_credentials": {
+    "admin": {"email": "admin@crm.com", "password": "admin123"},
+    "staff": {"email": "staff@crm.com", "password": "staff123"},
+    "product_id": "prod-istana2000"
+  },
+  
+  "seed_data_creation": "Test data created with OUTOFORDER_ and RECALC_ prefixes, cleaned up after each test",
+  
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  
+  "context_for_next_testing_agent": "NDP/RDP out-of-order entry bug is FIXED. Key behavior: 1) When omset records are created out of chronological order, recalculate_customer_type() is called after each INSERT to update the stored customer_type field. 2) The earliest record for a (staff, customer, product) combo becomes NDP, all others become RDP. 3) Records with 'tambahan' in keterangan are always RDP. 4) Frontend 'Recalculate NDP/RDP' button on Admin OMSET CRM page calls POST /api/omset/migrate-normalize to recalculate all existing records.",
+  
+  "verified_endpoints": {
+    "POST /api/omset": "Creates record and calls recalculate_customer_type() for correct NDP/RDP assignment",
+    "GET /api/omset": "Returns records with customer_type field (NDP or RDP)",
+    "POST /api/omset/migrate-normalize": "Recalculates customer_type for ALL existing records (admin only)"
+  },
+  
+  "feature_verification": {
+    "out_of_order_entry_fix": {
+      "status": "WORKING",
+      "details": "Creating Feb 9 first then Feb 7 correctly sets Feb 7=NDP (earliest), Feb 9=RDP"
+    },
+    "recalculate_button": {
+      "status": "WORKING",
+      "details": "Frontend button visible, calls migrate-normalize endpoint, refreshes data on success"
+    },
+    "tambahan_handling": {
+      "status": "WORKING",
+      "details": "Records with 'tambahan' in keterangan are always marked as RDP"
+    }
+  },
+  
+  "bug_fix_applied_during_testing": {
+    "file": "/app/frontend/src/components/AdminOmsetCRM.js",
+    "issue": "handleRecalculateNdpRdp() called undefined fetchRecords() instead of loadData()",
+    "fix": "Changed fetchRecords() to loadData() on line 48"
+  }
+}
