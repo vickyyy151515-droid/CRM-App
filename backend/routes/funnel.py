@@ -120,7 +120,7 @@ async def get_conversion_funnel(
     omset_records = await db.omset_records.find(
         omset_query,
         {'_id': 0, 'customer_id': 1, 'customer_id_normalized': 1, 'product_id': 1}
-    ).to_list(500000)
+    ).to_list(50000)
     
     # Create set of deposited customer identifiers (normalized username - ALWAYS uppercase)
     deposited_customers = set()
@@ -240,7 +240,7 @@ async def get_funnel_by_product(
         query,
         {'_id': 0, 'id': 1, 'customer_id': 1, 'product_id': 1, 'product_name': 1,
          'whatsapp_status': 1, 'respond_status': 1, 'row_data': 1}
-    ).to_list(500000)
+    ).to_list(50000)
     
     # Get ALL OMSET records (no date filter - check if customer ever deposited)
     omset_query = {}
@@ -250,7 +250,7 @@ async def get_funnel_by_product(
     omset_records = await db.omset_records.find(
         omset_query,
         {'_id': 0, 'customer_id': 1, 'customer_id_normalized': 1, 'product_id': 1}
-    ).to_list(500000)
+    ).to_list(50000)
     
     # Create set of ALL deposited customers (regardless of product for matching)
     # ALWAYS convert to uppercase for case-insensitive matching
@@ -360,7 +360,7 @@ async def get_funnel_by_staff(
         {'status': 'assigned'},
         {'_id': 0, 'id': 1, 'customer_id': 1, 'product_id': 1, 'assigned_to': 1,
          'whatsapp_status': 1, 'respond_status': 1, 'row_data': 1}
-    ).to_list(500000)
+    ).to_list(50000)
     
     # Get staff info
     all_staff = await db.users.find(
@@ -373,7 +373,7 @@ async def get_funnel_by_staff(
     omset_records = await db.omset_records.find(
         {},
         {'_id': 0, 'customer_id': 1, 'customer_id_normalized': 1, 'product_id': 1, 'staff_id': 1}
-    ).to_list(500000)
+    ).to_list(50000)
     
     # Build set of ALL deposited customers (regardless of which staff)
     # ALWAYS convert to uppercase for case-insensitive matching
