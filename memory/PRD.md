@@ -642,6 +642,11 @@ Before incrementing product RDP/NDP count, the code now:
 | OMSET Trash Cleanup | 00:05 WIB | Delete trash older than 30 days |
 
 ## Pending Tasks
+- P1: UI/UX consistency standardization across the app
+- P1: Unused code/dependencies cleanup (depcheck)
+- P2: Staging/testing environment setup
+- P2: Centralized logging & monitoring (Sentry/LogRocket)
+- P2: Codebase documentation improvements
 - P3: Email digests for conflict summaries
 
 ## Completed Tasks (This Session)
