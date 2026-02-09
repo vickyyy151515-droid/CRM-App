@@ -301,6 +301,12 @@ async def create_omset_record(record_data: OmsetRecordCreate, user: User = Depen
     
     await db.omset_records.insert_one(doc)
     
+    # SYNC: Recalculate NDP/RDP for ALL records of this (staff, customer, product)
+    # This handles out-of-order entry (e.g., Feb 9 entered before Feb 7)
+    if approval_status == 'approved':
+        from utils.db_operations import recalculate_customer_type
+        await recalculate_customer_type(db, user.id, record_data.customer_id.strip(), record_data.product_id)
+    
     # If pending, notify admin
     if approval_status == 'pending':
         now = get_jakarta_now()
