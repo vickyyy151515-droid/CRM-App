@@ -653,6 +653,7 @@ Before incrementing product RDP/NDP count, the code now:
 - ✅ Status Column in OMSET CRM - Added NDP/RDP status column between Customer ID and Deposits (verified 2026-02-09)
 - ✅ NDP/RDP Out-of-Order Entry Bug Fix - Fixed critical bug where records entered out of chronological order both showed NDP. Now recalculate_customer_type() is called after every record insertion (verified 2026-02-09, 8/8 tests passed)
 - ✅ Recalculate NDP/RDP Button - Added admin button on OMSET CRM page to recalculate all existing records
+- ✅ Frontend Unused Dependencies Cleanup - Removed 6 unused npm packages (@hookform/resolvers, cra-template, html5-qrcode, jsqr, xlsx, zod). Build verified with CI=true.
 - ✅ RDP Count Mismatch Fix - Staff RDP now equals Product RDP
 - ✅ Frontend Refactoring - Created shared components
 - ✅ Backend Utils - Centralized 10+ duplicate functions across 12 files
