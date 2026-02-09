@@ -128,7 +128,12 @@ async def generate_daily_report(target_date: datetime = None) -> str:
     
     # Get ALL omset records to build first deposit map properly
     # We need to exclude "tambahan" records from first deposit calculation
-    all_omset_records = await db.omset_records.find({}, {'_id': 0}).to_list(500000)
+    all_omset_records = await db.omset_records.find(
+        {'$or': [{'approval_status': 'approved'}, {'approval_status': {'$exists': False}}]},
+        {'_id': 0, 'staff_id': 1, 'staff_name': 1, 'customer_id': 1, 'customer_id_normalized': 1,
+         'product_id': 1, 'product_name': 1, 'record_date': 1, 'keterangan': 1, 
+         'depo_total': 1, 'nominal': 1, 'customer_name': 1}
+    ).to_list(50000)
     
     # Build customer first deposit map - EXCLUDE "tambahan" records
     first_deposits = {}
