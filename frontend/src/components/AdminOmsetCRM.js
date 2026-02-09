@@ -537,9 +537,16 @@ export default function AdminOmsetCRM() {
                       staff_id: record.staff_id,
                       product_name: record.product_name,
                       product_id: record.product_id,
+                      customer_type: record.customer_type || null,
                       total_depo: 0,
                       records: []
                     };
+                  }
+                  // Use the first record's customer_type (NDP takes priority)
+                  if (record.customer_type === 'NDP') {
+                    customerData[key].customer_type = 'NDP';
+                  } else if (!customerData[key].customer_type && record.customer_type) {
+                    customerData[key].customer_type = record.customer_type;
                   }
                   customerData[key].total_depo += record.depo_total || 0;
                   customerData[key].records.push(record);
