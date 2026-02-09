@@ -50,7 +50,8 @@ export default function AdminDashboard({ user, onLogout }) {
     pendingLeave: 0,
     totalOmsetYear: 0,
     omsetYear: new Date().getFullYear(),
-    monthlyAth: { date: null, amount: 0 }
+    monthlyAth: { date: null, amount: 0 },
+    trends: null
   });
 
   const loadStats = useCallback(async () => {
