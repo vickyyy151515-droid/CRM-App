@@ -858,6 +858,100 @@ async def get_customer_alerts(
     }
 
 
+@router.get("/retention/lost-customers")
+async def get_lost_customers(
+    product_id: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
+    """
+    Get lost customers - those with 31+ days since last deposit.
+    These are customers who were previously at-risk but never returned.
+    """
+    db = get_db()
+    
+    jakarta_now = get_jakarta_now()
+    today = jakarta_now.strftime('%Y-%m-%d')
+    today_date = datetime.strptime(today, '%Y-%m-%d')
+    
+    query = {}
+    if product_id:
+        query['product_id'] = product_id
+    if user.role == 'staff':
+        query['staff_id'] = user.id
+    
+    records = await db.omset_records.find(query, {'_id': 0}).to_list(500000)
+    
+    if not records:
+        return {'total': 0, 'customers': []}
+    
+    customer_data = defaultdict(lambda: {
+        'customer_id': '',
+        'customer_id_display': '',
+        'customer_name': '',
+        'product_id': '',
+        'product_name': '',
+        'staff_id': '',
+        'staff_name': '',
+        'total_deposits': 0,
+        'total_omset': 0,
+        'last_deposit_date': None,
+        'first_deposit_date': None,
+    })
+    
+    for record in records:
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        key = (cid_normalized, record.get('product_id'))
+        customer = customer_data[key]
+        
+        if customer['last_deposit_date'] is None or record['record_date'] > customer['last_deposit_date']:
+            customer['customer_id'] = cid_normalized
+            customer['customer_id_display'] = record['customer_id']
+            customer['customer_name'] = record.get('customer_name', record['customer_id'])
+            customer['staff_id'] = record.get('staff_id')
+            customer['staff_name'] = record.get('staff_name', 'Unknown')
+        
+        customer['product_id'] = record.get('product_id')
+        customer['product_name'] = record.get('product_name', 'Unknown')
+        customer['total_deposits'] += 1
+        customer['total_omset'] += record.get('depo_total', 0) or 0
+        
+        if customer['last_deposit_date'] is None or record['record_date'] > customer['last_deposit_date']:
+            customer['last_deposit_date'] = record['record_date']
+        if customer['first_deposit_date'] is None or record['record_date'] < customer['first_deposit_date']:
+            customer['first_deposit_date'] = record['record_date']
+    
+    lost_customers = []
+    for customer in customer_data.values():
+        if not customer['last_deposit_date']:
+            continue
+        last_date = datetime.strptime(customer['last_deposit_date'], '%Y-%m-%d')
+        days_since = (today_date - last_date).days
+        
+        if days_since > 30:
+            lost_customers.append({
+                'customer_id': customer['customer_id'],
+                'customer_id_display': customer['customer_id_display'],
+                'customer_name': customer['customer_name'],
+                'product_id': customer['product_id'],
+                'product_name': customer['product_name'],
+                'staff_id': customer['staff_id'],
+                'staff_name': customer['staff_name'],
+                'total_deposits': customer['total_deposits'],
+                'total_omset': customer['total_omset'],
+                'last_deposit_date': customer['last_deposit_date'],
+                'first_deposit_date': customer['first_deposit_date'],
+                'days_since_deposit': days_since,
+            })
+    
+    lost_customers.sort(key=lambda x: x['days_since_deposit'], reverse=True)
+    
+    return {
+        'total': len(lost_customers),
+        'customers': lost_customers
+    }
+
+
+
 @router.get("/retention/alerts/by-staff")
 async def get_alerts_by_staff(
     user: User = Depends(get_admin_user)
