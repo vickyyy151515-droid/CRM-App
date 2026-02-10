@@ -13,6 +13,7 @@ export default function CustomerRetention({ isAdmin = false }) {
   const [productBreakdown, setProductBreakdown] = useState(null);
   const [staffBreakdown, setStaffBreakdown] = useState(null);
   const [alerts, setAlerts] = useState(null);
+  const [lostCustomers, setLostCustomers] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeView, setActiveView] = useState('overview');
   const [dateRange, setDateRange] = useState('90');
