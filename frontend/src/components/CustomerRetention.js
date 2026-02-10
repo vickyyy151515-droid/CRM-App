@@ -923,6 +923,103 @@ export default function CustomerRetention({ isAdmin = false }) {
             )}
           </div>
         </div>
+      ) : activeView === 'lost' && lostCustomers ? (
+        <div className="space-y-6" data-testid="lost-customers-section">
+          {/* Lost Summary */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-gradient-to-br from-slate-50 to-gray-50 dark:from-slate-800 dark:to-gray-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <Users className="text-slate-600 dark:text-slate-400" size={20} />
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Total Lost</span>
+              </div>
+              <p className="text-2xl font-bold text-slate-900 dark:text-white">{lostCustomers.total}</p>
+              <p className="text-xs text-slate-500 mt-1">31+ days no deposit</p>
+            </div>
+            <div className="bg-gradient-to-br from-slate-50 to-gray-50 dark:from-slate-800 dark:to-gray-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <DollarSign className="text-slate-600 dark:text-slate-400" size={20} />
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Lost Revenue</span>
+              </div>
+              <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                {formatCurrency((lostCustomers.customers || []).reduce((sum, c) => sum + (c.total_omset || 0), 0))}
+              </p>
+              <p className="text-xs text-slate-500 mt-1">Total historical omset</p>
+            </div>
+            <div className="bg-gradient-to-br from-slate-50 to-gray-50 dark:from-slate-800 dark:to-gray-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <Calendar className="text-slate-600 dark:text-slate-400" size={20} />
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Avg Days Gone</span>
+              </div>
+              <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                {lostCustomers.total > 0
+                  ? Math.round((lostCustomers.customers || []).reduce((sum, c) => sum + c.days_since_deposit, 0) / lostCustomers.total)
+                  : 0}
+              </p>
+              <p className="text-xs text-slate-500 mt-1">Average days since last deposit</p>
+            </div>
+          </div>
+
+          {/* Lost Customer List */}
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center gap-2">
+              <Users className="text-slate-500" size={20} />
+              <h3 className="font-semibold text-slate-900 dark:text-white">Lost Customers</h3>
+              <span className="text-sm text-slate-500 dark:text-slate-400">No deposits for 31+ days</span>
+            </div>
+            
+            {(lostCustomers.customers || []).length === 0 ? (
+              <div className="p-8 text-center">
+                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Heart className="text-green-600 dark:text-green-400" size={32} />
+                </div>
+                <p className="text-lg font-medium text-slate-900 dark:text-white">No Lost Customers!</p>
+                <p className="text-sm text-slate-500 mt-1">All customers are still active</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full" data-testid="lost-customers-table">
+                  <thead>
+                    <tr className="text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">
+                      <th className="px-5 py-3">Customer</th>
+                      <th className="px-5 py-3">Product</th>
+                      <th className="px-5 py-3">Staff</th>
+                      <th className="px-5 py-3 text-center">Days Gone</th>
+                      <th className="px-5 py-3 text-center">Deposits</th>
+                      <th className="px-5 py-3 text-right">Total Omset</th>
+                      <th className="px-5 py-3 text-right">Last Deposit</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                    {lostCustomers.customers.map((customer, index) => (
+                      <tr key={`${customer.customer_id}-${customer.product_id}-${index}`} className="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                        <td className="px-5 py-3">
+                          <p className="font-medium text-slate-900 dark:text-white">{customer.customer_name}</p>
+                          <p className="text-xs text-slate-500">@{customer.customer_id_display || customer.customer_id}</p>
+                        </td>
+                        <td className="px-5 py-3">
+                          <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                            {customer.product_name}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3 text-sm text-slate-600 dark:text-slate-400">{customer.staff_name}</td>
+                        <td className="px-5 py-3 text-center">
+                          <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200">
+                            {customer.days_since_deposit}d
+                          </span>
+                        </td>
+                        <td className="px-5 py-3 text-center text-sm text-slate-600 dark:text-slate-400">{customer.total_deposits}</td>
+                        <td className="px-5 py-3 text-right font-medium text-emerald-600 dark:text-emerald-400">{formatCurrency(customer.total_omset)}</td>
+                        <td className="px-5 py-3 text-right text-sm text-slate-500 dark:text-slate-400">
+                          {new Date(customer.last_deposit_date).toLocaleDateString('id-ID')}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
       ) : (
         <div className="text-center py-12 text-slate-600 dark:text-slate-400">No data available</div>
       )}
