@@ -656,6 +656,7 @@ Before incrementing product RDP/NDP count, the code now:
 - ✅ Frontend Unused Dependencies Cleanup - Removed 6 unused npm packages. Build verified with CI=true.
 - ✅ Customer Retention RDP=0 Bug Fix - Fixed case mismatch in retention.py (verified 2026-02-10)
 - ✅ At-Risk Auto-Remove After 31 Days - Customers with 31+ days since last deposit are automatically excluded from at-risk list (verified 2026-02-10)
+- ✅ Lost Customers Section - New "Lost" tab in Customer Retention showing customers with 31+ days no deposit, with summary cards (Total Lost, Lost Revenue, Avg Days Gone) and detailed table (verified 2026-02-10)
 - ✅ RDP Count Mismatch Fix - Staff RDP now equals Product RDP
 - ✅ Frontend Refactoring - Created shared components
 - ✅ Backend Utils - Centralized 10+ duplicate functions across 12 files
