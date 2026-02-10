@@ -178,8 +178,9 @@ export default function CustomerRetention({ isAdmin = false }) {
     loadTrend();
     loadProductBreakdown();
     loadAlerts();
+    loadLostCustomers();
     if (isAdmin) loadStaffBreakdown();
-  }, [loadOverview, loadTrend, loadProductBreakdown, loadStaffBreakdown, loadAlerts, isAdmin]);
+  }, [loadOverview, loadTrend, loadProductBreakdown, loadStaffBreakdown, loadAlerts, loadLostCustomers, isAdmin]);
 
   useEffect(() => {
     if (activeView === 'customers') {
