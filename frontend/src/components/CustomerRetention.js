@@ -139,6 +139,17 @@ export default function CustomerRetention({ isAdmin = false }) {
     }
   }, [selectedProduct]);
 
+  const loadLostCustomers = useCallback(async () => {
+    try {
+      let url = '/retention/lost-customers';
+      if (selectedProduct) url += `?product_id=${selectedProduct}`;
+      const response = await api.get(url);
+      setLostCustomers(response.data);
+    } catch (error) {
+      console.error('Failed to load lost customers');
+    }
+  }, [selectedProduct]);
+
   const dismissAlert = async (customerId, productId) => {
     try {
       await api.post(`/retention/alerts/dismiss?customer_id=${customerId}&product_id=${productId}`);
