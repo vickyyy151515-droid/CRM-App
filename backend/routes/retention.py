@@ -927,6 +927,10 @@ async def get_alerts_by_staff(
         today_date = datetime.strptime(today, '%Y-%m-%d')
         days_since = (today_date - last_date).days
         
+        # Skip if 31+ days since last deposit (auto-removed from at-risk)
+        if days_since > 30:
+            continue
+        
         if days_since >= 14:
             staff['critical'] += 1
         elif days_since >= 7:
