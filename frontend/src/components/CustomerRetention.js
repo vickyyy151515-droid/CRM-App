@@ -306,6 +306,14 @@ export default function CustomerRetention({ isAdmin = false }) {
             activeClass: 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300',
             badgeClass: 'bg-red-500 text-white'
           },
+          {
+            id: 'lost',
+            label: 'Lost',
+            icon: UserPlus,
+            badge: lostCustomers?.total || 0,
+            activeClass: 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300',
+            badgeClass: 'bg-slate-500 text-white'
+          },
           { id: 'overview', label: 'Overview' },
           { id: 'customers', label: 'Customer List' },
           { id: 'by-product', label: 'By Product' },
