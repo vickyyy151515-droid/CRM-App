@@ -654,6 +654,7 @@ Before incrementing product RDP/NDP count, the code now:
 - ✅ NDP/RDP Out-of-Order Entry Bug Fix - Fixed critical bug where records entered out of chronological order both showed NDP. Now recalculate_customer_type() is called after every record insertion (verified 2026-02-09, 8/8 tests passed)
 - ✅ Recalculate NDP/RDP Button - Added admin button on OMSET CRM page to recalculate all existing records
 - ✅ Frontend Unused Dependencies Cleanup - Removed 6 unused npm packages (@hookform/resolvers, cra-template, html5-qrcode, jsqr, xlsx, zod). Build verified with CI=true.
+- ✅ Customer Retention RDP=0 Bug Fix - Fixed case mismatch (.strip().upper() vs normalize_customer_id lowercase) in retention.py that caused all customers to show as NDP. Fixed in 3 endpoints: overview, customers, trend. (verified 2026-02-10)
 - ✅ RDP Count Mismatch Fix - Staff RDP now equals Product RDP
 - ✅ Frontend Refactoring - Created shared components
 - ✅ Backend Utils - Centralized 10+ duplicate functions across 12 files
