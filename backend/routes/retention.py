@@ -216,7 +216,7 @@ async def get_retention_customers(
         {'$group': {'_id': {'c': {'$ifNull': ['$customer_id_normalized', '$customer_id']}, 'p': '$product_id'}, 'first_date': {'$min': '$record_date'}}}
     ]
     agg_results = await db.omset_records.aggregate(pipeline).to_list(None)
-    customer_first_date = {((r['_id']['c'] or '').strip().upper(), r['_id']['p']): r['first_date'] for r in agg_results if r['_id']['c'] and r['_id']['p']}
+    customer_first_date = {(normalize_customer_id(r['_id']['c']), r['_id']['p']): r['first_date'] for r in agg_results if r['_id']['c'] and r['_id']['p']}
     
     # Helper function to check if record has "tambahan" in notes
     def is_tambahan_record(record) -> bool:
@@ -533,7 +533,7 @@ async def get_retention_by_staff(
         {'$group': {'_id': {'c': {'$ifNull': ['$customer_id_normalized', '$customer_id']}, 'p': '$product_id'}, 'first_date': {'$min': '$record_date'}}}
     ]
     agg_results = await db.omset_records.aggregate(pipeline).to_list(None)
-    customer_first_date = {((r['_id']['c'] or '').strip().upper(), r['_id']['p']): r['first_date'] for r in agg_results if r['_id']['c'] and r['_id']['p']}
+    customer_first_date = {(normalize_customer_id(r['_id']['c']), r['_id']['p']): r['first_date'] for r in agg_results if r['_id']['c'] and r['_id']['p']}
     
     # Helper function to check if record has "tambahan" in notes
     def is_tambahan_record(record) -> bool:
