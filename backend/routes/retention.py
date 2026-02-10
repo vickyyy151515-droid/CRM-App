@@ -712,6 +712,10 @@ async def get_customer_alerts(
         if days_since == 0:
             continue
         
+        # Skip if 31+ days since last deposit (auto-removed from at-risk)
+        if days_since > 30:
+            continue
+        
         # Determine risk level
         risk_level = None
         risk_color = None
