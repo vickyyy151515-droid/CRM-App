@@ -79,7 +79,7 @@ async def get_retention_overview(
     ]
     agg_results = await db.omset_records.aggregate(pipeline).to_list(None)
     customer_first_date = {
-        ((r['_id']['c'] or '').strip().upper(), r['_id']['p']): r['first_date']
+        (normalize_customer_id(r['_id']['c']), r['_id']['p']): r['first_date']
         for r in agg_results if r['_id']['c'] and r['_id']['p']
     }
     
