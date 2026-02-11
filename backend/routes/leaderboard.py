@@ -654,19 +654,21 @@ async def get_all_staff_target_progress(
                     daily_ndp_m[date] = set()
                     daily_rdp_m[date] = set()
                 
+                cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+                unique_key = f"{cid_normalized}_{record['product_id']}"
+                
+                # "tambahan" records are always RDP
                 if is_tambahan_record(record):
+                    daily_rdp_m[date].add(unique_key)
                     continue
                 
-                cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
                 key = (staff_id, cid_normalized, record['product_id'])
                 first_date = global_customer_first_date.get(key)
                 
-                if first_date:
-                    unique_key = f"{cid_normalized}_{record['product_id']}"
-                    if first_date == date:
-                        daily_ndp_m[date].add(unique_key)
-                    else:
-                        daily_rdp_m[date].add(unique_key)
+                if first_date and first_date == date:
+                    daily_ndp_m[date].add(unique_key)
+                else:
+                    daily_rdp_m[date].add(unique_key)
             
             success = 0
             for date in set(daily_ndp_m.keys()) | set(daily_rdp_m.keys()):
