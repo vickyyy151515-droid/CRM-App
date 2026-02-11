@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import DashboardLayout from '../components/DashboardLayout';
 import DatabaseOverview from '../components/DatabaseOverview';
 import { useLanguage } from '../contexts/LanguageContext';
-import { LayoutDashboard, Upload, FileSpreadsheet, Clock, Users, Package, List, BarChart, UserCheck, DollarSign, UserCog, Gift, CreditCard, PieChart, Download, FileText, Calculator, CalendarOff, Calendar, Timer, Trophy, CalendarDays, Filter, Heart, Send, Boxes, Activity, ScanLine, Trash2, Award, Shield, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, Upload, FileSpreadsheet, Clock, Users, Package, List, BarChart, UserCheck, DollarSign, UserCog, Gift, CreditCard, PieChart, Download, FileText, Calculator, CalendarOff, Calendar, Timer, Trophy, CalendarDays, Filter, Heart, Send, Boxes, Activity, ScanLine, Trash2, Award, Shield, AlertTriangle, Bell } from 'lucide-react';
 
 // Lazy load all page components - only loaded when the user navigates to them
 const UploadDatabase = lazy(() => import('../components/UploadDatabase'));
