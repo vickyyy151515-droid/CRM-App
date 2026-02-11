@@ -657,7 +657,8 @@ Before incrementing product RDP/NDP count, the code now:
 - ✅ Customer Retention RDP=0 Bug Fix - Fixed case mismatch in retention.py (verified 2026-02-10)
 - ✅ At-Risk Auto-Remove After 31 Days - Customers with 31+ days since last deposit are automatically excluded from at-risk list (verified 2026-02-10)
 - ✅ Lost Customers Section - New "Lost" tab in Customer Retention showing customers with 31+ days no deposit, with summary cards (Total Lost, Lost Revenue, Avg Days Gone) and detailed table (verified 2026-02-10)
-- ✅ Retention Approval Status Filter Fix - Added approval_status filter to all 3 retention aggregation pipelines (overview, customers, by-staff) so pending/declined records no longer affect NDP/RDP calculation (verified 2026-02-11)
+- ✅ Retention Approval Status Filter Fix - Added approval_status filter to all 3 retention aggregation pipelines (verified 2026-02-11)
+- ✅ Staff Progress Daily Breakdown Dropdown - Each staff card in NDP/RDP Targets is now clickable, showing a per-day breakdown with NDP/RDP counts, target met status, and which target (NDP/RDP) was achieved (verified 2026-02-11)
 - ✅ Frontend Refactoring - Created shared components
 - ✅ Backend Utils - Centralized 10+ duplicate functions across 12 files
 - ✅ Custom Hook - Created `useAdminModule` for state management
