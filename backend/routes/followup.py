@@ -90,25 +90,29 @@ async def get_followup_filters(
 async def get_followups(
     product_id: Optional[str] = None,
     database_id: Optional[str] = None,
-    urgency: Optional[str] = None,  # 'critical', 'high', 'medium', 'all'
+    urgency: Optional[str] = None,
+    staff_id: Optional[str] = None,
     user: User = Depends(get_current_user)
 ):
-    """Get all pending follow-ups for the current staff member"""
+    """Get all pending follow-ups for the current staff or a specific staff (admin)"""
     db = get_db()
     
-    # Only staff can view their follow-ups
-    if user.role != 'staff':
-        raise HTTPException(status_code=403, detail="Only staff can view follow-ups")
+    # Determine target staff
+    if user.role == 'admin':
+        target_staff_id = staff_id  # None means all staff
+    else:
+        target_staff_id = user.id
     
     jakarta_now = get_jakarta_now()
     today = jakarta_now.strftime('%Y-%m-%d')
     
     # Find all assigned records with respond_status = 'ya'
     query = {
-        'assigned_to': user.id,
         'status': 'assigned',
         'respond_status': 'ya'
     }
+    if target_staff_id:
+        query['assigned_to'] = target_staff_id
     
     if product_id:
         query['product_id'] = product_id
