@@ -22,6 +22,7 @@ export default function StaffProgress() {
   const [targetProgress, setTargetProgress] = useState(null);
   const [targetLoading, setTargetLoading] = useState(true);
   const [activeView, setActiveView] = useState('quality'); // 'quality' or 'targets'
+  const [expandedStaff, setExpandedStaff] = useState(null);
 
   useEffect(() => {
     loadData();
