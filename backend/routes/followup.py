@@ -35,7 +35,7 @@ async def get_followup_filters(
     db = get_db()
     
     # Determine target staff
-    if user.role == 'admin':
+    if user.role in ['admin', 'master_admin']:
         target_staff_id = staff_id  # None means all staff
     else:
         target_staff_id = user.id
@@ -98,7 +98,7 @@ async def get_followups(
     db = get_db()
     
     # Determine target staff
-    if user.role == 'admin':
+    if user.role in ['admin', 'master_admin']:
         target_staff_id = staff_id  # None means all staff
     else:
         target_staff_id = user.id
