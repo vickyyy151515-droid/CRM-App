@@ -215,6 +215,10 @@ async def get_retention_customers(
             {'$or': [
                 {'keterangan': {'$exists': False}}, {'keterangan': None}, {'keterangan': ''},
                 {'keterangan': {'$not': {'$regex': 'tambahan', '$options': 'i'}}}
+            ]},
+            {'$or': [
+                {'approval_status': 'approved'},
+                {'approval_status': {'$exists': False}}
             ]}
         ]}},
         {'$group': {'_id': {'c': {'$ifNull': ['$customer_id_normalized', '$customer_id']}, 'p': '$product_id'}, 'first_date': {'$min': '$record_date'}}}
