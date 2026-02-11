@@ -659,6 +659,7 @@ Before incrementing product RDP/NDP count, the code now:
 - ✅ Lost Customers Section - New "Lost" tab in Customer Retention showing customers with 31+ days no deposit, with summary cards (Total Lost, Lost Revenue, Avg Days Gone) and detailed table (verified 2026-02-10)
 - ✅ Retention Approval Status Filter Fix - Added approval_status filter to all 3 retention aggregation pipelines (verified 2026-02-11)
 - ✅ Staff Progress Daily Breakdown Dropdown - Each staff card in NDP/RDP Targets is now clickable, showing a per-day breakdown with NDP/RDP counts, target met status, and which target (NDP/RDP) was achieved (verified 2026-02-11)
+- ✅ Staff Progress RDP Undercount Fix - Fixed tambahan records being skipped entirely instead of counted as RDP, and records with no first_date being silently dropped. Now matches Daily Summary counts exactly. Fixed in both current month and previous month calculations in leaderboard.py (verified 2026-02-11)
 - ✅ Frontend Refactoring - Created shared components
 - ✅ Backend Utils - Centralized 10+ duplicate functions across 12 files
 - ✅ Custom Hook - Created `useAdminModule` for state management
