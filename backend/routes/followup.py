@@ -135,9 +135,12 @@ async def get_followups(
             }
         }
     
-    # Get all OMSET records for this staff to check who has deposited
+    # Get OMSET records to check who has deposited
+    omset_query = {}
+    if target_staff_id:
+        omset_query['staff_id'] = target_staff_id
     omset_records = await db.omset_records.find(
-        {'staff_id': user.id},
+        omset_query,
         {'_id': 0, 'customer_id': 1, 'customer_name': 1, 'product_id': 1}
     ).to_list(100000)
     
