@@ -370,56 +370,114 @@ export default function StaffProgress() {
             }
 
             return (
-              <div key={staff.staff_id} className={`rounded-xl border p-4 shadow-sm ${cardStyle}`}>
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  {/* Staff Info */}
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{staff.status_symbol}</span>
-                    <div>
-                      <p className="font-semibold text-slate-900 dark:text-white">{staff.staff_name}</p>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">
-                        {isIndonesian ? 'Hari Ini' : 'Today'}: NDP {staff.today_ndp}/{targetProgress.daily_ndp_target} • RDP {staff.today_rdp}/{targetProgress.daily_rdp_target}
-                        {staff.today_target_reached && <CheckCircle size={14} className="inline ml-1 text-emerald-500" />}
-                      </p>
+              <div key={staff.staff_id} className={`rounded-xl border shadow-sm ${cardStyle} overflow-hidden`}>
+                <div 
+                  className="p-4 cursor-pointer select-none hover:opacity-90 transition-opacity"
+                  onClick={() => setExpandedStaff(expandedStaff === staff.staff_id ? null : staff.staff_id)}
+                  data-testid={`staff-progress-card-${staff.staff_id}`}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    {/* Staff Info */}
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{staff.status_symbol}</span>
+                      <div>
+                        <p className="font-semibold text-slate-900 dark:text-white">{staff.staff_name}</p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                          {isIndonesian ? 'Hari Ini' : 'Today'}: NDP {staff.today_ndp}/{targetProgress.daily_ndp_target} • RDP {staff.today_rdp}/{targetProgress.daily_rdp_target}
+                          {staff.today_target_reached && <CheckCircle size={14} className="inline ml-1 text-emerald-500" />}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Stats */}
+                    <div className="flex items-center gap-6">
+                      <div className="text-center">
+                        <p className="text-xl font-bold text-slate-900 dark:text-white">{staff.success_days}<span className="text-sm font-normal text-slate-500">/{targetProgress.required_success_days}</span></p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{isIndonesian ? 'Hari Sukses' : 'Success Days'}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xl font-bold text-slate-900 dark:text-white">{staff.projected_success}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{isIndonesian ? 'Proyeksi' : 'Projected'}</p>
+                      </div>
+                      {staff.warning_level >= 2 && (
+                        <div className="text-center">
+                          <p className="text-sm text-slate-500 dark:text-slate-400">{isIndonesian ? 'Bulan Lalu' : 'Last Month'}</p>
+                          <p className={`font-bold ${staff.prev_month_1_success < targetProgress.required_success_days ? 'text-red-500' : 'text-emerald-500'}`}>
+                            {staff.prev_month_1_success}/{targetProgress.required_success_days}
+                          </p>
+                        </div>
+                      )}
+                      <div className="ml-2">
+                        {expandedStaff === staff.staff_id 
+                          ? <ChevronUp size={20} className="text-slate-400" /> 
+                          : <ChevronDown size={20} className="text-slate-400" />}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Stats */}
-                  <div className="flex items-center gap-6">
-                    <div className="text-center">
-                      <p className="text-xl font-bold text-slate-900 dark:text-white">{staff.success_days}<span className="text-sm font-normal text-slate-500">/{targetProgress.required_success_days}</span></p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">{isIndonesian ? 'Hari Sukses' : 'Success Days'}</p>
+                  {/* Progress Bar */}
+                  <div className="mt-3">
+                    <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full transition-all duration-500 ${progressBarColor}`}
+                        style={{ width: `${progress}%` }}
+                      />
                     </div>
-                    <div className="text-center">
-                      <p className="text-xl font-bold text-slate-900 dark:text-white">{staff.projected_success}</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">{isIndonesian ? 'Proyeksi' : 'Projected'}</p>
+                    <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      <span>{Math.round(progress)}% {isIndonesian ? 'tercapai' : 'achieved'}</span>
+                      {staff.success_days < targetProgress.required_success_days && (
+                        <span>{isIndonesian ? `Butuh ${targetProgress.required_success_days - staff.success_days} hari lagi` : `Need ${targetProgress.required_success_days - staff.success_days} more`}</span>
+                      )}
                     </div>
-                    {staff.warning_level >= 2 && (
-                      <div className="text-center">
-                        <p className="text-sm text-slate-500 dark:text-slate-400">{isIndonesian ? 'Bulan Lalu' : 'Last Month'}</p>
-                        <p className={`font-bold ${staff.prev_month_1_success < targetProgress.required_success_days ? 'text-red-500' : 'text-emerald-500'}`}>
-                          {staff.prev_month_1_success}/{targetProgress.required_success_days}
-                        </p>
+                  </div>
+                </div>
+
+                {/* Daily Breakdown Dropdown */}
+                {expandedStaff === staff.staff_id && staff.daily_breakdown && (
+                  <div className="border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 px-4 py-3" data-testid={`staff-breakdown-${staff.staff_id}`}>
+                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+                      {isIndonesian ? 'Rincian Harian' : 'Daily Breakdown'}
+                    </p>
+                    {staff.daily_breakdown.length === 0 ? (
+                      <p className="text-sm text-slate-400 py-2">{isIndonesian ? 'Belum ada data bulan ini' : 'No data this month yet'}</p>
+                    ) : (
+                      <div className="grid gap-1.5">
+                        {[...staff.daily_breakdown].reverse().map((day) => (
+                          <div 
+                            key={day.date} 
+                            className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm ${
+                              day.target_met 
+                                ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800' 
+                                : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              {day.target_met 
+                                ? <CheckCircle size={16} className="text-emerald-500 shrink-0" />
+                                : <XCircle size={16} className="text-slate-300 dark:text-slate-600 shrink-0" />}
+                              <span className="font-medium text-slate-700 dark:text-slate-300">
+                                {new Date(day.date + 'T00:00:00').toLocaleDateString(isIndonesian ? 'id-ID' : 'en-US', { weekday: 'short', day: 'numeric', month: 'short' })}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${day.ndp >= targetProgress.daily_ndp_target ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400'}`}>
+                                NDP: {day.ndp}/{targetProgress.daily_ndp_target}
+                              </span>
+                              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${day.rdp >= targetProgress.daily_rdp_target ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400'}`}>
+                                RDP: {day.rdp}/{targetProgress.daily_rdp_target}
+                              </span>
+                              {day.target_met && (
+                                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                                  via {day.met_via}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
-                </div>
-
-                {/* Progress Bar */}
-                <div className="mt-3">
-                  <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full transition-all duration-500 ${progressBarColor}`}
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-                  <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    <span>{Math.round(progress)}% {isIndonesian ? 'tercapai' : 'achieved'}</span>
-                    {staff.success_days < targetProgress.required_success_days && (
-                      <span>{isIndonesian ? `Butuh ${targetProgress.required_success_days - staff.success_days} hari lagi` : `Need ${targetProgress.required_success_days - staff.success_days} more`}</span>
-                    )}
-                  </div>
-                </div>
+                )}
               </div>
             );
           })}
