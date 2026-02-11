@@ -353,6 +353,7 @@ export default function AdminDashboard({ user, onLogout }) {
     { id: 'leave-calendar', label: t('nav.leaveCalendar'), icon: Calendar, badge: 0 },
     { id: 'izin-monitor', label: t('nav.monitorIzin'), icon: Timer, badge: 0 },
     { id: 'progress', label: t('nav.staffProgress'), icon: BarChart, badge: 0 },
+    { id: 'followups', label: 'Follow-up Reminders', icon: Bell, badge: 0 },
     { id: 'omset', label: t('nav.omsetCRM'), icon: DollarSign, badge: stats.pendingOmset },
     { id: 'reserved', label: t('nav.reservedMembers'), icon: UserCheck, badge: stats.pendingReservations },
     { id: 'bonanza', label: t('nav.dbBonanza'), icon: Gift, badge: 0 },
