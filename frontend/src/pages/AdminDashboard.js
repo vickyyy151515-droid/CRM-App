@@ -284,6 +284,8 @@ export default function AdminDashboard({ user, onLogout }) {
         return <AllAssignments />;
       case 'progress':
         return <StaffProgress />;
+      case 'followups':
+        return <AdminFollowups />;
       case 'reserved':
         return <AdminReservedMembers onUpdate={loadStats} />;
       case 'omset':
