@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { Users, TrendingUp, CheckCircle, XCircle, Clock, Package, MessageCircle, Target, Trophy, AlertTriangle, AlertOctagon, Flame } from 'lucide-react';
+import { Users, TrendingUp, CheckCircle, XCircle, Clock, Package, MessageCircle, Target, Trophy, AlertTriangle, AlertOctagon, Flame, ChevronDown, ChevronUp } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const MONTH_NAMES_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
