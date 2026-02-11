@@ -39,6 +39,7 @@ const DataCleanup = lazy(() => import('./DataCleanup'));
 const AdminBonusCheck = lazy(() => import('../components/AdminBonusCheck'));
 const DataSyncDashboard = lazy(() => import('../components/DataSyncDashboard'));
 const ConflictResolutionLog = lazy(() => import('../components/ConflictResolutionLog'));
+const AdminFollowups = lazy(() => import('../components/AdminFollowups'));
 
 export default function AdminDashboard({ user, onLogout }) {
   const { t, language } = useLanguage();
