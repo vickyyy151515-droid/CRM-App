@@ -27,22 +27,29 @@ def get_reminder_level(days_since_response: int) -> dict:
 # ==================== FOLLOW-UP ENDPOINTS ====================
 
 @router.get("/followups/filters")
-async def get_followup_filters(user: User = Depends(get_current_user)):
-    """Get unique products and databases from staff's assigned records for filtering"""
+async def get_followup_filters(
+    staff_id: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
+    """Get unique products and databases from assigned records for filtering"""
     db = get_db()
     
-    if user.role != 'staff':
-        raise HTTPException(status_code=403, detail="Only staff can view follow-ups")
+    # Determine target staff
+    if user.role == 'admin':
+        target_staff_id = staff_id  # None means all staff
+    else:
+        target_staff_id = user.id
     
     # Get unique products and databases from assigned records with respond_status='ya'
+    match_query = {
+        'status': 'assigned',
+        'respond_status': 'ya'
+    }
+    if target_staff_id:
+        match_query['assigned_to'] = target_staff_id
+    
     pipeline = [
-        {
-            '$match': {
-                'assigned_to': user.id,
-                'status': 'assigned',
-                'respond_status': 'ya'
-            }
-        },
+        {'$match': match_query},
         {
             '$group': {
                 '_id': {
