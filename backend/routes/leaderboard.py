@@ -712,6 +712,23 @@ async def get_all_staff_target_progress(
         else:
             status_symbol = '📊'
         
+        # Build daily breakdown for dropdown
+        daily_breakdown = []
+        for date in sorted(set(daily_ndp.keys()) | set(daily_rdp.keys())):
+            ndp_count = len(daily_ndp.get(date, set()))
+            rdp_count = len(daily_rdp.get(date, set()))
+            ndp_met = ndp_count >= daily_ndp_target
+            rdp_met = rdp_count >= daily_rdp_target
+            target_met = ndp_met or rdp_met
+            met_via = 'NDP' if ndp_met else ('RDP' if rdp_met else None)
+            daily_breakdown.append({
+                'date': date,
+                'ndp': ndp_count,
+                'rdp': rdp_count,
+                'target_met': target_met,
+                'met_via': met_via,
+            })
+        
         staff_progress_list.append({
             'staff_id': staff_id,
             'staff_name': staff_name,
@@ -723,7 +740,8 @@ async def get_all_staff_target_progress(
             'warning_level': warning_level,
             'prev_month_1_success': prev_month_1_success,
             'prev_month_2_success': prev_month_2_success,
-            'status_symbol': status_symbol
+            'status_symbol': status_symbol,
+            'daily_breakdown': daily_breakdown
         })
     
     # Sort by warning level (critical first), then by success days
