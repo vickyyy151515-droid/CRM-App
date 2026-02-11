@@ -67,6 +67,10 @@ async def get_retention_overview(
                 {'keterangan': None},
                 {'keterangan': ''},
                 {'keterangan': {'$not': {'$regex': 'tambahan', '$options': 'i'}}}
+            ]},
+            {'$or': [
+                {'approval_status': 'approved'},
+                {'approval_status': {'$exists': False}}
             ]}
         ]}},
         {'$group': {
