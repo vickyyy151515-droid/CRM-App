@@ -249,6 +249,8 @@ async def get_followups(
             'product_id': record.get('product_id'),
             'product_name': record.get('product_name', 'Unknown'),
             'database_name': record.get('database_name', 'Unknown'),
+            'staff_id': record.get('assigned_to'),
+            'staff_name': record.get('assigned_to_name', 'Unknown'),
             'row_data': row_data,
             'respond_date': respond_date.isoformat(),
             'days_since_response': days_since,
