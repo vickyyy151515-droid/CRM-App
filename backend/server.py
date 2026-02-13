@@ -74,7 +74,6 @@ from routes.staff_notifications import router as staff_notifications_router
 from routes.inventory import router as inventory_router
 from routes.attendance import router as attendance_router
 from routes.fees import router as fees_router
-from routes.message_variations import router as message_variations_router
 from routes.bonus_check import router as bonus_check_router
 from routes.memberwd_diagnostics import router as memberwd_diagnostics_router
 from routes.data_sync import router as data_sync_router
@@ -107,7 +106,6 @@ api_router.include_router(staff_notifications_router)
 api_router.include_router(inventory_router)
 api_router.include_router(attendance_router)
 api_router.include_router(fees_router)
-api_router.include_router(message_variations_router)
 api_router.include_router(bonus_check_router)
 api_router.include_router(memberwd_diagnostics_router)
 api_router.include_router(data_sync_router)
