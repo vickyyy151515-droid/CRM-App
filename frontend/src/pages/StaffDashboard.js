@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import DashboardLayout from '../components/DashboardLayout';
 import StaffTargetBanner from '../components/StaffTargetBanner';
 import { useLanguage } from '../contexts/LanguageContext';
-import { LayoutDashboard, FileSpreadsheet, Clock, User, UserCheck, DollarSign, Gift, CreditCard, CalendarOff, Timer, Trophy, Bell, CalendarDays, Filter, Heart, Sparkles, Calculator, Award } from 'lucide-react';
+import { LayoutDashboard, FileSpreadsheet, Clock, User, UserCheck, DollarSign, Gift, CreditCard, CalendarOff, Timer, Trophy, Bell, CalendarDays, Filter, Heart, Calculator, Award } from 'lucide-react';
 
 // Lazy load all page components
 const DatabaseList = lazy(() => import('../components/DatabaseList'));
@@ -21,7 +21,6 @@ const StaffFollowups = lazy(() => import('../components/StaffFollowups'));
 const DailySummary = lazy(() => import('../components/DailySummary'));
 const ConversionFunnel = lazy(() => import('../components/ConversionFunnel'));
 const CustomerRetention = lazy(() => import('../components/CustomerRetention'));
-const MessageVariationGenerator = lazy(() => import('../components/MessageVariationGenerator'));
 const StaffBonusProgress = lazy(() => import('../components/StaffBonusProgress'));
 const StaffBonusCheck = lazy(() => import('../components/StaffBonusCheck'));
 
@@ -235,8 +234,6 @@ export default function StaffDashboard({ user, onLogout }) {
         return <ConversionFunnel isAdmin={false} />;
       case 'retention':
         return <CustomerRetention isAdmin={false} />;
-      case 'message-generator':
-        return <MessageVariationGenerator />;
       case 'my-bonus':
         return <StaffBonusProgress />;
       case 'bonus-check':
@@ -255,7 +252,6 @@ export default function StaffDashboard({ user, onLogout }) {
     { id: 'funnel', label: t('nav.conversionFunnel'), icon: Filter },
     { id: 'retention', label: t('nav.customerRetention'), icon: Heart },
     { id: 'followups', label: t('nav.followUpReminders'), icon: Bell },
-    { id: 'message-generator', label: t('nav.messageGenerator') || 'Variasi Pesan', icon: Sparkles },
     { id: 'requests', label: t('nav.myRequests'), icon: Clock },
     { id: 'assigned', label: t('nav.myAssignedCustomers'), icon: User },
     { id: 'reserved', label: t('nav.reservedMembers'), icon: UserCheck },
