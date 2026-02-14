@@ -1335,6 +1335,19 @@ export default function AdvancedAnalytics() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [compareStaff, compareMode, period, selectedProduct]);
 
+  // Reload deposit trends when granularity changes
+  const handleGranularityChange = async (newGranularity) => {
+    setDepositGranularity(newGranularity);
+    try {
+      const params = new URLSearchParams({ period, granularity: newGranularity });
+      if (selectedProduct) params.append('product_id', selectedProduct);
+      const res = await api.get(`/analytics/deposit-trends?${params}`);
+      setDepositTrendsData(res.data);
+    } catch (error) {
+      console.error('Failed to load deposit trends');
+    }
+  };
+
   const toggleWidget = (key) => {
     setVisibleWidgets(prev => ({ ...prev, [key]: !prev[key] }));
   };
