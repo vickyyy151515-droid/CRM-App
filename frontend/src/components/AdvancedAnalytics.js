@@ -343,6 +343,9 @@ export default function AdvancedAnalytics() {
 
   const renderWidget = (widgetId) => {
     switch (widgetId) {
+      case 'staffNdpRdpDaily':
+        return <StaffNdpRdpDailyWidget data={staffNdpRdpData} />;
+
       case 'staffCompare':
         return (
           <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 sm:p-6 shadow-sm" data-testid="staff-compare-widget">
