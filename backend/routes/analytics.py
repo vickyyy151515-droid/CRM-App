@@ -325,6 +325,82 @@ async def get_business_analytics(period: str = 'month', product_id: Optional[str
         'omset_chart': omset_chart, 'product_omset': product_omset, 'database_utilization': db_utilization
     }
 
+@router.get("/analytics/staff-ndp-rdp-daily")
+async def get_staff_ndp_rdp_daily(
+    period: str = 'month',
+    product_id: Optional[str] = None,
+    user: User = Depends(get_admin_user)
+):
+    """Get daily NDP/RDP breakdown per staff for chart visualization"""
+    db = get_db()
+    start_date, _ = get_date_range(period)
+
+    omset_query = {'record_date': {'$gte': start_date[:10]}}
+    if product_id:
+        omset_query['product_id'] = product_id
+
+    from utils.db_operations import add_approved_filter, build_staff_first_date_map
+    records = await db.omset_records.find(
+        add_approved_filter(omset_query), {'_id': 0}
+    ).to_list(100000)
+
+    staff_customer_first_date = await build_staff_first_date_map(db, product_id=product_id)
+
+    # Group by (date, staff_id) → {ndp, rdp}
+    daily_staff = {}
+    staff_names = {}
+    for record in records:
+        date = record.get('record_date')
+        sid = record.get('staff_id')
+        if not date or not sid:
+            continue
+
+        sname = record.get('staff_name', 'Unknown')
+        staff_names[sid] = sname
+
+        cid_normalized = record.get('customer_id_normalized') or normalize_customer_id(record['customer_id'])
+        pid = record['product_id']
+        key = (sid, cid_normalized, pid)
+        first_date = staff_customer_first_date.get(key)
+
+        keterangan = record.get('keterangan', '') or ''
+        is_tambahan = 'tambahan' in keterangan.lower()
+
+        ds_key = (date, sid)
+        if ds_key not in daily_staff:
+            daily_staff[ds_key] = {'ndp_set': set(), 'rdp_set': set()}
+
+        tup = (sid, cid_normalized, pid)
+        if is_tambahan:
+            daily_staff[ds_key]['rdp_set'].add(tup)
+        elif first_date == date:
+            daily_staff[ds_key]['ndp_set'].add(tup)
+        else:
+            daily_staff[ds_key]['rdp_set'].add(tup)
+
+    # Collect all dates and active staff
+    all_dates = sorted({k[0] for k in daily_staff})
+    active_staff = sorted(staff_names.keys(), key=lambda s: staff_names[s])
+
+    # Build chart data: one row per date, columns for each staff's NDP/RDP
+    chart_data = []
+    for date in all_dates:
+        row = {'date': date}
+        for sid in active_staff:
+            ds_key = (date, sid)
+            entry = daily_staff.get(ds_key, {'ndp_set': set(), 'rdp_set': set()})
+            row[f'ndp_{sid}'] = len(entry['ndp_set'])
+            row[f'rdp_{sid}'] = len(entry['rdp_set'])
+        chart_data.append(row)
+
+    staff_list = [{'id': sid, 'name': staff_names[sid]} for sid in active_staff]
+
+    return {
+        'chart_data': chart_data,
+        'staff': staff_list,
+        'period': period
+    }
+
 # ==================== EXPORT ENDPOINTS ====================
 
 @router.get("/export/customer-records")
