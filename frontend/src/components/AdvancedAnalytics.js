@@ -655,6 +655,7 @@ function ResponseTimeByStaffWidget({ data, onDrillDown }) {
                 <span className="text-slate-500">WA'd: <span className="text-slate-300 font-semibold">{staff.wa_checked_count}</span></span>
                 <span className="text-slate-500">Responded: <span className="text-slate-300 font-semibold">{staff.responded_count}</span></span>
                 {staff.fastest_wa !== null && <span className="text-slate-600 ml-auto">Best {formatHours(staff.fastest_wa)}</span>}
+                <ChevronRight size={12} className="text-slate-600 ml-auto shrink-0" />
               </div>
             </div>
           );
