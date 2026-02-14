@@ -58,6 +58,200 @@ const DEFAULT_WIDGET_ORDER = [
   'databaseUtilization'
 ];
 
+function StaffNdpRdpDailyWidget({ data }) {
+  const [viewMode, setViewMode] = useState('combined'); // 'combined' | 'ndp' | 'rdp'
+
+  if (!data?.chart_data?.length || !data?.staff?.length) {
+    return (
+      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm" data-testid="staff-ndp-rdp-daily-widget">
+        <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2 mb-4">
+          <BarChart3 size={20} className="text-indigo-600" />
+          Staff NDP / RDP Daily Breakdown
+        </h3>
+        <div className="text-center py-12 text-slate-400">
+          <BarChart3 size={48} className="mx-auto mb-3 opacity-30" />
+          <p className="font-medium">No data available for this period</p>
+        </div>
+      </div>
+    );
+  }
+
+  const { chart_data, staff: staffList } = data;
+
+  // Assign colors to staff
+  const staffColors = {};
+  staffList.forEach((s, i) => {
+    staffColors[s.id] = STAFF_CHART_COLORS[i % STAFF_CHART_COLORS.length];
+  });
+
+  // Compute totals per staff for the legend
+  const staffTotals = {};
+  staffList.forEach(s => { staffTotals[s.id] = { ndp: 0, rdp: 0 }; });
+  chart_data.forEach(row => {
+    staffList.forEach(s => {
+      staffTotals[s.id].ndp += row[`ndp_${s.id}`] || 0;
+      staffTotals[s.id].rdp += row[`rdp_${s.id}`] || 0;
+    });
+  });
+
+  // Format date for X-axis
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    return `${parts[2]}/${parts[1]}`;
+  };
+
+  // Custom tooltip
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (!active || !payload?.length) return null;
+    const ndpItems = payload.filter(p => p.dataKey.startsWith('ndp_') && p.value > 0);
+    const rdpItems = payload.filter(p => p.dataKey.startsWith('rdp_') && p.value > 0);
+    const totalNdp = ndpItems.reduce((sum, p) => sum + p.value, 0);
+    const totalRdp = rdpItems.reduce((sum, p) => sum + p.value, 0);
+
+    return (
+      <div className="bg-slate-900 text-white rounded-lg px-4 py-3 shadow-xl text-sm max-w-xs">
+        <p className="font-semibold mb-2 text-slate-200">{label}</p>
+        {(viewMode === 'combined' || viewMode === 'ndp') && totalNdp > 0 && (
+          <div className="mb-2">
+            <p className="text-xs font-semibold text-indigo-300 uppercase tracking-wider mb-1">NDP ({totalNdp})</p>
+            {ndpItems.map(item => {
+              const sid = item.dataKey.replace('ndp_', '');
+              const staffName = staffList.find(s => s.id === sid)?.name || sid;
+              return (
+                <div key={item.dataKey} className="flex items-center gap-2 py-0.5">
+                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: staffColors[sid] }} />
+                  <span className="truncate">{staffName}</span>
+                  <span className="ml-auto font-semibold">{item.value}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {(viewMode === 'combined' || viewMode === 'rdp') && totalRdp > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-emerald-300 uppercase tracking-wider mb-1">RDP ({totalRdp})</p>
+            {rdpItems.map(item => {
+              const sid = item.dataKey.replace('rdp_', '');
+              const staffName = staffList.find(s => s.id === sid)?.name || sid;
+              return (
+                <div key={item.dataKey} className="flex items-center gap-2 py-0.5">
+                  <span className="w-2.5 h-2.5 rounded-full shrink-0 opacity-60" style={{ backgroundColor: staffColors[sid] }} />
+                  <span className="truncate">{staffName}</span>
+                  <span className="ml-auto font-semibold">{item.value}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {totalNdp === 0 && totalRdp === 0 && <p className="text-slate-400">No data</p>}
+      </div>
+    );
+  };
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm" data-testid="staff-ndp-rdp-daily-widget">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+        <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+          <BarChart3 size={20} className="text-indigo-600" />
+          Staff NDP / RDP Daily Breakdown
+        </h3>
+        <div className="flex items-center bg-slate-100 rounded-lg p-0.5" data-testid="ndp-rdp-view-toggle">
+          {[
+            { key: 'combined', label: 'All' },
+            { key: 'ndp', label: 'NDP Only' },
+            { key: 'rdp', label: 'RDP Only' },
+          ].map(opt => (
+            <button
+              key={opt.key}
+              onClick={() => setViewMode(opt.key)}
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                viewMode === opt.key
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+              data-testid={`view-mode-${opt.key}`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Chart */}
+      <div className="h-72 sm:h-96" data-testid="ndp-rdp-chart-container">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={chart_data} margin={{ top: 4, right: 8, left: -12, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+            <XAxis
+              dataKey="date"
+              tickFormatter={formatDate}
+              tick={{ fontSize: 11, fill: '#64748b' }}
+              axisLine={{ stroke: '#e2e8f0' }}
+              tickLine={false}
+            />
+            <YAxis
+              allowDecimals={false}
+              tick={{ fontSize: 11, fill: '#64748b' }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(99,102,241,0.04)' }} />
+
+            {/* NDP bars (solid) */}
+            {(viewMode === 'combined' || viewMode === 'ndp') &&
+              staffList.map((s) => (
+                <Bar
+                  key={`ndp_${s.id}`}
+                  dataKey={`ndp_${s.id}`}
+                  stackId="ndp"
+                  fill={staffColors[s.id]}
+                  radius={staffList.indexOf(s) === staffList.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+                />
+              ))
+            }
+
+            {/* RDP bars (lighter) */}
+            {(viewMode === 'combined' || viewMode === 'rdp') &&
+              staffList.map((s) => (
+                <Bar
+                  key={`rdp_${s.id}`}
+                  dataKey={`rdp_${s.id}`}
+                  stackId="rdp"
+                  fill={staffColors[s.id]}
+                  fillOpacity={0.4}
+                  radius={staffList.indexOf(s) === staffList.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+                />
+              ))
+            }
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Legend */}
+      <div className="mt-4 pt-4 border-t border-slate-100">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          {staffList.map(s => (
+            <div key={s.id} className="flex items-center gap-2 text-xs" data-testid={`legend-${s.id}`}>
+              <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: staffColors[s.id] }} />
+              <span className="text-slate-700 font-medium">{s.name}</span>
+              <span className="text-slate-400">
+                NDP {staffTotals[s.id].ndp} / RDP {staffTotals[s.id].rdp}
+              </span>
+            </div>
+          ))}
+        </div>
+        {viewMode === 'combined' && (
+          <p className="text-[11px] text-slate-400 mt-2">
+            Solid bars = NDP (New Deposit) &nbsp;|&nbsp; Lighter bars = RDP (Re-Deposit)
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function SortableWidget({ id, children, isVisible }) {
   const {
     attributes,
