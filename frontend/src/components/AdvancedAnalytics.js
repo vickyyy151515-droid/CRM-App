@@ -532,6 +532,9 @@ export default function AdvancedAnalytics() {
 
   const widgetConfig = {
     staffNdpRdpDaily: { label: 'Staff NDP/RDP Daily', icon: BarChart3 },
+    conversionFunnel: { label: 'Staff Conversion Funnel', icon: TrendingUp },
+    revenueHeatmap: { label: 'Revenue Heatmap', icon: Database },
+    depositLifecycle: { label: 'Deposit Lifecycle', icon: Users },
     staffCompare: { label: 'Staff Comparison (Side-by-Side)', icon: GitCompare },
     staffComparison: { label: 'Staff Performance Comparison', icon: Users },
     dailyTrends: { label: 'Daily Activity Trends', icon: TrendingUp },
