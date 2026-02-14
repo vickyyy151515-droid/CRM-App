@@ -1099,6 +1099,12 @@ export default function AdvancedAnalytics() {
   const [funnelData, setFunnelData] = useState(null);
   const [heatmapData, setHeatmapData] = useState(null);
   const [lifecycleData, setLifecycleData] = useState(null);
+  const [responseTimeData, setResponseTimeData] = useState(null);
+  const [followupEffData, setFollowupEffData] = useState(null);
+  const [productPerfData, setProductPerfData] = useState(null);
+  const [customerValueData, setCustomerValueData] = useState(null);
+  const [depositTrendsData, setDepositTrendsData] = useState(null);
+  const [depositGranularity, setDepositGranularity] = useState('daily');
   const [products, setProducts] = useState([]);
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
