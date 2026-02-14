@@ -822,6 +822,7 @@ function FollowupEffectivenessWidget({ data, onDrillDown }) {
             <TrendingUp size={18} className="text-white" />
           </span>
           Follow-up Effectiveness
+          <ChartInfoTooltip chartKey="followupEffectiveness" />
         </h3>
         <div className="flex gap-2 text-[10px]">
           {[{ c: '#38bdf8', l: 'WA Checked' }, { c: '#fbbf24', l: 'Responded' }, { c: '#4ade80', l: 'Deposited' }].map(g => (
