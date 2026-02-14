@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
 import { 
   BarChart3, TrendingUp, Users, Package, Database, PieChart, 
-  Eye, EyeOff, RefreshCw, Filter, GripVertical, Save, GitCompare, X, Plus
+  Eye, EyeOff, RefreshCw, Filter, GripVertical, Save, GitCompare, X, Plus,
+  ChevronRight, Clock, CheckCircle2, XCircle, ArrowUpRight, Loader2
 } from 'lucide-react';
 import {
   LineChart, Line, BarChart, Bar, PieChart as RechartsPie, Pie, Cell,
