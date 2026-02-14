@@ -127,6 +127,7 @@ export function NdpRdpWidget({ data }) {
       <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
         <PieChart size={20} className="text-purple-600" />
         NDP vs RDP Analysis
+        <ChartInfoTooltip chartKey="ndpRdp" />
       </h3>
       {hasData ? (
         <>
