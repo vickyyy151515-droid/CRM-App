@@ -284,6 +284,9 @@ export default function AdvancedAnalytics() {
   const [staffData, setStaffData] = useState(null);
   const [businessData, setBusinessData] = useState(null);
   const [staffNdpRdpData, setStaffNdpRdpData] = useState(null);
+  const [funnelData, setFunnelData] = useState(null);
+  const [heatmapData, setHeatmapData] = useState(null);
+  const [lifecycleData, setLifecycleData] = useState(null);
   const [products, setProducts] = useState([]);
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
