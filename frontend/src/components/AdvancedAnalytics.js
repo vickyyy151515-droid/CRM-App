@@ -47,6 +47,9 @@ const STAFF_CHART_COLORS = [
 
 const DEFAULT_WIDGET_ORDER = [
   'staffNdpRdpDaily',
+  'conversionFunnel',
+  'revenueHeatmap',
+  'depositLifecycle',
   'staffCompare',
   'staffComparison',
   'dailyTrends', 
