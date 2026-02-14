@@ -1023,6 +1023,289 @@ async def get_deposit_trends(
     }
 
 
+# ==================== DRILL-DOWN DETAIL ENDPOINTS ====================
+
+@router.get("/analytics/drill-down/response-time")
+async def drill_down_response_time(
+    staff_id: str,
+    period: str = 'month',
+    product_id: Optional[str] = None,
+    user: User = Depends(get_admin_user)
+):
+    """Drill-down: individual records with WA/response timestamps for a staff"""
+    db = get_db()
+    start_date, _ = get_date_range(period)
+
+    rec_query = {'status': 'assigned', 'assigned_to': staff_id, 'assigned_at': {'$ne': None}}
+    if product_id:
+        rec_query['product_id'] = product_id
+
+    records = await db.customer_records.find(
+        rec_query,
+        {'_id': 0, 'id': 1, 'assigned_at': 1, 'whatsapp_status': 1, 'whatsapp_status_updated_at': 1,
+         'respond_status': 1, 'respond_status_updated_at': 1, 'product_name': 1,
+         'row_data': 1, 'database_name': 1}
+    ).sort('assigned_at', -1).to_list(100)
+
+    result = []
+    for r in records:
+        assigned_at = r.get('assigned_at', '')
+        wa_updated = r.get('whatsapp_status_updated_at')
+        resp_updated = r.get('respond_status_updated_at')
+        wa_hours = None
+        resp_hours = None
+
+        try:
+            a_dt = datetime.fromisoformat(assigned_at.replace('Z', '+00:00'))
+            if wa_updated:
+                wa_dt = datetime.fromisoformat(wa_updated.replace('Z', '+00:00'))
+                wa_hours = round(max(0, (wa_dt - a_dt).total_seconds() / 3600), 1)
+            if resp_updated:
+                r_dt = datetime.fromisoformat(resp_updated.replace('Z', '+00:00'))
+                resp_hours = round(max(0, (r_dt - a_dt).total_seconds() / 3600), 1)
+        except Exception:
+            pass
+
+        cid = r.get('row_data', {}).get('customer_id') or r.get('row_data', {}).get('username') or '-'
+        result.append({
+            'record_id': r.get('id', ''),
+            'customer_id': str(cid),
+            'product': r.get('product_name', ''),
+            'database': r.get('database_name', ''),
+            'assigned_at': assigned_at,
+            'wa_status': r.get('whatsapp_status') or '-',
+            'wa_hours': wa_hours,
+            'respond_status': r.get('respond_status') or '-',
+            'respond_hours': resp_hours,
+        })
+
+    return {'records': result, 'total': len(result)}
+
+
+@router.get("/analytics/drill-down/followup-detail")
+async def drill_down_followup_detail(
+    staff_id: str,
+    period: str = 'month',
+    product_id: Optional[str] = None,
+    user: User = Depends(get_admin_user)
+):
+    """Drill-down: responded customers with deposit status for a staff"""
+    db = get_db()
+    start_date, _ = get_date_range(period)
+
+    rec_query = {'status': 'assigned', 'assigned_to': staff_id, 'respond_status': 'ya'}
+    if product_id:
+        rec_query['product_id'] = product_id
+
+    records = await db.customer_records.find(rec_query, {'_id': 0}).to_list(100)
+
+    # Get deposits for this staff
+    from utils.db_operations import add_approved_filter
+    omset_query = {'staff_id': staff_id}
+    if product_id:
+        omset_query['product_id'] = product_id
+    deposits = await db.omset_records.find(
+        add_approved_filter(omset_query),
+        {'_id': 0, 'customer_id_normalized': 1, 'customer_id': 1, 'product_id': 1, 'depo_total': 1, 'record_date': 1}
+    ).to_list(100000)
+
+    deposit_map = {}
+    for d in deposits:
+        cid = d.get('customer_id_normalized') or str(d.get('customer_id', '')).strip().lower()
+        pid = d.get('product_id', '')
+        key = (cid, pid)
+        if key not in deposit_map:
+            deposit_map[key] = {'total': 0, 'count': 0, 'last_date': ''}
+        deposit_map[key]['total'] += d.get('depo_total', 0) or 0
+        deposit_map[key]['count'] += 1
+        rd = d.get('record_date', '')
+        if rd > deposit_map[key]['last_date']:
+            deposit_map[key]['last_date'] = rd
+
+    result = []
+    for r in records:
+        cid_raw = r.get('row_data', {}).get('customer_id') or r.get('row_data', {}).get('username') or ''
+        cid = str(cid_raw).strip().lower()
+        pid = r.get('product_id', '')
+        dep_info = deposit_map.get((cid, pid))
+
+        result.append({
+            'customer_id': str(cid_raw) or '-',
+            'product': r.get('product_name', ''),
+            'respond_at': r.get('respond_status_updated_at', ''),
+            'wa_status': r.get('whatsapp_status') or '-',
+            'deposited': dep_info is not None,
+            'deposit_total': dep_info['total'] if dep_info else 0,
+            'deposit_count': dep_info['count'] if dep_info else 0,
+            'last_deposit': dep_info['last_date'] if dep_info else None,
+        })
+
+    result.sort(key=lambda x: (not x['deposited'], -(x['deposit_total'])))
+    converted = sum(1 for r in result if r['deposited'])
+    return {'records': result, 'total': len(result), 'converted': converted, 'pending': len(result) - converted}
+
+
+@router.get("/analytics/drill-down/product-staff")
+async def drill_down_product_staff(
+    product_id: str,
+    period: str = 'month',
+    user: User = Depends(get_admin_user)
+):
+    """Drill-down: staff-level NDP/RDP breakdown for a specific product"""
+    db = get_db()
+    start_date, _ = get_date_range(period)
+
+    from utils.db_operations import add_approved_filter, build_staff_first_date_map
+    omset_query = {'record_date': {'$gte': start_date[:10]}, 'product_id': product_id}
+    records = await db.omset_records.find(
+        add_approved_filter(omset_query), {'_id': 0}
+    ).to_list(100000)
+
+    staff_customer_first_date = await build_staff_first_date_map(db, product_id=product_id)
+
+    staff_data = {}
+    for record in records:
+        sid = record.get('staff_id')
+        sname = record.get('staff_name', 'Unknown')
+        cid = record.get('customer_id_normalized') or normalize_customer_id(record.get('customer_id', ''))
+        date = record.get('record_date', '')
+        amount = record.get('depo_total', 0) or 0
+        key = (sid, cid, product_id)
+        first_date = staff_customer_first_date.get(key)
+        keterangan = record.get('keterangan', '') or ''
+        is_tambahan = 'tambahan' in keterangan.lower()
+        is_ndp = not is_tambahan and first_date == date
+
+        if sid not in staff_data:
+            staff_data[sid] = {'name': sname, 'ndp': 0, 'rdp': 0, 'ndp_amt': 0, 'rdp_amt': 0}
+        if is_ndp:
+            staff_data[sid]['ndp'] += 1
+            staff_data[sid]['ndp_amt'] += amount
+        else:
+            staff_data[sid]['rdp'] += 1
+            staff_data[sid]['rdp_amt'] += amount
+
+    result = []
+    for sid, d in staff_data.items():
+        result.append({
+            'staff_id': sid, 'staff_name': d['name'],
+            'ndp_count': d['ndp'], 'rdp_count': d['rdp'],
+            'ndp_amount': d['ndp_amt'], 'rdp_amount': d['rdp_amt'],
+            'total_amount': d['ndp_amt'] + d['rdp_amt'],
+            'total_count': d['ndp'] + d['rdp']
+        })
+    result.sort(key=lambda x: x['total_amount'], reverse=True)
+    return {'staff_breakdown': result, 'total_staff': len(result)}
+
+
+@router.get("/analytics/drill-down/staff-customers")
+async def drill_down_staff_customers(
+    staff_id: str,
+    period: str = 'month',
+    product_id: Optional[str] = None,
+    user: User = Depends(get_admin_user)
+):
+    """Drill-down: top customers by deposit value for a staff (NDP vs RDP)"""
+    db = get_db()
+    start_date, _ = get_date_range(period)
+
+    from utils.db_operations import add_approved_filter, build_staff_first_date_map
+    omset_query = {'record_date': {'$gte': start_date[:10]}, 'staff_id': staff_id}
+    if product_id:
+        omset_query['product_id'] = product_id
+
+    records = await db.omset_records.find(
+        add_approved_filter(omset_query), {'_id': 0}
+    ).to_list(100000)
+
+    staff_customer_first_date = await build_staff_first_date_map(db, product_id=product_id)
+
+    customer_map = {}
+    for record in records:
+        cid = record.get('customer_id_normalized') or normalize_customer_id(record.get('customer_id', ''))
+        cname = record.get('customer_name') or record.get('customer_id', '')
+        pid = record.get('product_id', '')
+        date = record.get('record_date', '')
+        amount = record.get('depo_total', 0) or 0
+        key = (staff_id, cid, pid)
+        first_date = staff_customer_first_date.get(key)
+        keterangan = record.get('keterangan', '') or ''
+        is_tambahan = 'tambahan' in keterangan.lower()
+        is_ndp = not is_tambahan and first_date == date
+
+        ckey = (cid, pid)
+        if ckey not in customer_map:
+            customer_map[ckey] = {
+                'customer_id': str(record.get('customer_id', '')),
+                'customer_name': str(cname),
+                'product': record.get('product_name', ''),
+                'type': 'NDP' if is_ndp else 'RDP',
+                'total_amount': 0, 'deposit_count': 0, 'first_deposit': date, 'last_deposit': date
+            }
+        customer_map[ckey]['total_amount'] += amount
+        customer_map[ckey]['deposit_count'] += 1
+        if date < customer_map[ckey]['first_deposit']:
+            customer_map[ckey]['first_deposit'] = date
+        if date > customer_map[ckey]['last_deposit']:
+            customer_map[ckey]['last_deposit'] = date
+
+    result = sorted(customer_map.values(), key=lambda x: x['total_amount'], reverse=True)[:50]
+    return {'customers': result, 'total': len(result)}
+
+
+@router.get("/analytics/drill-down/date-deposits")
+async def drill_down_date_deposits(
+    date: str,
+    granularity: str = 'daily',
+    product_id: Optional[str] = None,
+    user: User = Depends(get_admin_user)
+):
+    """Drill-down: individual deposits for a specific date/period"""
+    db = get_db()
+
+    from utils.db_operations import add_approved_filter
+    from datetime import date as dt_date
+
+    # Determine date range based on granularity
+    if granularity == 'weekly':
+        try:
+            start_d = dt_date.fromisoformat(date)
+            end_d = start_d + timedelta(days=6)
+            omset_query = {'record_date': {'$gte': start_d.isoformat(), '$lte': end_d.isoformat()}}
+        except Exception:
+            omset_query = {'record_date': date}
+    elif granularity == 'monthly':
+        omset_query = {'record_date': {'$regex': f'^{date}'}}
+    else:
+        omset_query = {'record_date': date}
+
+    if product_id:
+        omset_query['product_id'] = product_id
+
+    records = await db.omset_records.find(
+        add_approved_filter(omset_query),
+        {'_id': 0, 'staff_id': 1, 'staff_name': 1, 'customer_id': 1, 'customer_name': 1,
+         'product_name': 1, 'depo_total': 1, 'nominal': 1, 'record_date': 1, 'keterangan': 1,
+         'customer_type': 1}
+    ).sort('depo_total', -1).to_list(200)
+
+    result = []
+    for r in records:
+        result.append({
+            'staff_name': r.get('staff_name', 'Unknown'),
+            'customer_id': str(r.get('customer_id', '')),
+            'customer_name': r.get('customer_name', ''),
+            'product': r.get('product_name', ''),
+            'amount': r.get('depo_total') or r.get('nominal') or 0,
+            'date': r.get('record_date', ''),
+            'type': r.get('customer_type', ''),
+            'note': r.get('keterangan', ''),
+        })
+
+    total_amount = sum(r['amount'] for r in result)
+    return {'deposits': result, 'total_count': len(result), 'total_amount': total_amount}
+
+
 # ==================== EXPORT ENDPOINTS ====================
 
 @router.get("/export/customer-records")
