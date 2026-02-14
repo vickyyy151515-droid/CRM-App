@@ -21,7 +21,28 @@ All modules support:
 - UI: Tailwind CSS + Shadcn components
 - Scheduler: APScheduler (daily cleanup jobs)
 
-## Latest Update: 5 New Analytics Charts — Operational & Strategic (2026-02-14)
+## Latest Update: Drill-Down Interactivity (2026-02-14)
+
+Clicking on any staff/product/data point in the 5 new charts opens a detailed slide-over panel:
+
+1. **Response Time** → Click staff row → Individual records with WA/response timestamps
+2. **Follow-up Effectiveness** → Click staff tag → Responded customers with deposit status (converted/pending)
+3. **Product Performance** → Click product → Staff-level NDP/RDP breakdown for that product
+4. **Customer Value** → Click staff bar → Top customers by deposit value (NDP vs RDP)
+5. **Deposit Trends** → Click data point → That day's individual deposits
+
+### New Drill-Down Endpoints:
+- `GET /api/analytics/drill-down/response-time?staff_id=X&period=X`
+- `GET /api/analytics/drill-down/followup-detail?staff_id=X&period=X`
+- `GET /api/analytics/drill-down/product-staff?product_id=X&period=X`
+- `GET /api/analytics/drill-down/staff-customers?staff_id=X&period=X`
+- `GET /api/analytics/drill-down/date-deposits?date=X&granularity=X`
+
+Testing: 22/22 tests passed (100%) — Backend + Frontend
+
+---
+
+## Previous Update: 5 New Analytics Charts — Operational & Strategic (2026-02-14)
 
 ### New Charts (Medium Value — Operational Efficiency):
 1. **Response Time by Staff** — Shows avg time to WA check and first response per staff with speed grades (Excellent/Good/Average/Slow), dual bars
