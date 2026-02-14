@@ -80,6 +80,7 @@ export function ProductOmsetWidget({ data }) {
       <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
         <Package size={20} className="text-purple-600" />
         OMSET by Product
+        <ChartInfoTooltip chartKey="productOmset" />
       </h3>
       {hasData ? (
         <div className="h-64">
