@@ -105,6 +105,7 @@ export default function AdvancedAnalytics() {
   
   const [widgetOrder, setWidgetOrder] = useState(DEFAULT_WIDGET_ORDER);
   const [visibleWidgets, setVisibleWidgets] = useState({
+    staffNdpRdpDaily: true,
     staffCompare: true,
     staffComparison: true,
     dailyTrends: true,
