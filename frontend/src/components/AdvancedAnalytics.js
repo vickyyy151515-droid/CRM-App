@@ -248,6 +248,319 @@ function StaffNdpRdpDailyWidget({ data }) {
   );
 }
 
+
+// ==================== CHART 1: CONVERSION FUNNEL ====================
+function ConversionFunnelWidget({ data }) {
+  if (!data?.funnel_data?.length) {
+    return (
+      <div className="rounded-2xl p-6 shadow-lg" style={{ background: 'linear-gradient(145deg, #0c0f1a 0%, #151b2e 100%)' }} data-testid="conversion-funnel-widget">
+        <h3 className="text-lg font-semibold text-white flex items-center gap-2"><TrendingUp size={20} className="text-amber-400" /> Staff Conversion Funnel</h3>
+        <div className="text-center py-12 text-slate-500"><TrendingUp size={48} className="mx-auto mb-3 opacity-30" /><p>No data available</p></div>
+      </div>
+    );
+  }
+
+  const { funnel_data } = data;
+  const stages = [
+    { key: 'assigned', label: 'Assigned', color: '#64748b', glow: '#64748b' },
+    { key: 'wa_checked', label: 'WA Checked', color: '#3b82f6', glow: '#3b82f6' },
+    { key: 'responded', label: 'Responded', color: '#f59e0b', glow: '#f59e0b' },
+    { key: 'deposited', label: 'Deposited', color: '#22c55e', glow: '#22c55e' },
+  ];
+
+  const maxAssigned = Math.max(...funnel_data.map(d => d.assigned), 1);
+
+  return (
+    <div className="rounded-2xl p-4 sm:p-5 shadow-xl" style={{ background: 'linear-gradient(145deg, #0c0f1a 0%, #151b2e 50%, #0f172a 100%)' }} data-testid="conversion-funnel-widget">
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2.5">
+          <span className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
+            <TrendingUp size={18} className="text-white" />
+          </span>
+          Staff Conversion Funnel
+        </h3>
+        <div className="flex gap-2">
+          {stages.map(s => (
+            <div key={s.key} className="flex items-center gap-1 text-[10px]">
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />
+              <span className="text-slate-500 hidden sm:inline">{s.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {funnel_data.map((staff, si) => {
+          const widthScale = staff.assigned / maxAssigned;
+          return (
+            <div key={staff.staff_id} className="rounded-xl p-3 sm:p-4 border" style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.05)' }} data-testid={`funnel-staff-${staff.staff_id}`}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold text-white" style={{ background: `linear-gradient(135deg, ${STAFF_CHART_COLORS[si % STAFF_CHART_COLORS.length]}, ${STAFF_CHART_COLORS[(si + 3) % STAFF_CHART_COLORS.length]})` }}>
+                    {staff.staff_name.charAt(0)}
+                  </div>
+                  <span className="text-sm font-semibold text-white">{staff.staff_name}</span>
+                </div>
+                <span className="text-xs text-slate-500">{staff.assigned} records</span>
+              </div>
+              {/* Funnel bars */}
+              <div className="space-y-1.5">
+                {stages.map((stage, i) => {
+                  const value = staff[stage.key];
+                  const prevValue = i === 0 ? staff.assigned : staff[stages[i - 1].key];
+                  const pct = prevValue > 0 ? ((value / prevValue) * 100).toFixed(0) : 0;
+                  const totalPct = staff.assigned > 0 ? ((value / staff.assigned) * 100).toFixed(0) : 0;
+                  const barWidth = staff.assigned > 0 ? Math.max(2, (value / maxAssigned) * 100) : 0;
+                  return (
+                    <div key={stage.key} className="flex items-center gap-2">
+                      <span className="text-[10px] text-slate-500 w-16 sm:w-20 text-right shrink-0">{stage.label}</span>
+                      <div className="flex-1 h-6 rounded-md overflow-hidden relative" style={{ background: 'rgba(255,255,255,0.03)' }}>
+                        <div
+                          className="h-full rounded-md transition-all duration-700 flex items-center"
+                          style={{ width: `${barWidth}%`, background: `linear-gradient(90deg, ${stage.color}dd, ${stage.color}88)`, boxShadow: `0 0 12px ${stage.glow}30` }}
+                        >
+                          <span className="text-[10px] font-bold text-white ml-2 whitespace-nowrap drop-shadow">{value}</span>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-semibold w-10 text-right shrink-0" style={{ color: stage.color }}>{totalPct}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ==================== CHART 2: REVENUE HEATMAP ====================
+function RevenueHeatmapWidget({ data }) {
+  const [metric, setMetric] = useState('count');
+
+  if (!data?.grid?.length) {
+    return (
+      <div className="rounded-2xl p-6 shadow-lg bg-slate-900" data-testid="revenue-heatmap-widget">
+        <h3 className="text-lg font-semibold text-white flex items-center gap-2"><Database size={20} className="text-emerald-400" /> Revenue Heatmap</h3>
+        <div className="text-center py-12 text-slate-500"><Database size={48} className="mx-auto mb-3 opacity-30" /><p>No data available</p></div>
+      </div>
+    );
+  }
+
+  const { grid, max_count, max_amount, day_names } = data;
+  const maxVal = metric === 'count' ? max_count : max_amount;
+
+  const getHeatColor = (value) => {
+    if (!value || !maxVal) return 'rgba(255,255,255,0.02)';
+    const intensity = value / maxVal;
+    if (metric === 'count') {
+      const r = Math.round(6 + intensity * 93);
+      const g = Math.round(182 + intensity * (-40));
+      const b = Math.round(212 + intensity * (-120));
+      return `rgba(${r},${g},${b},${0.15 + intensity * 0.85})`;
+    } else {
+      const r = Math.round(34 + intensity * (220 - 34));
+      const g = Math.round(197 + intensity * (38 - 197));
+      const b = Math.round(94 + intensity * (38 - 94));
+      return `rgba(${r},${g},${b},${0.15 + intensity * 0.85})`;
+    }
+  };
+
+  const formatAmount = (val) => {
+    if (val >= 1000000) return `${(val / 1000000).toFixed(1)}M`;
+    if (val >= 1000) return `${(val / 1000).toFixed(0)}K`;
+    return val.toString();
+  };
+
+  return (
+    <div className="rounded-2xl p-4 sm:p-5 shadow-xl bg-slate-900 border border-slate-800" data-testid="revenue-heatmap-widget">
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2.5">
+          <span className="w-9 h-9 rounded-xl flex items-center justify-center bg-gradient-to-br from-emerald-500 to-teal-600">
+            <Database size={18} className="text-white" />
+          </span>
+          Revenue Heatmap
+        </h3>
+        <div className="flex items-center bg-slate-800 rounded-lg p-0.5" data-testid="heatmap-metric-toggle">
+          {[{ key: 'count', label: 'Deposits' }, { key: 'amount', label: 'Amount' }].map(opt => (
+            <button
+              key={opt.key}
+              onClick={() => setMetric(opt.key)}
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${metric === opt.key ? 'bg-slate-700 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}
+              data-testid={`heatmap-${opt.key}`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Heatmap grid */}
+      <div className="overflow-x-auto">
+        <div className="min-w-[480px]">
+          {/* Day headers */}
+          <div className="flex items-center mb-2">
+            <div className="w-28 sm:w-36 shrink-0" />
+            {day_names.map(d => (
+              <div key={d} className="flex-1 text-center text-[11px] font-semibold text-slate-400">{d}</div>
+            ))}
+          </div>
+
+          {/* Staff rows */}
+          {grid.map((row, ri) => (
+            <div key={row.staff_id} className="flex items-center mb-1.5" data-testid={`heatmap-row-${row.staff_id}`}>
+              <div className="w-28 sm:w-36 shrink-0 flex items-center gap-2 pr-2">
+                <div className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold text-white" style={{ background: STAFF_CHART_COLORS[ri % STAFF_CHART_COLORS.length] }}>
+                  {row.staff_name.charAt(0)}
+                </div>
+                <span className="text-xs text-slate-300 truncate">{row.staff_name}</span>
+              </div>
+              {row.days.map((cell, ci) => {
+                const val = metric === 'count' ? cell.count : cell.amount;
+                return (
+                  <div key={ci} className="flex-1 px-0.5">
+                    <div
+                      className="h-12 sm:h-14 rounded-lg flex flex-col items-center justify-center cursor-default transition-all hover:scale-105 hover:z-10 relative group border"
+                      style={{ background: getHeatColor(val), borderColor: val > 0 ? 'rgba(255,255,255,0.06)' : 'transparent' }}
+                      title={`${row.staff_name} - ${cell.day}: ${cell.count} deposits, ${formatAmount(cell.amount)}`}
+                    >
+                      {val > 0 && (
+                        <>
+                          <span className="text-sm font-bold text-white drop-shadow">{metric === 'count' ? val : formatAmount(val)}</span>
+                          <span className="text-[9px] text-white/50">{metric === 'count' ? 'dep' : `${cell.count}x`}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Color scale */}
+      <div className="flex items-center justify-end gap-2 mt-3 pt-3 border-t border-slate-800">
+        <span className="text-[10px] text-slate-500">Low</span>
+        <div className="flex gap-0.5">
+          {[0.1, 0.3, 0.5, 0.7, 0.9].map(i => (
+            <div key={i} className="w-5 h-3 rounded-sm" style={{ background: getHeatColor(maxVal * i) }} />
+          ))}
+        </div>
+        <span className="text-[10px] text-slate-500">High</span>
+      </div>
+    </div>
+  );
+}
+
+// ==================== CHART 3: DEPOSIT LIFECYCLE ====================
+function DepositLifecycleWidget({ data }) {
+  if (!data?.lifecycle_data?.length) {
+    return (
+      <div className="rounded-2xl p-6 shadow-lg" style={{ background: 'linear-gradient(160deg, #1a0a2e 0%, #16132d 50%, #0f172a 100%)' }} data-testid="deposit-lifecycle-widget">
+        <h3 className="text-lg font-semibold text-white flex items-center gap-2"><Users size={20} className="text-fuchsia-400" /> Deposit Lifecycle</h3>
+        <div className="text-center py-12 text-slate-500"><Users size={48} className="mx-auto mb-3 opacity-30" /><p>No data available</p></div>
+      </div>
+    );
+  }
+
+  const { lifecycle_data } = data;
+  const maxAvgDays = Math.max(...lifecycle_data.filter(d => d.avg_days !== null).map(d => d.avg_days), 1);
+
+  const getSpeedColor = (avgDays) => {
+    if (avgDays === null) return { text: '#64748b', bar: '#334155', label: 'No Data' };
+    if (avgDays <= 2) return { text: '#22c55e', bar: 'linear-gradient(90deg, #22c55e, #4ade80)', label: 'Fast' };
+    if (avgDays <= 5) return { text: '#3b82f6', bar: 'linear-gradient(90deg, #3b82f6, #60a5fa)', label: 'Good' };
+    if (avgDays <= 10) return { text: '#f59e0b', bar: 'linear-gradient(90deg, #f59e0b, #fbbf24)', label: 'Average' };
+    return { text: '#ef4444', bar: 'linear-gradient(90deg, #ef4444, #f87171)', label: 'Slow' };
+  };
+
+  return (
+    <div className="rounded-2xl p-4 sm:p-5 shadow-xl" style={{ background: 'linear-gradient(160deg, #1a0a2e 0%, #16132d 50%, #0f172a 100%)' }} data-testid="deposit-lifecycle-widget">
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2.5">
+          <span className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #d946ef, #a855f7)' }}>
+            <Users size={18} className="text-white" />
+          </span>
+          Deposit Lifecycle
+        </h3>
+        <p className="text-[11px] text-slate-500">Response to Deposit time</p>
+      </div>
+
+      <div className="space-y-3">
+        {lifecycle_data.map((staff, si) => {
+          const speed = getSpeedColor(staff.avg_days);
+          const barWidth = staff.avg_days !== null ? Math.max(8, (staff.avg_days / maxAvgDays) * 100) : 0;
+
+          return (
+            <div key={staff.staff_id} className="rounded-xl p-3 sm:p-4 border" style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.05)' }} data-testid={`lifecycle-staff-${staff.staff_id}`}>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold text-white" style={{ background: STAFF_CHART_COLORS[si % STAFF_CHART_COLORS.length] }}>
+                    {staff.staff_name.charAt(0)}
+                  </div>
+                  <span className="text-sm font-semibold text-white">{staff.staff_name}</span>
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider" style={{ color: speed.text, background: `${speed.text}18` }}>
+                    {speed.label}
+                  </span>
+                </div>
+              </div>
+
+              {/* Timeline bar */}
+              <div className="flex items-center gap-3 mb-2">
+                <div className="flex-1 h-7 rounded-lg overflow-hidden" style={{ background: 'rgba(255,255,255,0.03)' }}>
+                  {staff.avg_days !== null ? (
+                    <div className="h-full rounded-lg flex items-center transition-all duration-700" style={{ width: `${barWidth}%`, background: speed.bar, boxShadow: `0 0 16px ${speed.text}30` }}>
+                      <span className="text-xs font-black text-white ml-2 drop-shadow whitespace-nowrap">
+                        {staff.avg_days} days avg
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="h-full flex items-center justify-center">
+                      <span className="text-xs text-slate-600">No conversions yet</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Stats row */}
+              <div className="flex items-center gap-4 text-[11px]">
+                <div className="flex items-center gap-1">
+                  <span className="text-slate-500">Responded:</span>
+                  <span className="font-semibold text-slate-300">{staff.total_responded}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-slate-500">Converted:</span>
+                  <span className="font-semibold" style={{ color: '#22c55e' }}>{staff.converted_count}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-slate-500">Pending:</span>
+                  <span className="font-semibold text-amber-400">{staff.pending_count}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-slate-500">Rate:</span>
+                  <span className="font-bold" style={{ color: staff.conversion_rate >= 50 ? '#22c55e' : staff.conversion_rate >= 25 ? '#f59e0b' : '#ef4444' }}>
+                    {staff.conversion_rate}%
+                  </span>
+                </div>
+                {staff.min_days !== null && (
+                  <div className="flex items-center gap-1 ml-auto">
+                    <span className="text-slate-600">Min {staff.min_days}d</span>
+                    <span className="text-slate-700">|</span>
+                    <span className="text-slate-600">Max {staff.max_days}d</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+
 function SortableWidget({ id, children, isVisible }) {
   const {
     attributes,
