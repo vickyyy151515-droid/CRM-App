@@ -497,6 +497,7 @@ function RevenueHeatmapWidget({ data }) {
             <Database size={18} className="text-white" />
           </span>
           Revenue Heatmap
+          <ChartInfoTooltip chartKey="revenueHeatmap" />
         </h3>
         <div className="flex items-center bg-slate-800 rounded-lg p-0.5" data-testid="heatmap-metric-toggle">
           {[{ key: 'count', label: 'Deposits' }, { key: 'amount', label: 'Amount' }].map(opt => (
