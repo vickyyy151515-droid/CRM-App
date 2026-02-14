@@ -923,8 +923,8 @@ function CustomerValueWidget({ data, onDrillDown }) {
                 );
               }}
             />
-            <Bar dataKey="ndp" name="New Customer (NDP)" stackId="a" fill="url(#grad_ndp_val)" radius={[0, 0, 0, 0]} />
-            <Bar dataKey="rdp" name="Returning (RDP)" stackId="a" fill="url(#grad_rdp_val)" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="ndp" name="New Customer (NDP)" stackId="a" fill="url(#grad_ndp_val)" radius={[0, 0, 0, 0]} cursor="pointer" onClick={(d) => { const s = staff_data.find(x => x.staff_name === d.name); if (s) onDrillDown?.('staff_customers', { staff_id: s.staff_id, staff_name: s.staff_name }); }} />
+            <Bar dataKey="rdp" name="Returning (RDP)" stackId="a" fill="url(#grad_rdp_val)" radius={[4, 4, 0, 0]} cursor="pointer" onClick={(d) => { const s = staff_data.find(x => x.staff_name === d.name); if (s) onDrillDown?.('staff_customers', { staff_id: s.staff_id, staff_name: s.staff_name }); }} />
           </BarChart>
         </ResponsiveContainer>
       </div>
