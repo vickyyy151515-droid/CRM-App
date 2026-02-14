@@ -561,6 +561,500 @@ function DepositLifecycleWidget({ data }) {
 }
 
 
+// ==================== CHART 4: RESPONSE TIME BY STAFF ====================
+function ResponseTimeByStaffWidget({ data }) {
+  if (!data?.response_time_data?.length) {
+    return (
+      <div className="rounded-2xl p-6 shadow-lg" style={{ background: 'linear-gradient(145deg, #0a1628 0%, #162033 100%)' }} data-testid="response-time-widget">
+        <h3 className="text-lg font-semibold text-white flex items-center gap-2"><BarChart3 size={20} className="text-sky-400" /> Response Time by Staff</h3>
+        <div className="text-center py-12 text-slate-500"><BarChart3 size={48} className="mx-auto mb-3 opacity-30" /><p>No data available</p></div>
+      </div>
+    );
+  }
+  const { response_time_data } = data;
+  const maxHours = Math.max(...response_time_data.filter(d => d.avg_wa_hours !== null).map(d => d.avg_wa_hours), 1);
+
+  const getSpeedGrade = (hours) => {
+    if (hours === null) return { color: '#475569', bg: 'rgba(71,85,105,0.15)', label: 'N/A' };
+    if (hours <= 1) return { color: '#22c55e', bg: 'rgba(34,197,94,0.12)', label: 'Excellent' };
+    if (hours <= 4) return { color: '#3b82f6', bg: 'rgba(59,130,246,0.12)', label: 'Good' };
+    if (hours <= 12) return { color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', label: 'Average' };
+    return { color: '#ef4444', bg: 'rgba(239,68,68,0.12)', label: 'Slow' };
+  };
+
+  const formatHours = (h) => {
+    if (h === null) return '-';
+    if (h < 1) return `${Math.round(h * 60)}m`;
+    if (h >= 24) return `${(h / 24).toFixed(1)}d`;
+    return `${h.toFixed(1)}h`;
+  };
+
+  return (
+    <div className="rounded-2xl p-4 sm:p-5 shadow-xl" style={{ background: 'linear-gradient(145deg, #0a1628 0%, #101d35 50%, #162033 100%)' }} data-testid="response-time-widget">
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2.5">
+          <span className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #0ea5e9, #38bdf8)' }}>
+            <BarChart3 size={18} className="text-white" />
+          </span>
+          Response Time by Staff
+        </h3>
+        <div className="flex gap-1.5 text-[9px]">
+          {[{ c: '#22c55e', l: '<1h' }, { c: '#3b82f6', l: '1-4h' }, { c: '#f59e0b', l: '4-12h' }, { c: '#ef4444', l: '>12h' }].map(g => (
+            <span key={g.l} className="px-1.5 py-0.5 rounded-md border" style={{ color: g.c, borderColor: `${g.c}30`, background: `${g.c}08` }}>{g.l}</span>
+          ))}
+        </div>
+      </div>
+      <div className="space-y-2.5">
+        {response_time_data.map((staff, si) => {
+          const grade = getSpeedGrade(staff.avg_wa_hours);
+          const barWidth = staff.avg_wa_hours !== null ? Math.max(6, (staff.avg_wa_hours / maxHours) * 100) : 0;
+          return (
+            <div key={staff.staff_id} className="rounded-xl p-3 border" style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.05)' }} data-testid={`response-time-staff-${staff.staff_id}`}>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold text-white" style={{ background: STAFF_CHART_COLORS[si % STAFF_CHART_COLORS.length] }}>
+                    {staff.staff_name.charAt(0)}
+                  </div>
+                  <span className="text-sm font-semibold text-white">{staff.staff_name}</span>
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider" style={{ color: grade.color, background: grade.bg }}>{grade.label}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-lg font-black" style={{ color: grade.color }}>{formatHours(staff.avg_wa_hours)}</span>
+                  <span className="text-[10px] text-slate-500 ml-1">avg WA</span>
+                </div>
+              </div>
+              {/* Dual bars: WA time and Response time */}
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-slate-500 w-14 text-right shrink-0">WA Check</span>
+                  <div className="flex-1 h-5 rounded-md overflow-hidden" style={{ background: 'rgba(255,255,255,0.03)' }}>
+                    <div className="h-full rounded-md flex items-center transition-all duration-700" style={{ width: `${barWidth}%`, background: `linear-gradient(90deg, ${grade.color}cc, ${grade.color}66)`, boxShadow: `0 0 10px ${grade.color}25` }}>
+                      <span className="text-[9px] font-bold text-white ml-1.5 drop-shadow whitespace-nowrap">{formatHours(staff.avg_wa_hours)}</span>
+                    </div>
+                  </div>
+                </div>
+                {staff.avg_respond_hours !== null && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-slate-500 w-14 text-right shrink-0">Response</span>
+                    <div className="flex-1 h-5 rounded-md overflow-hidden" style={{ background: 'rgba(255,255,255,0.03)' }}>
+                      <div className="h-full rounded-md flex items-center transition-all duration-700" style={{ width: `${Math.max(6, (staff.avg_respond_hours / maxHours) * 100)}%`, background: 'linear-gradient(90deg, #a78bfacc, #a78bfa66)', boxShadow: '0 0 10px rgba(167,139,250,0.25)' }}>
+                        <span className="text-[9px] font-bold text-white ml-1.5 drop-shadow whitespace-nowrap">{formatHours(staff.avg_respond_hours)}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-4 mt-1.5 text-[10px]">
+                <span className="text-slate-500">Assigned: <span className="text-slate-300 font-semibold">{staff.total_assigned}</span></span>
+                <span className="text-slate-500">WA'd: <span className="text-slate-300 font-semibold">{staff.wa_checked_count}</span></span>
+                <span className="text-slate-500">Responded: <span className="text-slate-300 font-semibold">{staff.responded_count}</span></span>
+                {staff.fastest_wa !== null && <span className="text-slate-600 ml-auto">Best {formatHours(staff.fastest_wa)}</span>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ==================== CHART 5: FOLLOW-UP EFFECTIVENESS ====================
+function FollowupEffectivenessWidget({ data }) {
+  if (!data?.effectiveness_data?.length) {
+    return (
+      <div className="rounded-2xl p-6 shadow-lg" style={{ background: 'linear-gradient(150deg, #0f1a0f 0%, #0d1f17 100%)' }} data-testid="followup-effectiveness-widget">
+        <h3 className="text-lg font-semibold text-white flex items-center gap-2"><TrendingUp size={20} className="text-emerald-400" /> Follow-up Effectiveness</h3>
+        <div className="text-center py-12 text-slate-500"><TrendingUp size={48} className="mx-auto mb-3 opacity-30" /><p>No data available</p></div>
+      </div>
+    );
+  }
+  const { effectiveness_data } = data;
+
+  const chartData = effectiveness_data.map(s => ({
+    name: s.staff_name,
+    wa_checked: s.wa_checked,
+    responded: s.responded,
+    deposited: s.deposited,
+    effectiveness: s.effectiveness
+  }));
+
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (!active || !payload?.length) return null;
+    const d = effectiveness_data.find(s => s.staff_name === label);
+    return (
+      <div className="rounded-xl px-4 py-3 shadow-2xl border text-sm backdrop-blur-xl" style={{ background: 'rgba(15,23,42,0.95)', borderColor: 'rgba(255,255,255,0.08)' }}>
+        <p className="font-bold text-white mb-2">{label}</p>
+        <div className="space-y-1 text-xs">
+          <div className="flex justify-between gap-4"><span className="text-slate-400">WA Checked</span><span className="text-sky-400 font-semibold">{d?.wa_checked}</span></div>
+          <div className="flex justify-between gap-4"><span className="text-slate-400">Responded</span><span className="text-amber-400 font-semibold">{d?.responded}</span></div>
+          <div className="flex justify-between gap-4"><span className="text-slate-400">Deposited</span><span className="text-emerald-400 font-semibold">{d?.deposited}</span></div>
+          <div className="border-t border-slate-700 pt-1 flex justify-between gap-4"><span className="text-slate-300 font-medium">Effectiveness</span><span className="text-white font-bold">{d?.effectiveness}%</span></div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="rounded-2xl p-4 sm:p-5 shadow-xl" style={{ background: 'linear-gradient(150deg, #0f1a0f 0%, #0d1f17 50%, #0f172a 100%)' }} data-testid="followup-effectiveness-widget">
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2.5">
+          <span className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #10b981, #34d399)' }}>
+            <TrendingUp size={18} className="text-white" />
+          </span>
+          Follow-up Effectiveness
+        </h3>
+        <div className="flex gap-2 text-[10px]">
+          {[{ c: '#38bdf8', l: 'WA Checked' }, { c: '#fbbf24', l: 'Responded' }, { c: '#4ade80', l: 'Deposited' }].map(g => (
+            <div key={g.l} className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: g.c }} /><span className="text-slate-500 hidden sm:inline">{g.l}</span></div>
+          ))}
+        </div>
+      </div>
+      <div className="h-64 sm:h-80">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={chartData} margin={{ top: 8, right: 8, left: -8, bottom: 40 }}>
+            <defs>
+              <linearGradient id="grad_wa" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#38bdf8" stopOpacity={0.9} /><stop offset="100%" stopColor="#0284c7" stopOpacity={0.7} /></linearGradient>
+              <linearGradient id="grad_resp" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#fbbf24" stopOpacity={0.9} /><stop offset="100%" stopColor="#d97706" stopOpacity={0.7} /></linearGradient>
+              <linearGradient id="grad_dep" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#4ade80" stopOpacity={0.9} /><stop offset="100%" stopColor="#16a34a" stopOpacity={0.7} /></linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="4 4" stroke="rgba(255,255,255,0.04)" vertical={false} />
+            <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#64748b' }} angle={-25} textAnchor="end" axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 10, fill: '#475569' }} axisLine={false} tickLine={false} />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+            <Bar dataKey="wa_checked" name="WA Checked" fill="url(#grad_wa)" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="responded" name="Responded" fill="url(#grad_resp)" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="deposited" name="Deposited" fill="url(#grad_dep)" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      {/* Effectiveness ranking */}
+      <div className="mt-4 pt-3 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+        <p className="text-[11px] text-slate-500 mb-2">Conversion Rate (Responded → Deposited)</p>
+        <div className="flex flex-wrap gap-2">
+          {effectiveness_data.slice(0, 8).map((s, i) => (
+            <div key={s.staff_id} className="flex items-center gap-1.5 px-2 py-1 rounded-lg border" style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)' }}>
+              <span className="text-[10px] text-slate-400">{s.staff_name}</span>
+              <span className="text-[11px] font-bold" style={{ color: s.effectiveness >= 50 ? '#22c55e' : s.effectiveness >= 25 ? '#f59e0b' : '#ef4444' }}>{s.effectiveness}%</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==================== CHART 6: PRODUCT PERFORMANCE ====================
+function ProductPerformanceWidget({ data }) {
+  if (!data?.product_data?.length) {
+    return (
+      <div className="rounded-2xl p-6 shadow-lg" style={{ background: 'linear-gradient(135deg, #1a0f2e 0%, #1e1338 100%)' }} data-testid="product-performance-widget">
+        <h3 className="text-lg font-semibold text-white flex items-center gap-2"><Package size={20} className="text-violet-400" /> Product Performance</h3>
+        <div className="text-center py-12 text-slate-500"><Package size={48} className="mx-auto mb-3 opacity-30" /><p>No data available</p></div>
+      </div>
+    );
+  }
+  const { product_data } = data;
+  const DONUT_COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6'];
+  const totalAmount = product_data.reduce((s, p) => s + p.total_amount, 0);
+
+  const pieData = product_data.map((p, i) => ({
+    name: p.product_name,
+    value: p.total_count,
+    amount: p.total_amount,
+    fill: DONUT_COLORS[i % DONUT_COLORS.length]
+  }));
+
+  const formatAmt = (val) => {
+    if (val >= 1000000) return `${(val / 1000000).toFixed(1)}M`;
+    if (val >= 1000) return `${(val / 1000).toFixed(0)}K`;
+    return val.toString();
+  };
+
+  const CustomLabel = ({ cx, cy }) => (
+    <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle">
+      <tspan x={cx} y={cy - 8} fill="#fff" fontSize="18" fontWeight="800">{product_data.length}</tspan>
+      <tspan x={cx} y={cy + 12} fill="#64748b" fontSize="10">Products</tspan>
+    </text>
+  );
+
+  return (
+    <div className="rounded-2xl p-4 sm:p-5 shadow-xl" style={{ background: 'linear-gradient(135deg, #1a0f2e 0%, #1e1338 50%, #0f172a 100%)' }} data-testid="product-performance-widget">
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2.5">
+          <span className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #8b5cf6, #a78bfa)' }}>
+            <Package size={18} className="text-white" />
+          </span>
+          Product Performance
+        </h3>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Donut chart */}
+        <div className="h-64 sm:h-72">
+          <ResponsiveContainer width="100%" height="100%">
+            <RechartsPie>
+              <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={95} paddingAngle={3} dataKey="value" stroke="none" label={CustomLabel} labelLine={false}>
+                {pieData.map((entry, i) => <Cell key={`cell-${i}`} fill={entry.fill} />)}
+              </Pie>
+              <Tooltip
+                content={({ active, payload }) => {
+                  if (!active || !payload?.length) return null;
+                  const d = payload[0].payload;
+                  return (
+                    <div className="rounded-xl px-4 py-3 shadow-2xl border backdrop-blur-xl text-sm" style={{ background: 'rgba(15,23,42,0.95)', borderColor: 'rgba(255,255,255,0.08)' }}>
+                      <p className="font-bold text-white mb-1">{d.name}</p>
+                      <p className="text-slate-400 text-xs">Deposits: <span className="text-white font-semibold">{d.value}</span></p>
+                      <p className="text-slate-400 text-xs">Amount: <span className="text-white font-semibold">{formatAmt(d.amount)}</span></p>
+                    </div>
+                  );
+                }}
+              />
+            </RechartsPie>
+          </ResponsiveContainer>
+        </div>
+        {/* Product breakdown */}
+        <div className="space-y-2">
+          {product_data.map((p, i) => {
+            const pct = totalAmount > 0 ? (p.total_amount / totalAmount * 100).toFixed(1) : 0;
+            return (
+              <div key={p.product_id} className="rounded-lg p-3 border" style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.05)' }} data-testid={`product-perf-${p.product_id}`}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: DONUT_COLORS[i % DONUT_COLORS.length] }} />
+                    <span className="text-sm font-semibold text-white">{p.product_name}</span>
+                  </div>
+                  <span className="text-sm font-bold text-white">{formatAmt(p.total_amount)}</span>
+                </div>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                  <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: DONUT_COLORS[i % DONUT_COLORS.length] }} />
+                </div>
+                <div className="flex items-center gap-3 mt-1.5 text-[10px]">
+                  <span className="text-cyan-400">NDP: {p.ndp_count}</span>
+                  <span className="text-purple-400">RDP: {p.rdp_count}</span>
+                  <span className="text-slate-500 ml-auto">{pct}% of total</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==================== CHART 7: CUSTOMER VALUE COMPARISON (LTV) ====================
+function CustomerValueWidget({ data }) {
+  if (!data?.staff_data?.length) {
+    return (
+      <div className="rounded-2xl p-6 shadow-lg" style={{ background: 'linear-gradient(145deg, #1a0a0a 0%, #2d1313 100%)' }} data-testid="customer-value-widget">
+        <h3 className="text-lg font-semibold text-white flex items-center gap-2"><Users size={20} className="text-rose-400" /> New vs Returning Customer Value</h3>
+        <div className="text-center py-12 text-slate-500"><Users size={48} className="mx-auto mb-3 opacity-30" /><p>No data available</p></div>
+      </div>
+    );
+  }
+  const { staff_data, summary } = data;
+  const formatAmt = (val) => {
+    if (!val) return '0';
+    if (val >= 1000000) return `${(val / 1000000).toFixed(1)}M`;
+    if (val >= 1000) return `${(val / 1000).toFixed(0)}K`;
+    return val.toLocaleString();
+  };
+
+  const chartData = staff_data.map(s => ({
+    name: s.staff_name,
+    ndp: s.ndp_amount,
+    rdp: s.rdp_amount,
+  }));
+
+  return (
+    <div className="rounded-2xl p-4 sm:p-5 shadow-xl" style={{ background: 'linear-gradient(145deg, #1a0a0a 0%, #1f1020 50%, #0f172a 100%)' }} data-testid="customer-value-widget">
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2.5">
+          <span className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #e11d48, #f43f5e)' }}>
+            <Users size={18} className="text-white" />
+          </span>
+          New vs Returning Value
+        </h3>
+        {summary && (
+          <div className="flex gap-3 text-xs">
+            <div className="px-3 py-1.5 rounded-lg border" style={{ borderColor: 'rgba(34,211,238,0.3)', background: 'rgba(34,211,238,0.08)' }}>
+              <span className="text-cyan-400 font-bold">{formatAmt(summary.total_ndp_amount)}</span>
+              <span className="text-slate-500 ml-1">NDP</span>
+            </div>
+            <div className="px-3 py-1.5 rounded-lg border" style={{ borderColor: 'rgba(167,139,250,0.3)', background: 'rgba(167,139,250,0.08)' }}>
+              <span className="text-purple-400 font-bold">{formatAmt(summary.total_rdp_amount)}</span>
+              <span className="text-slate-500 ml-1">RDP</span>
+            </div>
+          </div>
+        )}
+      </div>
+      {/* Stacked bar chart */}
+      <div className="h-64 sm:h-80">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={chartData} margin={{ top: 8, right: 8, left: -8, bottom: 40 }}>
+            <defs>
+              <linearGradient id="grad_ndp_val" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#22d3ee" stopOpacity={0.9} /><stop offset="100%" stopColor="#0891b2" stopOpacity={0.7} /></linearGradient>
+              <linearGradient id="grad_rdp_val" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#a78bfa" stopOpacity={0.9} /><stop offset="100%" stopColor="#7c3aed" stopOpacity={0.7} /></linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="4 4" stroke="rgba(255,255,255,0.04)" vertical={false} />
+            <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#64748b' }} angle={-25} textAnchor="end" axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 10, fill: '#475569' }} axisLine={false} tickLine={false} tickFormatter={(v) => formatAmt(v)} />
+            <Tooltip
+              content={({ active, payload, label }) => {
+                if (!active || !payload?.length) return null;
+                const s = staff_data.find(x => x.staff_name === label);
+                return (
+                  <div className="rounded-xl px-4 py-3 shadow-2xl border backdrop-blur-xl text-sm" style={{ background: 'rgba(15,23,42,0.95)', borderColor: 'rgba(255,255,255,0.08)' }}>
+                    <p className="font-bold text-white mb-2">{label}</p>
+                    <div className="space-y-1 text-xs">
+                      <div className="flex justify-between gap-4"><span className="text-cyan-400">NDP Value</span><span className="text-white font-semibold">{formatAmt(s?.ndp_amount)}</span></div>
+                      <div className="flex justify-between gap-4"><span className="text-purple-400">RDP Value</span><span className="text-white font-semibold">{formatAmt(s?.rdp_amount)}</span></div>
+                      <div className="border-t border-slate-700 pt-1 flex justify-between gap-4"><span className="text-slate-300">Avg NDP</span><span className="text-white font-semibold">{formatAmt(s?.avg_ndp)}</span></div>
+                      <div className="flex justify-between gap-4"><span className="text-slate-300">Avg RDP</span><span className="text-white font-semibold">{formatAmt(s?.avg_rdp)}</span></div>
+                    </div>
+                  </div>
+                );
+              }}
+            />
+            <Bar dataKey="ndp" name="New Customer (NDP)" stackId="a" fill="url(#grad_ndp_val)" radius={[0, 0, 0, 0]} />
+            <Bar dataKey="rdp" name="Returning (RDP)" stackId="a" fill="url(#grad_rdp_val)" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      {/* Share indicator */}
+      {summary && (
+        <div className="mt-3 pt-3 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-slate-500">NDP Share</span>
+            <div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
+              <div className="h-full rounded-full" style={{ width: `${summary.ndp_share}%`, background: 'linear-gradient(90deg, #22d3ee, #0891b2)' }} />
+            </div>
+            <span className="text-[11px] font-bold text-cyan-400">{summary.ndp_share}%</span>
+            <span className="text-[11px] text-slate-500 ml-2">RDP</span>
+            <span className="text-[11px] font-bold text-purple-400">{(100 - summary.ndp_share).toFixed(1)}%</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ==================== CHART 8: DEPOSIT TRENDS OVER TIME ====================
+function DepositTrendsWidget({ data, onGranularityChange, granularity }) {
+  if (!data?.chart_data?.length) {
+    return (
+      <div className="rounded-2xl p-6 shadow-lg" style={{ background: 'linear-gradient(160deg, #0f172a 0%, #1a1a2e 100%)' }} data-testid="deposit-trends-widget">
+        <h3 className="text-lg font-semibold text-white flex items-center gap-2"><TrendingUp size={20} className="text-indigo-400" /> Deposit Trends</h3>
+        <div className="text-center py-12 text-slate-500"><TrendingUp size={48} className="mx-auto mb-3 opacity-30" /><p>No data available</p></div>
+      </div>
+    );
+  }
+  const { chart_data, summary } = data;
+  const formatAmt = (val) => {
+    if (!val) return '0';
+    if (val >= 1000000) return `${(val / 1000000).toFixed(1)}M`;
+    if (val >= 1000) return `${(val / 1000).toFixed(0)}K`;
+    return val.toLocaleString();
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    if (granularity === 'monthly') {
+      const [y, m] = dateStr.split('-');
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return `${months[parseInt(m) - 1]} ${y.slice(2)}`;
+    }
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  };
+
+  return (
+    <div className="rounded-2xl p-4 sm:p-5 shadow-xl" style={{ background: 'linear-gradient(160deg, #0f172a 0%, #1a1a2e 50%, #0f172a 100%)' }} data-testid="deposit-trends-widget">
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2.5">
+          <span className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #6366f1, #818cf8)' }}>
+            <TrendingUp size={18} className="text-white" />
+          </span>
+          Deposit Trends
+        </h3>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center rounded-lg p-0.5" style={{ background: 'rgba(255,255,255,0.06)' }} data-testid="granularity-toggle">
+            {['daily', 'weekly', 'monthly'].map(g => (
+              <button
+                key={g}
+                onClick={() => onGranularityChange?.(g)}
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${granularity === g ? 'text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}
+                style={granularity === g ? { background: 'rgba(99,102,241,0.5)' } : {}}
+                data-testid={`granularity-${g}`}
+              >{g.charAt(0).toUpperCase() + g.slice(1)}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+      {/* Summary stats */}
+      {summary && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+          {[
+            { label: 'Total Volume', value: formatAmt(summary.total_amount), color: '#6366f1' },
+            { label: 'Total Deposits', value: summary.total_deposits.toLocaleString(), color: '#22c55e' },
+            { label: 'Avg/Period', value: formatAmt(summary.avg_per_period), color: '#f59e0b' },
+            { label: 'Peak', value: formatAmt(summary.peak_amount), color: '#ef4444' },
+          ].map(s => (
+            <div key={s.label} className="rounded-lg p-3 border" style={{ borderColor: `${s.color}20`, background: `${s.color}08` }}>
+              <p className="text-[10px] text-slate-500">{s.label}</p>
+              <p className="text-lg font-bold" style={{ color: s.color }}>{s.value}</p>
+            </div>
+          ))}
+        </div>
+      )}
+      {/* Main chart */}
+      <div className="h-64 sm:h-80">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={chart_data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+            <defs>
+              <linearGradient id="grad_trend_amt" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#6366f1" stopOpacity={0.35} />
+                <stop offset="95%" stopColor="#6366f1" stopOpacity={0.02} />
+              </linearGradient>
+              <linearGradient id="grad_trend_count" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#22c55e" stopOpacity={0.25} />
+                <stop offset="95%" stopColor="#22c55e" stopOpacity={0.02} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="4 4" stroke="rgba(255,255,255,0.04)" vertical={false} />
+            <XAxis dataKey="date" tickFormatter={formatDate} tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
+            <YAxis yAxisId="amount" tick={{ fontSize: 10, fill: '#475569' }} axisLine={false} tickLine={false} tickFormatter={(v) => formatAmt(v)} />
+            <YAxis yAxisId="count" orientation="right" tick={{ fontSize: 10, fill: '#475569' }} axisLine={false} tickLine={false} />
+            <Tooltip
+              content={({ active, payload, label }) => {
+                if (!active || !payload?.length) return null;
+                const d = chart_data.find(x => x.date === label);
+                return (
+                  <div className="rounded-xl px-4 py-3 shadow-2xl border backdrop-blur-xl text-sm" style={{ background: 'rgba(15,23,42,0.95)', borderColor: 'rgba(255,255,255,0.08)' }}>
+                    <p className="font-semibold text-slate-300 mb-2 text-xs">{formatDate(label)}</p>
+                    <div className="space-y-1 text-xs">
+                      <div className="flex justify-between gap-4"><span className="text-indigo-400">Amount</span><span className="text-white font-semibold">{formatAmt(d?.amount)}</span></div>
+                      <div className="flex justify-between gap-4"><span className="text-emerald-400">Deposits</span><span className="text-white font-semibold">{d?.count}</span></div>
+                      <div className="flex justify-between gap-4"><span className="text-slate-400">Unique Customers</span><span className="text-white font-semibold">{d?.unique_customers}</span></div>
+                      <div className="flex justify-between gap-4"><span className="text-slate-400">Avg Deposit</span><span className="text-white font-semibold">{formatAmt(d?.avg_deposit)}</span></div>
+                    </div>
+                  </div>
+                );
+              }}
+            />
+            <Area yAxisId="amount" type="monotone" dataKey="amount" stroke="#6366f1" strokeWidth={2} fill="url(#grad_trend_amt)" dot={false} activeDot={{ r: 4, stroke: '#6366f1', fill: '#0f172a', strokeWidth: 2 }} />
+            <Line yAxisId="count" type="monotone" dataKey="count" stroke="#22c55e" strokeWidth={2} dot={false} activeDot={{ r: 3, stroke: '#22c55e', fill: '#0f172a', strokeWidth: 2 }} />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="flex items-center gap-4 mt-2 text-[11px]">
+        <div className="flex items-center gap-1.5"><span className="w-3 h-1 rounded-full" style={{ background: '#6366f1' }} /><span className="text-slate-400">Deposit Amount</span></div>
+        <div className="flex items-center gap-1.5"><span className="w-3 h-1 rounded-full" style={{ background: '#22c55e' }} /><span className="text-slate-400">Deposit Count</span></div>
+      </div>
+    </div>
+  );
+}
+
+
 function SortableWidget({ id, children, isVisible }) {
   const {
     attributes,
