@@ -340,10 +340,8 @@ function StaffNdpRdpDailyWidget({ data }) {
             <BarChart3 size={18} className="text-white" />
           </span>
           Staff NDP / RDP Daily
+          <ChartInfoTooltip chartKey="staffNdpRdpDaily" />
         </h3>
-        <div className="flex items-center gap-3 text-xs">
-          <div className="px-3 py-1.5 rounded-lg border" style={{ borderColor: 'rgba(34,211,238,0.3)', background: 'rgba(34,211,238,0.08)' }}>
-            <span className="text-cyan-400 font-bold">{totalNdpAvg}</span>
             <span className="text-slate-500 ml-1">NDP/day</span>
           </div>
           <div className="px-3 py-1.5 rounded-lg border" style={{ borderColor: 'rgba(167,139,250,0.3)', background: 'rgba(167,139,250,0.08)' }}>
