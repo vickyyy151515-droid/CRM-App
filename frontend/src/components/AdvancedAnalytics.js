@@ -393,6 +393,7 @@ function ConversionFunnelWidget({ data }) {
             <TrendingUp size={18} className="text-white" />
           </span>
           Staff Conversion Funnel
+          <ChartInfoTooltip chartKey="conversionFunnel" />
         </h3>
         <div className="flex gap-2">
           {stages.map(s => (
