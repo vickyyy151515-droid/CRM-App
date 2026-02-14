@@ -568,7 +568,7 @@ function DepositLifecycleWidget({ data }) {
 
 
 // ==================== CHART 4: RESPONSE TIME BY STAFF ====================
-function ResponseTimeByStaffWidget({ data }) {
+function ResponseTimeByStaffWidget({ data, onDrillDown }) {
   if (!data?.response_time_data?.length) {
     return (
       <div className="rounded-2xl p-6 shadow-lg" style={{ background: 'linear-gradient(145deg, #0a1628 0%, #162033 100%)' }} data-testid="response-time-widget">
