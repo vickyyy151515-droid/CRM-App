@@ -21,23 +21,29 @@ All modules support:
 - UI: Tailwind CSS + Shadcn components
 - Scheduler: APScheduler (daily cleanup jobs)
 
-## Latest Update: 3 New High-Value Analytics Charts (2026-02-14)
+## Latest Update: 5 New Analytics Charts — Operational & Strategic (2026-02-14)
 
-### New Features:
-1. **Staff Conversion Funnel** — Dark navy theme, shows Assigned → WA Checked → Responded → Deposited per staff with gradient bars and percentages
-2. **Revenue Heatmap** — Dark slate theme, Staff × Day-of-Week grid with heat-colored cells, toggle between Deposits/Amount views
-3. **Deposit Lifecycle** — Deep purple gradient theme, shows avg time from customer response to first deposit per staff, with speed labels (Fast/Good/Average/Slow)
+### New Charts (Medium Value — Operational Efficiency):
+1. **Response Time by Staff** — Shows avg time to WA check and first response per staff with speed grades (Excellent/Good/Average/Slow), dual bars
+2. **Follow-up Effectiveness** — Grouped bar chart showing WA Checked → Responded → Deposited per staff with effectiveness % ranking
+3. **Product Performance** — Donut pie chart showing NDP/RDP counts and deposit amounts per product with percentage breakdown
+
+### New Charts (Nice to Have — Strategic Insights):
+4. **New vs Returning Customer Value (LTV)** — Stacked bar chart comparing NDP vs RDP deposit values per staff with NDP share indicator
+5. **Deposit Trends Over Time** — Area+line chart with Daily/Weekly/Monthly granularity toggle, summary stats (Total Volume, Deposits, Avg/Period, Peak)
 
 ### New Endpoints:
-- `GET /api/analytics/staff-conversion-funnel`
-- `GET /api/analytics/revenue-heatmap`
-- `GET /api/analytics/deposit-lifecycle`
+- `GET /api/analytics/response-time-by-staff` (period, product_id filters)
+- `GET /api/analytics/followup-effectiveness` (period, product_id filters)
+- `GET /api/analytics/product-performance` (period filter)
+- `GET /api/analytics/customer-value-comparison` (period, product_id filters)
+- `GET /api/analytics/deposit-trends` (period, granularity, product_id filters)
 
-Testing: 24/24 tests passed (100%)
+Testing: 38/38 tests passed (100%) — Backend + Frontend
 
 ---
 
-## Previous Update: Staff NDP/RDP Daily Breakdown Chart (2026-02-14)
+## Previous Update: 3 High-Value Analytics Charts (2026-02-14)
 
 ### Bug Fix: Admin Follow-up page showing 0 counts for master_admin users
 
