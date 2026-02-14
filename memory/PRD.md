@@ -21,7 +21,16 @@ All modules support:
 - UI: Tailwind CSS + Shadcn components
 - Scheduler: APScheduler (daily cleanup jobs)
 
-## Latest Update: Drill-Down Interactivity (2026-02-14)
+## Latest Update: Chart Info Tooltips (2026-02-14)
+
+Added hover-to-reveal info tooltips on **all 18 chart titles** across the Advanced Analytics page. Hovering over the (i) icon next to any chart title shows a popup explaining what the chart does and its business benefit.
+
+- Shared `ChartInfoTooltip` component at `/app/frontend/src/components/shared/ChartInfoTooltip.js`
+- Applied to: StaffNdpRdpDaily, ConversionFunnel, RevenueHeatmap, DepositLifecycle, ResponseTime, FollowupEffectiveness, ProductPerformance, CustomerValue, DepositTrends, StaffCompare, StaffComparison, DailyTrends, WhatsappDistribution, ResponseRate, OmsetTrends, ProductOmset, NdpRdp, DatabaseUtilization
+
+---
+
+## Previous Update: Drill-Down Interactivity (2026-02-14)
 
 Clicking on any staff/product/data point in the 5 new charts opens a detailed slide-over panel:
 
