@@ -2109,6 +2109,17 @@ export default function AdvancedAnalytics() {
           </DndContext>
         </div>
       )}
-    </div>
+
+      {/* Drill-down Panel */}
+      <DrillDownPanel
+        isOpen={drillDown.isOpen}
+        onClose={closeDrillDown}
+        title={drillDown.title}
+        subtitle={drillDown.subtitle}
+        loading={drillDown.loading}
+        data={drillDown.data}
+        type={drillDown.type}
+      />
+    </>
   );
 }
