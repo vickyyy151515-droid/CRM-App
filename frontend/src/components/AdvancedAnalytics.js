@@ -739,9 +739,10 @@ function FollowupEffectivenessWidget({ data, onDrillDown }) {
         <p className="text-[11px] text-slate-500 mb-2">Conversion Rate (Responded → Deposited)</p>
         <div className="flex flex-wrap gap-2">
           {effectiveness_data.slice(0, 8).map((s, i) => (
-            <div key={s.staff_id} className="flex items-center gap-1.5 px-2 py-1 rounded-lg border" style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)' }}>
+            <div key={s.staff_id} className="flex items-center gap-1.5 px-2 py-1 rounded-lg border cursor-pointer hover:border-emerald-500/30 transition-colors" style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)' }} onClick={() => onDrillDown?.('followup', { staff_id: s.staff_id, staff_name: s.staff_name })}>
               <span className="text-[10px] text-slate-400">{s.staff_name}</span>
               <span className="text-[11px] font-bold" style={{ color: s.effectiveness >= 50 ? '#22c55e' : s.effectiveness >= 25 ? '#f59e0b' : '#ef4444' }}>{s.effectiveness}%</span>
+              <ChevronRight size={10} className="text-slate-600" />
             </div>
           ))}
         </div>
