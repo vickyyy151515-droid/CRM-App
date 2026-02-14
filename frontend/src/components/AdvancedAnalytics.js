@@ -728,9 +728,9 @@ function FollowupEffectivenessWidget({ data, onDrillDown }) {
             <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#64748b' }} angle={-25} textAnchor="end" axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 10, fill: '#475569' }} axisLine={false} tickLine={false} />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-            <Bar dataKey="wa_checked" name="WA Checked" fill="url(#grad_wa)" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="responded" name="Responded" fill="url(#grad_resp)" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="deposited" name="Deposited" fill="url(#grad_dep)" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="wa_checked" name="WA Checked" fill="url(#grad_wa)" radius={[4, 4, 0, 0]} cursor="pointer" onClick={(d) => { const s = effectiveness_data.find(x => x.staff_name === d.name); if (s) onDrillDown?.('followup', { staff_id: s.staff_id, staff_name: s.staff_name }); }} />
+            <Bar dataKey="responded" name="Responded" fill="url(#grad_resp)" radius={[4, 4, 0, 0]} cursor="pointer" onClick={(d) => { const s = effectiveness_data.find(x => x.staff_name === d.name); if (s) onDrillDown?.('followup', { staff_id: s.staff_id, staff_name: s.staff_name }); }} />
+            <Bar dataKey="deposited" name="Deposited" fill="url(#grad_dep)" radius={[4, 4, 0, 0]} cursor="pointer" onClick={(d) => { const s = effectiveness_data.find(x => x.staff_name === d.name); if (s) onDrillDown?.('followup', { staff_id: s.staff_id, staff_name: s.staff_name }); }} />
           </BarChart>
         </ResponsiveContainer>
       </div>
