@@ -2110,6 +2110,7 @@ export default function AdvancedAnalytics() {
           </DndContext>
         </div>
       )}
+    </div>
 
       {/* Drill-down Panel */}
       <DrillDownPanel
