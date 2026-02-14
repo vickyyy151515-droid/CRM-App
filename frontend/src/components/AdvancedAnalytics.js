@@ -46,6 +46,7 @@ const STAFF_CHART_COLORS = [
 ];
 
 const DEFAULT_WIDGET_ORDER = [
+  'staffNdpRdpDaily',
   'staffCompare',
   'staffComparison',
   'dailyTrends', 
