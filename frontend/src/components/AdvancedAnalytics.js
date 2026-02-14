@@ -551,6 +551,15 @@ export default function AdvancedAnalytics() {
       case 'staffNdpRdpDaily':
         return <StaffNdpRdpDailyWidget data={staffNdpRdpData} />;
 
+      case 'conversionFunnel':
+        return <ConversionFunnelWidget data={funnelData} />;
+
+      case 'revenueHeatmap':
+        return <RevenueHeatmapWidget data={heatmapData} />;
+
+      case 'depositLifecycle':
+        return <DepositLifecycleWidget data={lifecycleData} />;
+
       case 'staffCompare':
         return (
           <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 sm:p-6 shadow-sm" data-testid="staff-compare-widget">
