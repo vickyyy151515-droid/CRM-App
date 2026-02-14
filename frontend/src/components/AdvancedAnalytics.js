@@ -93,6 +93,7 @@ function SortableWidget({ id, children, isVisible }) {
 export default function AdvancedAnalytics() {
   const [staffData, setStaffData] = useState(null);
   const [businessData, setBusinessData] = useState(null);
+  const [staffNdpRdpData, setStaffNdpRdpData] = useState(null);
   const [products, setProducts] = useState([]);
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
