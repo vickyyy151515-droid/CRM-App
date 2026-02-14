@@ -21,19 +21,23 @@ All modules support:
 - UI: Tailwind CSS + Shadcn components
 - Scheduler: APScheduler (daily cleanup jobs)
 
-## Latest Update: Staff NDP/RDP Daily Breakdown Chart (2026-02-14)
+## Latest Update: 3 New High-Value Analytics Charts (2026-02-14)
 
-### New Feature: Staff NDP / RDP Daily Breakdown Widget
-- New stacked bar chart on Advanced Analytics page showing per-staff NDP/RDP counts per day
-- View toggle: All / NDP Only / RDP Only
-- Custom dark tooltips with per-staff breakdown
-- Staff legend with NDP/RDP totals
-- New backend endpoint: `GET /api/analytics/staff-ndp-rdp-daily`
-- Testing: 100% backend + frontend tests passed
+### New Features:
+1. **Staff Conversion Funnel** — Dark navy theme, shows Assigned → WA Checked → Responded → Deposited per staff with gradient bars and percentages
+2. **Revenue Heatmap** — Dark slate theme, Staff × Day-of-Week grid with heat-colored cells, toggle between Deposits/Amount views
+3. **Deposit Lifecycle** — Deep purple gradient theme, shows avg time from customer response to first deposit per staff, with speed labels (Fast/Good/Average/Slow)
+
+### New Endpoints:
+- `GET /api/analytics/staff-conversion-funnel`
+- `GET /api/analytics/revenue-heatmap`
+- `GET /api/analytics/deposit-lifecycle`
+
+Testing: 24/24 tests passed (100%)
 
 ---
 
-## Previous Update: Admin Follow-up Reminders Bug Fix (2026-02-12)
+## Previous Update: Staff NDP/RDP Daily Breakdown Chart (2026-02-14)
 
 ### Bug Fix: Admin Follow-up page showing 0 counts for master_admin users
 
