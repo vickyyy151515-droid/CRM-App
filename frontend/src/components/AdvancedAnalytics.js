@@ -800,7 +800,7 @@ function ProductPerformanceWidget({ data, onDrillDown }) {
         <div className="h-64 sm:h-72">
           <ResponsiveContainer width="100%" height="100%">
             <RechartsPie>
-              <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={95} paddingAngle={3} dataKey="value" stroke="none" label={CustomLabel} labelLine={false}>
+              <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={95} paddingAngle={3} dataKey="value" stroke="none" label={CustomLabel} labelLine={false} cursor="pointer" onClick={(_, idx) => { const p = product_data[idx]; if (p) onDrillDown?.('product_staff', { product_id: p.product_id, product_name: p.product_name }); }}>
                 {pieData.map((entry, i) => <Cell key={`cell-${i}`} fill={entry.fill} />)}
               </Pie>
               <Tooltip
