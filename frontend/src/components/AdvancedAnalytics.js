@@ -1368,6 +1368,9 @@ export default function AdvancedAnalytics() {
   
   const [showWidgetSettings, setShowWidgetSettings] = useState(false);
   const [activeId, setActiveId] = useState(null);
+  
+  // Drill-down state
+  const [drillDown, setDrillDown] = useState({ isOpen: false, type: null, title: '', subtitle: '', data: null, loading: false });
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
