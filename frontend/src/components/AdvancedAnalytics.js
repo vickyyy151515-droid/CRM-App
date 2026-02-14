@@ -61,12 +61,12 @@ const DEFAULT_WIDGET_ORDER = [
 function StaffNdpRdpDailyWidget({ data }) {
   if (!data?.chart_data?.length || !data?.staff?.length) {
     return (
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm" data-testid="staff-ndp-rdp-daily-widget">
-        <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2 mb-4">
-          <BarChart3 size={20} className="text-indigo-600" />
-          Staff NDP / RDP Daily Breakdown
+      <div className="rounded-2xl p-6 shadow-lg" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }} data-testid="staff-ndp-rdp-daily-widget">
+        <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
+          <BarChart3 size={20} className="text-cyan-400" />
+          Staff NDP / RDP Daily
         </h3>
-        <div className="text-center py-12 text-slate-400">
+        <div className="text-center py-12 text-slate-500">
           <BarChart3 size={48} className="mx-auto mb-3 opacity-30" />
           <p className="font-medium">No data available for this period</p>
         </div>
@@ -76,110 +76,171 @@ function StaffNdpRdpDailyWidget({ data }) {
 
   const { chart_data, staff: staffList } = data;
 
-  // Build per-staff chart data
-  const staffCharts = staffList.map((s, i) => {
-    const color = STAFF_CHART_COLORS[i % STAFF_CHART_COLORS.length];
-    let totalNdp = 0, totalRdp = 0;
-    const rows = chart_data.map(row => {
-      const ndp = row[`ndp_${s.id}`] || 0;
-      const rdp = row[`rdp_${s.id}`] || 0;
-      totalNdp += ndp;
-      totalRdp += rdp;
-      return { date: row.date, ndp, rdp };
-    }).filter(r => r.ndp > 0 || r.rdp > 0);
-    return { ...s, color, rows, totalNdp, totalRdp };
-  }).filter(s => s.rows.length > 0);
+  const NDP_PALETTE = ['#22d3ee', '#a78bfa', '#f472b6', '#34d399', '#fbbf24', '#fb923c', '#e879f9', '#2dd4bf', '#60a5fa', '#f87171'];
+  const RDP_PALETTE = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#0ea5e9', '#d946ef'];
+
+  // Build per-staff daily data for separate NDP and RDP charts
+  const ndpChartData = chart_data.map(row => {
+    const entry = { date: row.date };
+    staffList.forEach(s => { entry[s.name] = row[`ndp_${s.id}`] || 0; });
+    return entry;
+  });
+
+  const rdpChartData = chart_data.map(row => {
+    const entry = { date: row.date };
+    staffList.forEach(s => { entry[s.name] = row[`rdp_${s.id}`] || 0; });
+    return entry;
+  });
+
+  // Calculate averages
+  const days = chart_data.length || 1;
+  const staffNdpAvg = {};
+  const staffRdpAvg = {};
+  staffList.forEach(s => {
+    let ndpTotal = 0, rdpTotal = 0;
+    chart_data.forEach(row => {
+      ndpTotal += row[`ndp_${s.id}`] || 0;
+      rdpTotal += row[`rdp_${s.id}`] || 0;
+    });
+    staffNdpAvg[s.name] = (ndpTotal / days).toFixed(1);
+    staffRdpAvg[s.name] = (rdpTotal / days).toFixed(1);
+  });
+
+  const totalNdpAvg = Object.values(staffNdpAvg).reduce((s, v) => s + parseFloat(v), 0).toFixed(1);
+  const totalRdpAvg = Object.values(staffRdpAvg).reduce((s, v) => s + parseFloat(v), 0).toFixed(1);
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '';
-    const parts = dateStr.split('-');
-    return `${parts[2]}/${parts[1]}`;
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
   };
 
-  const StaffTooltip = ({ active, payload, label }) => {
+  const ChartTooltip = ({ active, payload, label, type }) => {
     if (!active || !payload?.length) return null;
-    const ndp = payload.find(p => p.dataKey === 'ndp')?.value || 0;
-    const rdp = payload.find(p => p.dataKey === 'rdp')?.value || 0;
+    const items = payload.filter(p => p.value > 0).sort((a, b) => b.value - a.value);
+    const total = items.reduce((s, p) => s + p.value, 0);
     return (
-      <div className="bg-slate-900 text-white rounded-lg px-3 py-2 shadow-xl text-xs">
-        <p className="font-semibold text-slate-300 mb-1">{label}</p>
-        <div className="flex items-center gap-3">
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-500" />NDP: <b>{ndp}</b></span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" />RDP: <b>{rdp}</b></span>
+      <div className="rounded-xl px-4 py-3 shadow-2xl border text-sm backdrop-blur-xl" style={{ background: 'rgba(15,23,42,0.92)', borderColor: 'rgba(255,255,255,0.08)' }}>
+        <p className="font-semibold text-slate-300 mb-2 text-xs">{formatDate(label)}</p>
+        {items.map(item => (
+          <div key={item.dataKey} className="flex items-center gap-2 py-0.5">
+            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color, boxShadow: `0 0 6px ${item.color}` }} />
+            <span className="text-slate-300 text-xs">{item.dataKey}</span>
+            <span className="ml-auto font-bold text-white text-xs">{item.value}</span>
+          </div>
+        ))}
+        <div className="border-t border-slate-700 mt-1.5 pt-1.5 flex justify-between text-xs">
+          <span className="text-slate-400">Total {type}</span>
+          <span className="font-bold text-white">{total}</span>
         </div>
       </div>
     );
   };
 
-  return (
-    <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm" data-testid="staff-ndp-rdp-daily-widget">
-      <div className="flex items-center justify-between mb-5">
-        <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-          <BarChart3 size={20} className="text-indigo-600" />
-          Staff NDP / RDP Daily Breakdown
-        </h3>
-        <div className="flex items-center gap-4 text-xs font-medium">
-          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-indigo-500" /> NDP (New Deposit)</span>
-          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-emerald-500" /> RDP (Re-Deposit)</span>
+  const renderChart = (chartData, palette, type, avgData, totalAvg) => (
+    <div className="rounded-xl p-4 sm:p-5 border" style={{ background: 'linear-gradient(180deg, rgba(30,41,59,0.5) 0%, rgba(15,23,42,0.8) 100%)', borderColor: 'rgba(255,255,255,0.06)' }}>
+      {/* Chart Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: type === 'NDP' ? 'linear-gradient(135deg, #06b6d4, #22d3ee)' : 'linear-gradient(135deg, #7c3aed, #a78bfa)' }}>
+            <TrendingUp size={16} className="text-white" />
+          </div>
+          <div>
+            <h4 className="font-bold text-white text-sm tracking-wide">Daily {type} by Staff</h4>
+            <p className="text-[11px] text-slate-500">{type === 'NDP' ? 'New Deposit' : 'Re-Deposit'} trend per staff</p>
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="text-xs text-slate-400">Avg Total</p>
+          <p className="text-lg font-black text-white" style={{ textShadow: type === 'NDP' ? '0 0 20px rgba(34,211,238,0.3)' : '0 0 20px rgba(167,139,250,0.3)' }}>
+            {totalAvg}<span className="text-xs font-normal text-slate-500 ml-1">{type}/day</span>
+          </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4" data-testid="staff-charts-grid">
-        {staffCharts.map(s => (
-          <div
-            key={s.id}
-            className="border border-slate-100 rounded-xl p-4 hover:shadow-md transition-shadow"
-            style={{ borderLeftWidth: 4, borderLeftColor: s.color }}
-            data-testid={`staff-chart-${s.id}`}
-          >
-            {/* Staff header */}
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ backgroundColor: s.color }}>
-                  {s.name.charAt(0).toUpperCase()}
-                </div>
-                <span className="font-semibold text-slate-800 truncate">{s.name}</span>
-              </div>
-              <div className="flex items-center gap-3 text-xs shrink-0">
-                <span className="px-2 py-1 rounded-md bg-indigo-50 text-indigo-700 font-semibold">NDP {s.totalNdp}</span>
-                <span className="px-2 py-1 rounded-md bg-emerald-50 text-emerald-700 font-semibold">RDP {s.totalRdp}</span>
-              </div>
-            </div>
+      {/* Chart */}
+      <div className="h-56 sm:h-72">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={chartData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+            <defs>
+              {staffList.map((s, i) => (
+                <linearGradient key={s.id} id={`grad_${type}_${i}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={palette[i % palette.length]} stopOpacity={0.35} />
+                  <stop offset="95%" stopColor={palette[i % palette.length]} stopOpacity={0.02} />
+                </linearGradient>
+              ))}
+            </defs>
+            <CartesianGrid strokeDasharray="4 4" stroke="rgba(255,255,255,0.04)" vertical={false} />
+            <XAxis
+              dataKey="date"
+              tickFormatter={formatDate}
+              tick={{ fontSize: 10, fill: '#64748b' }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis
+              allowDecimals={false}
+              tick={{ fontSize: 10, fill: '#475569' }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <Tooltip content={<ChartTooltip type={type} />} cursor={{ stroke: 'rgba(255,255,255,0.06)', strokeWidth: 1 }} />
+            {staffList.map((s, i) => (
+              <Area
+                key={s.id}
+                type="monotone"
+                dataKey={s.name}
+                stroke={palette[i % palette.length]}
+                strokeWidth={2}
+                fill={`url(#grad_${type}_${i})`}
+                dot={false}
+                activeDot={{ r: 4, strokeWidth: 2, stroke: palette[i % palette.length], fill: '#0f172a' }}
+              />
+            ))}
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
 
-            {/* Chart */}
-            <div className="h-44">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={s.rows} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barGap={2}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                  <XAxis
-                    dataKey="date"
-                    tickFormatter={formatDate}
-                    tick={{ fontSize: 10, fill: '#94a3b8' }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    allowDecimals={false}
-                    tick={{ fontSize: 10, fill: '#94a3b8' }}
-                    axisLine={false}
-                    tickLine={false}
-                    width={30}
-                  />
-                  <Tooltip content={<StaffTooltip />} cursor={{ fill: 'rgba(99,102,241,0.04)' }} />
-                  <Bar dataKey="ndp" fill="#6366f1" radius={[3, 3, 0, 0]} maxBarSize={24} />
-                  <Bar dataKey="rdp" fill="#22c55e" radius={[3, 3, 0, 0]} maxBarSize={24} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+      {/* Legend */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-3 pt-3 border-t" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+        {staffList.map((s, i) => (
+          <div key={s.id} className="flex items-center gap-1.5 text-[11px]" data-testid={`legend-${type.toLowerCase()}-${s.id}`}>
+            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: palette[i % palette.length], boxShadow: `0 0 8px ${palette[i % palette.length]}40` }} />
+            <span className="text-slate-400">{s.name}</span>
+            <span className="font-semibold text-slate-300">{avgData[s.name]}/d</span>
           </div>
         ))}
       </div>
+    </div>
+  );
 
-      {staffCharts.length === 0 && (
-        <div className="text-center py-8 text-slate-400">
-          <p>No staff with NDP/RDP data in this period</p>
+  return (
+    <div className="rounded-2xl p-4 sm:p-5 shadow-xl" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1a1f3a 50%, #1e293b 100%)' }} data-testid="staff-ndp-rdp-daily-widget">
+      {/* Main Header */}
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2.5">
+          <span className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+            <BarChart3 size={18} className="text-white" />
+          </span>
+          Staff NDP / RDP Daily
+        </h3>
+        <div className="flex items-center gap-3 text-xs">
+          <div className="px-3 py-1.5 rounded-lg border" style={{ borderColor: 'rgba(34,211,238,0.3)', background: 'rgba(34,211,238,0.08)' }}>
+            <span className="text-cyan-400 font-bold">{totalNdpAvg}</span>
+            <span className="text-slate-500 ml-1">NDP/day</span>
+          </div>
+          <div className="px-3 py-1.5 rounded-lg border" style={{ borderColor: 'rgba(167,139,250,0.3)', background: 'rgba(167,139,250,0.08)' }}>
+            <span className="text-purple-400 font-bold">{totalRdpAvg}</span>
+            <span className="text-slate-500 ml-1">RDP/day</span>
+          </div>
         </div>
-      )}
+      </div>
+
+      {/* Two charts side by side */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4" data-testid="ndp-rdp-charts-grid">
+        {renderChart(ndpChartData, NDP_PALETTE, 'NDP', staffNdpAvg, totalNdpAvg)}
+        {renderChart(rdpChartData, RDP_PALETTE, 'RDP', staffRdpAvg, totalRdpAvg)}
+      </div>
     </div>
   );
 }
