@@ -996,6 +996,7 @@ function CustomerValueWidget({ data, onDrillDown }) {
             <Users size={18} className="text-white" />
           </span>
           New vs Returning Value
+          <ChartInfoTooltip chartKey="customerValue" />
         </h3>
         {summary && (
           <div className="flex gap-3 text-xs">
