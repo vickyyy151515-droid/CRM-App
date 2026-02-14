@@ -39,6 +39,11 @@ import {
 
 const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899'];
 const COMPARISON_COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
+const STAFF_CHART_COLORS = [
+  '#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6',
+  '#06b6d4', '#ec4899', '#14b8a6', '#f97316', '#a855f7',
+  '#0ea5e9', '#e11d48', '#84cc16', '#7c3aed', '#d946ef'
+];
 
 const DEFAULT_WIDGET_ORDER = [
   'staffCompare',
