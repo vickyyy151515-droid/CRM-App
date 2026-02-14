@@ -310,6 +310,7 @@ export function ResponseRateWidget({ data }) {
       <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
         <BarChart3 size={20} className="text-indigo-600" />
         Response Rate by Staff
+        <ChartInfoTooltip chartKey="responseRate" />
       </h3>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
