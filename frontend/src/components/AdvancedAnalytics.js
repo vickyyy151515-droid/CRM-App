@@ -601,6 +601,7 @@ function DepositLifecycleWidget({ data }) {
             <Users size={18} className="text-white" />
           </span>
           Deposit Lifecycle
+          <ChartInfoTooltip chartKey="depositLifecycle" />
         </h3>
         <p className="text-[11px] text-slate-500">Response to Deposit time</p>
       </div>
