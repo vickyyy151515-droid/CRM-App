@@ -37,6 +37,7 @@ import {
   ResponseRateWidget,
   formatNumber
 } from './shared/AnalyticsWidgets';
+import { ChartInfoTooltip } from './shared/ChartInfoTooltip';
 
 const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899'];
 const COMPARISON_COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
