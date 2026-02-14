@@ -41,6 +41,7 @@ export function OmsetTrendsWidget({ data }) {
       <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
         <TrendingUp size={20} className="text-purple-600" />
         OMSET Trends
+        <ChartInfoTooltip chartKey="omsetTrends" />
       </h3>
       {hasData ? (
         <div className="h-64 sm:h-80">
