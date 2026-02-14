@@ -184,6 +184,7 @@ export function DatabaseUtilizationWidget({ data }) {
       <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
         <Database size={20} className="text-indigo-600" />
         Database Utilization
+        <ChartInfoTooltip chartKey="databaseUtilization" />
       </h3>
       <div className="overflow-x-auto">
         <table className="min-w-full">
