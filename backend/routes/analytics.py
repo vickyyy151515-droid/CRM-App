@@ -620,6 +620,409 @@ async def get_deposit_lifecycle(
     result.sort(key=lambda x: x['avg_days'] if x['avg_days'] is not None else 999)
     return {'lifecycle_data': result}
 
+
+# ==================== NEW ANALYTICS CHARTS (Operational & Strategic) ====================
+
+@router.get("/analytics/response-time-by-staff")
+async def get_response_time_by_staff(
+    period: str = 'month',
+    product_id: Optional[str] = None,
+    user: User = Depends(get_admin_user)
+):
+    """Average time from assignment to first WA check and first response, per staff"""
+    db = get_db()
+    start_date, _ = get_date_range(period)
+
+    rec_query = {
+        'status': 'assigned',
+        'assigned_at': {'$ne': None}
+    }
+    if product_id:
+        rec_query['product_id'] = product_id
+
+    records = await db.customer_records.find(rec_query, {'_id': 0}).to_list(100000)
+
+    staff_times = {}
+    for r in records:
+        sid = r.get('assigned_to')
+        sname = r.get('assigned_to_name', 'Unknown')
+        assigned_at = r.get('assigned_at', '')
+        if not sid or not assigned_at:
+            continue
+
+        if sid not in staff_times:
+            staff_times[sid] = {
+                'name': sname,
+                'wa_times': [],
+                'respond_times': [],
+                'total_assigned': 0
+            }
+        staff_times[sid]['total_assigned'] += 1
+
+        try:
+            assigned_dt = datetime.fromisoformat(assigned_at.replace('Z', '+00:00'))
+        except Exception:
+            continue
+
+        # Time to WA check
+        wa_updated = r.get('whatsapp_status_updated_at')
+        if wa_updated:
+            try:
+                wa_dt = datetime.fromisoformat(wa_updated.replace('Z', '+00:00'))
+                diff_hours = max(0, (wa_dt - assigned_dt).total_seconds() / 3600)
+                if diff_hours < 720:  # cap at 30 days
+                    staff_times[sid]['wa_times'].append(diff_hours)
+            except Exception:
+                pass
+
+        # Time to response
+        resp_updated = r.get('respond_status_updated_at')
+        if resp_updated:
+            try:
+                resp_dt = datetime.fromisoformat(resp_updated.replace('Z', '+00:00'))
+                diff_hours = max(0, (resp_dt - assigned_dt).total_seconds() / 3600)
+                if diff_hours < 720:
+                    staff_times[sid]['respond_times'].append(diff_hours)
+            except Exception:
+                pass
+
+    result = []
+    for sid, data in staff_times.items():
+        avg_wa = round(sum(data['wa_times']) / len(data['wa_times']), 1) if data['wa_times'] else None
+        avg_resp = round(sum(data['respond_times']) / len(data['respond_times']), 1) if data['respond_times'] else None
+        result.append({
+            'staff_id': sid,
+            'staff_name': data['name'],
+            'total_assigned': data['total_assigned'],
+            'avg_wa_hours': avg_wa,
+            'avg_respond_hours': avg_resp,
+            'wa_checked_count': len(data['wa_times']),
+            'responded_count': len(data['respond_times']),
+            'fastest_wa': round(min(data['wa_times']), 1) if data['wa_times'] else None,
+            'slowest_wa': round(max(data['wa_times']), 1) if data['wa_times'] else None,
+        })
+
+    result.sort(key=lambda x: x['avg_wa_hours'] if x['avg_wa_hours'] is not None else 999)
+    return {'response_time_data': result}
+
+
+@router.get("/analytics/followup-effectiveness")
+async def get_followup_effectiveness(
+    period: str = 'month',
+    product_id: Optional[str] = None,
+    user: User = Depends(get_admin_user)
+):
+    """Track follow-ups sent vs. successful deposits per staff"""
+    db = get_db()
+    start_date, _ = get_date_range(period)
+
+    rec_query = {'status': 'assigned'}
+    if product_id:
+        rec_query['product_id'] = product_id
+
+    records = await db.customer_records.find(rec_query, {'_id': 0}).to_list(100000)
+
+    from utils.db_operations import add_approved_filter
+    omset_query = {'record_date': {'$gte': start_date[:10]}}
+    if product_id:
+        omset_query['product_id'] = product_id
+    omset_recs = await db.omset_records.find(
+        add_approved_filter(omset_query),
+        {'_id': 0, 'staff_id': 1, 'customer_id_normalized': 1, 'customer_id': 1, 'product_id': 1}
+    ).to_list(100000)
+
+    # Build deposited set per staff
+    staff_deposited = {}
+    for o in omset_recs:
+        sid = o.get('staff_id')
+        cid = o.get('customer_id_normalized') or str(o.get('customer_id', '')).strip().lower()
+        pid = o.get('product_id', '')
+        if sid not in staff_deposited:
+            staff_deposited[sid] = set()
+        staff_deposited[sid].add((cid, pid))
+
+    staff_map = {}
+    for r in records:
+        sid = r.get('assigned_to')
+        sname = r.get('assigned_to_name', 'Unknown')
+        if not sid:
+            continue
+        if sid not in staff_map:
+            staff_map[sid] = {
+                'name': sname, 'wa_checked': 0, 'wa_ada': 0,
+                'responded': 0, 'followup_customers': set(), 'total': 0
+            }
+        staff_map[sid]['total'] += 1
+
+        wa = r.get('whatsapp_status')
+        if wa in ['ada', 'tidak', 'ceklis1']:
+            staff_map[sid]['wa_checked'] += 1
+        if wa == 'ada':
+            staff_map[sid]['wa_ada'] += 1
+
+        if r.get('respond_status') == 'ya':
+            staff_map[sid]['responded'] += 1
+            cid = r.get('row_data', {}).get('customer_id') or r.get('row_data', {}).get('username') or ''
+            pid = r.get('product_id', '')
+            if cid:
+                staff_map[sid]['followup_customers'].add((str(cid).strip().lower(), pid))
+
+    result = []
+    for sid, data in staff_map.items():
+        deposited_set = staff_deposited.get(sid, set())
+        converted = len(data['followup_customers'] & deposited_set) if data['followup_customers'] else 0
+        result.append({
+            'staff_id': sid,
+            'staff_name': data['name'],
+            'total_assigned': data['total'],
+            'wa_checked': data['wa_checked'],
+            'wa_ada': data['wa_ada'],
+            'responded': data['responded'],
+            'deposited': converted,
+            'effectiveness': round(converted / data['responded'] * 100, 1) if data['responded'] > 0 else 0
+        })
+
+    result.sort(key=lambda x: x['effectiveness'], reverse=True)
+    return {'effectiveness_data': result}
+
+
+@router.get("/analytics/product-performance")
+async def get_product_performance(
+    period: str = 'month',
+    user: User = Depends(get_admin_user)
+):
+    """NDP/RDP counts and amounts per product"""
+    db = get_db()
+    start_date, _ = get_date_range(period)
+
+    from utils.db_operations import add_approved_filter, build_staff_first_date_map
+    omset_query = {'record_date': {'$gte': start_date[:10]}}
+    records = await db.omset_records.find(
+        add_approved_filter(omset_query), {'_id': 0}
+    ).to_list(100000)
+
+    staff_customer_first_date = await build_staff_first_date_map(db)
+
+    products = await db.products.find({}, {'_id': 0}).to_list(1000)
+    product_names = {p['id']: p['name'] for p in products}
+
+    product_stats = {}
+    for record in records:
+        pid = record.get('product_id', '')
+        pname = product_names.get(pid, pid)
+        sid = record.get('staff_id')
+        cid = record.get('customer_id_normalized') or normalize_customer_id(record.get('customer_id', ''))
+        date = record.get('record_date', '')
+        amount = record.get('depo_total', 0) or 0
+
+        key = (sid, cid, pid)
+        first_date = staff_customer_first_date.get(key)
+        keterangan = record.get('keterangan', '') or ''
+        is_tambahan = 'tambahan' in keterangan.lower()
+
+        if pid not in product_stats:
+            product_stats[pid] = {'name': pname, 'ndp': 0, 'rdp': 0, 'ndp_amount': 0, 'rdp_amount': 0, 'total_records': 0}
+
+        product_stats[pid]['total_records'] += 1
+        if is_tambahan:
+            product_stats[pid]['rdp'] += 1
+            product_stats[pid]['rdp_amount'] += amount
+        elif first_date == date:
+            product_stats[pid]['ndp'] += 1
+            product_stats[pid]['ndp_amount'] += amount
+        else:
+            product_stats[pid]['rdp'] += 1
+            product_stats[pid]['rdp_amount'] += amount
+
+    result = []
+    for pid, stats in product_stats.items():
+        total = stats['ndp'] + stats['rdp']
+        result.append({
+            'product_id': pid,
+            'product_name': stats['name'],
+            'ndp_count': stats['ndp'],
+            'rdp_count': stats['rdp'],
+            'total_count': total,
+            'ndp_amount': stats['ndp_amount'],
+            'rdp_amount': stats['rdp_amount'],
+            'total_amount': stats['ndp_amount'] + stats['rdp_amount'],
+            'ndp_percentage': round(stats['ndp'] / total * 100, 1) if total > 0 else 0
+        })
+
+    result.sort(key=lambda x: x['total_amount'], reverse=True)
+    return {'product_data': result}
+
+
+@router.get("/analytics/customer-value-comparison")
+async def get_customer_value_comparison(
+    period: str = 'month',
+    product_id: Optional[str] = None,
+    user: User = Depends(get_admin_user)
+):
+    """Compare New vs Returning customer total deposit amounts (LTV)"""
+    db = get_db()
+    start_date, _ = get_date_range(period)
+
+    from utils.db_operations import add_approved_filter, build_staff_first_date_map
+    omset_query = {'record_date': {'$gte': start_date[:10]}}
+    if product_id:
+        omset_query['product_id'] = product_id
+
+    records = await db.omset_records.find(
+        add_approved_filter(omset_query), {'_id': 0}
+    ).to_list(100000)
+
+    staff_customer_first_date = await build_staff_first_date_map(db, product_id=product_id)
+
+    # Aggregate by staff: NDP vs RDP amounts
+    staff_value = {}
+    daily_value = {}
+    for record in records:
+        sid = record.get('staff_id')
+        sname = record.get('staff_name', 'Unknown')
+        cid = record.get('customer_id_normalized') or normalize_customer_id(record.get('customer_id', ''))
+        pid = record.get('product_id', '')
+        date = record.get('record_date', '')
+        amount = record.get('depo_total', 0) or 0
+
+        key = (sid, cid, pid)
+        first_date = staff_customer_first_date.get(key)
+        keterangan = record.get('keterangan', '') or ''
+        is_tambahan = 'tambahan' in keterangan.lower()
+
+        is_ndp = not is_tambahan and first_date == date
+
+        if sid not in staff_value:
+            staff_value[sid] = {'name': sname, 'ndp_amount': 0, 'rdp_amount': 0, 'ndp_count': 0, 'rdp_count': 0}
+
+        if is_ndp:
+            staff_value[sid]['ndp_amount'] += amount
+            staff_value[sid]['ndp_count'] += 1
+        else:
+            staff_value[sid]['rdp_amount'] += amount
+            staff_value[sid]['rdp_count'] += 1
+
+        # Daily breakdown
+        if date not in daily_value:
+            daily_value[date] = {'ndp_amount': 0, 'rdp_amount': 0}
+        if is_ndp:
+            daily_value[date]['ndp_amount'] += amount
+        else:
+            daily_value[date]['rdp_amount'] += amount
+
+    staff_result = []
+    for sid, data in staff_value.items():
+        total = data['ndp_amount'] + data['rdp_amount']
+        staff_result.append({
+            'staff_id': sid,
+            'staff_name': data['name'],
+            'ndp_amount': data['ndp_amount'],
+            'rdp_amount': data['rdp_amount'],
+            'total_amount': total,
+            'ndp_count': data['ndp_count'],
+            'rdp_count': data['rdp_count'],
+            'avg_ndp': round(data['ndp_amount'] / data['ndp_count']) if data['ndp_count'] > 0 else 0,
+            'avg_rdp': round(data['rdp_amount'] / data['rdp_count']) if data['rdp_count'] > 0 else 0
+        })
+    staff_result.sort(key=lambda x: x['total_amount'], reverse=True)
+
+    daily_chart = [{'date': d, 'ndp_amount': v['ndp_amount'], 'rdp_amount': v['rdp_amount']} for d, v in sorted(daily_value.items())]
+
+    total_ndp = sum(s['ndp_amount'] for s in staff_result)
+    total_rdp = sum(s['rdp_amount'] for s in staff_result)
+
+    return {
+        'staff_data': staff_result,
+        'daily_chart': daily_chart,
+        'summary': {
+            'total_ndp_amount': total_ndp,
+            'total_rdp_amount': total_rdp,
+            'total_amount': total_ndp + total_rdp,
+            'ndp_share': round(total_ndp / (total_ndp + total_rdp) * 100, 1) if (total_ndp + total_rdp) > 0 else 0
+        }
+    }
+
+
+@router.get("/analytics/deposit-trends")
+async def get_deposit_trends(
+    period: str = 'month',
+    granularity: str = 'daily',
+    product_id: Optional[str] = None,
+    user: User = Depends(get_admin_user)
+):
+    """Deposit volume trends over time with daily/weekly/monthly granularity"""
+    db = get_db()
+    start_date, _ = get_date_range(period)
+
+    from utils.db_operations import add_approved_filter
+    omset_query = {'record_date': {'$gte': start_date[:10]}}
+    if product_id:
+        omset_query['product_id'] = product_id
+
+    records = await db.omset_records.find(
+        add_approved_filter(omset_query),
+        {'_id': 0, 'record_date': 1, 'depo_total': 1, 'nominal': 1, 'staff_id': 1, 'customer_id': 1}
+    ).to_list(100000)
+
+    from datetime import date as dt_date
+
+    bucket_data = {}
+    for r in records:
+        date_str = r.get('record_date', '')
+        amount = r.get('depo_total') or r.get('nominal') or 0
+        if not date_str:
+            continue
+
+        try:
+            d = dt_date.fromisoformat(date_str)
+        except Exception:
+            continue
+
+        if granularity == 'weekly':
+            # ISO week start (Monday)
+            start_of_week = d - timedelta(days=d.weekday())
+            bucket_key = start_of_week.isoformat()
+        elif granularity == 'monthly':
+            bucket_key = f"{d.year}-{d.month:02d}"
+        else:
+            bucket_key = date_str
+
+        if bucket_key not in bucket_data:
+            bucket_data[bucket_key] = {'amount': 0, 'count': 0, 'customers': set()}
+        bucket_data[bucket_key]['amount'] += amount
+        bucket_data[bucket_key]['count'] += 1
+        cid = str(r.get('customer_id', '')).strip().lower()
+        if cid:
+            bucket_data[bucket_key]['customers'].add(cid)
+
+    chart_data = []
+    for key in sorted(bucket_data.keys()):
+        data = bucket_data[key]
+        chart_data.append({
+            'date': key,
+            'amount': data['amount'],
+            'count': data['count'],
+            'unique_customers': len(data['customers']),
+            'avg_deposit': round(data['amount'] / data['count']) if data['count'] > 0 else 0
+        })
+
+    total_amount = sum(d['amount'] for d in chart_data)
+    total_count = sum(d['count'] for d in chart_data)
+    peak = max(chart_data, key=lambda x: x['amount']) if chart_data else None
+
+    return {
+        'chart_data': chart_data,
+        'granularity': granularity,
+        'summary': {
+            'total_amount': total_amount,
+            'total_deposits': total_count,
+            'avg_per_period': round(total_amount / len(chart_data)) if chart_data else 0,
+            'peak_period': peak['date'] if peak else None,
+            'peak_amount': peak['amount'] if peak else 0
+        }
+    }
+
+
 # ==================== EXPORT ENDPOINTS ====================
 
 @router.get("/export/customer-records")
