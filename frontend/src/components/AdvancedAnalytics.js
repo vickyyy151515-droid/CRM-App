@@ -1574,6 +1574,58 @@ export default function AdvancedAnalytics() {
     }
   };
 
+  // Drill-down handler
+  const handleDrillDown = useCallback(async (type, params) => {
+    const titles = {
+      response_time: { title: `Response Time Details`, subtitle: params.staff_name },
+      followup: { title: `Follow-up Details`, subtitle: params.staff_name },
+      product_staff: { title: `Staff Breakdown`, subtitle: params.product_name },
+      staff_customers: { title: `Top Customers`, subtitle: params.staff_name },
+      date_deposits: { title: `Deposit Details`, subtitle: params.date },
+    };
+    const t = titles[type] || { title: 'Details', subtitle: '' };
+    setDrillDown({ isOpen: true, type, title: t.title, subtitle: t.subtitle, data: null, loading: true });
+
+    try {
+      const qp = new URLSearchParams({ period });
+      if (selectedProduct) qp.append('product_id', selectedProduct);
+
+      let url;
+      switch (type) {
+        case 'response_time':
+          qp.append('staff_id', params.staff_id);
+          url = `/analytics/drill-down/response-time?${qp}`;
+          break;
+        case 'followup':
+          qp.append('staff_id', params.staff_id);
+          url = `/analytics/drill-down/followup-detail?${qp}`;
+          break;
+        case 'product_staff':
+          url = `/analytics/drill-down/product-staff?${new URLSearchParams({ period, product_id: params.product_id })}`;
+          break;
+        case 'staff_customers':
+          qp.append('staff_id', params.staff_id);
+          url = `/analytics/drill-down/staff-customers?${qp}`;
+          break;
+        case 'date_deposits':
+          qp.append('date', params.date);
+          qp.append('granularity', params.granularity || 'daily');
+          url = `/analytics/drill-down/date-deposits?${qp}`;
+          break;
+        default:
+          setDrillDown(prev => ({ ...prev, loading: false }));
+          return;
+      }
+      const res = await api.get(url);
+      setDrillDown(prev => ({ ...prev, data: res.data, loading: false }));
+    } catch (error) {
+      toast.error('Failed to load details');
+      setDrillDown(prev => ({ ...prev, loading: false }));
+    }
+  }, [period, selectedProduct]);
+
+  const closeDrillDown = () => setDrillDown({ isOpen: false, type: null, title: '', subtitle: '', data: null, loading: false });
+
   const toggleWidget = (key) => {
     setVisibleWidgets(prev => ({ ...prev, [key]: !prev[key] }));
   };
