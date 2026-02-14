@@ -1209,13 +1209,18 @@ export default function AdvancedAnalytics() {
       if (selectedProduct) params.append('product_id', selectedProduct);
       if (selectedStaff) params.append('staff_id', selectedStaff);
 
-      const [staffRes, businessRes, ndpRdpRes, funnelRes, heatmapRes, lifecycleRes] = await Promise.all([
+      const [staffRes, businessRes, ndpRdpRes, funnelRes, heatmapRes, lifecycleRes, respTimeRes, followupEffRes, productPerfRes, custValueRes, depositTrendsRes] = await Promise.all([
         api.get(`/analytics/staff-performance?${params}`),
         api.get(`/analytics/business?${params}`),
         api.get(`/analytics/staff-ndp-rdp-daily?${params}`),
         api.get(`/analytics/staff-conversion-funnel?${params}`),
         api.get(`/analytics/revenue-heatmap?${params}`),
-        api.get(`/analytics/deposit-lifecycle?${params}`)
+        api.get(`/analytics/deposit-lifecycle?${params}`),
+        api.get(`/analytics/response-time-by-staff?${params}`),
+        api.get(`/analytics/followup-effectiveness?${params}`),
+        api.get(`/analytics/product-performance?${params}`),
+        api.get(`/analytics/customer-value-comparison?${params}`),
+        api.get(`/analytics/deposit-trends?${params}&granularity=${depositGranularity}`)
       ]);
       
       setStaffData(staffRes.data);
@@ -1224,6 +1229,11 @@ export default function AdvancedAnalytics() {
       setFunnelData(funnelRes.data);
       setHeatmapData(heatmapRes.data);
       setLifecycleData(lifecycleRes.data);
+      setResponseTimeData(respTimeRes.data);
+      setFollowupEffData(followupEffRes.data);
+      setProductPerfData(productPerfRes.data);
+      setCustomerValueData(custValueRes.data);
+      setDepositTrendsData(depositTrendsRes.data);
     } catch (error) {
       toast.error('Failed to load analytics');
     } finally {
