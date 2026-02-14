@@ -752,7 +752,7 @@ function FollowupEffectivenessWidget({ data, onDrillDown }) {
 }
 
 // ==================== CHART 6: PRODUCT PERFORMANCE ====================
-function ProductPerformanceWidget({ data }) {
+function ProductPerformanceWidget({ data, onDrillDown }) {
   if (!data?.product_data?.length) {
     return (
       <div className="rounded-2xl p-6 shadow-lg" style={{ background: 'linear-gradient(135deg, #1a0f2e 0%, #1e1338 100%)' }} data-testid="product-performance-widget">
