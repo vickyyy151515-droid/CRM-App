@@ -190,13 +190,15 @@ export default function AdvancedAnalytics() {
       if (selectedProduct) params.append('product_id', selectedProduct);
       if (selectedStaff) params.append('staff_id', selectedStaff);
 
-      const [staffRes, businessRes] = await Promise.all([
+      const [staffRes, businessRes, ndpRdpRes] = await Promise.all([
         api.get(`/analytics/staff-performance?${params}`),
-        api.get(`/analytics/business?${params}`)
+        api.get(`/analytics/business?${params}`),
+        api.get(`/analytics/staff-ndp-rdp-daily?${params}`)
       ]);
       
       setStaffData(staffRes.data);
       setBusinessData(businessRes.data);
+      setStaffNdpRdpData(ndpRdpRes.data);
     } catch (error) {
       toast.error('Failed to load analytics');
     } finally {
