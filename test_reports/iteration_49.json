@@ -1,0 +1,139 @@
+{
+  "summary": "Feature testing complete for 5 new Advanced Analytics endpoints and widgets: Response Time by Staff, Follow-up Effectiveness, Product Performance, Customer Value Comparison (LTV), and Deposit Trends. All 38 backend tests passed. All 5 new frontend widgets render correctly with proper data-testid attributes, granularity toggle works, and all are included in the widget settings panel.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Advanced Analytics - Console warnings",
+        "issues": ["Recharts console warning about chart width/height being -1 appears during initial widget loading (non-blocking, resolves after render)"]
+      }
+    ]
+  },
+
+  "passed_tests": [
+    "✓ GET /api/analytics/response-time-by-staff returns 200 with response_time_data",
+    "✓ Response time data has required fields: staff_id, staff_name, total_assigned, avg_wa_hours, avg_respond_hours, wa_checked_count, responded_count, fastest_wa, slowest_wa",
+    "✓ Response time endpoint accepts period filter (today/week/month/quarter)",
+    "✓ Response time endpoint accepts product_id filter",
+    "✓ Response time endpoint requires admin authentication (401/403 without)",
+    "✓ GET /api/analytics/followup-effectiveness returns 200 with effectiveness_data",
+    "✓ Effectiveness data has required fields: staff_id, staff_name, total_assigned, wa_checked, wa_ada, responded, deposited, effectiveness (0-100)",
+    "✓ Followup effectiveness endpoint accepts period filter",
+    "✓ Followup effectiveness endpoint accepts product_id filter",
+    "✓ Followup effectiveness endpoint requires admin authentication",
+    "✓ GET /api/analytics/product-performance returns 200 with product_data",
+    "✓ Product data has required fields: product_id, product_name, ndp_count, rdp_count, total_count, ndp_amount, rdp_amount, total_amount, ndp_percentage (0-100)",
+    "✓ Product performance total_count = ndp_count + rdp_count",
+    "✓ Product performance endpoint accepts period filter (today/week/month/quarter/year)",
+    "✓ Product performance endpoint requires admin authentication",
+    "✓ GET /api/analytics/customer-value-comparison returns 200 with staff_data, daily_chart, summary",
+    "✓ Customer value staff_data has required fields: staff_id, staff_name, ndp_amount, rdp_amount, total_amount, ndp_count, rdp_count, avg_ndp, avg_rdp",
+    "✓ Customer value summary has required fields: total_ndp_amount, total_rdp_amount, total_amount, ndp_share (0-100)",
+    "✓ Customer value daily_chart has required fields: date, ndp_amount, rdp_amount",
+    "✓ Customer value endpoint accepts period and product_id filters",
+    "✓ Customer value endpoint requires admin authentication",
+    "✓ GET /api/analytics/deposit-trends returns 200 with chart_data, granularity, summary",
+    "✓ Deposit trends default granularity is 'daily'",
+    "✓ Deposit trends chart_data has required fields: date, amount, count, unique_customers, avg_deposit",
+    "✓ Deposit trends summary has required fields: total_amount, total_deposits, avg_per_period, peak_period, peak_amount",
+    "✓ Deposit trends granularity=daily works",
+    "✓ Deposit trends granularity=weekly works",
+    "✓ Deposit trends granularity=monthly works",
+    "✓ Deposit trends accepts period filter",
+    "✓ Deposit trends accepts product_id filter",
+    "✓ Deposit trends combined filters (period + granularity + product_id) work",
+    "✓ Deposit trends endpoint requires admin authentication",
+    "✓ All 5 endpoints work together with same period filter",
+    "✓ All filterable endpoints accept product_id filter",
+    "✓ ResponseTimeByStaffWidget renders (data-testid='response-time-widget')",
+    "✓ FollowupEffectivenessWidget renders (data-testid='followup-effectiveness-widget')",
+    "✓ ProductPerformanceWidget renders (data-testid='product-performance-widget')",
+    "✓ CustomerValueWidget renders (data-testid='customer-value-widget')",
+    "✓ DepositTrendsWidget renders (data-testid='deposit-trends-widget')",
+    "✓ Granularity toggle buttons (Daily/Weekly/Monthly) clickable in Deposit Trends widget",
+    "✓ All 5 new widgets appear in Show/Hide Widgets settings panel",
+    "✓ Period filter (Last 30 Days dropdown) present"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_new_analytics_charts.py",
+    "/app/test_reports/pytest/new_analytics_charts_results.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [
+    "✓ All 5 endpoints properly use get_admin_user dependency for authentication",
+    "✓ Endpoints accept period filter with proper date range calculations",
+    "✓ Product filter correctly filters omset_records by product_id",
+    "✓ Deposit trends granularity toggle works correctly (daily/weekly/monthly bucketing)",
+    "✓ NDP/RDP logic consistent with other analytics endpoints using staff_customer_first_date map",
+    "✓ Frontend widgets have proper data-testid attributes for testing",
+    "✓ All 5 new widgets integrated into DEFAULT_WIDGET_ORDER and visibleWidgets state"
+  ],
+
+  "updated_files": [
+    "/app/backend/tests/test_new_analytics_charts.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (38/38 passed)",
+    "frontend": "100% - All 5 widgets render with proper styling and interactions"
+  },
+
+  "test_credentials": {
+    "admin": {"email": "vicky@crm.com", "password": "admin123", "role": "master_admin"}
+  },
+
+  "seed_data_creation": "No new seed data created. Used existing omset_records and customer_records data.",
+
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "Five new Advanced Analytics widgets are fully functional: 1) Response Time by Staff - shows avg time to WA check and response per staff with speed labels (Excellent/Good/Average/Slow), 2) Follow-up Effectiveness - shows WA checked → Responded → Deposited conversion with effectiveness %, 3) Product Performance - shows NDP/RDP counts and amounts per product with pie chart, 4) Customer Value (LTV) - compares new vs returning customer deposit value per staff with NDP share indicator, 5) Deposit Trends - shows deposit volume over time with Daily/Weekly/Monthly toggle. All endpoints require admin auth and accept period/product_id filters. Widgets are in DEFAULT_WIDGET_ORDER and can be toggled via widget settings panel.",
+
+  "verified_features": {
+    "response_time_by_staff": {
+      "endpoint": "GET /api/analytics/response-time-by-staff",
+      "params": ["period (default: month)", "product_id (optional)"],
+      "response_structure": {"response_time_data": "Array of {staff_id, staff_name, total_assigned, avg_wa_hours, avg_respond_hours, wa_checked_count, responded_count, fastest_wa, slowest_wa}"},
+      "widget_testid": "response-time-widget",
+      "ui_features": ["Dual bars for WA check time and response time", "Speed grade labels (Excellent/Good/Average/Slow)", "Per-staff breakdown"]
+    },
+    "followup_effectiveness": {
+      "endpoint": "GET /api/analytics/followup-effectiveness",
+      "params": ["period (default: month)", "product_id (optional)"],
+      "response_structure": {"effectiveness_data": "Array of {staff_id, staff_name, total_assigned, wa_checked, wa_ada, responded, deposited, effectiveness}"},
+      "widget_testid": "followup-effectiveness-widget",
+      "ui_features": ["Grouped bar chart (WA Checked/Responded/Deposited)", "Effectiveness % ranking", "Per-staff conversion rate"]
+    },
+    "product_performance": {
+      "endpoint": "GET /api/analytics/product-performance",
+      "params": ["period (default: month)"],
+      "response_structure": {"product_data": "Array of {product_id, product_name, ndp_count, rdp_count, total_count, ndp_amount, rdp_amount, total_amount, ndp_percentage}"},
+      "widget_testid": "product-performance-widget",
+      "ui_features": ["Donut pie chart", "Per-product NDP/RDP breakdown", "Progress bars with percentages"]
+    },
+    "customer_value_comparison": {
+      "endpoint": "GET /api/analytics/customer-value-comparison",
+      "params": ["period (default: month)", "product_id (optional)"],
+      "response_structure": {"staff_data": "Array of {staff_id, staff_name, ndp_amount, rdp_amount, total_amount, ndp_count, rdp_count, avg_ndp, avg_rdp}", "daily_chart": "Array of {date, ndp_amount, rdp_amount}", "summary": "{total_ndp_amount, total_rdp_amount, total_amount, ndp_share}"},
+      "widget_testid": "customer-value-widget",
+      "ui_features": ["Stacked bar chart (NDP/RDP amounts per staff)", "NDP Share indicator bar", "Summary stats (Total NDP/RDP amounts)"]
+    },
+    "deposit_trends": {
+      "endpoint": "GET /api/analytics/deposit-trends",
+      "params": ["period (default: month)", "granularity (daily/weekly/monthly, default: daily)", "product_id (optional)"],
+      "response_structure": {"chart_data": "Array of {date, amount, count, unique_customers, avg_deposit}", "granularity": "string", "summary": "{total_amount, total_deposits, avg_per_period, peak_period, peak_amount}"},
+      "widget_testid": "deposit-trends-widget",
+      "ui_features": ["Area chart with amount trend", "Line overlay for deposit count", "Daily/Weekly/Monthly toggle buttons", "Summary stats cards (Total Volume, Total Deposits, Avg/Period, Peak)"]
+    }
+  }
+}
