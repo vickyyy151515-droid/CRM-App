@@ -1049,8 +1049,8 @@ function DepositTrendsWidget({ data, onGranularityChange, granularity, onDrillDo
                 );
               }}
             />
-            <Area yAxisId="amount" type="monotone" dataKey="amount" stroke="#6366f1" strokeWidth={2} fill="url(#grad_trend_amt)" dot={false} activeDot={{ r: 4, stroke: '#6366f1', fill: '#0f172a', strokeWidth: 2 }} />
-            <Line yAxisId="count" type="monotone" dataKey="count" stroke="#22c55e" strokeWidth={2} dot={false} activeDot={{ r: 3, stroke: '#22c55e', fill: '#0f172a', strokeWidth: 2 }} />
+            <Area yAxisId="amount" type="monotone" dataKey="amount" stroke="#6366f1" strokeWidth={2} fill="url(#grad_trend_amt)" dot={false} activeDot={{ r: 5, stroke: '#6366f1', fill: '#0f172a', strokeWidth: 2, cursor: 'pointer', onClick: (e, p) => { const d = chart_data[p.index]; if (d) onDrillDown?.('date_deposits', { date: d.date, granularity }); } }} />
+            <Line yAxisId="count" type="monotone" dataKey="count" stroke="#22c55e" strokeWidth={2} dot={false} activeDot={{ r: 4, stroke: '#22c55e', fill: '#0f172a', strokeWidth: 2, cursor: 'pointer', onClick: (e, p) => { const d = chart_data[p.index]; if (d) onDrillDown?.('date_deposits', { date: d.date, granularity }); } }} />
           </AreaChart>
         </ResponsiveContainer>
       </div>
