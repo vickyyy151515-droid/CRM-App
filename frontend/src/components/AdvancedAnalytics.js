@@ -615,7 +615,7 @@ function ResponseTimeByStaffWidget({ data, onDrillDown }) {
           const grade = getSpeedGrade(staff.avg_wa_hours);
           const barWidth = staff.avg_wa_hours !== null ? Math.max(6, (staff.avg_wa_hours / maxHours) * 100) : 0;
           return (
-            <div key={staff.staff_id} className="rounded-xl p-3 border" style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.05)' }} data-testid={`response-time-staff-${staff.staff_id}`}>
+            <div key={staff.staff_id} className="rounded-xl p-3 border cursor-pointer hover:border-sky-500/30 transition-colors" style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.05)' }} data-testid={`response-time-staff-${staff.staff_id}`} onClick={() => onDrillDown?.('response_time', { staff_id: staff.staff_id, staff_name: staff.staff_name })}>
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold text-white" style={{ background: STAFF_CHART_COLORS[si % STAFF_CHART_COLORS.length] }}>
