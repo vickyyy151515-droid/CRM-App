@@ -907,6 +907,7 @@ function ProductPerformanceWidget({ data, onDrillDown }) {
             <Package size={18} className="text-white" />
           </span>
           Product Performance
+          <ChartInfoTooltip chartKey="productPerformance" />
         </h3>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
