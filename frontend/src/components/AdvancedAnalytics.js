@@ -1828,6 +1828,7 @@ export default function AdvancedAnalytics() {
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                 <GitCompare size={20} className="text-purple-600" />
                 Staff Comparison (Side-by-Side)
+                <ChartInfoTooltip chartKey="staffCompare" />
               </h3>
               <button
                 onClick={toggleCompareMode}
