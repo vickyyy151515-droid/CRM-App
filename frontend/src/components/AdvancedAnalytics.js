@@ -1960,6 +1960,7 @@ export default function AdvancedAnalytics() {
   };
 
   return (
+    <>
     <div data-testid="advanced-analytics">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
         <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900">Advanced Analytics</h2>
