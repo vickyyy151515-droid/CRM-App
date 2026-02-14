@@ -666,7 +666,7 @@ function ResponseTimeByStaffWidget({ data, onDrillDown }) {
 }
 
 // ==================== CHART 5: FOLLOW-UP EFFECTIVENESS ====================
-function FollowupEffectivenessWidget({ data }) {
+function FollowupEffectivenessWidget({ data, onDrillDown }) {
   if (!data?.effectiveness_data?.length) {
     return (
       <div className="rounded-2xl p-6 shadow-lg" style={{ background: 'linear-gradient(150deg, #0f1a0f 0%, #0d1f17 100%)' }} data-testid="followup-effectiveness-widget">
