@@ -1690,19 +1690,19 @@ export default function AdvancedAnalytics() {
         return <DepositLifecycleWidget data={lifecycleData} />;
 
       case 'responseTime':
-        return <ResponseTimeByStaffWidget data={responseTimeData} />;
+        return <ResponseTimeByStaffWidget data={responseTimeData} onDrillDown={handleDrillDown} />;
 
       case 'followupEffectiveness':
-        return <FollowupEffectivenessWidget data={followupEffData} />;
+        return <FollowupEffectivenessWidget data={followupEffData} onDrillDown={handleDrillDown} />;
 
       case 'productPerformance':
-        return <ProductPerformanceWidget data={productPerfData} />;
+        return <ProductPerformanceWidget data={productPerfData} onDrillDown={handleDrillDown} />;
 
       case 'customerValue':
-        return <CustomerValueWidget data={customerValueData} />;
+        return <CustomerValueWidget data={customerValueData} onDrillDown={handleDrillDown} />;
 
       case 'depositTrends':
-        return <DepositTrendsWidget data={depositTrendsData} onGranularityChange={handleGranularityChange} granularity={depositGranularity} />;
+        return <DepositTrendsWidget data={depositTrendsData} onGranularityChange={handleGranularityChange} granularity={depositGranularity} onDrillDown={handleDrillDown} />;
 
       case 'staffCompare':
         return (
