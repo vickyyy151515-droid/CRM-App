@@ -401,6 +401,225 @@ async def get_staff_ndp_rdp_daily(
         'period': period
     }
 
+
+@router.get("/analytics/staff-conversion-funnel")
+async def get_staff_conversion_funnel(
+    period: str = 'month',
+    product_id: Optional[str] = None,
+    user: User = Depends(get_admin_user)
+):
+    """Get conversion funnel data per staff: Assigned → WA Checked → Responded → Deposited"""
+    db = get_db()
+    start_date, _ = get_date_range(period)
+
+    rec_query = {'status': 'assigned'}
+    if product_id:
+        rec_query['product_id'] = product_id
+
+    records = await db.customer_records.find(rec_query, {'_id': 0}).to_list(100000)
+
+    # Group by staff
+    staff_map = {}
+    for r in records:
+        sid = r.get('assigned_to')
+        if not sid:
+            continue
+        if sid not in staff_map:
+            staff_map[sid] = {'name': r.get('assigned_to_name', 'Unknown'), 'assigned': 0, 'wa_checked': 0, 'responded': 0, 'customers': set()}
+        staff_map[sid]['assigned'] += 1
+        if r.get('whatsapp_status') == 'ada':
+            staff_map[sid]['wa_checked'] += 1
+        if r.get('respond_status') == 'ya':
+            staff_map[sid]['responded'] += 1
+            cid = r.get('row_data', {}).get('customer_id') or r.get('row_data', {}).get('username') or r.get('id')
+            pid = r.get('product_id', '')
+            if cid:
+                staff_map[sid]['customers'].add((str(cid).strip().lower(), pid))
+
+    # Count deposited customers per staff from omset
+    from utils.db_operations import add_approved_filter
+    omset_query = {}
+    if product_id:
+        omset_query['product_id'] = product_id
+    omset_records = await db.omset_records.find(
+        add_approved_filter(omset_query), {'_id': 0, 'staff_id': 1, 'customer_id_normalized': 1, 'customer_id': 1, 'product_id': 1}
+    ).to_list(100000)
+
+    staff_deposited = {}
+    for o in omset_records:
+        sid = o.get('staff_id')
+        cid = o.get('customer_id_normalized') or str(o.get('customer_id', '')).strip().lower()
+        pid = o.get('product_id', '')
+        if sid not in staff_deposited:
+            staff_deposited[sid] = set()
+        staff_deposited[sid].add((cid, pid))
+
+    result = []
+    for sid, data in staff_map.items():
+        deposited_set = staff_deposited.get(sid, set())
+        deposited_count = len(data['customers'] & deposited_set) if data['customers'] else 0
+        result.append({
+            'staff_id': sid,
+            'staff_name': data['name'],
+            'assigned': data['assigned'],
+            'wa_checked': data['wa_checked'],
+            'responded': data['responded'],
+            'deposited': deposited_count
+        })
+
+    result.sort(key=lambda x: x['assigned'], reverse=True)
+    return {'funnel_data': result}
+
+
+@router.get("/analytics/revenue-heatmap")
+async def get_revenue_heatmap(
+    period: str = 'month',
+    product_id: Optional[str] = None,
+    user: User = Depends(get_admin_user)
+):
+    """Get revenue heatmap: staff × day-of-week with deposit counts and amounts"""
+    db = get_db()
+    start_date, _ = get_date_range(period)
+
+    from utils.db_operations import add_approved_filter
+    omset_query = {'record_date': {'$gte': start_date[:10]}}
+    if product_id:
+        omset_query['product_id'] = product_id
+
+    records = await db.omset_records.find(
+        add_approved_filter(omset_query),
+        {'_id': 0, 'staff_id': 1, 'staff_name': 1, 'record_date': 1, 'depo_total': 1, 'nominal': 1}
+    ).to_list(100000)
+
+    DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    staff_names = {}
+    heatmap = {}
+
+    for r in records:
+        sid = r.get('staff_id')
+        staff_names[sid] = r.get('staff_name', 'Unknown')
+        date_str = r.get('record_date', '')
+        try:
+            from datetime import date as dt_date
+            d = dt_date.fromisoformat(date_str)
+            dow = d.weekday()  # 0=Mon, 6=Sun
+        except Exception:
+            continue
+
+        key = (sid, dow)
+        amount = r.get('depo_total') or r.get('nominal') or 0
+        if key not in heatmap:
+            heatmap[key] = {'count': 0, 'amount': 0}
+        heatmap[key]['count'] += 1
+        heatmap[key]['amount'] += amount
+
+    staff_list = sorted(staff_names.keys(), key=lambda s: staff_names[s])
+    grid = []
+    max_count = 0
+    max_amount = 0
+    for sid in staff_list:
+        row = {'staff_id': sid, 'staff_name': staff_names[sid], 'days': []}
+        for dow in range(7):
+            cell = heatmap.get((sid, dow), {'count': 0, 'amount': 0})
+            if cell['count'] > max_count:
+                max_count = cell['count']
+            if cell['amount'] > max_amount:
+                max_amount = cell['amount']
+            row['days'].append({'day': DAY_NAMES[dow], 'count': cell['count'], 'amount': cell['amount']})
+        grid.append(row)
+
+    return {'grid': grid, 'max_count': max_count, 'max_amount': max_amount, 'day_names': DAY_NAMES}
+
+
+@router.get("/analytics/deposit-lifecycle")
+async def get_deposit_lifecycle(
+    period: str = 'month',
+    product_id: Optional[str] = None,
+    user: User = Depends(get_admin_user)
+):
+    """Get average time from 'responded ya' to first deposit, per staff and product"""
+    db = get_db()
+
+    from utils.db_operations import add_approved_filter
+
+    # Get all responded records with timestamps
+    rec_query = {'status': 'assigned', 'respond_status': 'ya', 'respond_status_updated_at': {'$ne': None}}
+    if product_id:
+        rec_query['product_id'] = product_id
+    responded = await db.customer_records.find(rec_query, {'_id': 0}).to_list(100000)
+
+    # Get all omset records
+    omset_query = {}
+    if product_id:
+        omset_query['product_id'] = product_id
+    omset_recs = await db.omset_records.find(
+        add_approved_filter(omset_query),
+        {'_id': 0, 'staff_id': 1, 'staff_name': 1, 'customer_id_normalized': 1, 'customer_id': 1, 'product_id': 1, 'record_date': 1}
+    ).to_list(100000)
+
+    # Build earliest deposit date per (staff, customer, product)
+    from datetime import datetime
+    deposit_dates = {}
+    for o in omset_recs:
+        sid = o.get('staff_id')
+        cid = o.get('customer_id_normalized') or str(o.get('customer_id', '')).strip().lower()
+        pid = o.get('product_id', '')
+        rd = o.get('record_date', '')
+        key = (sid, cid, pid)
+        if key not in deposit_dates or rd < deposit_dates[key]:
+            deposit_dates[key] = rd
+
+    # Calculate lifecycle per staff
+    staff_lifecycle = {}
+    for r in responded:
+        sid = r.get('assigned_to')
+        sname = r.get('assigned_to_name', 'Unknown')
+        pid = r.get('product_id', '')
+        respond_at = r.get('respond_status_updated_at', '')
+
+        cid_raw = r.get('row_data', {}).get('customer_id') or r.get('row_data', {}).get('username') or ''
+        cid = str(cid_raw).strip().lower()
+        if not cid or not respond_at:
+            continue
+
+        deposit_date = deposit_dates.get((sid, cid, pid))
+
+        if sid not in staff_lifecycle:
+            staff_lifecycle[sid] = {'name': sname, 'converted': [], 'pending': 0, 'total_responded': 0}
+
+        staff_lifecycle[sid]['total_responded'] += 1
+
+        if deposit_date:
+            try:
+                resp_dt = datetime.fromisoformat(respond_at.replace('Z', '+00:00'))
+                dep_dt = datetime.fromisoformat(deposit_date + 'T00:00:00+07:00')
+                days_diff = max(0, (dep_dt - resp_dt).days)
+                staff_lifecycle[sid]['converted'].append(days_diff)
+            except Exception:
+                staff_lifecycle[sid]['converted'].append(0)
+        else:
+            staff_lifecycle[sid]['pending'] += 1
+
+    result = []
+    for sid, data in staff_lifecycle.items():
+        avg_days = round(sum(data['converted']) / len(data['converted']), 1) if data['converted'] else None
+        min_days = min(data['converted']) if data['converted'] else None
+        max_days = max(data['converted']) if data['converted'] else None
+        result.append({
+            'staff_id': sid,
+            'staff_name': data['name'],
+            'total_responded': data['total_responded'],
+            'converted_count': len(data['converted']),
+            'pending_count': data['pending'],
+            'avg_days': avg_days,
+            'min_days': min_days,
+            'max_days': max_days,
+            'conversion_rate': round(len(data['converted']) / data['total_responded'] * 100, 1) if data['total_responded'] > 0 else 0
+        })
+
+    result.sort(key=lambda x: x['avg_days'] if x['avg_days'] is not None else 999)
+    return {'lifecycle_data': result}
+
 # ==================== EXPORT ENDPOINTS ====================
 
 @router.get("/export/customer-records")
