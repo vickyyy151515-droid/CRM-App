@@ -2019,6 +2019,7 @@ export default function AdvancedAnalytics() {
             <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
               <Users size={20} className="text-indigo-600" />
               Staff Performance Comparison
+              <ChartInfoTooltip chartKey="staffComparison" />
             </h3>
             <div className="h-64 sm:h-80">
               <ResponsiveContainer width="100%" height="100%">
