@@ -21,7 +21,19 @@ All modules support:
 - UI: Tailwind CSS + Shadcn components
 - Scheduler: APScheduler (daily cleanup jobs)
 
-## Latest Update: Admin Follow-up Reminders Bug Fix (2026-02-12)
+## Latest Update: Staff NDP/RDP Daily Breakdown Chart (2026-02-14)
+
+### New Feature: Staff NDP / RDP Daily Breakdown Widget
+- New stacked bar chart on Advanced Analytics page showing per-staff NDP/RDP counts per day
+- View toggle: All / NDP Only / RDP Only
+- Custom dark tooltips with per-staff breakdown
+- Staff legend with NDP/RDP totals
+- New backend endpoint: `GET /api/analytics/staff-ndp-rdp-daily`
+- Testing: 100% backend + frontend tests passed
+
+---
+
+## Previous Update: Admin Follow-up Reminders Bug Fix (2026-02-12)
 
 ### Bug Fix: Admin Follow-up page showing 0 counts for master_admin users
 
