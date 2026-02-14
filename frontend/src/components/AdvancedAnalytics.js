@@ -715,6 +715,7 @@ function ResponseTimeByStaffWidget({ data, onDrillDown }) {
             <BarChart3 size={18} className="text-white" />
           </span>
           Response Time by Staff
+          <ChartInfoTooltip chartKey="responseTime" />
         </h3>
         <div className="flex gap-1.5 text-[9px]">
           {[{ c: '#22c55e', l: '<1h' }, { c: '#3b82f6', l: '1-4h' }, { c: '#f59e0b', l: '4-12h' }, { c: '#ef4444', l: '>12h' }].map(g => (
