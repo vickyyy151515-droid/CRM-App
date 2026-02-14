@@ -1099,6 +1099,7 @@ function DepositTrendsWidget({ data, onGranularityChange, granularity, onDrillDo
             <TrendingUp size={18} className="text-white" />
           </span>
           Deposit Trends
+          <ChartInfoTooltip chartKey="depositTrends" />
         </h3>
         <div className="flex items-center gap-2">
           <div className="flex items-center rounded-lg p-0.5" style={{ background: 'rgba(255,255,255,0.06)' }} data-testid="granularity-toggle">
