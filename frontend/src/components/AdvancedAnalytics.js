@@ -850,7 +850,7 @@ function ProductPerformanceWidget({ data, onDrillDown }) {
 }
 
 // ==================== CHART 7: CUSTOMER VALUE COMPARISON (LTV) ====================
-function CustomerValueWidget({ data }) {
+function CustomerValueWidget({ data, onDrillDown }) {
   if (!data?.staff_data?.length) {
     return (
       <div className="rounded-2xl p-6 shadow-lg" style={{ background: 'linear-gradient(145deg, #1a0a0a 0%, #2d1313 100%)' }} data-testid="customer-value-widget">
