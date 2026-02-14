@@ -1061,6 +1061,226 @@ function DepositTrendsWidget({ data, onGranularityChange, granularity }) {
 }
 
 
+// ==================== DRILL-DOWN PANEL ====================
+function DrillDownPanel({ isOpen, onClose, title, subtitle, loading, data, type }) {
+  if (!isOpen) return null;
+
+  const formatAmt = (val) => {
+    if (!val) return '0';
+    if (val >= 1000000) return `${(val / 1000000).toFixed(1)}M`;
+    if (val >= 1000) return `${(val / 1000).toFixed(0)}K`;
+    return val.toLocaleString();
+  };
+
+  const formatHours = (h) => {
+    if (h === null || h === undefined) return '-';
+    if (h < 1) return `${Math.round(h * 60)}m`;
+    if (h >= 24) return `${(h / 24).toFixed(1)}d`;
+    return `${h.toFixed(1)}h`;
+  };
+
+  const formatDate = (d) => {
+    if (!d) return '-';
+    try {
+      const dt = new Date(d.includes('T') ? d : d + 'T00:00:00');
+      return dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' });
+    } catch { return d; }
+  };
+
+  const renderContent = () => {
+    if (loading) return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 size={28} className="animate-spin text-indigo-400" />
+        <span className="ml-3 text-slate-400">Loading details...</span>
+      </div>
+    );
+    if (!data) return <div className="text-center py-16 text-slate-500">No data available</div>;
+
+    switch (type) {
+      case 'response_time':
+        return (
+          <div className="space-y-2" data-testid="drilldown-response-time">
+            <div className="grid grid-cols-12 gap-2 px-3 py-2 text-[10px] font-semibold text-slate-500 uppercase tracking-wider border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+              <div className="col-span-2">Customer</div>
+              <div className="col-span-2">Product</div>
+              <div className="col-span-2">Assigned</div>
+              <div className="col-span-1">WA</div>
+              <div className="col-span-2 text-right">WA Time</div>
+              <div className="col-span-1">Resp</div>
+              <div className="col-span-2 text-right">Resp Time</div>
+            </div>
+            {data.records?.map((r, i) => (
+              <div key={i} className="grid grid-cols-12 gap-2 px-3 py-2.5 rounded-lg text-xs items-center hover:bg-white/[0.03] transition-colors" style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                <div className="col-span-2 text-slate-300 truncate font-medium">{r.customer_id}</div>
+                <div className="col-span-2 text-slate-500 truncate">{r.product}</div>
+                <div className="col-span-2 text-slate-500">{formatDate(r.assigned_at)}</div>
+                <div className="col-span-1">
+                  {r.wa_status === 'ada' ? <CheckCircle2 size={14} className="text-emerald-400" /> : r.wa_status === 'tidak' ? <XCircle size={14} className="text-red-400" /> : <span className="text-slate-600">-</span>}
+                </div>
+                <div className="col-span-2 text-right font-semibold" style={{ color: r.wa_hours === null ? '#475569' : r.wa_hours <= 1 ? '#22c55e' : r.wa_hours <= 4 ? '#3b82f6' : r.wa_hours <= 12 ? '#f59e0b' : '#ef4444' }}>
+                  {formatHours(r.wa_hours)}
+                </div>
+                <div className="col-span-1">
+                  {r.respond_status === 'ya' ? <CheckCircle2 size={14} className="text-emerald-400" /> : r.respond_status === 'tidak' ? <XCircle size={14} className="text-red-400" /> : <span className="text-slate-600">-</span>}
+                </div>
+                <div className="col-span-2 text-right font-semibold text-purple-400">{formatHours(r.respond_hours)}</div>
+              </div>
+            ))}
+          </div>
+        );
+
+      case 'followup':
+        return (
+          <div data-testid="drilldown-followup">
+            <div className="flex gap-3 mb-4">
+              <div className="flex-1 rounded-lg p-3 border" style={{ borderColor: 'rgba(34,197,94,0.2)', background: 'rgba(34,197,94,0.06)' }}>
+                <p className="text-[10px] text-slate-500">Converted</p>
+                <p className="text-xl font-bold text-emerald-400">{data.converted}</p>
+              </div>
+              <div className="flex-1 rounded-lg p-3 border" style={{ borderColor: 'rgba(245,158,11,0.2)', background: 'rgba(245,158,11,0.06)' }}>
+                <p className="text-[10px] text-slate-500">Pending</p>
+                <p className="text-xl font-bold text-amber-400">{data.pending}</p>
+              </div>
+              <div className="flex-1 rounded-lg p-3 border" style={{ borderColor: 'rgba(99,102,241,0.2)', background: 'rgba(99,102,241,0.06)' }}>
+                <p className="text-[10px] text-slate-500">Total</p>
+                <p className="text-xl font-bold text-indigo-400">{data.total}</p>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              {data.records?.map((r, i) => (
+                <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/[0.03] transition-colors" style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0" style={{ background: r.deposited ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.15)' }}>
+                    {r.deposited ? <CheckCircle2 size={13} className="text-emerald-400" /> : <Clock size={13} className="text-amber-400" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-slate-300 truncate">{r.customer_id}</p>
+                    <p className="text-[10px] text-slate-500">{r.product} {r.respond_at ? `• Responded ${formatDate(r.respond_at)}` : ''}</p>
+                  </div>
+                  {r.deposited ? (
+                    <div className="text-right shrink-0">
+                      <p className="text-xs font-bold text-emerald-400">{formatAmt(r.deposit_total)}</p>
+                      <p className="text-[10px] text-slate-500">{r.deposit_count}x • Last {formatDate(r.last_deposit)}</p>
+                    </div>
+                  ) : (
+                    <span className="text-[10px] text-amber-400 font-medium shrink-0">Pending</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 'product_staff':
+        return (
+          <div data-testid="drilldown-product-staff">
+            <p className="text-xs text-slate-500 mb-3">{data.total_staff} staff with deposits for this product</p>
+            <div className="space-y-2">
+              {data.staff_breakdown?.map((s, i) => (
+                <div key={s.staff_id} className="rounded-xl p-3 border" style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.05)' }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold text-white" style={{ background: STAFF_CHART_COLORS[i % STAFF_CHART_COLORS.length] }}>
+                        {s.staff_name.charAt(0)}
+                      </div>
+                      <span className="text-sm font-semibold text-white">{s.staff_name}</span>
+                    </div>
+                    <span className="text-sm font-bold text-white">{formatAmt(s.total_amount)}</span>
+                  </div>
+                  <div className="flex gap-4 text-[11px]">
+                    <span className="text-cyan-400">NDP: {s.ndp_count} ({formatAmt(s.ndp_amount)})</span>
+                    <span className="text-purple-400">RDP: {s.rdp_count} ({formatAmt(s.rdp_amount)})</span>
+                    <span className="text-slate-500 ml-auto">{s.total_count} total deposits</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 'staff_customers':
+        return (
+          <div data-testid="drilldown-staff-customers">
+            <div className="space-y-1.5">
+              {data.customers?.map((c, i) => (
+                <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/[0.03] transition-colors" style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                  <div className="w-5 h-5 rounded flex items-center justify-center text-[9px] font-bold shrink-0" style={{ background: c.type === 'NDP' ? 'rgba(34,211,238,0.15)' : 'rgba(167,139,250,0.15)', color: c.type === 'NDP' ? '#22d3ee' : '#a78bfa' }}>
+                    {c.type === 'NDP' ? 'N' : 'R'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-slate-300 truncate">{c.customer_name || c.customer_id}</p>
+                    <p className="text-[10px] text-slate-500">{c.product} • {c.deposit_count}x deposits</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-xs font-bold text-white">{formatAmt(c.total_amount)}</p>
+                    <p className="text-[10px] text-slate-500">{formatDate(c.first_deposit)} - {formatDate(c.last_deposit)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 'date_deposits':
+        return (
+          <div data-testid="drilldown-date-deposits">
+            <div className="flex gap-3 mb-4">
+              <div className="flex-1 rounded-lg p-3 border" style={{ borderColor: 'rgba(99,102,241,0.2)', background: 'rgba(99,102,241,0.06)' }}>
+                <p className="text-[10px] text-slate-500">Total Amount</p>
+                <p className="text-xl font-bold text-indigo-400">{formatAmt(data.total_amount)}</p>
+              </div>
+              <div className="flex-1 rounded-lg p-3 border" style={{ borderColor: 'rgba(34,197,94,0.2)', background: 'rgba(34,197,94,0.06)' }}>
+                <p className="text-[10px] text-slate-500">Deposits</p>
+                <p className="text-xl font-bold text-emerald-400">{data.total_count}</p>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              {data.deposits?.map((d, i) => (
+                <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/[0.03] transition-colors" style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-slate-300 truncate">{d.customer_name || d.customer_id}</p>
+                    <p className="text-[10px] text-slate-500">{d.staff_name} • {d.product}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-sm font-bold text-white">{formatAmt(d.amount)}</p>
+                    {d.note && <p className="text-[10px] text-slate-500 truncate max-w-[120px]">{d.note}</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      default:
+        return <div className="text-center py-12 text-slate-500">Unknown drill-down type</div>;
+    }
+  };
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm" onClick={onClose} data-testid="drilldown-backdrop" />
+      {/* Panel */}
+      <div className="fixed top-0 right-0 h-full w-full sm:w-[540px] lg:w-[620px] z-50 shadow-2xl flex flex-col" style={{ background: 'linear-gradient(180deg, #0f172a 0%, #131b2e 100%)' }} data-testid="drilldown-panel">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+          <div>
+            <h3 className="text-base font-bold text-white">{title}</h3>
+            {subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
+          </div>
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/10 transition-colors" data-testid="drilldown-close">
+            <X size={18} className="text-slate-400" />
+          </button>
+        </div>
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 custom-scrollbar">
+          {renderContent()}
+        </div>
+      </div>
+    </>
+  );
+}
+
+
 function SortableWidget({ id, children, isVisible }) {
   const {
     attributes,
