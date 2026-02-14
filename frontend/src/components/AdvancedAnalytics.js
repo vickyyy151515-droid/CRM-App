@@ -947,7 +947,7 @@ function CustomerValueWidget({ data, onDrillDown }) {
 }
 
 // ==================== CHART 8: DEPOSIT TRENDS OVER TIME ====================
-function DepositTrendsWidget({ data, onGranularityChange, granularity }) {
+function DepositTrendsWidget({ data, onGranularityChange, granularity, onDrillDown }) {
   if (!data?.chart_data?.length) {
     return (
       <div className="rounded-2xl p-6 shadow-lg" style={{ background: 'linear-gradient(160deg, #0f172a 0%, #1a1a2e 100%)' }} data-testid="deposit-trends-widget">
