@@ -329,6 +329,7 @@ export default function AdvancedAnalytics() {
   };
 
   const widgetConfig = {
+    staffNdpRdpDaily: { label: 'Staff NDP/RDP Daily', icon: BarChart3 },
     staffCompare: { label: 'Staff Comparison (Side-by-Side)', icon: GitCompare },
     staffComparison: { label: 'Staff Performance Comparison', icon: Users },
     dailyTrends: { label: 'Daily Activity Trends', icon: TrendingUp },
