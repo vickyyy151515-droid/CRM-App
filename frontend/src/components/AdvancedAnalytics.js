@@ -824,7 +824,7 @@ function ProductPerformanceWidget({ data, onDrillDown }) {
           {product_data.map((p, i) => {
             const pct = totalAmount > 0 ? (p.total_amount / totalAmount * 100).toFixed(1) : 0;
             return (
-              <div key={p.product_id} className="rounded-lg p-3 border" style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.05)' }} data-testid={`product-perf-${p.product_id}`}>
+              <div key={p.product_id} className="rounded-lg p-3 border cursor-pointer hover:border-violet-500/30 transition-colors" style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.05)' }} data-testid={`product-perf-${p.product_id}`} onClick={() => onDrillDown?.('product_staff', { product_id: p.product_id, product_name: p.product_name })}>
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-2">
                     <span className="w-3 h-3 rounded-full" style={{ backgroundColor: DONUT_COLORS[i % DONUT_COLORS.length] }} />
