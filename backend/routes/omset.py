@@ -322,10 +322,15 @@ async def create_omset_record(record_data: OmsetRecordCreate, user: User = Depen
         })
     
     # SYNC: Update reserved_members last_omset_date if this customer is reserved by THIS staff
+    # Search BOTH customer_id AND customer_name fields to handle legacy data
     if approval_status == 'approved':
+        customer_id_clean = record_data.customer_id.strip()
         await db.reserved_members.update_many(
             {
-                'customer_id': {'$regex': f'^{record_data.customer_id.strip()}$', '$options': 'i'},
+                '$or': [
+                    {'customer_id': {'$regex': f'^{customer_id_clean}$', '$options': 'i'}},
+                    {'customer_name': {'$regex': f'^{customer_id_clean}$', '$options': 'i'}}
+                ],
                 'staff_id': user.id,
                 'status': 'approved'
             },
