@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../App';
 import { toast } from 'sonner';
-import { UserPlus, Check, X, Trash2, ArrowRight, Search, Users, Clock, CheckCircle, Package, Upload, FileText, Phone, Copy, RotateCcw, Archive } from 'lucide-react';
+import { UserPlus, Check, X, Trash2, ArrowRight, Search, Users, Clock, CheckCircle, Package, Upload, FileText, Phone, Copy, RotateCcw, Archive, Shield, ShieldOff } from 'lucide-react';
 
 export default function AdminReservedMembers({ onUpdate }) {
   const [members, setMembers] = useState([]);
