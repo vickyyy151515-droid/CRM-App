@@ -282,10 +282,6 @@ async def generate_atrisk_alert(inactive_days: int = 14) -> str:
     products = await db.products.find({}, {'_id': 0}).to_list(100)
     product_map = {p['id']: p['name'] for p in products}
     
-    # Get staff for grouping
-    staff_list = await db.users.find({'role': 'staff'}, {'_id': 0}).to_list(100)
-    staff_map = {s['id']: s['name'] for s in staff_list}
-    
     # Track customer last deposit dates - use normalized IDs AND product_id
     # CRITICAL: Must track (customer_id, product_id) pairs, not just customer_id
     # because a customer can deposit to different products at different times
@@ -536,7 +532,7 @@ async def generate_staff_offline_alert() -> str:
                 
                 if minutes_since_activity < OFFLINE_THRESHOLD_MINUTES:
                     status = 'online'
-            except:
+            except (ValueError, TypeError, AttributeError):
                 pass
         
         staff_info = {
@@ -586,7 +582,7 @@ async def generate_staff_offline_alert() -> str:
             try:
                 login_dt = datetime.fromisoformat(last_login.replace('Z', '+00:00'))
                 last_login_str = login_dt.strftime('%d %b %H:%M')
-            except:
+            except (ValueError, TypeError, AttributeError):
                 last_login_str = 'Unknown'
         else:
             last_login_str = 'Never logged in'
@@ -1513,7 +1509,6 @@ async def preview_reserved_member_cleanup(user: User = Depends(get_admin_user)):
     will_be_deleted = []  # 0 days or less remaining OR no deposit
     active_members = []  # Has OMSET
     safe_members = []  # No OMSET but still within grace period (outside warning)
-    no_deposit_members = []  # Members with no deposit record (will be deleted)
     permanent_members = []  # Permanent reservations (never expire)
     
     for member in reserved_members:
@@ -1779,12 +1774,6 @@ async def manual_omset_trash_cleanup(user: User = Depends(get_admin_user)):
     # Calculate cutoff date (30 days ago)
     cutoff_date = datetime.now(JAKARTA_TZ) - timedelta(days=30)
     cutoff_iso = cutoff_date.isoformat()
-    
-    # Find records that will be deleted (for reporting)
-    to_delete = await db.omset_trash.find(
-        {'deleted_at': {'$lt': cutoff_iso}},
-        {'_id': 0, 'customer_id': 1, 'deleted_at': 1, 'depo_total': 1}
-    ).to_list(1000)
     
     # Delete old records
     result = await db.omset_trash.delete_many({
