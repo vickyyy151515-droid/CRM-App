@@ -1220,7 +1220,6 @@ async def diagnose_invalid_records(staff_id: str, user: User = Depends(get_admin
             for rec in available_sample:
                 if is_record_reserved(rec, reserved_ids):
                     reserved_count += 1
-                            is_res = True
             diagnosis['invalid_records_by_database'][db_id] = {
                 'database_name': database.get('name') if database else db_name,
                 'database_exists': database is not None,
