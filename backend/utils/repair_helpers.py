@@ -681,19 +681,23 @@ async def diagnose_reserved_conflicts(db, module: str = 'records') -> Dict[str, 
         row_data = record.get('row_data', {})
         assigned_to = record.get('assigned_to')
         
-        customer_id = _find_customer_id_in_row(row_data)
-        if customer_id and customer_id.upper() in reserved_map:
-            reserved_info = reserved_map[customer_id.upper()]
-            if reserved_info['staff_id'] != assigned_to:
-                conflicts.append({
-                    'record_id': record['id'],
-                    'customer_id': customer_id,
-                    'database_name': record.get('database_name', 'Unknown'),
-                    'assigned_to': record.get('assigned_to_name', 'Unknown'),
-                    'assigned_to_id': assigned_to,
-                    'reserved_by': reserved_info['staff_name'],
-                    'reserved_by_id': reserved_info['staff_id']
-                })
+        # Field-agnostic: check ALL row_data values against reserved map
+        for value in row_data.values():
+            if value and str(value).strip():
+                normalized = str(value).strip().upper()
+                if normalized in reserved_map:
+                    reserved_info = reserved_map[normalized]
+                    if reserved_info['staff_id'] != assigned_to:
+                        conflicts.append({
+                            'record_id': record['id'],
+                            'customer_id': str(value).strip(),
+                            'database_name': record.get('database_name', 'Unknown'),
+                            'assigned_to': record.get('assigned_to_name', 'Unknown'),
+                            'assigned_to_id': assigned_to,
+                            'reserved_by': reserved_info['staff_name'],
+                            'reserved_by_id': reserved_info['staff_id']
+                        })
+                    break
     
     return {
         'total_conflicts': len(conflicts),
