@@ -21,7 +21,20 @@ All modules support:
 - UI: Tailwind CSS + Shadcn components
 - Scheduler: APScheduler (daily cleanup jobs)
 
-## Latest Update: Chart Info Tooltips (2026-02-14)
+## Latest Update: Permanent Reserved Members (2026-02-15)
+
+Admin can mark reserved members as **"Permanent"** — they will never expire regardless of deposit activity.
+
+- **Backend**: `PATCH /api/reserved-members/{id}/permanent` toggles `is_permanent` (admin-only)
+- **Backend**: Cleanup job (`process_reserved_member_cleanup`) skips `is_permanent=True` members
+- **Frontend**: Shield icon toggle button + "PERMANENT" badge on `AdminReservedMembers.js`
+- Staff users cannot see or toggle permanent status
+
+Testing: 11/11 tests passed (100%)
+
+---
+
+## Previous Update: Chart Info Tooltips (2026-02-14)
 
 Added hover-to-reveal info tooltips on **all 18 chart titles** across the Advanced Analytics page. Hovering over the (i) icon next to any chart title shows a popup explaining what the chart does and its business benefit.
 
