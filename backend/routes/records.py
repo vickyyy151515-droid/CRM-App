@@ -1991,14 +1991,17 @@ async def move_reserved_member(member_id: str, new_staff_id: str, user: User = D
         raise HTTPException(status_code=404, detail="Staff not found")
     
     old_staff_id = member.get('staff_id')
+    old_staff_name = member.get('staff_name', 'Unknown')
     customer_id = member.get('customer_id') or member.get('customer_name', '')
+    product_id = member.get('product_id')
+    new_staff_name = staff['name']
     
     # Update the reserved member
     await db.reserved_members.update_one(
         {'id': member_id},
         {'$set': {
             'staff_id': new_staff_id,
-            'staff_name': staff['name']
+            'staff_name': new_staff_name
         }}
     )
     
@@ -2011,11 +2014,31 @@ async def move_reserved_member(member_id: str, new_staff_id: str, user: User = D
             },
             {'$set': {
                 'staff_id': new_staff_id,
-                'staff_name': staff['name']
+                'staff_name': new_staff_name
             }}
         )
     
-    return {'message': f"Reserved member moved to {staff['name']}"}
+    # SYNC: Restore records that were invalidated by the OLD reservation
+    # (e.g., records assigned to the new_staff that were blocked by old_staff's reservation)
+    restored_count = 0
+    if customer_id and old_staff_id:
+        restored_count = await restore_invalidated_records_for_reservation(
+            db, customer_id, old_staff_id, product_id
+        )
+    
+    # SYNC: Now invalidate records for OTHER staff (not the new owner)
+    # The new staff now owns this reservation, so other staff's records should be flagged
+    invalidated_count = 0
+    if customer_id and new_staff_id:
+        invalidated_count, _ = await invalidate_customer_records_for_other_staff(
+            db, customer_id, new_staff_id, new_staff_name, product_id
+        )
+    
+    return {
+        'message': f"Reserved member moved to {new_staff_name}",
+        'restored_records': restored_count,
+        'invalidated_records': invalidated_count
+    }
 
 
 @router.patch("/reserved-members/{member_id}/permanent")
