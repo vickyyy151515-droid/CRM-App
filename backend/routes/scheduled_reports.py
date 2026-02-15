@@ -1507,9 +1507,20 @@ async def preview_reserved_member_cleanup(user: User = Depends(get_admin_user)):
     active_members = []  # Has OMSET
     safe_members = []  # No OMSET but still within grace period (outside warning)
     no_deposit_members = []  # Members with no deposit record (will be deleted)
+    permanent_members = []  # Permanent reservations (never expire)
     
     for member in reserved_members:
         member_id = member.get('id')
+        # Skip permanent reservations
+        if member.get('is_permanent', False):
+            permanent_members.append({
+                'id': member_id,
+                'customer_id': member.get('customer_id') or member.get('customer_name') or '',
+                'staff_name': member.get('staff_name', 'Unknown'),
+                'product_name': member.get('product_name', 'Unknown'),
+                'status': 'permanent'
+            })
+            continue
         # Support both old field name (customer_name) and new field name (customer_id)
         customer_id = member.get('customer_id') or member.get('customer_name') or ''
         staff_id = member.get('staff_id')
