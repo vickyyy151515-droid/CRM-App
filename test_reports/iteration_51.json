@@ -1,0 +1,90 @@
+{
+  "summary": "Permanent toggle feature for Reserved Members tested successfully. All backend tests passed (9/9). Frontend shows PERMANENT badge for permanent members and Shield icon buttons for admin to toggle permanent status. Staff users cannot access the Reserved Members page or toggle permanent status.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "✓ PATCH /api/reserved-members/{id}/permanent toggles is_permanent field on/off",
+    "✓ PATCH endpoint returns correct message and new is_permanent status",
+    "✓ GET /api/reserved-members returns is_permanent field for each member",
+    "✓ Reserved Members page shows 'PERMANENT' badge next to permanent member names (TESTCUST001)",
+    "✓ Shield icon button appears in Actions column for approved members",
+    "✓ Non-permanent members (TESTCUST002) do NOT show the permanent badge",
+    "✓ Only admin/master_admin can toggle permanent - staff get 403 Forbidden",
+    "✓ Staff users cannot see Reserved Members page in sidebar",
+    "✓ Cleanup preview endpoint includes permanent_members_count",
+    "✓ Cleanup preview skips permanent members (not in will_be_deleted or expiring_soon lists)",
+    "✓ Toggle returns 404 for non-existent member IDs"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_permanent_toggle.py",
+    "/app/test_reports/pytest/permanent_toggle_results.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [
+    "✓ PATCH /reserved-members/{member_id}/permanent uses get_admin_user dependency correctly",
+    "✓ is_permanent field is a boolean with default False in ReservedMember model",
+    "✓ process_reserved_member_cleanup correctly checks is_permanent and skips permanent members",
+    "✓ Frontend AdminReservedMembers.js shows Shield icon (lucide-react) for toggle button",
+    "✓ Frontend shows PERMANENT badge with Shield icon for permanent members",
+    "✓ handleTogglePermanent function calls API and shows confirmation dialog"
+  ],
+
+  "updated_files": [
+    "/app/backend/tests/test_permanent_toggle.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (9/9 tests passed)",
+    "frontend": "100% - All UI elements present and functional"
+  },
+
+  "test_credentials": {
+    "admin": {"email": "vicky@crm.com", "password": "admin123", "role": "master_admin"},
+    "staff": {"email": "staff@crm.com", "password": "staff123", "role": "staff"}
+  },
+
+  "seed_data_creation": "Two test members exist: TESTCUST001 (permanent=true, product=ISTANA2000) and TESTCUST002 (permanent=false, product=LIGA2000)",
+
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "Permanent toggle feature fully tested. Backend endpoint: PATCH /api/reserved-members/{id}/permanent toggles is_permanent boolean field. Response includes {message, is_permanent}. Frontend shows Shield icon button (btn-permanent-{id}) in Actions column for approved members. Permanent members show a yellow 'PERMANENT' badge (permanent-badge-{id}) next to customer ID. Staff users cannot access Reserved Members page (redirected to attendance check-in). The cleanup process at 00:01 WIB skips permanent members - verified in process_reserved_member_cleanup function.",
+
+  "verified_features": {
+    "backend_endpoint": {
+      "path": "PATCH /api/reserved-members/{member_id}/permanent",
+      "auth": "get_admin_user (admin/master_admin only)",
+      "response": {"message": "string", "is_permanent": "boolean"},
+      "tested": true
+    },
+    "frontend_elements": {
+      "permanent_badge": "data-testid='permanent-badge-{id}' - Yellow badge with Shield icon",
+      "toggle_button": "data-testid='btn-permanent-{id}' - Shield/ShieldOff icon in Actions column",
+      "confirmation_dialog": "window.confirm() before toggling",
+      "tested": true
+    },
+    "authorization": {
+      "admin_access": true,
+      "staff_access": false,
+      "tested": true
+    },
+    "cleanup_behavior": {
+      "skips_permanent_members": true,
+      "permanent_members_count_in_preview": true,
+      "tested": true
+    }
+  }
+}
