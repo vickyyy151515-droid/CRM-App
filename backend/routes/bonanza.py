@@ -347,11 +347,7 @@ async def assign_bonanza_records(assignment: BonanzaAssignment, user: User = Dep
         {'_id': 0, 'customer_id': 1, 'customer_name': 1, 'staff_id': 1, 'staff_name': 1}
     ).to_list(100000)
     
-    reserved_ids = {}  # Maps normalized ID -> staff_name who reserved it
-    for m in reserved_members:
-        cid = m.get('customer_id') or m.get('customer_name')
-        if cid:
-            reserved_ids[str(cid).strip().upper()] = m.get('staff_name', 'Another staff')
+    reserved_map_local = build_reserved_map(reserved_members)
     
     # Get the records to be assigned
     records = await db.bonanza_records.find(
@@ -365,21 +361,7 @@ async def assign_bonanza_records(assignment: BonanzaAssignment, user: User = Dep
     
     for record in records:
         row_data = record.get('row_data', {})
-        is_reserved = False
-        reserved_by = None
-        
-        # Check ALL row_data values against reserved members
-        if record.get('is_reserved_member'):
-            is_reserved = True
-            reserved_by = record.get('reserved_by_name', 'Another staff')
-        else:
-            for key, value in row_data.items():
-                if value:
-                    normalized = str(value).strip().upper()
-                    if normalized in reserved_ids:
-                        is_reserved = True
-                        reserved_by = reserved_ids[normalized]
-                        break
+        is_reserved, reserved_by = find_reservation_owner(record, reserved_map_local)
         
         if is_reserved:
             customer_display = next((str(row_data[k]) for k in row_data if row_data[k]), 'Unknown')
