@@ -1617,13 +1617,15 @@ async def preview_reserved_member_cleanup(user: User = Depends(get_admin_user)):
             'product_overrides_count': len(product_overrides)
         },
         'total_approved_members': len(reserved_members),
+        'permanent_members_count': len(permanent_members),
         'active_members_with_omset': len(active_members),
         'safe_members_count': len(safe_members),
         'expiring_soon_count': len(expiring_soon),
         'will_be_deleted_count': len(will_be_deleted),
         'expiring_soon': expiring_soon,
         'will_be_deleted': will_be_deleted,
-        'message': f'{len(expiring_soon)} members will receive warning notifications, {len(will_be_deleted)} will be auto-deleted at next cleanup (00:01 WIB)'
+        'permanent_members': permanent_members,
+        'message': f'{len(expiring_soon)} members will receive warning notifications, {len(will_be_deleted)} will be auto-deleted at next cleanup (00:01 WIB), {len(permanent_members)} permanent (never expire)'
     }
 
 
