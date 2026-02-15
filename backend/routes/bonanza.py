@@ -469,11 +469,16 @@ async def assign_random_bonanza_records(assignment: RandomBonanzaAssignment, use
         if record.get('is_reserved_member'):
             skipped_count += 1
             continue
-            
-        username = record.get('row_data', {}).get(assignment.username_field, '')
-        # Normalize to UPPERCASE for case-insensitive comparison
-        username_str = str(username).strip().upper() if username else ''
-        if username_str and username_str in reserved_ids:
+        
+        # Check ALL row_data values against reserved members (field-name independent)
+        row_data = record.get('row_data', {})
+        is_reserved = False
+        for key, value in row_data.items():
+            if value and str(value).strip().upper() in reserved_ids:
+                is_reserved = True
+                break
+        
+        if is_reserved:
             skipped_count += 1
             continue
         eligible_records.append(record)
