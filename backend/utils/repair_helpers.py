@@ -732,27 +732,31 @@ async def fix_reserved_conflicts(db, module: str = 'records') -> Dict[str, Any]:
         row_data = record.get('row_data', {})
         assigned_to = record.get('assigned_to')
         
-        customer_id = _find_customer_id_in_row(row_data)
-        if customer_id and customer_id.upper() in reserved_map:
-            reserved_info = reserved_map[customer_id.upper()]
-            if reserved_info['staff_id'] != assigned_to:
-                await db[collections['records']].update_one(
-                    {'id': record['id']},
-                    {'$set': {
-                        'assigned_to': reserved_info['staff_id'],
-                        'assigned_to_name': reserved_info['staff_name'],
-                        'reassigned_at': now.isoformat(),
-                        'reassigned_reason': 'reserved_conflict_fix',
-                        'previous_assigned_to': assigned_to,
-                        'previous_assigned_to_name': record.get('assigned_to_name')
-                    }}
-                )
-                fixed.append({
-                    'record_id': record['id'],
-                    'customer_id': customer_id,
-                    'from_staff': record.get('assigned_to_name'),
-                    'to_staff': reserved_info['staff_name']
-                })
+        # Field-agnostic: check ALL row_data values against reserved map
+        for value in row_data.values():
+            if value and str(value).strip():
+                normalized = str(value).strip().upper()
+                if normalized in reserved_map:
+                    reserved_info = reserved_map[normalized]
+                    if reserved_info['staff_id'] != assigned_to:
+                        await db[collections['records']].update_one(
+                            {'id': record['id']},
+                            {'$set': {
+                                'assigned_to': reserved_info['staff_id'],
+                                'assigned_to_name': reserved_info['staff_name'],
+                                'reassigned_at': now.isoformat(),
+                                'reassigned_reason': 'reserved_conflict_fix',
+                                'previous_assigned_to': assigned_to,
+                                'previous_assigned_to_name': record.get('assigned_to_name')
+                            }}
+                        )
+                        fixed.append({
+                            'record_id': record['id'],
+                            'customer_id': str(value).strip(),
+                            'from_staff': record.get('assigned_to_name'),
+                            'to_staff': reserved_info['staff_name']
+                        })
+                    break
     
     return {
         'success': True,
