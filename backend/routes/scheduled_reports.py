@@ -724,7 +724,6 @@ async def process_reserved_member_cleanup():
         # Support both old field name (customer_name) and new field name (customer_id)
         customer_id = member.get('customer_id') or member.get('customer_name') or ''
         staff_id = member.get('staff_id')
-        staff_name = member.get('staff_name', 'Unknown')
         product_id = member.get('product_id', '')
         product_name = member.get('product_name', 'Unknown')
         
