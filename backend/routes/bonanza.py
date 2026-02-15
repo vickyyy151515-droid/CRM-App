@@ -286,12 +286,7 @@ async def get_bonanza_databases(product_id: Optional[str] = None, user: User = D
     
     # Get reserved members for excluded count
     reserved_members = await db.reserved_members.find({'status': 'approved'}, {'_id': 0, 'customer_id': 1, 'customer_name': 1}).to_list(100000)
-    reserved_ids = set()
-    for m in reserved_members:
-        if m.get('customer_id'):
-            reserved_ids.add(str(m['customer_id']).strip().upper())
-        if m.get('customer_name'):
-            reserved_ids.add(str(m['customer_name']).strip().upper())
+    reserved_ids = build_reserved_set(reserved_members)
     
     for database in databases:
         total = await db.bonanza_records.count_documents({'database_id': database['id']})
@@ -307,16 +302,13 @@ async def get_bonanza_databases(product_id: Optional[str] = None, user: User = D
         # Count excluded (reserved members in available records)
         available_records = await db.bonanza_records.find(
             {'database_id': database['id'], 'status': 'available'},
-            {'_id': 0, 'row_data': 1}
+            {'_id': 0, 'row_data': 1, 'is_reserved_member': 1}
         ).to_list(100000)
         
         excluded_count = 0
         for record in available_records:
-            row_data = record.get('row_data', {})
-            for key, value in row_data.items():
-                if value and str(value).strip().upper() in reserved_ids:
-                    excluded_count += 1
-                    break
+            if is_record_reserved(record, reserved_ids):
+                excluded_count += 1
         
         database['total_records'] = total
         database['assigned_count'] = assigned
