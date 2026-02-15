@@ -5,7 +5,7 @@ Common validation and repair operations for all record modules
 
 from typing import Dict, Any, List, Optional
 from utils.helpers import get_jakarta_now
-from utils.db_operations import get_collection_names, count_records_by_status
+from utils.reserved_check import build_reserved_map as _centralized_build_reserved_map, is_record_reserved, find_reservation_owner
 
 # Common username fields used across all modules for customer ID lookup
 USERNAME_FIELDS = [
