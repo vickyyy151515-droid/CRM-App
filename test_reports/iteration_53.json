@@ -1,0 +1,114 @@
+{
+  "summary": "P0 Bug Fix Verified: Reserved member assignment prevention using centralized utility (backend/utils/reserved_check.py). All 27 backend tests passed (16 new + 11 existing). The fix centralizes all reserved member checking with build_reserved_set, build_reserved_map, is_record_reserved, and find_reservation_owner functions that add BOTH customer_id AND customer_name to the reserved set and check ALL row_data values field-agnostically.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "✓ TestCentralizedUtilityUnit::test_01_verify_build_reserved_set_adds_both_ids",
+    "✓ TestCentralizedUtilityUnit::test_02_verify_is_record_reserved_checks_all_values",
+    "✓ TestMemberWDReservedHandling::test_01_memberwd_upload_flags_reserved_members",
+    "✓ TestMemberWDReservedHandling::test_02_memberwd_assign_random_skips_reserved",
+    "✓ TestMemberWDReservedHandling::test_03_memberwd_manual_assign_blocks_reserved",
+    "✓ TestBonanzaReservedHandling::test_01_bonanza_databases_show_excluded_count",
+    "✓ TestBonanzaReservedHandling::test_02_bonanza_assign_random_skips_reserved",
+    "✓ TestBonanzaReservedHandling::test_03_bonanza_manual_assign_blocks_reserved",
+    "✓ TestCriticalBugScenario::test_reserved_with_both_ids_scenario",
+    "✓ TestDiagnoseAndRepair::test_memberwd_diagnose_reserved_conflicts",
+    "✓ TestDiagnoseAndRepair::test_bonanza_diagnose_reserved_conflicts",
+    "✓ TestDiagnoseAndRepair::test_memberwd_data_health",
+    "✓ TestDiagnoseAndRepair::test_bonanza_data_health",
+    "✓ TestHealthCheck::test_backend_health",
+    "✓ TestHealthCheck::test_auth_login",
+    "✓ TestCleanup::test_cleanup_test_reserved_members",
+    "✓ test_reserved_member_field_independent.py - All 11 tests passed"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_reserved_member_centralized_fix.py",
+    "/app/backend/tests/test_reserved_member_field_independent.py",
+    "/app/test_reports/pytest/reserved_member_centralized_fix_results.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [
+    "✓ backend/utils/reserved_check.py: build_reserved_set adds BOTH customer_id AND customer_name (lines 35-40) - ROOT CAUSE FIXED",
+    "✓ backend/utils/reserved_check.py: build_reserved_map adds BOTH identifiers (lines 64-68)",
+    "✓ backend/utils/reserved_check.py: is_record_reserved checks ALL row_data values (lines 95-98) - FIELD-AGNOSTIC",
+    "✓ backend/utils/reserved_check.py: find_reservation_owner checks ALL row_data values (lines 116-121)",
+    "✓ memberwd.py: Upload (line 385), manual assign (line 572-586), random assign (line 675-685), process-invalid (line 1282) all use centralized utility",
+    "✓ bonanza.py: Upload (line 183), manual assign (line 350-364), random assign (line 421-431), process-invalid (line 891-941) all use centralized utility",
+    "✓ repair_helpers.py: Uses centralized utility via _build_reserved_map (line 649) and field-agnostic checks (lines 686-700)"
+  ],
+
+  "updated_files": [
+    "/app/backend/tests/test_reserved_member_centralized_fix.py (NEW - 16 comprehensive tests)"
+  ],
+
+  "success_rate": {
+    "backend": "100% (27/27 tests passed)",
+    "frontend": "N/A (backend-only testing requested)"
+  },
+
+  "test_credentials": {
+    "admin": {"email": "vicky@crm.com", "password": "admin123", "role": "master_admin"},
+    "known_staff_id": "staff-user-1",
+    "known_product_ids": ["prod-istana2000", "prod-liga2000", "prod-pucuk33"]
+  },
+
+  "seed_data_verification": {
+    "reserved_members": "Existing reserved members in system with status='approved'",
+    "memberwd_databases": "Multiple databases with available records",
+    "bonanza_databases": "Multiple databases with available records"
+  },
+
+  "bug_fix_verification": {
+    "original_bug": "Reserved members could be assigned to wrong staff when customer_id OR customer_name was used (only one added to reserved set), and column names varied in Excel",
+    "root_cause": "1) `customer_id or customer_name` in old code only added ONE identifier. 2) Hardcoded USERNAME_FIELDS list didn't match all possible Excel column headers",
+    "fix_applied": [
+      "1. Centralized utility adds BOTH customer_id AND customer_name to reserved set",
+      "2. Field-agnostic check iterates ALL row_data values instead of specific field names",
+      "3. All code paths (upload, manual assign, random assign, process-invalid) now use centralized utility"
+    ],
+    "verification_method": "Created 16 comprehensive tests covering centralized utility functions and all code paths (memberwd/bonanza upload, manual assign, random assign, diagnose conflicts, data health)",
+    "affected_endpoints": [
+      "POST /api/memberwd/upload",
+      "POST /api/memberwd/assign",
+      "POST /api/memberwd/assign-random",
+      "POST /api/memberwd/admin/process-invalid/{staff_id}",
+      "GET /api/memberwd/admin/diagnose-reserved-conflicts",
+      "GET /api/memberwd/admin/data-health",
+      "POST /api/bonanza/upload",
+      "POST /api/bonanza/assign",
+      "POST /api/bonanza/assign-random",
+      "POST /api/bonanza/admin/process-invalid/{staff_id}",
+      "GET /api/bonanza/admin/diagnose-reserved-conflicts",
+      "GET /api/bonanza/admin/data-health"
+    ]
+  },
+
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "P0 reserved member bug fix verified. Centralized utility in backend/utils/reserved_check.py handles all reserved member checks. Key tests: test_reserved_member_centralized_fix.py (16 tests) and test_reserved_member_field_independent.py (11 tests). All assignment code paths (memberwd and bonanza) now use centralized utility with field-agnostic checking.",
+
+  "rca_of_the_issue": {
+    "root_cause": "OLD CODE: `customer_id or customer_name` only added ONE value per reserved member. If a member had customer_id='abc123' AND customer_name='Gcpokemon', only 'abc123' was in the set. An Excel with 'Gcpokemon' bypassed the check.",
+    "reproduction_steps": [
+      "1. Create reserved member with customer_id='testid123' customer_name='TestUser'",
+      "2. Upload Excel with record containing 'TestUser' in any column",
+      "3. OLD BUG: Record was NOT flagged as reserved because only 'testid123' was in reserved set",
+      "4. FIX: Both 'TESTID123' and 'TESTUSER' are now in reserved set"
+    ],
+    "mitigation": "Centralized utility in reserved_check.py adds BOTH identifiers and checks ALL row_data values. All affected code paths updated to use centralized utility."
+  }
+}
