@@ -1253,24 +1253,7 @@ async def process_invalid_memberwd_and_replace(staff_id: str, data: ProcessInval
             {'_id': 0, 'customer_id': 1, 'customer_name': 1}
         ).to_list(100000)
         
-        reserved_ids = set()
-        for m in reserved_members:
-            if m.get('customer_id'):
-                reserved_ids.add(str(m['customer_id']).strip().upper())
-            if m.get('customer_name'):
-                reserved_ids.add(str(m['customer_name']).strip().upper())
-        
-        def is_reserved(record):
-            """Check if a record is reserved using multiple safety checks"""
-            # Check 1: Upload-time flag
-            if record.get('is_reserved_member'):
-                return True
-            # Check 2: Runtime check - ALL row_data values against reserved members
-            row_data = record.get('row_data', {})
-            for key, value in row_data.items():
-                if value and str(value).strip().upper() in reserved_ids:
-                    return True
-            return False
+        reserved_ids = build_reserved_set(reserved_members)
         
         # Process each batch group separately
         # Key: Each invalid record gets replaced by one record from the SAME database, 
