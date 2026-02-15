@@ -1933,6 +1933,29 @@ async def move_reserved_member(member_id: str, new_staff_id: str, user: User = D
     
     return {'message': f"Reserved member moved to {staff['name']}"}
 
+
+@router.patch("/reserved-members/{member_id}/permanent")
+async def toggle_permanent_reserved(member_id: str, user: User = Depends(get_admin_user)):
+    """Toggle permanent reservation status. Only admins can set this."""
+    db = get_db()
+    member = await db.reserved_members.find_one({'id': member_id})
+    if not member:
+        raise HTTPException(status_code=404, detail="Reserved member not found")
+
+    new_status = not member.get('is_permanent', False)
+    await db.reserved_members.update_one(
+        {'id': member_id},
+        {'$set': {'is_permanent': new_status}}
+    )
+
+    customer_id = member.get('customer_id') or member.get('customer_name', '')
+    action = 'permanent' if new_status else 'non-permanent'
+    return {
+        'message': f"Customer '{customer_id}' is now {action}",
+        'is_permanent': new_status
+    }
+
+
 @router.get("/reserved-members/duplicates")
 async def find_reserved_member_duplicates(user: User = Depends(get_admin_user)):
     """Find duplicate reserved members (same customer + product)"""
