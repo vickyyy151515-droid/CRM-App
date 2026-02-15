@@ -410,14 +410,12 @@ async def repair_data(repair_type: str, user: User = Depends(get_admin_user)):
                 record_product_id = record.get('product_id')
                 reserved_by_staff_id = record.get('reserved_by_staff_id')
                 
-                # Get customer ID from row_data
+                # Get customer ID from row_data - check ALL fields
                 row_data = record.get('row_data', {})
                 customer_id = None
-                for key in ['Username', 'username', 'USERNAME', 'USER', 'user', 'ID', 'id', 
-                           'Nama Lengkap', 'nama_lengkap', 'Name', 'name', 
-                           'CUSTOMER', 'customer', 'Customer', 'customer_id', 'Customer_ID']:
-                    if key in row_data and row_data[key]:
-                        customer_id = str(row_data[key]).strip().upper()
+                for key, value in row_data.items():
+                    if value:
+                        customer_id = str(value).strip().upper()
                         break
                 
                 if not customer_id or not record_product_id or not reserved_by_staff_id:
