@@ -689,10 +689,10 @@ async def validate_bonanza_records(data: RecordValidation, user: User = Depends(
                 eligible = []
                 for rec in available:
                     row_data = rec.get('row_data', {})
-                    is_reserved = False
-                    for key in ['Username', 'username', 'USER', 'user', 'ID', 'id', 'Nama Lengkap', 'nama_lengkap', 'Name', 'name']:
-                        if key in row_data and row_data[key]:
-                            if str(row_data[key]).strip().upper() in reserved_ids:
+                    is_reserved = rec.get('is_reserved_member', False)
+                    if not is_reserved:
+                        for key, value in row_data.items():
+                            if value and str(value).strip().upper() in reserved_ids:
                                 is_reserved = True
                                 break
                     if not is_reserved:
