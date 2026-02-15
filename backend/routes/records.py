@@ -78,14 +78,14 @@ async def invalidate_customer_records_for_other_staff(
         for record in assigned_records:
             row_data = record.get('row_data', {})
             
-            # Check all possible customer ID fields
+            # Check ALL row_data values for matching customer ID
             record_customer_id = None
-            for key in ['Username', 'username', 'USERNAME', 'USER', 'user', 'ID', 'id', 
-                       'Nama Lengkap', 'nama_lengkap', 'Name', 'name', 
-                       'CUSTOMER', 'customer', 'Customer', 'customer_id', 'Customer_ID']:
-                if key in row_data and row_data[key]:
-                    record_customer_id = str(row_data[key]).strip().upper()
-                    break
+            for key, value in row_data.items():
+                if value:
+                    normalized = str(value).strip().upper()
+                    if normalized == customer_id_normalized:
+                        record_customer_id = normalized
+                        break
             
             # If this record matches the reserved customer (same customer + same product already filtered in query)
             if record_customer_id == customer_id_normalized:
