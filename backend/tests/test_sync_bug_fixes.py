@@ -414,8 +414,8 @@ class TestCleanup:
         )
         if response.status_code == 200:
             members = response.json()
-            test_members = [m for m in members if m.get("customer_id", "").startswith("TEST_") or 
-                          m.get("customer_name", "").startswith("TEST_")]
+            test_members = [m for m in members if (m.get("customer_id") or "").startswith("TEST_") or 
+                          (m.get("customer_name") or "").startswith("TEST_")]
             
             cleaned = 0
             for member in test_members:
