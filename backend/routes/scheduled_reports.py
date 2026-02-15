@@ -811,6 +811,9 @@ async def process_reserved_member_cleanup():
                 'staff_id': staff_id
             })
             
+            # SYNC: Restore records that were invalidated by this reservation
+            await restore_invalidated_records_for_reservation(db, customer_id, staff_id, product_id)
+            
             print(f"  -> DELETED: {customer_id} (no deposit)")
             continue
         
