@@ -127,6 +127,79 @@ async def invalidate_customer_records_for_other_staff(
     return invalidated_count, notified_staff
 
 
+async def restore_invalidated_records_for_reservation(
+    db,
+    customer_id: str,
+    reserved_by_staff_id: str,
+    product_id: str = None
+):
+    """
+    When a reservation is deleted/expired/moved, restore records that were
+    invalidated because of THAT specific reservation.
+    
+    Only restores records where:
+    - is_reservation_conflict == True
+    - reserved_by_staff_id matches the staff who owned the reservation
+    - product_id matches (if provided)
+    
+    Returns: count of restored records
+    """
+    customer_id_normalized = str(customer_id).strip().upper() if customer_id else ''
+    if not customer_id_normalized:
+        return 0
+    
+    restored_count = 0
+    now = get_jakarta_now()
+    
+    collections_to_check = ['customer_records', 'bonanza_records', 'memberwd_records']
+    
+    for collection_name in collections_to_check:
+        collection = db[collection_name]
+        
+        query = {
+            'is_reservation_conflict': True,
+            'reserved_by_staff_id': reserved_by_staff_id
+        }
+        if product_id:
+            query['product_id'] = product_id
+        
+        conflicted_records = await collection.find(
+            query,
+            {'_id': 0, 'id': 1, 'row_data': 1, 'assigned_to': 1}
+        ).to_list(100000)
+        
+        for record in conflicted_records:
+            row_data = record.get('row_data', {})
+            matches = False
+            for value in row_data.values():
+                if value and str(value).strip().upper() == customer_id_normalized:
+                    matches = True
+                    break
+            
+            if matches:
+                await collection.update_one(
+                    {'id': record['id']},
+                    {
+                        '$set': {
+                            'is_reservation_conflict': False,
+                            'restored_at': now.isoformat(),
+                            'restored_reason': 'reservation_removed'
+                        },
+                        '$unset': {
+                            'invalid_reason': '',
+                            'invalidated_at': '',
+                            'invalidated_by': '',
+                            'reserved_by_staff_id': '',
+                            'reserved_by_staff_name': ''
+                        }
+                    }
+                )
+                restored_count += 1
+    
+    return restored_count
+
+
+
 # ==================== PYDANTIC MODELS ====================
 
 class Database(BaseModel):
