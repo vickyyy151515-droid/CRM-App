@@ -421,17 +421,16 @@ async def upload_memberwd_database(
                 except Exception:
                     row_data[str(col)] = ''
         
-        # Check if this record is a reserved member
-        # Check ALL row_data values against reserved members (field-name independent)
-        is_reserved = False
+        # Check if this record is a reserved member using centralized utility
+        is_reserved_flag = False
         reserved_by = None
         reserved_by_name = None
         
         for key, value in row_data.items():
-            if value:
-                normalized = str(value).strip().lower()
+            if value and str(value).strip():
+                normalized = str(value).strip().upper()
                 if normalized in reserved_map:
-                    is_reserved = True
+                    is_reserved_flag = True
                     reserved_by = reserved_map[normalized]['staff_id']
                     reserved_by_name = reserved_map[normalized]['staff_name']
                     reserved_count += 1
