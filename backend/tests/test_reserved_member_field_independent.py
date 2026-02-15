@@ -397,7 +397,7 @@ class TestReservedMemberCreationAndQuery:
             pytest.skip("No products available")
         
         # Get staff
-        staff_response = requests.get(f"{BASE_URL}/api/users/staff", headers=self.headers)
+        staff_response = requests.get(f"{BASE_URL}/api/memberwd/staff", headers=self.headers)
         assert staff_response.status_code == 200
         staff_list = staff_response.json()
         
