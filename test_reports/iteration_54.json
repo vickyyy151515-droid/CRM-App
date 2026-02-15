@@ -1,0 +1,100 @@
+{
+  "summary": "3 High-Priority Sync/Logic Bug Fixes Verified. All 7 backend tests passed. Fixes ensure: (1) omset sync finds reserved members by customer_name when customer_id is empty/different, (2) delete_reserved_member restores invalidated records, (3) move_reserved_member restores OLD invalidations and creates NEW ones.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "✓ TestHealthCheck::test_backend_health",
+    "✓ TestFix1_OmsetSyncWithCustomerNameOnly::test_01_omset_sync_updates_reserved_member_via_customer_name",
+    "✓ TestFix2_DeleteReservedMemberRestoresRecords::test_01_delete_reserved_member_restores_invalidated_records",
+    "✓ TestFix3_MoveReservedMemberInvalidationLogic::test_01_move_reserved_member_restores_and_invalidates",
+    "✓ TestRestoreInvalidatedRecordsHelper::test_01_verify_restore_helper_behavior",
+    "✓ TestOmsetApproveFlowSync::test_01_verify_omset_approve_endpoint_exists",
+    "✓ TestCleanup::test_cleanup_test_reserved_members"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_sync_bug_fixes.py",
+    "/app/test_reports/pytest/sync_bug_fixes_results.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [
+    "✓ FIX 1: omset.py create_omset (lines 326-338) uses $or query to search BOTH customer_id AND customer_name fields",
+    "✓ FIX 1b: omset.py approve_omset (lines 370-383) uses same $or pattern for reserved member lookup",
+    "✓ FIX 2: records.py delete_reserved_member (lines 1967-1973) calls restore_invalidated_records_for_reservation helper",
+    "✓ FIX 3: records.py move_reserved_member (lines 2020-2034) calls BOTH restore (old staff) AND invalidate (new staff)",
+    "✓ Helper function restore_invalidated_records_for_reservation (lines 130-199) checks ALL row_data values (field-agnostic)",
+    "✓ scheduled_reports.py cleanup functions (lines 815, 858) properly call restore helper when deleting expired reservations"
+  ],
+
+  "updated_files": [
+    "/app/backend/tests/test_sync_bug_fixes.py (NEW - 7 tests for 3 bug fixes)"
+  ],
+
+  "success_rate": {
+    "backend": "100% (7/7 tests passed)",
+    "frontend": "N/A (backend-only testing requested)"
+  },
+
+  "test_credentials": {
+    "admin": {"email": "vicky@crm.com", "password": "admin123", "role": "master_admin"},
+    "known_staff_id_1": "staff-user-1",
+    "known_staff_id_2": "9d543ea9-7cca-4a55-b3b3-a9e7cf9a107a",
+    "known_product_id": "prod-istana2000"
+  },
+
+  "bug_fix_verification": {
+    "fix_1_omset_sync": {
+      "location": "backend/routes/omset.py lines 326-338, 370-383",
+      "description": "Omset last_omset_date sync now uses $or query to find reserved members by BOTH customer_id AND customer_name fields",
+      "before": "Only searched customer_id field - legacy data with customer_name only was not updated",
+      "after": "Uses $or: [{customer_id: regex}, {customer_name: regex}] to handle legacy data"
+    },
+    "fix_2_delete_restores": {
+      "location": "backend/routes/records.py lines 1967-1973",
+      "description": "delete_reserved_member now calls restore_invalidated_records_for_reservation helper",
+      "before": "Deleting a reserved member did not restore records that were invalidated by that reservation",
+      "after": "Calls helper function that sets is_reservation_conflict=False and unsets invalidation fields"
+    },
+    "fix_3_move_restores_and_invalidates": {
+      "location": "backend/routes/records.py lines 2020-2034",
+      "description": "move_reserved_member now restores OLD staff's invalidated records AND creates NEW invalidations",
+      "before": "Moving a reservation did not properly handle the invalidation state of affected records",
+      "after": "First restores records for old_staff_id, then invalidates records for new_staff_id"
+    },
+    "helper_function": {
+      "location": "backend/routes/records.py lines 130-199",
+      "description": "restore_invalidated_records_for_reservation checks ALL row_data values (field-agnostic)",
+      "key_logic": "Iterates row_data.values() and matches any value that equals customer_id_normalized"
+    }
+  },
+
+  "affected_endpoints": [
+    "POST /api/omset - FIX 1: create_omset sync",
+    "POST /api/omset/{record_id}/approve - FIX 1b: approve_omset sync",
+    "DELETE /api/reserved-members/{member_id} - FIX 2: restore on delete",
+    "PATCH /api/reserved-members/{member_id}/move - FIX 3: restore old + invalidate new"
+  ],
+
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "3 sync/logic bug fixes verified (iteration_54). FIX 1: omset sync uses $or for customer_id/customer_name. FIX 2: delete_reserved_member restores invalidated records. FIX 3: move_reserved_member restores OLD and invalidates NEW. All use centralized restore_invalidated_records_for_reservation helper which is field-agnostic (checks all row_data values). Previous P0 fix (iteration_53) for reserved member assignment also working.",
+
+  "rca_of_the_issue": {
+    "fix_1_root_cause": "Legacy reserved member data had customer info in customer_name field, but omset sync only searched customer_id field. Result: last_omset_date not updated for legacy reservations.",
+    "fix_2_root_cause": "delete_reserved_member did not call any function to restore records that were invalidated by the deleted reservation. Result: Records stayed invalidated even after the reservation was removed.",
+    "fix_3_root_cause": "move_reserved_member did not handle the transition properly. It needed to: (1) restore records that the OLD owner's reservation had invalidated, AND (2) invalidate records now affected by the NEW owner's reservation."
+  }
+}
