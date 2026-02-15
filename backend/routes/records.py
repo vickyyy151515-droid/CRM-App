@@ -190,6 +190,7 @@ class ReservedMember(BaseModel):
     approved_by_name: Optional[str] = None
     last_omset_date: Optional[datetime] = None  # Last deposit date
     days_since_last_omset: Optional[int] = None  # Days since last deposit
+    is_permanent: bool = False  # Permanent reservation - never expires
     
     @property
     def customer_identifier(self) -> str:
