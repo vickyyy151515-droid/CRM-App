@@ -938,7 +938,7 @@ async def process_invalid_and_replace(staff_id: str, data: ProcessInvalidRequest
             eligible_records = []
             skipped = 0
             for record in available_records:
-                if is_reserved(record):
+                if is_record_reserved(record, reserved_ids):
                     skipped += 1
                 else:
                     eligible_records.append(record)
