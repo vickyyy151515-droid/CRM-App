@@ -36,6 +36,17 @@ CRM application for sales tracking, customer retention, and staff management. In
 
 **Testing**: 27/27 tests passed (16 new + 11 existing)
 
+### Deep Audit Sync Bug Fixes (2026-02-15) - COMPLETE
+**3 high-priority sync/logic bugs found and fixed:**
+
+1. **`omset.py` last_omset_date sync** — Now searches BOTH `customer_id` AND `customer_name` using `$or`. Legacy reserved members get deposit dates synced correctly.
+
+2. **`delete_reserved_member` + cleanup job** — Now restores records invalidated by the deleted/expired reservation via new `restore_invalidated_records_for_reservation()` helper.
+
+3. **`move_reserved_member`** — Now restores OLD staff's invalidations and creates NEW ones for the new owner.
+
+**Testing**: 7/7 tests passed (iteration_54)
+
 ## Prioritized Backlog
 
 ### P1 - Upcoming
