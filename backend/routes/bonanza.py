@@ -320,11 +320,10 @@ async def get_bonanza_databases(product_id: Optional[str] = None, user: User = D
         excluded_count = 0
         for record in available_records:
             row_data = record.get('row_data', {})
-            for key in ['Username', 'username', 'USER', 'user', 'ID', 'id', 'Nama Lengkap', 'nama_lengkap', 'Name', 'name']:
-                if key in row_data and row_data[key]:
-                    if str(row_data[key]).strip().upper() in reserved_ids:
-                        excluded_count += 1
-                        break
+            for key, value in row_data.items():
+                if value and str(value).strip().upper() in reserved_ids:
+                    excluded_count += 1
+                    break
         
         database['total_records'] = total
         database['assigned_count'] = assigned
