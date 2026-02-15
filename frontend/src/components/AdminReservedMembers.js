@@ -704,7 +704,17 @@ export default function AdminReservedMembers({ onUpdate }) {
             ) : (
               filteredMembers.map(member => (
                 <tr key={member.id} className="hover:bg-slate-50 dark:hover:bg-slate-700" data-testid={`reservation-row-${member.id}`}>
-                  <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">{member.customer_id || member.customer_name}</td>
+                  <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
+                    <span className="flex items-center gap-1.5">
+                      {member.customer_id || member.customer_name}
+                      {member.is_permanent && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" data-testid={`permanent-badge-${member.id}`}>
+                          <Shield size={10} />
+                          Permanent
+                        </span>
+                      )}
+                    </span>
+                  </td>
                   <td className="px-6 py-4">
                     {member.phone_number ? (
                       <div className="flex items-center gap-2">
