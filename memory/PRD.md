@@ -1,161 +1,63 @@
-# CRM Boost PRD
+# CRM Pro - Product Requirements Document
 
 ## Original Problem Statement
-CRM system for managing member data with three main modules:
-1. **Normal Database** - Staff request records from admin-uploaded databases
-2. **Member WD CRM** - Batch-based assignment system
-3. **DB Bonanza** - Database-based assignment system
+CRM application for sales tracking, customer retention, and staff management. Includes Member WD assignment, DB Bonanza, reserved member protection, analytics dashboards, and more.
 
-All modules support:
-- Database upload (CSV/Excel)
-- Random/manual assignment to staff
-- Validation workflow (valid/invalid)
-- Auto-replace invalid records (configurable)
-- Recall assigned records
-- Reserved member filtering
+## Architecture
+- **Frontend**: React + Vite + TypeScript + Tailwind CSS + Shadcn/ui + Recharts
+- **Backend**: Python + FastAPI + MongoDB (via pymongo/motor)
+- **Auth**: JWT-based with master_admin and staff roles
 
-## Tech Stack
-- Backend: FastAPI (Python)
-- Frontend: React.js
-- Database: MongoDB (Motor async driver)
-- UI: Tailwind CSS + Shadcn components
-- Scheduler: APScheduler (daily cleanup jobs)
+## What's Been Implemented
 
-## Latest Update: CRITICAL BUG FIX — Reserved Member Assignment (2026-02-15)
+### Core Features (Complete)
+- Sales tracking and customer records management
+- Staff management with role-based access
+- Member WD CRM with batch assignment system
+- DB Bonanza assignment system
+- Reserved member protection system (with permanent toggle)
+- Advanced Analytics page with 10+ interactive charts and drill-downs
+- Data sync and health check utilities
+- Scheduled cleanup jobs for expired reservations
 
-**Root cause**: Reserved member checks used hardcoded field name lists (e.g., `['Username', 'username', 'USER']`). If the Excel column header was something else (like `USERNAME`, `NAMA_REKENING`, `Member`, etc.), the check was completely bypassed, allowing reserved customers to be assigned to wrong staff.
+### P0 Bug Fix: Reserved Member Assignment (2026-02-15) - COMPLETE
+**Root Cause**: Reserved member checks were built using `customer_id OR customer_name` (only adding ONE identifier per member). If a member had both fields with different values, the check could be bypassed when the uploaded data matched the un-added field.
 
-**Fix**: All reserved member checks now iterate ALL `row_data` key-value pairs instead of specific field names. Applied across ALL assignment paths:
-- `memberwd.py`: Upload flagging, random assignment, manual assignment, auto-replace
-- `bonanza.py`: Upload flagging, random assignment, manual assignment, auto-replace
-- `records.py`: Conflict checking
-- `data_sync.py`: Customer ID extraction
+**Fix**: Created centralized utility (`backend/utils/reserved_check.py`) that:
+1. Adds BOTH customer_id AND customer_name to the reserved set
+2. Checks ALL row_data values field-agnostically (no hardcoded column names)
+3. Is used by ALL code paths: upload, manual assign, random assign, auto-replace, process-invalid
 
-Testing: 11/11 backend tests passed (100%). Verified with actual database records.
+**Files Changed**:
+- NEW: `backend/utils/reserved_check.py` - Centralized utility
+- UPDATED: `backend/routes/memberwd.py` - All assignment paths
+- UPDATED: `backend/routes/bonanza.py` - All assignment paths
+- UPDATED: `backend/utils/repair_helpers.py` - Conflict detection
 
----
+**Testing**: 27/27 tests passed (16 new + 11 existing)
 
-## Previous Update: Permanent Reserved Members (2026-02-15)
+## Prioritized Backlog
 
-Admin can mark reserved members as **"Permanent"** — they will never expire regardless of deposit activity.
+### P1 - Upcoming
+- UI/UX consistency standardization across the app
 
-- **Backend**: `PATCH /api/reserved-members/{id}/permanent` toggles `is_permanent` (admin-only)
-- **Backend**: Cleanup job (`process_reserved_member_cleanup`) skips `is_permanent=True` members
-- **Frontend**: Shield icon toggle button + "PERMANENT" badge on `AdminReservedMembers.js`
-- Staff users cannot see or toggle permanent status
-
-Testing: 11/11 tests passed (100%)
-
----
-
-## Previous Update: Chart Info Tooltips (2026-02-14)
-
-Added hover-to-reveal info tooltips on **all 18 chart titles** across the Advanced Analytics page. Hovering over the (i) icon next to any chart title shows a popup explaining what the chart does and its business benefit.
-
-- Shared `ChartInfoTooltip` component at `/app/frontend/src/components/shared/ChartInfoTooltip.js`
-- Applied to: StaffNdpRdpDaily, ConversionFunnel, RevenueHeatmap, DepositLifecycle, ResponseTime, FollowupEffectiveness, ProductPerformance, CustomerValue, DepositTrends, StaffCompare, StaffComparison, DailyTrends, WhatsappDistribution, ResponseRate, OmsetTrends, ProductOmset, NdpRdp, DatabaseUtilization
-
----
-
-## Previous Update: Drill-Down Interactivity (2026-02-14)
-
-Clicking on any staff/product/data point in the 5 new charts opens a detailed slide-over panel:
-
-1. **Response Time** → Click staff row → Individual records with WA/response timestamps
-2. **Follow-up Effectiveness** → Click staff tag → Responded customers with deposit status (converted/pending)
-3. **Product Performance** → Click product → Staff-level NDP/RDP breakdown for that product
-4. **Customer Value** → Click staff bar → Top customers by deposit value (NDP vs RDP)
-5. **Deposit Trends** → Click data point → That day's individual deposits
-
-### New Drill-Down Endpoints:
-- `GET /api/analytics/drill-down/response-time?staff_id=X&period=X`
-- `GET /api/analytics/drill-down/followup-detail?staff_id=X&period=X`
-- `GET /api/analytics/drill-down/product-staff?product_id=X&period=X`
-- `GET /api/analytics/drill-down/staff-customers?staff_id=X&period=X`
-- `GET /api/analytics/drill-down/date-deposits?date=X&granularity=X`
-
-Testing: 22/22 tests passed (100%) — Backend + Frontend
-
----
-
-## Previous Update: 5 New Analytics Charts — Operational & Strategic (2026-02-14)
-
-### New Charts (Medium Value — Operational Efficiency):
-1. **Response Time by Staff** — Shows avg time to WA check and first response per staff with speed grades (Excellent/Good/Average/Slow), dual bars
-2. **Follow-up Effectiveness** — Grouped bar chart showing WA Checked → Responded → Deposited per staff with effectiveness % ranking
-3. **Product Performance** — Donut pie chart showing NDP/RDP counts and deposit amounts per product with percentage breakdown
-
-### New Charts (Nice to Have — Strategic Insights):
-4. **New vs Returning Customer Value (LTV)** — Stacked bar chart comparing NDP vs RDP deposit values per staff with NDP share indicator
-5. **Deposit Trends Over Time** — Area+line chart with Daily/Weekly/Monthly granularity toggle, summary stats (Total Volume, Deposits, Avg/Period, Peak)
-
-### New Endpoints:
-- `GET /api/analytics/response-time-by-staff` (period, product_id filters)
-- `GET /api/analytics/followup-effectiveness` (period, product_id filters)
-- `GET /api/analytics/product-performance` (period filter)
-- `GET /api/analytics/customer-value-comparison` (period, product_id filters)
-- `GET /api/analytics/deposit-trends` (period, granularity, product_id filters)
-
-Testing: 38/38 tests passed (100%) — Backend + Frontend
-
----
-
-## Previous Update: 3 High-Value Analytics Charts (2026-02-14)
-
-### Bug Fix: Admin Follow-up page showing 0 counts for master_admin users
-
-**Problem:** The Admin Follow-up Reminders page (`/admin/follow-ups`) showed "0" for all summary counters (Total, Critical, High, Medium, Low, Deposited) when accessed by users with `master_admin` role.
-
-**Root Cause:** In `backend/routes/followup.py`, the role check used `user.role == 'admin'` which excluded `master_admin` users. When a `master_admin` accessed the page, the code fell to the `else` branch and filtered follow-ups by the master_admin's own user ID — who has no assigned customer records.
-
-**Fix Applied:**
-| File | Line | Change |
-|------|------|--------|
-| `followup.py` | Line 38 | `user.role == 'admin'` → `user.role in ['admin', 'master_admin']` |
-| `followup.py` | Line 101 | `user.role == 'admin'` → `user.role in ['admin', 'master_admin']` |
-
-**Testing:** 10/10 backend tests passed. Both admin and master_admin roles now return identical follow-up data.
-
----
-
-## Completed Tasks (All Sessions)
-- Status Column in OMSET CRM
-- NDP/RDP Out-of-Order Entry Bug Fix
-- Recalculate NDP/RDP Button
-- Frontend Unused Dependencies Cleanup
-- Customer Retention RDP=0 Bug Fix
-- At-Risk Auto-Remove After 31 Days
-- Lost Customers Section
-- Retention Approval Status Filter Fix
-- Staff Progress Daily Breakdown Dropdown
-- Staff Progress RDP Undercount Fix
-- Admin Follow-up Reminders Page
-- Admin Follow-up Reminders 0 Count Bug Fix (master_admin role)
-- Frontend Refactoring (shared components)
-- Backend Utils centralization
-- MongoDB Index Optimization (28 indexes)
-- Reserved Member protection & conflict resolution
-- Data Sync Dashboard
-- Member WD CRM count mismatch fix
-- RDP Double-Counting Fix
-
-## Pending Tasks
-- P1: UI/UX consistency standardization across the app
-- P2: Staging/testing environment setup
-- P2: Centralized logging & monitoring (Sentry/LogRocket)
-- P2: Review & cleanup of potentially unused frontend components
+### P2 - Future
+- "Smart Message Queue" WhatsApp follow-up app
+- Staging/testing environment setup
+- Centralized logging & monitoring (Sentry/LogRocket)
 
 ## Key API Endpoints
-- `GET /api/followups` - Follow-up reminders (admin sees all staff, staff sees own)
-- `GET /api/followups/filters` - Filter options for follow-ups
-- `GET /api/followups/notifications` - Staff notification counts
-- `GET /api/followups/check-deposited/{record_id}` - Check deposit status
-- `POST /api/omset` - Create sales record
-- `GET /api/retention/summary` - Retention dashboard
-- `GET /api/leaderboard/admin-progress` - Staff progress
+- `POST /api/memberwd/upload` - Upload member database
+- `POST /api/memberwd/assign` - Manual assign records
+- `POST /api/memberwd/assign-random` - Random assign records
+- `POST /api/bonanza/upload` - Upload bonanza database
+- `POST /api/bonanza/assign` - Manual assign bonanza records
+- `POST /api/bonanza/assign-random` - Random assign bonanza records
+- `PATCH /api/reserved-members/{id}/permanent` - Toggle permanent status
+- `GET /api/analytics/drilldown/*` - Chart drill-down data
 
-## Key DB Schema
-- `omset_records`: Transaction records with NDP/RDP status
-- `customer_records`: Customer contact/status, used by follow-up system
-- `staff_targets`: Daily NDP/RDP targets per staff
-- `users`: User accounts with roles (staff, admin, master_admin)
+## DB Schema (Key Collections)
+- `reserved_members`: {customer_id, customer_name, staff_id, staff_name, status, is_permanent, product_id}
+- `memberwd_records`: {row_data, status, assigned_to, is_reserved_member, batch_id}
+- `bonanza_records`: {row_data, status, assigned_to, is_reserved_member}
+- `customer_records`: {row_data, status, assigned_to}
