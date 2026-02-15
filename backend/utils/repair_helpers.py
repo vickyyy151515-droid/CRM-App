@@ -637,22 +637,15 @@ async def repair_product_mismatch(db, module: str = 'records') -> Dict[str, Any]
 
 
 async def _build_reserved_map(db) -> Dict[str, Dict]:
-    """Build a map of normalized customer IDs to their reservation info."""
+    """Build a map of normalized customer IDs to their reservation info.
+    Uses centralized utility that adds BOTH customer_id AND customer_name.
+    """
     reserved_members = await db.reserved_members.find(
         {'status': 'approved'},
         {'_id': 0, 'customer_id': 1, 'customer_name': 1, 'staff_id': 1, 'staff_name': 1}
     ).to_list(100000)
     
-    reserved_map = {}
-    for m in reserved_members:
-        cid = m.get('customer_id') or m.get('customer_name')
-        if cid:
-            normalized = str(cid).strip().upper()
-            reserved_map[normalized] = {
-                'staff_id': m.get('staff_id'),
-                'staff_name': m.get('staff_name', 'Unknown')
-            }
-    return reserved_map
+    return _centralized_build_reserved_map(reserved_members)
 
 
 def _find_customer_id_in_row(row_data: Dict) -> Optional[str]:
