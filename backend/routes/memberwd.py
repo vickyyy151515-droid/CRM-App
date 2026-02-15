@@ -1315,15 +1315,11 @@ async def process_invalid_memberwd_and_replace(staff_id: str, data: ProcessInval
             # Check 1: Upload-time flag
             if record.get('is_reserved_member'):
                 return True
-            # Check 2: Runtime check against current reserved members
+            # Check 2: Runtime check - ALL row_data values against reserved members
             row_data = record.get('row_data', {})
-            for key in ['Username', 'username', 'USER', 'user', 'ID', 'id',
-                         'USERNAME', 'USERID', 'UserId', 'user_id',
-                         'Nama Lengkap', 'nama_lengkap', 'Name', 'name', 
-                         'NAMA', 'CUSTOMER', 'customer', 'Customer']:
-                if key in row_data and row_data[key]:
-                    if str(row_data[key]).strip().upper() in reserved_ids:
-                        return True
+            for key, value in row_data.items():
+                if value and str(value).strip().upper() in reserved_ids:
+                    return True
             return False
         
         # Process each batch group separately
