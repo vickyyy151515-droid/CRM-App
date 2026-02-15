@@ -21,7 +21,21 @@ All modules support:
 - UI: Tailwind CSS + Shadcn components
 - Scheduler: APScheduler (daily cleanup jobs)
 
-## Latest Update: Permanent Reserved Members (2026-02-15)
+## Latest Update: CRITICAL BUG FIX — Reserved Member Assignment (2026-02-15)
+
+**Root cause**: Reserved member checks used hardcoded field name lists (e.g., `['Username', 'username', 'USER']`). If the Excel column header was something else (like `USERNAME`, `NAMA_REKENING`, `Member`, etc.), the check was completely bypassed, allowing reserved customers to be assigned to wrong staff.
+
+**Fix**: All reserved member checks now iterate ALL `row_data` key-value pairs instead of specific field names. Applied across ALL assignment paths:
+- `memberwd.py`: Upload flagging, random assignment, manual assignment, auto-replace
+- `bonanza.py`: Upload flagging, random assignment, manual assignment, auto-replace
+- `records.py`: Conflict checking
+- `data_sync.py`: Customer ID extraction
+
+Testing: 11/11 backend tests passed (100%). Verified with actual database records.
+
+---
+
+## Previous Update: Permanent Reserved Members (2026-02-15)
 
 Admin can mark reserved members as **"Permanent"** — they will never expire regardless of deposit activity.
 
