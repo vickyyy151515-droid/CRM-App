@@ -854,9 +854,9 @@ async def get_conflict_resolution_log(
             # Extract customer ID from row_data
             row_data = record.get('row_data', {})
             customer_id = None
-            for key in ['Username', 'username', 'USERNAME', 'USER', 'user', 'CUSTOMER_ID', 'customer_id', 'ID', 'id']:
-                if key in row_data:
-                    customer_id = str(row_data[key]).strip()
+            for key, value in row_data.items():
+                if value:
+                    customer_id = str(value).strip()
                     break
             
             all_records.append({
