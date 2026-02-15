@@ -674,35 +674,17 @@ async def assign_random_memberwd_records(assignment: RandomMemberWDAssignment, u
         {'_id': 0, 'customer_id': 1, 'customer_name': 1}
     ).to_list(100000)
     
-    reserved_ids = set()
-    for m in reserved_members:
-        cid = m.get('customer_id') or m.get('customer_name')
-        if cid:
-            reserved_ids.add(str(cid).strip().upper())
+    reserved_ids = build_reserved_set(reserved_members)
     
     available_records = await db.memberwd_records.find(
         {'database_id': assignment.database_id, 'status': 'available'},
         {'_id': 0}
     ).to_list(100000)
     
-    def is_record_reserved(record):
-        """Check if a record is reserved - checks ALL row_data values"""
-        # Check 1: Upload-time flag
-        if record.get('is_reserved_member'):
-            return True
-        
-        # Check 2: Runtime check - compare ALL row_data values against reserved members
-        row_data = record.get('row_data', {})
-        for key, value in row_data.items():
-            if value and str(value).strip().upper() in reserved_ids:
-                return True
-        
-        return False
-    
     eligible_records = []
     skipped_count = 0
     for record in available_records:
-        if is_record_reserved(record):
+        if is_record_reserved(record, reserved_ids):
             skipped_count += 1
             continue
         eligible_records.append(record)
