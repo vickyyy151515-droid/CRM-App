@@ -1301,11 +1301,14 @@ async def diagnose_invalid_records(staff_id: str, user: User = Depends(get_admin
             reserved_count = 0
             for rec in available_sample:
                 row_data = rec.get('row_data', {})
-                for key in ['Username', 'username', 'USER', 'user', 'ID', 'id', 'Nama Lengkap', 'nama_lengkap', 'Name', 'name', 'NAMA']:
-                    if key in row_data and row_data[key]:
-                        if str(row_data[key]).strip().upper() in reserved_ids:
-                            reserved_count += 1
+                is_res = rec.get('is_reserved_member', False)
+                if not is_res:
+                    for key, value in row_data.items():
+                        if value and str(value).strip().upper() in reserved_ids:
+                            is_res = True
                             break
+                if is_res:
+                    reserved_count += 1
             
             diagnosis['invalid_records_by_database'][db_id] = {
                 'database_name': database.get('name') if database else db_name,
