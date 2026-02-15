@@ -429,14 +429,14 @@ async def upload_memberwd_database(
                     row_data[str(col)] = ''
         
         # Check if this record is a reserved member
+        # Check ALL row_data values against reserved members (field-name independent)
         is_reserved = False
         reserved_by = None
         reserved_by_name = None
         
-        # Check all possible username fields
-        for key in ['Username', 'username', 'USER', 'user', 'ID', 'id', 'Nama Lengkap', 'nama_lengkap', 'Name', 'name', 'CUSTOMER', 'customer', 'Customer']:
-            if key in row_data and row_data[key]:
-                normalized = str(row_data[key]).strip().lower()
+        for key, value in row_data.items():
+            if value:
+                normalized = str(value).strip().lower()
                 if normalized in reserved_map:
                     is_reserved = True
                     reserved_by = reserved_map[normalized]['staff_id']
