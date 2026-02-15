@@ -383,19 +383,24 @@ async def assign_bonanza_records(assignment: BonanzaAssignment, user: User = Dep
         is_reserved = False
         reserved_by = None
         
-        # Check all possible username fields
-        for key in ['Username', 'username', 'USER', 'user', 'ID', 'id', 'Nama Lengkap', 'nama_lengkap', 'Name', 'name', 'CUSTOMER', 'customer', 'Customer']:
-            if key in row_data and row_data[key]:
-                normalized = str(row_data[key]).strip().upper()
-                if normalized in reserved_ids:
-                    is_reserved = True
-                    reserved_by = reserved_ids[normalized]
-                    break
+        # Check ALL row_data values against reserved members
+        if record.get('is_reserved_member'):
+            is_reserved = True
+            reserved_by = record.get('reserved_by_name', 'Another staff')
+        else:
+            for key, value in row_data.items():
+                if value:
+                    normalized = str(value).strip().upper()
+                    if normalized in reserved_ids:
+                        is_reserved = True
+                        reserved_by = reserved_ids[normalized]
+                        break
         
         if is_reserved:
+            customer_display = next((str(row_data[k]) for k in row_data if row_data[k]), 'Unknown')
             blocked_records.append({
                 'record_id': record['id'],
-                'customer': row_data.get('Username') or row_data.get('username') or row_data.get('Name') or 'Unknown',
+                'customer': customer_display,
                 'reserved_by': reserved_by
             })
         else:
