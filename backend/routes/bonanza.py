@@ -418,11 +418,7 @@ async def assign_random_bonanza_records(assignment: RandomBonanzaAssignment, use
         {'_id': 0, 'customer_id': 1, 'customer_name': 1}
     ).to_list(100000)
     
-    reserved_ids = set()
-    for m in reserved_members:
-        cid = m.get('customer_id') or m.get('customer_name')
-        if cid:
-            reserved_ids.add(str(cid).strip().upper())
+    reserved_ids = build_reserved_set(reserved_members)
     
     available_records = await db.bonanza_records.find(
         {'database_id': assignment.database_id, 'status': 'available'},
@@ -432,20 +428,7 @@ async def assign_random_bonanza_records(assignment: RandomBonanzaAssignment, use
     eligible_records = []
     skipped_count = 0
     for record in available_records:
-        # Skip if record is flagged as reserved during upload
-        if record.get('is_reserved_member'):
-            skipped_count += 1
-            continue
-        
-        # Check ALL row_data values against reserved members (field-name independent)
-        row_data = record.get('row_data', {})
-        is_reserved = False
-        for key, value in row_data.items():
-            if value and str(value).strip().upper() in reserved_ids:
-                is_reserved = True
-                break
-        
-        if is_reserved:
+        if is_record_reserved(record, reserved_ids):
             skipped_count += 1
             continue
         eligible_records.append(record)
