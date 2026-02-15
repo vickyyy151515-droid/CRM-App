@@ -595,12 +595,7 @@ async def validate_bonanza_records(data: RecordValidation, user: User = Depends(
             
             # Get reserved members
             reserved_members = await db.reserved_members.find({'status': 'approved'}, {'_id': 0, 'customer_id': 1, 'customer_name': 1}).to_list(100000)
-            reserved_ids = set()
-            for m in reserved_members:
-                if m.get('customer_id'):
-                    reserved_ids.add(str(m['customer_id']).strip().upper())
-                if m.get('customer_name'):
-                    reserved_ids.add(str(m['customer_name']).strip().upper())
+            reserved_ids = build_reserved_set(reserved_members)
             
             for database_id, group in invalid_by_db.items():
                 invalid_records = group['records']
