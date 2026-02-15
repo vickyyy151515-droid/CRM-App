@@ -1181,12 +1181,7 @@ async def diagnose_invalid_records(staff_id: str, user: User = Depends(get_admin
         {'_id': 0, 'customer_id': 1, 'customer_name': 1}
     ).to_list(100000)
     
-    reserved_ids = set()
-    for m in reserved_members:
-        if m.get('customer_id'):
-            reserved_ids.add(str(m['customer_id']).strip().upper())
-        if m.get('customer_name'):
-            reserved_ids.add(str(m['customer_name']).strip().upper())
+    reserved_ids = build_reserved_set(reserved_members)
     
     diagnosis = {
         'total_invalid_records': len(invalid_records),
@@ -1218,16 +1213,13 @@ async def diagnose_invalid_records(staff_id: str, user: User = Depends(get_admin
             available_sample = await db.bonanza_records.find({
                 'database_id': db_id,
                 'status': 'available'
-            }, {'_id': 0, 'id': 1, 'row_data': 1}).to_list(10)
+            }, {'_id': 0, 'id': 1, 'row_data': 1, 'is_reserved_member': 1}).to_list(10)
             
             # Check how many are reserved
             reserved_count = 0
             for rec in available_sample:
-                row_data = rec.get('row_data', {})
-                is_res = rec.get('is_reserved_member', False)
-                if not is_res:
-                    for key, value in row_data.items():
-                        if value and str(value).strip().upper() in reserved_ids:
+                if is_record_reserved(rec, reserved_ids):
+                    reserved_count += 1
                             is_res = True
                             break
                 if is_res:
