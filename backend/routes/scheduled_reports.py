@@ -11,6 +11,7 @@ from apscheduler.triggers.cron import CronTrigger
 
 from .deps import get_db, get_admin_user, User
 from .notifications import create_notification
+from .records import restore_invalidated_records_for_reservation
 from utils.helpers import normalize_customer_id
 
 router = APIRouter()
