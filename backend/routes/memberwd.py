@@ -527,10 +527,8 @@ async def get_memberwd_databases(product_id: Optional[str] = None, user: User = 
             
             reserved_set = reserved_by_product[product_id_for_db]
             for record in available_records:
-                row_data = record.get('row_data', {})
-                if not is_record_reserved(record, reserved_set):
-                    continue
-                excluded_count += 1
+                if is_record_reserved(record, reserved_set):
+                    excluded_count += 1
         
         database['total_records'] = total
         database['assigned_count'] = assigned
