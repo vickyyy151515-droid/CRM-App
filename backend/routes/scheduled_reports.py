@@ -720,6 +720,10 @@ async def process_reserved_member_cleanup():
     
     for member in reserved_members:
         member_id = member.get('id')
+        # Skip permanent reservations - they never expire
+        if member.get('is_permanent', False):
+            print(f"  {member.get('customer_id') or member.get('customer_name', '')}: PERMANENT - skipping")
+            continue
         # Support both old field name (customer_name) and new field name (customer_id)
         customer_id = member.get('customer_id') or member.get('customer_name') or ''
         staff_id = member.get('staff_id')
