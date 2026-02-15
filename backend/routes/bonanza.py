@@ -180,15 +180,7 @@ async def upload_bonanza_database(
         {'_id': 0, 'customer_id': 1, 'customer_name': 1, 'staff_id': 1, 'staff_name': 1}
     ).to_list(100000)
     
-    reserved_map = {}  # Maps normalized ID -> {staff_id, staff_name}
-    for m in reserved_members:
-        cid = m.get('customer_id') or m.get('customer_name')
-        if cid:
-            normalized = str(cid).strip().upper()
-            reserved_map[normalized] = {
-                'staff_id': m.get('staff_id'),
-                'staff_name': m.get('staff_name', 'Unknown')
-            }
+    reserved_map = build_reserved_map(reserved_members)
     
     database_id = str(uuid.uuid4())
     database_doc = {
