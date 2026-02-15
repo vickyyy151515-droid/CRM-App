@@ -223,6 +223,20 @@ export default function AdminReservedMembers({ onUpdate }) {
     }
   };
 
+  const handleTogglePermanent = async (member) => {
+    const action = member.is_permanent ? 'remove permanent status from' : 'make permanent';
+    const customerName = member.customer_id || member.customer_name || 'this customer';
+    if (!window.confirm(`Are you sure you want to ${action} "${customerName}"?${!member.is_permanent ? '\n\nPermanent members will never expire regardless of deposit activity.' : ''}`)) return;
+
+    try {
+      const res = await api.patch(`/reserved-members/${member.id}/permanent`);
+      toast.success(res.data.message);
+      loadData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to update');
+    }
+  };
+
   const handleMove = async () => {
     if (!newStaffId) {
       toast.error('Please select a staff member');
