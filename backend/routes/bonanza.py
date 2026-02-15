@@ -888,22 +888,7 @@ async def process_invalid_and_replace(staff_id: str, data: ProcessInvalidRequest
         {'_id': 0, 'customer_id': 1, 'customer_name': 1}
     ).to_list(100000)
     
-    reserved_ids = set()
-    for m in reserved_members:
-        if m.get('customer_id'):
-            reserved_ids.add(str(m['customer_id']).strip().upper())
-        if m.get('customer_name'):
-            reserved_ids.add(str(m['customer_name']).strip().upper())
-    
-    def is_reserved(record):
-        """Check if a record matches a reserved member - checks ALL row_data values"""
-        if record.get('is_reserved_member'):
-            return True
-        row_data = record.get('row_data', {})
-        for key, value in row_data.items():
-            if value and str(value).strip().upper() in reserved_ids:
-                return True
-        return False
+    reserved_ids = build_reserved_set(reserved_members)
     
     # Group invalid records by database_id
     invalid_by_database = {}
