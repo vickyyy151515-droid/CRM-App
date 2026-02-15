@@ -712,25 +712,15 @@ async def assign_random_memberwd_records(assignment: RandomMemberWDAssignment, u
     ).to_list(100000)
     
     def is_record_reserved(record):
-        """Check if a record is reserved using MULTIPLE safety checks"""
-        # Check 1: Upload-time flag (set when database was uploaded)
+        """Check if a record is reserved - checks ALL row_data values"""
+        # Check 1: Upload-time flag
         if record.get('is_reserved_member'):
             return True
         
-        # Check 2: Runtime check against current reserved members using ALL possible fields
+        # Check 2: Runtime check - compare ALL row_data values against reserved members
         row_data = record.get('row_data', {})
-        for key in ['Username', 'username', 'USER', 'user', 'ID', 'id', 
-                     'Nama Lengkap', 'nama_lengkap', 'Name', 'name', 
-                     'NAMA', 'CUSTOMER', 'customer', 'Customer',
-                     'USERNAME', 'USERID', 'UserId', 'user_id']:
-            if key in row_data and row_data[key]:
-                if str(row_data[key]).strip().upper() in reserved_ids:
-                    return True
-        
-        # Check 3: Also check the specific username_field from frontend
-        if assignment.username_field:
-            username = row_data.get(assignment.username_field, '')
-            if username and str(username).strip().upper() in reserved_ids:
+        for key, value in row_data.items():
+            if value and str(value).strip().upper() in reserved_ids:
                 return True
         
         return False
