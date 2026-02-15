@@ -1281,7 +1281,7 @@ async def process_invalid_memberwd_and_replace(staff_id: str, data: ProcessInval
             # Filter out reserved
             eligible_records = []
             for record in available_records:
-                if is_reserved(record):
+                if is_record_reserved(record, reserved_ids):
                     skipped_reserved += 1
                 else:
                     eligible_records.append(record)
