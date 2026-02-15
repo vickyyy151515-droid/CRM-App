@@ -208,7 +208,7 @@ async def generate_daily_report(target_date: datetime = None) -> str:
         return f"Rp {amount:,.0f}".replace(',', '.')
     
     report_lines = [
-        f"📊 <b>Daily CRM Report</b>",
+        "📊 <b>Daily CRM Report</b>",
         f"📅 <b>Date:</b> {date_str}",
         f"⏰ <b>Generated:</b> {datetime.now(JAKARTA_TZ).strftime('%Y-%m-%d %H:%M')} WIB",
         ""
@@ -217,7 +217,7 @@ async def generate_daily_report(target_date: datetime = None) -> str:
     grand_totals = {'ndp': 0, 'rdp': 0, 'total_form': 0, 'nominal': 0}
     
     for product_id, product_data in sorted(product_staff_data.items(), key=lambda x: x[1]['totals']['nominal'], reverse=True):
-        report_lines.append(f"━━━━━━━━━━━━━━━━━━━━")
+        report_lines.append("━━━━━━━━━━━━━━━━━━━━")
         report_lines.append(f"🏷 <b>{product_data['product_name']}</b>")
         report_lines.append("")
         
@@ -246,7 +246,7 @@ async def generate_daily_report(target_date: datetime = None) -> str:
     
     # Grand totals
     report_lines.append("━━━━━━━━━━━━━━━━━━━━")
-    report_lines.append(f"🏆 <b>GRAND TOTAL</b>")
+    report_lines.append("🏆 <b>GRAND TOTAL</b>")
     report_lines.append(
         f"   NDP: {grand_totals['ndp']} | RDP: {grand_totals['rdp']} | Form: {grand_totals['total_form']}\n"
         f"   💰 <b>{format_rupiah(grand_totals['nominal'])}</b>"
@@ -276,7 +276,7 @@ async def generate_atrisk_alert(inactive_days: int = 14) -> str:
     all_records = await db.omset_records.find({}, {'_id': 0}).to_list(100000)
     
     if not all_records:
-        return f"⚠️ <b>At-Risk Customer Alert</b>\n\n<i>No customer data found.</i>"
+        return "⚠️ <b>At-Risk Customer Alert</b>\n\n<i>No customer data found.</i>"
     
     # Get products for grouping
     products = await db.products.find({}, {'_id': 0}).to_list(100)
@@ -353,7 +353,7 @@ async def generate_atrisk_alert(inactive_days: int = 14) -> str:
     total_at_risk_count = len(at_risk_customers) + len(recently_alerted_keys)
     
     alert_lines = [
-        f"🚨 <b>AT-RISK CUSTOMER ALERT</b>",
+        "🚨 <b>AT-RISK CUSTOMER ALERT</b>",
         f"📅 <b>Date:</b> {jakarta_now.strftime('%Y-%m-%d')}",
         f"⚠️ <b>Threshold:</b> {inactive_days}+ days inactive",
         f"👥 <b>Today's At-Risk:</b> {len(at_risk_customers)} customers",
@@ -389,7 +389,7 @@ async def generate_atrisk_alert(inactive_days: int = 14) -> str:
         if shown_count >= max_show:
             break
             
-        alert_lines.append(f"━━━━━━━━━━━━━━━━━━━━")
+        alert_lines.append("━━━━━━━━━━━━━━━━━━━━")
         alert_lines.append(f"👤 <b>{staff_data['staff_name']}</b> ({len(staff_data['customers'])} at-risk)")
         alert_lines.append("")
         
@@ -414,12 +414,12 @@ async def generate_atrisk_alert(inactive_days: int = 14) -> str:
             alert_lines.append("")
     
     if len(at_risk_customers) > max_show:
-        alert_lines.append(f"━━━━━━━━━━━━━━━━━━━━")
+        alert_lines.append("━━━━━━━━━━━━━━━━━━━━")
         alert_lines.append(f"<i>Showing {max_show} of {len(at_risk_customers)} at-risk customers today</i>")
     
     alert_lines.append("")
     alert_lines.append("💡 <b>Action Required:</b> Follow up with these customers to re-engage!")
-    alert_lines.append(f"🔄 <i>These customers will rotate out for 3 days</i>")
+    alert_lines.append("🔄 <i>These customers will rotate out for 3 days</i>")
     
     # Store which customers were shown today (for 3-day rotation)
     # Now includes product_id for accurate per-product tracking
@@ -469,7 +469,7 @@ async def send_atrisk_alert():
     )
     
     if result.modified_count == 0:
-        print(f"At-risk alert already sent recently, skipping duplicate")
+        print("At-risk alert already sent recently, skipping duplicate")
         return
     
     bot_token = config.get('telegram_bot_token')
@@ -553,7 +553,7 @@ async def generate_staff_offline_alert() -> str:
     
     # Format the alert
     alert_lines = [
-        f"👥 <b>STAFF STATUS REPORT</b>",
+        "👥 <b>STAFF STATUS REPORT</b>",
         f"📅 <b>Date:</b> {jakarta_now.strftime('%Y-%m-%d')}",
         f"⏰ <b>Time:</b> {jakarta_now.strftime('%H:%M')} WIB",
         ""
@@ -564,7 +564,7 @@ async def generate_staff_offline_alert() -> str:
     online_count = len(online_staff)
     offline_count = len(offline_staff)
     
-    alert_lines.append(f"📊 <b>Summary:</b>")
+    alert_lines.append("📊 <b>Summary:</b>")
     alert_lines.append(f"   Total Staff: {total_staff}")
     alert_lines.append(f"   🟢 Online: {online_count}")
     alert_lines.append(f"   🔴 Offline: {offline_count}")
@@ -637,7 +637,7 @@ async def send_staff_offline_alert():
     )
     
     if result.modified_count == 0:
-        print(f"Staff offline alert already sent recently, skipping duplicate")
+        print("Staff offline alert already sent recently, skipping duplicate")
         return
     
     bot_token = config.get('telegram_bot_token')
@@ -981,7 +981,7 @@ async def send_scheduled_report():
     
     # If no document was modified, another process already sent/is sending the report
     if result.modified_count == 0:
-        print(f"Daily report already sent recently or send in progress, skipping duplicate")
+        print("Daily report already sent recently or send in progress, skipping duplicate")
         return
     
     bot_token = config.get('telegram_bot_token')
