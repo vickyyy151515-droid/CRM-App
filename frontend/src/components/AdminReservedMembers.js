@@ -779,6 +779,16 @@ export default function AdminReservedMembers({ onUpdate }) {
                       )}
                       {member.status === 'approved' && (
                         <button
+                          onClick={() => handleTogglePermanent(member)}
+                          className={`p-2 rounded-lg transition-colors ${member.is_permanent ? 'text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/30' : 'text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/30'}`}
+                          title={member.is_permanent ? 'Remove permanent status' : 'Make permanent (never expires)'}
+                          data-testid={`btn-permanent-${member.id}`}
+                        >
+                          {member.is_permanent ? <Shield size={18} /> : <ShieldOff size={18} />}
+                        </button>
+                      )}
+                      {member.status === 'approved' && (
+                        <button
                           onClick={() => setMoveModal({ open: true, member })}
                           className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
                           title="Move to another staff"
