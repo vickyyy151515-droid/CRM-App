@@ -1,0 +1,93 @@
+{
+  "summary": "Bug fix verified: Reserved member field-independent check now works correctly. The fix replaces hardcoded field name lists (e.g., ['Username', 'username', 'USER']) with checking ALL row_data values. This prevents reserved members like 'Gcpokemon' from being incorrectly assigned to other staff when the Excel column header doesn't match the hardcoded list. All 11 backend tests passed. Frontend Reserved Members page loads correctly showing permanent badges.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "✓ GET /api/reserved-members returns data correctly (3 members)",
+    "✓ GET /api/memberwd/databases returns excluded_count field",
+    "✓ GET /api/bonanza/databases returns list correctly",
+    "✓ POST /api/memberwd/assign-random respects reserved members (field-independent)",
+    "✓ POST /api/bonanza/assign-random respects reserved members (field-independent)",
+    "✓ PATCH /api/reserved-members/{id}/permanent toggle works correctly",
+    "✓ POST /api/memberwd/assign (manual) respects reserved members",
+    "✓ POST /api/bonanza/assign (manual) respects reserved members",
+    "✓ excluded_count increases when reserved member matches row_data.USERNAME",
+    "✓ POST /api/reserved-members creates new reservation successfully",
+    "✓ Reserved members have all required fields including is_permanent",
+    "✓ Frontend Reserved Members page loads correctly",
+    "✓ PERMANENT badge shows for permanent members (TESTCUST001)",
+    "✓ Non-permanent members (TESTCUST002, Gcpokemon) don't show permanent badge"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_reserved_member_field_independent.py",
+    "/app/test_reports/pytest/reserved_member_field_independent_results.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [
+    "✓ memberwd.py is_record_reserved() now iterates ALL row_data values: 'for key, value in row_data.items()'",
+    "✓ bonanza.py random assignment check iterates ALL row_data values",
+    "✓ Upload-time reserved flagging (memberwd & bonanza) checks ALL row_data values",
+    "✓ Manual assign endpoints also use field-independent check",
+    "✓ Normalized comparison: str(value).strip().upper() vs reserved_ids set",
+    "✓ excluded_count correctly calculated by checking ALL row_data values against reserved members"
+  ],
+
+  "updated_files": [
+    "/app/backend/tests/test_reserved_member_field_independent.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (11/11 tests passed)",
+    "frontend": "100% - Page loads, permanent badge displays correctly"
+  },
+
+  "test_credentials": {
+    "admin": {"email": "vicky@crm.com", "password": "admin123", "role": "master_admin"},
+    "known_staff_id": "staff-user-1",
+    "known_product_ids": ["prod-istana2000", "prod-liga2000", "prod-pucuk33"]
+  },
+
+  "seed_data_verification": {
+    "reserved_members": [
+      {"customer_id": "Gcpokemon", "product": "LIGA2000", "staff": "Staff User", "is_permanent": false},
+      {"customer_id": "TESTCUST001", "product": "ISTANA2000", "staff": "Staff User", "is_permanent": true},
+      {"customer_id": "TESTCUST002", "product": "LIGA2000", "staff": "Staff User", "is_permanent": false}
+    ],
+    "memberwd_databases": [
+      {"name": "Member WD Pucuk 18 Jan (316)", "available_count": 291, "row_data_fields": ["USERNAME", "NAMA_REKENING", "WHATSAPP", "WITHDRAW"]}
+    ]
+  },
+
+  "bug_fix_verification": {
+    "original_bug": "Reserved members were being assigned to wrong staff during random assignment because the check only looked at hardcoded field names like ['Username', 'username', 'USER']",
+    "root_cause": "Excel column headers can be ANY name (e.g., 'USERNAME', 'NAMA_REKENING'). The old code only checked specific field names.",
+    "fix_applied": "Changed is_record_reserved() and all assignment checks to iterate ALL row_data key-value pairs instead of specific field names",
+    "verification_method": "Created reserved member for 'InisialN' (actual username from database), verified excluded_count increased from 0 to 1",
+    "affected_endpoints": [
+      "POST /api/memberwd/assign-random",
+      "POST /api/memberwd/assign",
+      "POST /api/memberwd/upload",
+      "POST /api/bonanza/assign-random",
+      "POST /api/bonanza/assign",
+      "POST /api/bonanza/upload"
+    ]
+  },
+
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "Bug fix for reserved member field-independent check verified. The key change is in memberwd.py lines 720-732 (is_record_reserved function) and bonanza.py lines 467-484. Both now check ALL row_data values against reserved members instead of hardcoded field names. The databases use field names from Excel column headers (e.g., 'USERNAME', 'NAMA_REKENING') which vary by file. Verified by creating reserved member for actual username 'InisialN' and confirming excluded_count increased."
+}
