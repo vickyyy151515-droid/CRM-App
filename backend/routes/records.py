@@ -1991,7 +1991,6 @@ async def move_reserved_member(member_id: str, new_staff_id: str, user: User = D
         raise HTTPException(status_code=404, detail="Staff not found")
     
     old_staff_id = member.get('staff_id')
-    old_staff_name = member.get('staff_name', 'Unknown')
     customer_id = member.get('customer_id') or member.get('customer_name', '')
     product_id = member.get('product_id')
     new_staff_name = staff['name']
