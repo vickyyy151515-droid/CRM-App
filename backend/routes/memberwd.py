@@ -450,7 +450,7 @@ async def upload_memberwd_database(
             'assigned_at': None,
             'assigned_by': None,
             'assigned_by_name': None,
-            'is_reserved_member': is_reserved,
+            'is_reserved_member': is_reserved_flag,
             'reserved_by': reserved_by,
             'reserved_by_name': reserved_by_name,
             'created_at': get_jakarta_now().isoformat()
