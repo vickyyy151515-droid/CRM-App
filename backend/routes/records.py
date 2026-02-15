@@ -1953,19 +1953,31 @@ async def delete_reserved_member(member_id: str, user: User = Depends(get_admin_
     if not member:
         raise HTTPException(status_code=404, detail="Reserved member not found")
     
-    # SYNC: Delete related bonus_check_submissions for this customer+staff
     customer_id = member.get('customer_id') or member.get('customer_name', '')
     staff_id = member.get('staff_id')
+    product_id = member.get('product_id')
     
+    # SYNC: Delete related bonus_check_submissions for this customer+staff
     if customer_id and staff_id:
         await db.bonus_check_submissions.delete_many({
             'customer_id_normalized': customer_id.strip().upper(),
             'staff_id': staff_id
         })
     
+    # SYNC: Restore records that were invalidated because of this reservation
+    # When a reservation is removed, those records should become valid again
+    restored_count = 0
+    if customer_id and staff_id:
+        restored_count = await restore_invalidated_records_for_reservation(
+            db, customer_id, staff_id, product_id
+        )
+    
     await db.reserved_members.delete_one({'id': member_id})
     
-    return {'message': 'Reserved member deleted'}
+    return {
+        'message': 'Reserved member deleted',
+        'restored_records': restored_count
+    }
 
 @router.patch("/reserved-members/{member_id}/move")
 async def move_reserved_member(member_id: str, new_staff_id: str, user: User = Depends(get_admin_user)):
