@@ -367,10 +367,20 @@ async def approve_omset(record_id: str, user: User = Depends(get_admin_user)):
     )
     
     # Update reserved_members last_omset_date
-    await db.reserved_members.update_many(
-        {'customer_id': {'$regex': f'^{record["customer_id"]}$', '$options': 'i'}, 'staff_id': record['staff_id'], 'status': 'approved'},
-        {'$set': {'last_omset_date': record['record_date']}}
-    )
+    # Search BOTH customer_id AND customer_name fields to handle legacy data
+    customer_id_clean = record['customer_id'].strip() if record.get('customer_id') else ''
+    if customer_id_clean:
+        await db.reserved_members.update_many(
+            {
+                '$or': [
+                    {'customer_id': {'$regex': f'^{customer_id_clean}$', '$options': 'i'}},
+                    {'customer_name': {'$regex': f'^{customer_id_clean}$', '$options': 'i'}}
+                ],
+                'staff_id': record['staff_id'],
+                'status': 'approved'
+            },
+            {'$set': {'last_omset_date': record['record_date']}}
+        )
     
     # Recalculate NDP/RDP customer_type now that this record is approved
     from utils.db_operations import recalculate_customer_type
