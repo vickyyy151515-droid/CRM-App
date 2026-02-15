@@ -47,6 +47,13 @@ CRM application for sales tracking, customer retention, and staff management. In
 
 **Testing**: 7/7 tests passed (iteration_54)
 
+### Code Quality Cleanup (2026-02-15) - COMPLETE
+Fixed 19 linting issues in `scheduled_reports.py`:
+- 13 f-string without placeholders (auto-fixed)
+- 3 unused local variables (`staff_map`, `staff_name`, `no_deposit_members`, `to_delete`) removed
+- 2 bare `except` clauses replaced with specific exception types (`ValueError, TypeError, AttributeError`)
+- Verified all related backend files (`memberwd.py`, `bonanza.py`, `records.py`, `omset.py`, `utils/`) pass linting with zero issues.
+
 ## Prioritized Backlog
 
 ### P1 - Upcoming
