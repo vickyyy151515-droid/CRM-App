@@ -424,14 +424,13 @@ async def get_databases_with_stats(search: Optional[str] = None, product_id: Opt
             reserved_set = reserved_by_product[product_id_for_db]
             for record in available_records:
                 row_data = record.get('row_data', {})
-                # Check common identifier fields
-                customer_id = None
-                for key in ['customer_id', 'Customer_ID', 'CUSTOMER_ID', 'ID', 'id', 'Username', 'USERNAME', 'username']:
-                    if key in row_data and row_data[key]:
-                        customer_id = str(row_data[key]).strip().upper()
-                        break
-                
-                if customer_id and customer_id in reserved_set:
+                is_reserved = record.get('is_reserved_member', False)
+                if not is_reserved:
+                    for key, value in row_data.items():
+                        if value and str(value).strip().upper() in reserved_set:
+                            is_reserved = True
+                            break
+                if is_reserved:
                     excluded_count += 1
         
         # Adjust available count to show truly available (not excluded)
