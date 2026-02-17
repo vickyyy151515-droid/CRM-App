@@ -354,7 +354,8 @@ export default function FeePaymentTab() {
           </div>
 
           <div className="bg-slate-100 dark:bg-slate-700/50 rounded-lg p-3 flex flex-wrap justify-center gap-4 text-sm text-slate-600 dark:text-slate-300">
-            <span>💰 Fee Rate: <span className="font-bold">${feeData.fee_per_minute}/minute</span></span>
+            <span>💰 Fee Rate: <span className="font-bold">${feeData.fee_per_minute}/minute</span> (lateness & izin overage)</span>
+            <span>⏱ Izin Limit: <span className="font-bold">{feeData.izin_limit_minutes || 30} min/day</span></span>
             <span>💱 $1 = ฿{thbRate.toLocaleString()} THB = Rp {idrRate.toLocaleString()} IDR</span>
           </div>
 
