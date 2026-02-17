@@ -121,6 +121,14 @@ export default function StaffFeeCard({
             />
           )}
 
+          {/* Izin Overage Records Table */}
+          {staff.izin_overage_records?.length > 0 && (
+            <IzinOverageTable 
+              records={staff.izin_overage_records}
+              formatCurrency={formatCurrency}
+            />
+          )}
+
           {/* Manual Fees Table */}
           {staff.manual_fees?.length > 0 && (
             <ManualFeesTable 
