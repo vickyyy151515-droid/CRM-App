@@ -195,6 +195,9 @@ async def get_fees_summary(
     izin_overage_map = {}  # {staff_id: [{'date', 'total_minutes', 'overage_minutes', 'fee'}]}
     for (staff_id, date), data in izin_daily.items():
         if data['total_minutes'] > IZIN_LIMIT_MINUTES:
+            # Skip if waived
+            if (staff_id, date) in izin_waiver_map:
+                continue
             overage_minutes = data['total_minutes'] - IZIN_LIMIT_MINUTES
             fee = overage_minutes * LATENESS_FEE_PER_MINUTE
             if staff_id not in izin_overage_map:
