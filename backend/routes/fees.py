@@ -246,6 +246,32 @@ async def get_fees_summary(
             'type': 'attendance'
         })
     
+    # Process izin overage fees
+    for staff_id, overage_list in izin_overage_map.items():
+        staff_name = staff_name_map.get(staff_id, 'Unknown')
+        if staff_id not in staff_fees:
+            staff_fees[staff_id] = {
+                'staff_id': staff_id,
+                'staff_name': staff_name,
+                'total_late_minutes': 0,
+                'total_izin_overage_minutes': 0,
+                'total_fee': 0,
+                'total_paid': 0,
+                'remaining_fee': 0,
+                'late_days': 0,
+                'izin_overage_days': 0,
+                'records': [],
+                'izin_overage_records': [],
+                'manual_fees': [],
+                'payments': []
+            }
+        
+        for overage in overage_list:
+            staff_fees[staff_id]['total_izin_overage_minutes'] += overage['overage_minutes']
+            staff_fees[staff_id]['total_fee'] += overage['fee']
+            staff_fees[staff_id]['izin_overage_days'] += 1
+            staff_fees[staff_id]['izin_overage_records'].append(overage)
+    
     # Add manual fees
     for staff_id, fees in manual_fee_map.items():
         staff_name = staff_name_map.get(staff_id, 'Unknown')
