@@ -133,6 +133,12 @@ async def get_fees_summary(
     }, {'_id': 0}).to_list(10000)
     waiver_map = {(w['staff_id'], w.get('date', '')): w for w in fee_waivers}
     
+    # Get existing izin overage waivers
+    izin_waivers = await db.izin_overage_waivers.find({
+        'year': year, 'month': month
+    }, {'_id': 0}).to_list(10000)
+    izin_waiver_map = {(w['staff_id'], w.get('date', '')): w for w in izin_waivers}
+    
     # Get manual fees for the month
     manual_fees = await db.lateness_manual_fees.find({
         'year': year, 'month': month
