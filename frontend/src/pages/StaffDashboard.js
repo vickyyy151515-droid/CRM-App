@@ -24,6 +24,8 @@ const CustomerRetention = lazy(() => import('../components/CustomerRetention'));
 const StaffBonusProgress = lazy(() => import('../components/StaffBonusProgress'));
 const StaffBonusCheck = lazy(() => import('../components/StaffBonusCheck'));
 
+import DailyBriefingModal from '../components/DailyBriefingModal';
+
 export default function StaffDashboard({ user, onLogout }) {
   const { t, setDefaultLanguageForRole } = useLanguage();
   const [activeTab, setActiveTab] = useState('databases');
