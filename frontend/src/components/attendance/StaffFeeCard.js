@@ -128,6 +128,10 @@ export default function StaffFeeCard({
             <IzinOverageTable 
               records={staff.izin_overage_records}
               formatCurrency={formatCurrency}
+              onRemove={onRemoveIzinFee}
+              staffId={staff.staff_id}
+              staffName={staff.staff_name}
+              processingFee={processingFee}
             />
           )}
 
