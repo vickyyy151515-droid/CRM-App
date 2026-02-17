@@ -280,3 +280,36 @@ function PaymentsTable({ payments, onDelete, formatCurrency, processingFee }) {
     </>
   );
 }
+
+function IzinOverageTable({ records, formatCurrency }) {
+  return (
+    <>
+      <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1.5">
+        <Timer size={14} className="text-orange-500" />
+        Izin Overage Fees (over 30 min daily limit):
+      </p>
+      <div className="overflow-x-auto mb-4">
+        <table className="w-full text-sm" data-testid="izin-overage-table">
+          <thead className="bg-orange-50 dark:bg-orange-900/20">
+            <tr>
+              <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Date</th>
+              <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Total Izin</th>
+              <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Overage</th>
+              <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Fee</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+            {records.map((record, idx) => (
+              <tr key={idx}>
+                <td className="px-3 py-2 text-slate-900 dark:text-white font-mono">{record.date}</td>
+                <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{record.total_izin_minutes?.toFixed(1)} min</td>
+                <td className="px-3 py-2 text-orange-600 font-medium">+{record.overage_minutes?.toFixed(1)} min</td>
+                <td className="px-3 py-2 text-red-600 font-medium">{formatCurrency(record.fee, 'USD')}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
