@@ -47,6 +47,15 @@ CRM application for sales tracking, customer retention, and staff management. In
 
 **Testing**: 7/7 tests passed (iteration_54)
 
+### Daily Briefing Pop-up for Staff (2026-02-17) - COMPLETE
+Staff sees a daily pop-up on first login showing randomized priority customers:
+- At-Risk: 5 Critical (14-30d), 5 High (7-13d), 5 Medium (3-6d, 2+ deposits)
+- Follow-Up Reminders: 5 random per product from their follow-up list
+- Randomized daily (seed = staff_id + date), dismissable, won't re-show same day
+- Backend: `GET /api/retention/daily-briefing`, `POST /api/retention/daily-briefing/dismiss`
+- Frontend: `DailyBriefingModal.js` rendered in `StaffDashboard.js`
+- Testing: 11/11 backend, 8/8 frontend passed
+
 ### At-Risk Telegram Alert Fix (2026-02-17) - COMPLETE
 Fixed at-risk customer alert to exclude "lost" customers (31+ days inactive). Added `lost_boundary_date` (30 days) as upper bound in `generate_atrisk_alert()` so only customers between `inactive_days` threshold and 30 days are included, matching the retention page's at-risk vs lost categorization.
 
