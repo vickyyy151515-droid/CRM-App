@@ -4,7 +4,7 @@
  */
 import { 
   DollarSign, ChevronDown, ChevronUp, CreditCard, Ban, CheckCircle,
-  XCircle, Trash2 
+  XCircle, Trash2, Timer 
 } from 'lucide-react';
 
 export default function StaffFeeCard({
