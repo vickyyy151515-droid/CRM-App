@@ -47,6 +47,12 @@ CRM application for sales tracking, customer retention, and staff management. In
 
 **Testing**: 7/7 tests passed (iteration_54)
 
+### Izin Overage Fee System (2026-02-17) - COMPLETE
+Staff has a 30-minute daily izin (break/permission) limit. For every minute past the threshold, a $5/minute fine is applied (seconds handled via float precision). Connected to the Fee & Payment tab in Attendance:
+- Backend: `fees.py` calculates izin overage from `izin_records` per staff per day
+- Frontend: New "Izin Overage" summary card, info bar showing "Izin Limit: 30 min/day", and `IzinOverageTable` in StaffFeeCard
+- Testing: 12/12 backend, 8/8 frontend tests passed
+
 ### Code Quality Cleanup (2026-02-15) - COMPLETE
 Fixed 19 linting issues in `scheduled_reports.py`:
 - 13 f-string without placeholders (auto-fixed)
