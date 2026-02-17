@@ -36,6 +36,7 @@ export default function StaffFeeCard({
             <p className="font-semibold text-slate-900 dark:text-white">{staff.staff_name}</p>
             <p className="text-sm text-slate-500 dark:text-slate-400">
               {staff.late_days > 0 && `${staff.late_days} late day(s) • ${staff.total_late_minutes} min`}
+              {staff.izin_overage_days > 0 && `${staff.late_days > 0 ? ' • ' : ''}${staff.izin_overage_days} izin overage day(s) • ${staff.total_izin_overage_minutes?.toFixed(1)} min`}
               {staff.manual_fees?.length > 0 && ` • ${staff.manual_fees.length} manual fee(s)`}
             </p>
           </div>
