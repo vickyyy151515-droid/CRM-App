@@ -286,7 +286,7 @@ function PaymentsTable({ payments, onDelete, formatCurrency, processingFee }) {
   );
 }
 
-function IzinOverageTable({ records, formatCurrency }) {
+function IzinOverageTable({ records, formatCurrency, onRemove, staffId, staffName, processingFee }) {
   return (
     <>
       <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1.5">
@@ -301,6 +301,7 @@ function IzinOverageTable({ records, formatCurrency }) {
               <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Total Izin</th>
               <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Overage</th>
               <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Fee</th>
+              <th className="px-3 py-2 text-left text-slate-600 dark:text-slate-300">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
@@ -310,6 +311,17 @@ function IzinOverageTable({ records, formatCurrency }) {
                 <td className="px-3 py-2 text-slate-600 dark:text-slate-300">{record.total_izin_minutes?.toFixed(1)} min</td>
                 <td className="px-3 py-2 text-orange-600 font-medium">+{record.overage_minutes?.toFixed(1)} min</td>
                 <td className="px-3 py-2 text-red-600 font-medium">{formatCurrency(record.fee, 'USD')}</td>
+                <td className="px-3 py-2">
+                  <button
+                    onClick={() => onRemove(staffId, record.date, staffName)}
+                    disabled={processingFee === `izin-${staffId}-${record.date}`}
+                    className="flex items-center gap-1 px-2 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-300 rounded text-xs disabled:opacity-50"
+                    data-testid={`remove-izin-fee-${record.date}`}
+                  >
+                    <XCircle size={14} />
+                    Remove
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
