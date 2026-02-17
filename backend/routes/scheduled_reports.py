@@ -318,10 +318,11 @@ async def generate_atrisk_alert(inactive_days: int = 14) -> str:
             customer_data[key]['total_nominal'] += record.get('depo_total', 0) or record.get('nominal', 0) or 0
     
     # Find at-risk customers (last deposit before cutoff date AND has deposited at least twice)
+    # EXCLUDE "lost" customers (31+ days inactive) - they belong to the "lost" list, not at-risk
     # EXCLUDE customers that were alerted in the last 3 days (per customer+product pair)
     at_risk_customers = []
     for (cid, product_id), data in customer_data.items():
-        if data['last_date'] < cutoff_date and data['total_deposits'] >= 2:
+        if data['last_date'] < cutoff_date and data['last_date'] >= lost_boundary_date and data['total_deposits'] >= 2:
             # Skip if this customer+product was alerted in the last 3 days
             if (cid, product_id) in recently_alerted_keys:
                 continue
