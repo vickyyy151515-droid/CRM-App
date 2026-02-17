@@ -47,6 +47,9 @@ CRM application for sales tracking, customer retention, and staff management. In
 
 **Testing**: 7/7 tests passed (iteration_54)
 
+### At-Risk Telegram Alert Fix (2026-02-17) - COMPLETE
+Fixed at-risk customer alert to exclude "lost" customers (31+ days inactive). Added `lost_boundary_date` (30 days) as upper bound in `generate_atrisk_alert()` so only customers between `inactive_days` threshold and 30 days are included, matching the retention page's at-risk vs lost categorization.
+
 ### Izin Overage Fee System (2026-02-17) - COMPLETE
 Staff has a 30-minute daily izin (break/permission) limit. For every minute past the threshold, a $5/minute fine is applied (seconds handled via float precision). Connected to the Fee & Payment tab in Attendance:
 - Backend: `fees.py` calculates izin overage from `izin_records` per staff per day
