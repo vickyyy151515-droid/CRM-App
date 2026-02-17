@@ -272,6 +272,7 @@ export default function StaffDashboard({ user, onLogout }) {
       setActiveTab={setActiveTab}
       menuItems={menuItems}
     >
+      <DailyBriefingModal />
       {/* Target Progress Banner - Always visible at top */}
       <StaffTargetBanner />
       
