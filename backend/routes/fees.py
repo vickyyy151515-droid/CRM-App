@@ -394,7 +394,7 @@ async def waive_fee(
         parsed_date = datetime.strptime(date, '%Y-%m-%d')
         year = parsed_date.year
         month = parsed_date.month
-    except:
+    except (ValueError, TypeError):
         raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
     
     # Check if record exists
