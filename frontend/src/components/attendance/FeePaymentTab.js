@@ -105,6 +105,21 @@ export default function FeePaymentTab() {
     }
   };
 
+  // Remove izin overage fee for a specific date
+  const handleRemoveIzinFee = async (staffId, date, staffName) => {
+    if (!window.confirm(`Remove izin overage fee for ${staffName} on ${date}?`)) return;
+    setProcessingFee(`izin-${staffId}-${date}`);
+    try {
+      await api.post(`/attendance/admin/fees/${staffId}/waive-izin?date=${date}`);
+      toast.success('Izin overage fee removed');
+      fetchFees();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to remove izin fee');
+    } finally {
+      setProcessingFee(null);
+    }
+  };
+
   // Setup installment plan
   const handleSetupInstallment = async (staffId) => {
     setProcessingFee(`installment-${staffId}`);
