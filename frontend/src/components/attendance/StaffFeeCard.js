@@ -17,6 +17,7 @@ export default function StaffFeeCard({
   onCancelInstallment,
   onRecordInstallmentPayment,
   onWaiveFee,
+  onRemoveIzinFee,
   onDeleteManualFee,
   onDeletePayment,
   processingFee
