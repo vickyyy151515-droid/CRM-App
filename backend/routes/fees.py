@@ -348,6 +348,7 @@ async def get_fees_summary(
     total_paid = sum(d['total_paid'] for d in staff_fees.values())
     total_remaining = sum(d['remaining_fee'] for d in staff_fees.values())
     total_late_minutes = sum(d['total_late_minutes'] for d in staff_fees.values())
+    total_izin_overage_minutes = sum(d['total_izin_overage_minutes'] for d in staff_fees.values())
     
     # Get all-time collected (from partial payments)
     all_payments = await db.lateness_partial_payments.find({}, {'_id': 0}).to_list(100000)
