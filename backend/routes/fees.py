@@ -222,11 +222,14 @@ async def get_fees_summary(
                 'staff_id': staff_id,
                 'staff_name': staff_name,
                 'total_late_minutes': 0,
+                'total_izin_overage_minutes': 0,
                 'total_fee': 0,
                 'total_paid': 0,
                 'remaining_fee': 0,
                 'late_days': 0,
+                'izin_overage_days': 0,
                 'records': [],
+                'izin_overage_records': [],
                 'manual_fees': [],
                 'payments': []
             }
@@ -251,11 +254,14 @@ async def get_fees_summary(
                 'staff_id': staff_id,
                 'staff_name': staff_name,
                 'total_late_minutes': 0,
+                'total_izin_overage_minutes': 0,
                 'total_fee': 0,
                 'total_paid': 0,
                 'remaining_fee': 0,
                 'late_days': 0,
+                'izin_overage_days': 0,
                 'records': [],
+                'izin_overage_records': [],
                 'manual_fees': [],
                 'payments': []
             }
