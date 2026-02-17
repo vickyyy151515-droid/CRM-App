@@ -461,6 +461,73 @@ async def remove_waiver(
     
     return {'success': True, 'message': 'Fee waiver removed, fee is now active'}
 
+@router.post("/attendance/admin/fees/{staff_id}/waive-izin")
+async def waive_izin_overage(
+    staff_id: str,
+    date: str,
+    user: User = Depends(get_current_user)
+):
+    """Remove/waive izin overage fee for a specific date"""
+    db = get_db()
+    
+    if user.role not in ['admin', 'master_admin']:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    try:
+        parsed_date = datetime.strptime(date, '%Y-%m-%d')
+        year = parsed_date.year
+        month = parsed_date.month
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+    
+    # Get staff name
+    staff = await db.users.find_one({'id': staff_id}, {'_id': 0, 'name': 1})
+    staff_name = staff['name'] if staff else 'Unknown'
+    
+    waiver = {
+        'staff_id': staff_id,
+        'staff_name': staff_name,
+        'date': date,
+        'year': year,
+        'month': month,
+        'waived_by': user.id,
+        'waived_by_name': user.name,
+        'waived_at': get_jakarta_now().isoformat()
+    }
+    
+    await db.izin_overage_waivers.update_one(
+        {'staff_id': staff_id, 'date': date},
+        {'$set': waiver},
+        upsert=True
+    )
+    
+    return {
+        'success': True,
+        'message': f'Izin overage fee removed for {staff_name} on {date}'
+    }
+
+@router.delete("/attendance/admin/fees/{staff_id}/waive-izin/{date}")
+async def remove_izin_waiver(
+    staff_id: str,
+    date: str,
+    user: User = Depends(get_current_user)
+):
+    """Reinstate a previously waived izin overage fee"""
+    db = get_db()
+    
+    if user.role not in ['admin', 'master_admin']:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    result = await db.izin_overage_waivers.delete_one({
+        'staff_id': staff_id,
+        'date': date
+    })
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="No izin waiver found for this date")
+    
+    return {'success': True, 'message': 'Izin overage fee reinstated'}
+
 @router.get("/attendance/admin/fees/waivers")
 async def get_all_waivers(
     year: Optional[int] = None,
