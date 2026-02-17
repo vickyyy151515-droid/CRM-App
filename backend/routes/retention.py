@@ -1075,3 +1075,197 @@ async def dismiss_alert(
     )
     
     return {'message': 'Alert dismissed for 7 days'}
+
+
+# ==================== DAILY BRIEFING ====================
+
+@router.get("/retention/daily-briefing")
+async def get_daily_briefing(user: User = Depends(get_current_user)):
+    """
+    Get daily pop-up briefing for staff: randomized at-risk customers and follow-up reminders.
+    Returns empty if already dismissed today.
+    """
+    import random
+    db = get_db()
+    
+    if user.role not in ('staff',):
+        return {'show': False, 'reason': 'not_staff'}
+    
+    jakarta_now = get_jakarta_now()
+    today = jakarta_now.strftime('%Y-%m-%d')
+    
+    # Check if already dismissed today
+    dismissed = await db.daily_briefing_log.find_one({
+        'staff_id': user.id,
+        'date': today
+    })
+    if dismissed:
+        return {'show': False, 'reason': 'already_seen'}
+    
+    # Use staff_id + date as random seed for consistent daily randomization
+    seed = hash(f"{user.id}_{today}")
+    rng = random.Random(seed)
+    
+    # ---- AT-RISK CUSTOMERS ----
+    query = {'staff_id': user.id}
+    omset_records = await db.omset_records.find(query, {'_id': 0}).to_list(500000)
+    
+    # Build customer last deposit map
+    customer_data = {}
+    for record in omset_records:
+        cid = normalize_customer_id(record.get('customer_id', ''))
+        pid = record.get('product_id', '')
+        key = (cid, pid)
+        if key not in customer_data:
+            customer_data[key] = {
+                'customer_id': record.get('customer_id', ''),
+                'customer_name': record.get('customer_name', ''),
+                'product_id': pid,
+                'product_name': record.get('product_name', 'Unknown'),
+                'total_deposits': 0,
+                'last_deposit_date': None
+            }
+        customer_data[key]['total_deposits'] += 1
+        rd = record.get('record_date', '')
+        if rd and (customer_data[key]['last_deposit_date'] is None or rd > customer_data[key]['last_deposit_date']):
+            customer_data[key]['last_deposit_date'] = rd
+            customer_data[key]['customer_id'] = record.get('customer_id', '')
+            customer_data[key]['customer_name'] = record.get('customer_name', '')
+    
+    today_date = datetime.strptime(today, '%Y-%m-%d')
+    critical, high, medium = [], [], []
+    
+    for data in customer_data.values():
+        if not data['last_deposit_date']:
+            continue
+        last = datetime.strptime(data['last_deposit_date'], '%Y-%m-%d')
+        days = (today_date - last).days
+        if days <= 0 or days > 30:
+            continue
+        entry = {
+            'customer_id': data['customer_id'],
+            'customer_name': data['customer_name'],
+            'product_name': data['product_name'],
+            'days_since_deposit': days,
+            'total_deposits': data['total_deposits']
+        }
+        if days >= 14:
+            critical.append(entry)
+        elif days >= 7:
+            high.append(entry)
+        elif days >= 3 and data['total_deposits'] >= 2:
+            medium.append(entry)
+    
+    rng.shuffle(critical)
+    rng.shuffle(high)
+    rng.shuffle(medium)
+    
+    at_risk = {
+        'critical': critical[:5],
+        'high': high[:5],
+        'medium': medium[:5],
+        'total_critical': len(critical),
+        'total_high': len(high),
+        'total_medium': len(medium)
+    }
+    
+    # ---- FOLLOW-UP REMINDERS (per product) ----
+    followup_query = {
+        'assigned_to': user.id,
+        'status': 'assigned',
+        'respond_status': 'ya'
+    }
+    followup_records = await db.customer_records.find(followup_query, {'_id': 0}).to_list(10000)
+    
+    # Get deposited set to exclude
+    omset_set = set()
+    for r in omset_records:
+        omset_set.add((normalize_customer_id(r.get('customer_id', '')), r.get('product_id', '')))
+        omset_set.add((normalize_customer_id(r.get('customer_name', '')), r.get('product_id', '')))
+    
+    # Group by product
+    product_followups = {}
+    for rec in followup_records:
+        row_data = rec.get('row_data', {})
+        pid = rec.get('product_id', '')
+        pname = rec.get('product_name', 'Unknown')
+        
+        # Get customer identifier
+        cid = None
+        for field in ['customer_id', 'id', 'ID', 'Id', 'user_id', 'userid', 'username']:
+            if field in row_data and row_data[field]:
+                cid = str(row_data[field]).strip()
+                break
+        cname = None
+        for field in ['name', 'Name', 'nama', 'Nama', 'customer_name', 'customer']:
+            if field in row_data and row_data[field]:
+                cname = str(row_data[field]).strip()
+                break
+        
+        # Exclude deposited
+        if cid and (normalize_customer_id(cid), pid) in omset_set:
+            continue
+        if cname and (normalize_customer_id(cname), pid) in omset_set:
+            continue
+        
+        # Calculate days since response
+        respond_date_str = rec.get('respond_status_updated_at') or rec.get('assigned_at')
+        days_since = 0
+        if respond_date_str and isinstance(respond_date_str, str):
+            try:
+                rd = datetime.fromisoformat(respond_date_str.replace('Z', '+00:00'))
+                if rd.tzinfo is None:
+                    from datetime import timezone
+                    rd = rd.replace(tzinfo=JAKARTA_TZ)
+                days_since = (jakarta_now - rd).days
+            except (ValueError, TypeError):
+                pass
+        
+        display_name = cname or cid or 'Unknown'
+        entry = {
+            'customer_display': display_name,
+            'customer_id': cid,
+            'days_since_response': days_since,
+            'product_name': pname
+        }
+        
+        if pname not in product_followups:
+            product_followups[pname] = []
+        product_followups[pname].append(entry)
+    
+    # Randomize and pick 5 per product
+    followups_by_product = {}
+    for pname, items in product_followups.items():
+        rng.shuffle(items)
+        followups_by_product[pname] = {
+            'items': items[:5],
+            'total': len(items)
+        }
+    
+    return {
+        'show': True,
+        'date': today,
+        'staff_name': user.name,
+        'at_risk': at_risk,
+        'followups_by_product': followups_by_product
+    }
+
+
+@router.post("/retention/daily-briefing/dismiss")
+async def dismiss_daily_briefing(user: User = Depends(get_current_user)):
+    """Mark daily briefing as seen for today"""
+    db = get_db()
+    jakarta_now = get_jakarta_now()
+    today = jakarta_now.strftime('%Y-%m-%d')
+    
+    await db.daily_briefing_log.update_one(
+        {'staff_id': user.id, 'date': today},
+        {'$set': {
+            'staff_id': user.id,
+            'date': today,
+            'dismissed_at': jakarta_now.isoformat()
+        }},
+        upsert=True
+    )
+    
+    return {'message': 'Briefing dismissed'}
