@@ -304,15 +304,26 @@ export default function FeePaymentTab() {
       {/* Global Summary Cards */}
       {feeData && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
                   <Clock className="text-red-600" size={24} />
                 </div>
                 <div>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">Total Late Minutes</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Late Minutes</p>
                   <p className="text-2xl font-bold text-slate-900 dark:text-white">{feeData.total_late_minutes}</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-700">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                  <Clock className="text-orange-600" size={24} />
+                </div>
+                <div>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Izin Overage</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white">{(feeData.total_izin_overage_minutes || 0).toFixed(1)}<span className="text-sm font-normal"> min</span></p>
                 </div>
               </div>
             </div>
