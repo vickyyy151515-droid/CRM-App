@@ -393,7 +393,7 @@ export default function FeePaymentTab() {
             ) : (
               <div className="bg-white dark:bg-slate-800 rounded-xl p-8 text-center text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                 <CheckCircle className="mx-auto mb-2 text-emerald-500" size={32} />
-                <p>No lateness fees for this month! 🎉</p>
+                <p>No lateness or izin overage fees for this month!</p>
               </div>
             )}
           </div>
