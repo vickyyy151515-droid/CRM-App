@@ -163,6 +163,45 @@ async def get_fees_summary(
     all_staff = await db.users.find({'role': 'staff'}, {'_id': 0, 'id': 1, 'name': 1}).to_list(1000)
     staff_name_map = {s['id']: s['name'] for s in all_staff}
     
+    # ==================== IZIN OVERAGE FEES ====================
+    # Get all completed izin records for the month
+    izin_records = await db.izin_records.find({
+        'date': {'$regex': f'^{date_prefix}'},
+        'end_time': {'$ne': None},
+        'duration_minutes': {'$gt': 0}
+    }, {'_id': 0}).to_list(100000)
+    
+    # Group izin by staff_id + date, sum daily totals
+    izin_daily = {}  # {(staff_id, date): {'total_minutes': float, 'staff_name': str, 'records': []}}
+    for iz in izin_records:
+        key = (iz['staff_id'], iz['date'])
+        if key not in izin_daily:
+            izin_daily[key] = {
+                'total_minutes': 0,
+                'staff_name': iz.get('staff_name', 'Unknown'),
+                'records': []
+            }
+        izin_daily[key]['total_minutes'] += iz.get('duration_minutes', 0)
+        izin_daily[key]['records'].append(iz)
+    
+    # Build izin overage map: only days where total > 30 minutes
+    IZIN_LIMIT_MINUTES = 30
+    izin_overage_map = {}  # {staff_id: [{'date', 'total_minutes', 'overage_minutes', 'fee'}]}
+    for (staff_id, date), data in izin_daily.items():
+        if data['total_minutes'] > IZIN_LIMIT_MINUTES:
+            overage_minutes = data['total_minutes'] - IZIN_LIMIT_MINUTES
+            fee = overage_minutes * LATENESS_FEE_PER_MINUTE
+            if staff_id not in izin_overage_map:
+                izin_overage_map[staff_id] = []
+            izin_overage_map[staff_id].append({
+                'date': date,
+                'total_izin_minutes': round(data['total_minutes'], 2),
+                'overage_minutes': round(overage_minutes, 2),
+                'fee': round(fee, 2),
+                'staff_name': data['staff_name'],
+                'type': 'izin_overage'
+            })
+    
     # Calculate fees per staff
     staff_fees = {}
     
