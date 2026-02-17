@@ -400,6 +400,7 @@ export default function FeePaymentTab() {
                   onCancelInstallment={handleCancelInstallment}
                   onRecordInstallmentPayment={handleRecordInstallmentPayment}
                   onWaiveFee={setWaiveModal}
+                  onRemoveIzinFee={handleRemoveIzinFee}
                   onDeleteManualFee={handleDeleteManualFee}
                   onDeletePayment={handleDeletePayment}
                   processingFee={processingFee}
