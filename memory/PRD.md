@@ -47,6 +47,13 @@ CRM application for sales tracking, customer retention, and staff management. In
 
 **Testing**: 7/7 tests passed (iteration_54)
 
+### Izin Overage Fee Removal Option (2026-02-17) - COMPLETE
+Added ability for admins to manually remove/waive izin overage fees per staff per date:
+- Backend: `POST /api/attendance/admin/fees/{staff_id}/waive-izin?date=YYYY-MM-DD` and `DELETE .../waive-izin/{date}` to reinstate
+- Uses `izin_overage_waivers` collection, waived records excluded from fee summary
+- Frontend: "Remove" button on each izin overage row with confirmation dialog
+- Both endpoints verified via curl
+
 ### Daily Briefing Pop-up for Staff (2026-02-17) - COMPLETE
 Staff sees a daily pop-up on first login showing randomized priority customers:
 - At-Risk: 5 Critical (14-30d), 5 High (7-13d), 5 Medium (3-6d, 2+ deposits)
