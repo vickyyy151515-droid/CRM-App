@@ -262,6 +262,8 @@ async def generate_atrisk_alert(inactive_days: int = 14) -> str:
     
     jakarta_now = datetime.now(JAKARTA_TZ)
     cutoff_date = (jakarta_now - timedelta(days=inactive_days)).strftime('%Y-%m-%d')
+    # "Lost" boundary: customers inactive 31+ days are no longer at-risk, they are "lost"
+    lost_boundary_date = (jakarta_now - timedelta(days=30)).strftime('%Y-%m-%d')
     
     # Get customers that were alerted in the last 3 days (to exclude them)
     # Now using (customer_id, product_id) pairs for more accurate rotation
