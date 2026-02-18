@@ -632,13 +632,11 @@ async def create_download_request(request_data: DownloadRequestCreate, user: Use
         if cid:
             reserved_ids.add(str(cid).strip().upper())
     
-    # Get all available records from the database (get more than needed to account for duplicates)
-    # Fetch up to 3x the requested amount to have enough replacements
-    fetch_limit = min(request_data.record_count * 3, 10000)
+    # Get all available records from the database
     all_available_records = await db.customer_records.find(
         {'database_id': request_data.database_id, 'status': 'available'},
         {'_id': 0}
-    ).sort('row_number', 1).to_list(fetch_limit)
+    ).to_list(100000)
     
     if len(all_available_records) == 0:
         raise HTTPException(status_code=400, detail="No available records in this database")
