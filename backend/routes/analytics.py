@@ -38,6 +38,8 @@ def get_date_range(period: str, custom_start: str = None, custom_end: str = None
 @router.get("/analytics/staff-performance")
 async def get_staff_performance_analytics(
     period: str = 'month',
+    custom_start: Optional[str] = None,
+    custom_end: Optional[str] = None,
     staff_id: Optional[str] = None,
     product_id: Optional[str] = None,
     user: User = Depends(get_admin_user)
@@ -156,6 +158,8 @@ async def get_staff_performance_analytics(
 
 @router.get("/analytics/business")
 async def get_business_analytics(period: str = 'month', product_id: Optional[str] = None, staff_id: Optional[str] = None, user: User = Depends(get_admin_user)):
+custom_start: Optional[str] = None,
+custom_end: Optional[str] = None,
     """Get business analytics including OMSET trends"""
     db = get_db()
     start_date, end_date = get_date_range(period, custom_start, custom_end)
@@ -332,6 +336,8 @@ async def get_business_analytics(period: str = 'month', product_id: Optional[str
 @router.get("/analytics/staff-ndp-rdp-daily")
 async def get_staff_ndp_rdp_daily(
     period: str = 'month',
+    custom_start: Optional[str] = None,
+    custom_end: Optional[str] = None,
     product_id: Optional[str] = None,
     user: User = Depends(get_admin_user)
 ):
@@ -409,6 +415,8 @@ async def get_staff_ndp_rdp_daily(
 @router.get("/analytics/staff-conversion-funnel")
 async def get_staff_conversion_funnel(
     period: str = 'month',
+    custom_start: Optional[str] = None,
+    custom_end: Optional[str] = None,
     product_id: Optional[str] = None,
     user: User = Depends(get_admin_user)
 ):
@@ -478,6 +486,8 @@ async def get_staff_conversion_funnel(
 @router.get("/analytics/revenue-heatmap")
 async def get_revenue_heatmap(
     period: str = 'month',
+    custom_start: Optional[str] = None,
+    custom_end: Optional[str] = None,
     product_id: Optional[str] = None,
     user: User = Depends(get_admin_user)
 ):
@@ -538,6 +548,8 @@ async def get_revenue_heatmap(
 @router.get("/analytics/deposit-lifecycle")
 async def get_deposit_lifecycle(
     period: str = 'month',
+    custom_start: Optional[str] = None,
+    custom_end: Optional[str] = None,
     product_id: Optional[str] = None,
     user: User = Depends(get_admin_user)
 ):
@@ -630,6 +642,8 @@ async def get_deposit_lifecycle(
 @router.get("/analytics/response-time-by-staff")
 async def get_response_time_by_staff(
     period: str = 'month',
+    custom_start: Optional[str] = None,
+    custom_end: Optional[str] = None,
     product_id: Optional[str] = None,
     user: User = Depends(get_admin_user)
 ):
@@ -713,6 +727,8 @@ async def get_response_time_by_staff(
 @router.get("/analytics/followup-effectiveness")
 async def get_followup_effectiveness(
     period: str = 'month',
+    custom_start: Optional[str] = None,
+    custom_end: Optional[str] = None,
     product_id: Optional[str] = None,
     user: User = Depends(get_admin_user)
 ):
@@ -793,6 +809,8 @@ async def get_followup_effectiveness(
 @router.get("/analytics/product-performance")
 async def get_product_performance(
     period: str = 'month',
+    custom_start: Optional[str] = None,
+    custom_end: Optional[str] = None,
     user: User = Depends(get_admin_user)
 ):
     """NDP/RDP counts and amounts per product"""
@@ -860,6 +878,8 @@ async def get_product_performance(
 @router.get("/analytics/customer-value-comparison")
 async def get_customer_value_comparison(
     period: str = 'month',
+    custom_start: Optional[str] = None,
+    custom_end: Optional[str] = None,
     product_id: Optional[str] = None,
     user: User = Depends(get_admin_user)
 ):
@@ -950,6 +970,8 @@ async def get_customer_value_comparison(
 @router.get("/analytics/deposit-trends")
 async def get_deposit_trends(
     period: str = 'month',
+    custom_start: Optional[str] = None,
+    custom_end: Optional[str] = None,
     granularity: str = 'daily',
     product_id: Optional[str] = None,
     user: User = Depends(get_admin_user)
@@ -1033,6 +1055,8 @@ async def get_deposit_trends(
 async def drill_down_response_time(
     staff_id: str,
     period: str = 'month',
+    custom_start: Optional[str] = None,
+    custom_end: Optional[str] = None,
     product_id: Optional[str] = None,
     user: User = Depends(get_admin_user)
 ):
@@ -1090,6 +1114,8 @@ async def drill_down_response_time(
 async def drill_down_followup_detail(
     staff_id: str,
     period: str = 'month',
+    custom_start: Optional[str] = None,
+    custom_end: Optional[str] = None,
     product_id: Optional[str] = None,
     user: User = Depends(get_admin_user)
 ):
@@ -1153,6 +1179,8 @@ async def drill_down_followup_detail(
 async def drill_down_product_staff(
     product_id: str,
     period: str = 'month',
+    custom_start: Optional[str] = None,
+    custom_end: Optional[str] = None,
     user: User = Depends(get_admin_user)
 ):
     """Drill-down: staff-level NDP/RDP breakdown for a specific product"""
@@ -1206,6 +1234,8 @@ async def drill_down_product_staff(
 async def drill_down_staff_customers(
     staff_id: str,
     period: str = 'month',
+    custom_start: Optional[str] = None,
+    custom_end: Optional[str] = None,
     product_id: Optional[str] = None,
     user: User = Depends(get_admin_user)
 ):
@@ -1416,6 +1446,8 @@ async def export_omset_data(
 
 @router.get("/export/staff-report")
 async def export_staff_performance_report(format: str = 'xlsx', period: str = 'month', token: Optional[str] = None, user: User = Depends(get_admin_user)):
+custom_start: Optional[str] = None,
+custom_end: Optional[str] = None,
     """Export staff performance report"""
     analytics = await get_staff_performance_analytics(period=period, user=user)
     
