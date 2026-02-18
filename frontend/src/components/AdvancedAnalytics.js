@@ -1444,6 +1444,10 @@ export default function AdvancedAnalytics() {
     setLoading(true);
     try {
       const params = new URLSearchParams({ period });
+      if (period === 'custom' && customStart && customEnd) {
+        params.append('custom_start', customStart);
+        params.append('custom_end', customEnd);
+      }
       if (selectedProduct) params.append('product_id', selectedProduct);
       if (selectedStaff) params.append('staff_id', selectedStaff);
 
