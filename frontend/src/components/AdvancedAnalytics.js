@@ -1496,9 +1496,11 @@ export default function AdvancedAnalytics() {
     setLoadingCompare(true);
     try {
       const params = new URLSearchParams({ period });
+      if (period === 'custom' && customStart && customEnd) {
+        params.append('custom_start', customStart);
+        params.append('custom_end', customEnd);
+      }
       if (selectedProduct) params.append('product_id', selectedProduct);
-
-      // Fetch data for each staff member in parallel
       const requests = compareStaff.map(staffId => 
         api.get(`/analytics/business?${params}&staff_id=${staffId}`)
       );
