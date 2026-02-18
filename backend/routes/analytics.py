@@ -1405,9 +1405,12 @@ async def export_omset_data(
     """Export OMSET data with filters"""
     db = get_db()
     query = {}
-    if product_id: query['product_id'] = product_id
-    if staff_id: query['staff_id'] = staff_id
-    if customer_type: query['customer_type'] = customer_type
+    if product_id:
+        query['product_id'] = product_id
+    if staff_id:
+        query['staff_id'] = staff_id
+    if customer_type:
+        query['customer_type'] = customer_type
     
     records = await db.omset_records.find(query, {'_id': 0}).to_list(100000)
     
