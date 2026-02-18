@@ -47,6 +47,9 @@ CRM application for sales tracking, customer retention, and staff management. In
 
 **Testing**: 7/7 tests passed (iteration_54)
 
+### Advanced Analytics Date Range Filter (2026-02-18) - COMPLETE
+Added "Custom Range" option to the Advanced Analytics period filter with date picker inputs. Backend `get_date_range()` updated to accept `custom_start`/`custom_end` params across all analytics endpoints. Frontend shows date pickers when "Custom Range" is selected, auto-loads when both dates are filled.
+
 ### Record Assignment Randomization (2026-02-17) - COMPLETE
 Changed normal database record assignment from sequential (by row_number) to random. Staff now receives randomized records when requesting from a database. Reserved member exclusion unchanged.
 
