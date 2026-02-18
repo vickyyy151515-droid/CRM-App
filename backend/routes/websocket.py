@@ -125,7 +125,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Query(None)):
                 # Send heartbeat to check if connection is still alive
                 try:
                     await websocket.send_json({"type": "heartbeat", "timestamp": datetime.now().isoformat()})
-                except:
+                except Exception:
                     break
                     
     except WebSocketDisconnect:
