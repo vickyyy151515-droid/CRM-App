@@ -47,6 +47,9 @@ CRM application for sales tracking, customer retention, and staff management. In
 
 **Testing**: 7/7 tests passed (iteration_54)
 
+### Record Assignment Randomization (2026-02-17) - COMPLETE
+Changed normal database record assignment from sequential (by row_number) to random. Staff now receives randomized records when requesting from a database. Reserved member exclusion unchanged.
+
 ### Izin Overage Fee Removal Option (2026-02-17) - COMPLETE
 Added ability for admins to manually remove/waive izin overage fees per staff per date:
 - Backend: `POST /api/attendance/admin/fees/{staff_id}/waive-izin?date=YYYY-MM-DD` and `DELETE .../waive-izin/{date}` to reinstate
