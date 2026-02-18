@@ -1996,7 +1996,28 @@ export default function AdvancedAnalytics() {
             <option value="month">Last 30 Days</option>
             <option value="quarter">Last 90 Days</option>
             <option value="year">Last Year</option>
+            <option value="custom">Custom Range</option>
           </select>
+
+          {period === 'custom' && (
+            <>
+              <input
+                type="date"
+                value={customStart}
+                onChange={(e) => setCustomStart(e.target.value)}
+                className="h-10 px-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                data-testid="custom-start-date"
+              />
+              <span className="text-sm text-slate-500">to</span>
+              <input
+                type="date"
+                value={customEnd}
+                onChange={(e) => setCustomEnd(e.target.value)}
+                className="h-10 px-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                data-testid="custom-end-date"
+              />
+            </>
+          )}
 
           <select
             value={selectedProduct}
