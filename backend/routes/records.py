@@ -686,7 +686,8 @@ async def create_download_request(request_data: DownloadRequestCreate, user: Use
             detail=f"Only {available_count} non-reserved records available ({reserved_count} records skipped due to Reserved Member duplicates). You requested {request_data.record_count}."
         )
     
-    # Use only the requested number of valid records
+    # Randomize and select the requested number of records
+    random.shuffle(valid_records)
     selected_records = valid_records[:request_data.record_count]
     record_ids = [record['id'] for record in selected_records]
     
