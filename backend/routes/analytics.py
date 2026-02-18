@@ -1547,7 +1547,8 @@ async def export_izin_records(
     """Export izin (break) records"""
     db = get_db()
     query = {}
-    if staff_id: query['staff_id'] = staff_id
+    if staff_id:
+        query['staff_id'] = staff_id
     
     records = await db.izin_records.find(query, {'_id': 0}).sort('created_at', -1).to_list(100000)
     
