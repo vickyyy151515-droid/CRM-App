@@ -1349,9 +1349,12 @@ async def export_customer_records(
     """Export customer records with filters"""
     db = get_db()
     query = {}
-    if product_id: query['product_id'] = product_id
-    if status: query['status'] = status
-    if staff_id: query['assigned_to'] = staff_id
+    if product_id:
+        query['product_id'] = product_id
+    if status:
+        query['status'] = status
+    if staff_id:
+        query['assigned_to'] = staff_id
     
     records = await db.customer_records.find(query, {'_id': 0}).to_list(100000)
     
