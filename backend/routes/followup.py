@@ -290,7 +290,6 @@ async def get_followup_notifications(user: User = Depends(get_current_user)):
     
     # Get followups data - call the internal logic directly instead of the route function
     jakarta_now = get_jakarta_now()
-    today = jakarta_now.strftime('%Y-%m-%d')
     
     # Find all assigned records with respond_status = 'ya'
     query = {
