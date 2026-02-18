@@ -157,7 +157,7 @@ async def get_staff_performance_analytics(
     }
 
 @router.get("/analytics/business")
-async def get_business_analytics(period: str = 'month', product_id: Optional[str] = None, staff_id: Optional[str] = None, user: User = Depends(get_admin_user)):
+async def get_business_analytics(period: str = 'month', custom_start: Optional[str] = None, custom_end: Optional[str] = None, product_id: Optional[str] = None, staff_id: Optional[str] = None, user: User = Depends(get_admin_user)):
 custom_start: Optional[str] = None,
 custom_end: Optional[str] = None,
     """Get business analytics including OMSET trends"""
