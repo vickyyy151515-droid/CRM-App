@@ -44,7 +44,7 @@ async def get_staff_performance_analytics(
 ):
     """Get comprehensive staff performance analytics"""
     db = get_db()
-    start_date, end_date = get_date_range(period)
+    start_date, end_date = get_date_range(period, custom_start, custom_end)
     
     record_query = {'status': 'assigned'}
     if staff_id:
@@ -158,7 +158,7 @@ async def get_staff_performance_analytics(
 async def get_business_analytics(period: str = 'month', product_id: Optional[str] = None, staff_id: Optional[str] = None, user: User = Depends(get_admin_user)):
     """Get business analytics including OMSET trends"""
     db = get_db()
-    start_date, end_date = get_date_range(period)
+    start_date, end_date = get_date_range(period, custom_start, custom_end)
     
     # FIXED: Use 'record_date' field instead of 'date'
     omset_query = {'record_date': {'$gte': start_date[:10]}}
