@@ -1444,8 +1444,6 @@ async def export_omset_data(
 
 @router.get("/export/staff-report")
 async def export_staff_performance_report(format: str = 'xlsx', period: str = 'month', custom_start: Optional[str] = None, custom_end: Optional[str] = None, token: Optional[str] = None, user: User = Depends(get_admin_user)):
-custom_start: Optional[str] = None,
-custom_end: Optional[str] = None,
     """Export staff performance report"""
     analytics = await get_staff_performance_analytics(period=period, user=user)
     
