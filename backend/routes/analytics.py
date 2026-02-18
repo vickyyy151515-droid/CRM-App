@@ -337,7 +337,7 @@ async def get_staff_ndp_rdp_daily(
 ):
     """Get daily NDP/RDP breakdown per staff for chart visualization"""
     db = get_db()
-    start_date, _ = get_date_range(period)
+    start_date, _ = get_date_range(period, custom_start, custom_end)
 
     omset_query = {'record_date': {'$gte': start_date[:10]}}
     if product_id:
@@ -414,7 +414,7 @@ async def get_staff_conversion_funnel(
 ):
     """Get conversion funnel data per staff: Assigned → WA Checked → Responded → Deposited"""
     db = get_db()
-    start_date, _ = get_date_range(period)
+    start_date, _ = get_date_range(period, custom_start, custom_end)
 
     rec_query = {'status': 'assigned'}
     if product_id:
@@ -483,7 +483,7 @@ async def get_revenue_heatmap(
 ):
     """Get revenue heatmap: staff × day-of-week with deposit counts and amounts"""
     db = get_db()
-    start_date, _ = get_date_range(period)
+    start_date, _ = get_date_range(period, custom_start, custom_end)
 
     from utils.db_operations import add_approved_filter
     omset_query = {'record_date': {'$gte': start_date[:10]}}
@@ -635,7 +635,7 @@ async def get_response_time_by_staff(
 ):
     """Average time from assignment to first WA check and first response, per staff"""
     db = get_db()
-    start_date, _ = get_date_range(period)
+    start_date, _ = get_date_range(period, custom_start, custom_end)
 
     rec_query = {
         'status': 'assigned',
@@ -718,7 +718,7 @@ async def get_followup_effectiveness(
 ):
     """Track follow-ups sent vs. successful deposits per staff"""
     db = get_db()
-    start_date, _ = get_date_range(period)
+    start_date, _ = get_date_range(period, custom_start, custom_end)
 
     rec_query = {'status': 'assigned'}
     if product_id:
@@ -797,7 +797,7 @@ async def get_product_performance(
 ):
     """NDP/RDP counts and amounts per product"""
     db = get_db()
-    start_date, _ = get_date_range(period)
+    start_date, _ = get_date_range(period, custom_start, custom_end)
 
     from utils.db_operations import add_approved_filter, build_staff_first_date_map
     omset_query = {'record_date': {'$gte': start_date[:10]}}
@@ -865,7 +865,7 @@ async def get_customer_value_comparison(
 ):
     """Compare New vs Returning customer total deposit amounts (LTV)"""
     db = get_db()
-    start_date, _ = get_date_range(period)
+    start_date, _ = get_date_range(period, custom_start, custom_end)
 
     from utils.db_operations import add_approved_filter, build_staff_first_date_map
     omset_query = {'record_date': {'$gte': start_date[:10]}}
@@ -956,7 +956,7 @@ async def get_deposit_trends(
 ):
     """Deposit volume trends over time with daily/weekly/monthly granularity"""
     db = get_db()
-    start_date, _ = get_date_range(period)
+    start_date, _ = get_date_range(period, custom_start, custom_end)
 
     from utils.db_operations import add_approved_filter
     omset_query = {'record_date': {'$gte': start_date[:10]}}
@@ -1038,7 +1038,7 @@ async def drill_down_response_time(
 ):
     """Drill-down: individual records with WA/response timestamps for a staff"""
     db = get_db()
-    start_date, _ = get_date_range(period)
+    start_date, _ = get_date_range(period, custom_start, custom_end)
 
     rec_query = {'status': 'assigned', 'assigned_to': staff_id, 'assigned_at': {'$ne': None}}
     if product_id:
@@ -1095,7 +1095,7 @@ async def drill_down_followup_detail(
 ):
     """Drill-down: responded customers with deposit status for a staff"""
     db = get_db()
-    start_date, _ = get_date_range(period)
+    start_date, _ = get_date_range(period, custom_start, custom_end)
 
     rec_query = {'status': 'assigned', 'assigned_to': staff_id, 'respond_status': 'ya'}
     if product_id:
@@ -1157,7 +1157,7 @@ async def drill_down_product_staff(
 ):
     """Drill-down: staff-level NDP/RDP breakdown for a specific product"""
     db = get_db()
-    start_date, _ = get_date_range(period)
+    start_date, _ = get_date_range(period, custom_start, custom_end)
 
     from utils.db_operations import add_approved_filter, build_staff_first_date_map
     omset_query = {'record_date': {'$gte': start_date[:10]}, 'product_id': product_id}
@@ -1211,7 +1211,7 @@ async def drill_down_staff_customers(
 ):
     """Drill-down: top customers by deposit value for a staff (NDP vs RDP)"""
     db = get_db()
-    start_date, _ = get_date_range(period)
+    start_date, _ = get_date_range(period, custom_start, custom_end)
 
     from utils.db_operations import add_approved_filter, build_staff_first_date_map
     omset_query = {'record_date': {'$gte': start_date[:10]}, 'staff_id': staff_id}
