@@ -1397,7 +1397,7 @@ export default function AdvancedAnalytics() {
   useEffect(() => {
     loadAnalytics();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period, selectedProduct, selectedStaff]);
+  }, [period, selectedProduct, selectedStaff, customStart, customEnd]);
 
   const loadFilters = async () => {
     try {
