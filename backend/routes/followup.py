@@ -104,7 +104,6 @@ async def get_followups(
         target_staff_id = user.id
     
     jakarta_now = get_jakarta_now()
-    today = jakarta_now.strftime('%Y-%m-%d')
     
     # Find all assigned records with respond_status = 'ya'
     query = {
