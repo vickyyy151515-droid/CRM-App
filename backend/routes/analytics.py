@@ -1491,8 +1491,10 @@ async def export_leave_requests(
     """Export leave request records"""
     db = get_db()
     query = {}
-    if staff_id: query['staff_id'] = staff_id
-    if status: query['status'] = status
+    if staff_id:
+        query['staff_id'] = staff_id
+    if status:
+        query['status'] = status
     
     records = await db.leave_requests.find(query, {'_id': 0}).sort('created_at', -1).to_list(100000)
     
