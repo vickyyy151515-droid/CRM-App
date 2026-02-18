@@ -11,9 +11,13 @@ from utils.helpers import get_jakarta_now, normalize_customer_id
 
 router = APIRouter(tags=["Analytics & Export"])
 
-def get_date_range(period: str):
+def get_date_range(period: str, custom_start: str = None, custom_end: str = None):
     """Get start and end dates for a period"""
     now = get_jakarta_now()
+    if period == 'custom' and custom_start and custom_end:
+        start = datetime.fromisoformat(custom_start + 'T00:00:00').replace(tzinfo=now.tzinfo)
+        end = datetime.fromisoformat(custom_end + 'T23:59:59').replace(tzinfo=now.tzinfo)
+        return start.isoformat(), end.isoformat()
     if period == 'today':
         start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     elif period == 'yesterday':
