@@ -1445,7 +1445,7 @@ async def export_omset_data(
         return FileResponse(path=temp_path, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', filename=f"{filename}.xlsx")
 
 @router.get("/export/staff-report")
-async def export_staff_performance_report(format: str = 'xlsx', period: str = 'month', token: Optional[str] = None, user: User = Depends(get_admin_user)):
+async def export_staff_performance_report(format: str = 'xlsx', period: str = 'month', custom_start: Optional[str] = None, custom_end: Optional[str] = None, token: Optional[str] = None, user: User = Depends(get_admin_user)):
 custom_start: Optional[str] = None,
 custom_end: Optional[str] = None,
     """Export staff performance report"""
