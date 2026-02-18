@@ -329,7 +329,7 @@ async def get_followup_notifications(user: User = Depends(get_current_user)):
                 high += 1
             elif days_since >= 1:
                 medium += 1
-        except:
+        except (ValueError, TypeError):
             continue
     
     notifications = []
