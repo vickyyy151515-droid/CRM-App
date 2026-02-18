@@ -1345,6 +1345,8 @@ export default function AdvancedAnalytics() {
   const [layoutChanged, setLayoutChanged] = useState(false);
   
   const [period, setPeriod] = useState('month');
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
   const [selectedProduct, setSelectedProduct] = useState('');
   const [selectedStaff, setSelectedStaff] = useState('');
   
