@@ -202,7 +202,7 @@ async def get_followups(
             if isinstance(respond_date_str, str):
                 try:
                     respond_date = datetime.fromisoformat(respond_date_str.replace('Z', '+00:00'))
-                except:
+                except (ValueError, TypeError):
                     respond_date = jakarta_now
             else:
                 respond_date = respond_date_str
@@ -213,7 +213,7 @@ async def get_followups(
                 if isinstance(assigned_at, str):
                     try:
                         respond_date = datetime.fromisoformat(assigned_at.replace('Z', '+00:00'))
-                    except:
+                    except (ValueError, TypeError):
                         respond_date = jakarta_now
                 else:
                     respond_date = assigned_at
