@@ -1441,6 +1441,9 @@ export default function AdvancedAnalytics() {
   };
 
   const loadAnalytics = async () => {
+    // Don't load if custom range is selected but dates are incomplete
+    if (period === 'custom' && (!customStart || !customEnd)) return;
+    
     setLoading(true);
     try {
       const params = new URLSearchParams({ period });
