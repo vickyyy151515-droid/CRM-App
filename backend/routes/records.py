@@ -672,10 +672,6 @@ async def create_download_request(request_data: DownloadRequestCreate, user: Use
                 continue
         
         valid_records.append(record)
-        
-        # Stop once we have enough valid records
-        if len(valid_records) >= request_data.record_count:
-            break
     
     # Check if we have enough valid records
     if len(valid_records) < request_data.record_count:
