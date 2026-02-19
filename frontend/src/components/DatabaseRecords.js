@@ -160,7 +160,7 @@ export default function DatabaseRecords({ database, isStaff, onRequestSuccess })
                     <td className="px-4 py-3 text-sm text-slate-900 font-medium">{record.row_number}</td>
                     {visibleColumns.map((col, idx) => {
                       const cellValue = record.row_data[col];
-                      const isWhatsAppColumn = col.toLowerCase() === 'telpon';
+                      const isWhatsAppColumn = col.toLowerCase() === 'telpon' || col.toLowerCase() === 'telpon 2';
                       
                       if (isWhatsAppColumn && cellValue) {
                         // Extract phone number from wa.me link or use as-is
