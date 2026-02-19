@@ -312,7 +312,7 @@ export default function BatchRecordsView() {
                       <td className="px-4 py-3 text-sm text-slate-900 dark:text-white font-medium">{record.row_number}</td>
                       {columns.map((col, idx) => {
                         const cellValue = record.row_data[col];
-                        const isWhatsAppColumn = col.toLowerCase() === 'telpon';
+                        const isWhatsAppColumn = col.toLowerCase() === 'telpon' || col.toLowerCase() === 'telpon 2';
                         
                         if (isWhatsAppColumn && cellValue) {
                           let phoneNumber = cellValue;
