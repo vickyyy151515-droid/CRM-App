@@ -502,7 +502,7 @@ export default function MyAssignedRecords() {
                       <td className="px-4 py-3 text-sm text-slate-900 font-medium">{record.row_number}</td>
                       {visibleColumns.map((col, idx) => {
                         const cellValue = record.row_data[col];
-                        const isWhatsAppColumn = col.toLowerCase() === 'telpon' || col.toLowerCase() === 'telpon 2';
+                        const isWhatsAppColumn = col.toLowerCase().startsWith('telpon') || col.toLowerCase().startsWith('telepon');
                         
                         if (isWhatsAppColumn && cellValue) {
                           let phoneNumber = cellValue;
