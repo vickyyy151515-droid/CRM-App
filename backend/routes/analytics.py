@@ -1562,9 +1562,14 @@ async def export_leave_requests(
 async def export_izin_records(
     format: str = 'xlsx', staff_id: Optional[str] = None,
     start_date: Optional[str] = None, end_date: Optional[str] = None,
-    token: Optional[str] = None, user: User = Depends(get_admin_user)
+    token: Optional[str] = None
 ):
     """Export izin (break) records"""
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    user = await get_user_from_token_param(token)
+    if user.role not in ['admin', 'master_admin']:
+        raise HTTPException(status_code=403, detail="Admin access required")
     db = get_db()
     query = {}
     if staff_id:
