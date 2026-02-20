@@ -176,7 +176,74 @@ export default function AttendanceAdmin() {
 
       {/* Today Tab */}
       {activeTab === 'today' && todayData && (
-        <TodayTab todayData={todayData} />
+        <div className="space-y-6">
+          <TodayTab todayData={todayData} />
+          
+          {/* Working Hours Setting */}
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700" data-testid="working-hours-card">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Clock size={18} className="text-indigo-500" />
+                <h3 className="font-semibold text-slate-800 dark:text-white">Working Hours</h3>
+              </div>
+              {!editingHours && (
+                <button
+                  onClick={() => setEditingHours(true)}
+                  className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                  data-testid="edit-hours-btn"
+                >
+                  Edit
+                </button>
+              )}
+            </div>
+            
+            {!editingHours ? (
+              <p className="text-slate-600 dark:text-slate-300">
+                <span className="font-mono text-lg font-bold text-slate-800 dark:text-white">{workingHours?.start_display || '11:00'}</span>
+                <span className="mx-2 text-slate-400">—</span>
+                <span className="font-mono text-lg font-bold text-slate-800 dark:text-white">{workingHours?.end_display || '23:00'}</span>
+                <span className="text-sm text-slate-500 ml-3">Check-in after start time = late</span>
+              </p>
+            ) : (
+              <div className="flex items-center gap-3">
+                <div>
+                  <label className="text-xs text-slate-500 block mb-1">Start Time</label>
+                  <input
+                    type="time"
+                    value={newStartTime}
+                    onChange={(e) => setNewStartTime(e.target.value)}
+                    className="h-10 px-3 rounded-lg border border-slate-300 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    data-testid="start-time-input"
+                  />
+                </div>
+                <span className="text-slate-400 mt-5">—</span>
+                <div>
+                  <label className="text-xs text-slate-500 block mb-1">End Time</label>
+                  <input
+                    type="time"
+                    value={newEndTime}
+                    onChange={(e) => setNewEndTime(e.target.value)}
+                    className="h-10 px-3 rounded-lg border border-slate-300 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    data-testid="end-time-input"
+                  />
+                </div>
+                <button
+                  onClick={saveWorkingHours}
+                  className="mt-5 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700"
+                  data-testid="save-hours-btn"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => { setEditingHours(false); setNewStartTime(workingHours?.start_display || '11:00'); setNewEndTime(workingHours?.end_display || '23:00'); }}
+                  className="mt-5 px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-300"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       {/* History Tab */}
