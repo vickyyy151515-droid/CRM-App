@@ -6,7 +6,7 @@ from typing import Optional
 from datetime import datetime, timedelta
 import pandas as pd
 import io
-from .deps import User, get_db, get_admin_user
+from .deps import User, get_db, get_admin_user, get_user_from_token_param
 from utils.helpers import get_jakarta_now, normalize_customer_id
 
 router = APIRouter(tags=["Analytics & Export"])
