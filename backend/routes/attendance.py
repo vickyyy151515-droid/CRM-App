@@ -204,10 +204,12 @@ async def check_in_with_totp(data: TOTPVerifyRequest, user: User = Depends(get_c
     late_minutes = 0
     
     if not has_approved_leave:
-        # Only calculate lateness if no approved leave
-        is_late = now.hour > SHIFT_START_HOUR or (now.hour == SHIFT_START_HOUR and now.minute > 0)
-        if is_late:
-            shift_start = now.replace(hour=SHIFT_START_HOUR, minute=0, second=0, microsecond=0)
+        # Get working hours from settings
+        wh = await get_working_hours()
+        shift_start = now.replace(hour=wh['start_hour'], minute=wh['start_minute'], second=0, microsecond=0)
+        # Only calculate lateness if checked in after shift start
+        if now > shift_start:
+            is_late = True
             late_delta = now - shift_start
             late_minutes = int(late_delta.total_seconds() / 60)
     
