@@ -6,7 +6,7 @@ from typing import Optional, List
 import io
 import pandas as pd
 
-from .deps import get_db, get_admin_user, User
+from .deps import get_db, get_admin_user, get_user_from_token_param, User
 from utils.helpers import normalize_customer_id, get_jakarta_now
 
 router = APIRouter(tags=["Bonus Calculation"])
