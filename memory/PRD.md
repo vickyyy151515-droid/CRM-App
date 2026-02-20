@@ -47,6 +47,9 @@ CRM application for sales tracking, customer retention, and staff management. In
 
 **Testing**: 7/7 tests passed (iteration_54)
 
+### Configurable Working Hours (2026-02-20) - COMPLETE
+Added admin setting to configure staff working hours from the Attendance page (Today tab). Previously hardcoded to 11:00-23:00, now stored in DB `system_settings`. Lateness is calculated based on the configured start time. Backend: `GET/PUT /api/attendance/admin/working-hours`. Frontend: Working Hours card with time picker inputs.
+
 ### Per-Database Auto-Approve Control (2026-02-20) - COMPLETE
 Added per-database auto-approve setting with clear visual toggle. Each database shows "Auto-Approve" (green) or "Manual" (amber) button. Global toggle is master switch — when OFF, everything is manual. When ON, per-database setting takes over. Fixed: Pydantic model now includes `auto_approve` field, API properly persists and returns the setting.
 
