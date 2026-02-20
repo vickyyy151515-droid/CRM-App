@@ -395,3 +395,63 @@ async def get_attendance_history(
         'total_records': len(records),
         'records': records
     }
+
+
+# ==================== WORKING HOURS SETTINGS ====================
+
+@router.get("/attendance/admin/working-hours")
+async def get_working_hours_settings(user: User = Depends(get_current_user)):
+    """Get current working hours settings"""
+    if user.role not in ('admin', 'master_admin'):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    wh = await get_working_hours()
+    return {
+        'start_hour': wh['start_hour'],
+        'start_minute': wh['start_minute'],
+        'end_hour': wh['end_hour'],
+        'end_minute': wh['end_minute'],
+        'start_display': f"{wh['start_hour']:02d}:{wh['start_minute']:02d}",
+        'end_display': f"{wh['end_hour']:02d}:{wh['end_minute']:02d}"
+    }
+
+
+@router.put("/attendance/admin/working-hours")
+async def update_working_hours(
+    start_hour: int,
+    start_minute: int = 0,
+    end_hour: int = 23,
+    end_minute: int = 0,
+    user: User = Depends(get_current_user)
+):
+    """Update working hours - affects lateness calculation"""
+    if user.role not in ('admin', 'master_admin'):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    if not (0 <= start_hour <= 23 and 0 <= start_minute <= 59):
+        raise HTTPException(status_code=400, detail="Invalid start time")
+    if not (0 <= end_hour <= 23 and 0 <= end_minute <= 59):
+        raise HTTPException(status_code=400, detail="Invalid end time")
+    
+    db = get_db()
+    await db.system_settings.update_one(
+        {'key': 'working_hours'},
+        {'$set': {
+            'key': 'working_hours',
+            'start_hour': start_hour,
+            'start_minute': start_minute,
+            'end_hour': end_hour,
+            'end_minute': end_minute,
+            'updated_by': user.id,
+            'updated_at': get_jakarta_now().isoformat()
+        }},
+        upsert=True
+    )
+    
+    return {
+        'message': f"Working hours updated to {start_hour:02d}:{start_minute:02d} - {end_hour:02d}:{end_minute:02d}",
+        'start_hour': start_hour,
+        'start_minute': start_minute,
+        'end_hour': end_hour,
+        'end_minute': end_minute
+    }
