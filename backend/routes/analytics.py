@@ -1,6 +1,6 @@
 # Analytics and Export Routes
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 from typing import Optional
 from datetime import datetime, timedelta
