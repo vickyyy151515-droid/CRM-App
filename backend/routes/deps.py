@@ -99,6 +99,22 @@ async def get_admin_user(user: User = Depends(get_current_user)) -> User:
         raise HTTPException(status_code=403, detail="Admin access required")
     return user
 
+async def get_user_from_token_param(token: str) -> User:
+    """Authenticate user from a token query parameter (for export/download endpoints)"""
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        user_id = payload.get('user_id')
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        user_data = await db.users.find_one({'id': user_id}, {'_id': 0})
+        if not user_data:
+            raise HTTPException(status_code=401, detail="User not found")
+        return User(**user_data)
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
 async def get_master_admin_user(user: User = Depends(get_current_user)) -> User:
     """Ensure current user is a master_admin"""
     if user.role != 'master_admin':
