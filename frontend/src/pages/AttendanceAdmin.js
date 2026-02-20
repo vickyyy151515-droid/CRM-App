@@ -93,11 +93,11 @@ export default function AttendanceAdmin() {
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      await Promise.all([fetchTodayAttendance(), fetchTotpStatus()]);
+      await Promise.all([fetchTodayAttendance(), fetchTotpStatus(), fetchWorkingHours()]);
       setLoading(false);
     };
     loadData();
-  }, [fetchTodayAttendance, fetchTotpStatus]);
+  }, [fetchTodayAttendance, fetchTotpStatus, fetchWorkingHours]);
 
   // Fetch history when tab changes
   useEffect(() => {
