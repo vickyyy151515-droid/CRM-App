@@ -376,6 +376,47 @@ export default function DatabaseList({ onUpdate, isStaff = false }) {
                 </div>
 
                 <div className="flex gap-2 ml-4">
+                  {/* Per-database auto-approve toggle (admin only) */}
+                  {!isStaff && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          const current = db.auto_approve;
+                          let newVal;
+                          if (current === true) newVal = false;
+                          else if (current === false) newVal = null;
+                          else newVal = true;
+                          await api.put(`/databases/${db.id}/auto-approve/set`, null, {
+                            params: { auto_approve: newVal }
+                          });
+                          loadDatabases();
+                          toast.success(
+                            newVal === true ? 'Set to Auto-Approve' :
+                            newVal === false ? 'Set to Manual Approval' :
+                            'Set to Global Default'
+                          );
+                        } catch (err) {
+                          toast.error('Failed to update');
+                        }
+                      }}
+                      data-testid={`auto-approve-toggle-${db.id}`}
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
+                        db.auto_approve === true
+                          ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
+                          : db.auto_approve === false
+                          ? 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200'
+                          : 'bg-slate-50 text-slate-500 hover:bg-slate-100 border border-slate-200'
+                      }`}
+                      title={
+                        db.auto_approve === true ? 'Auto-Approve ON (click to switch to Manual)' :
+                        db.auto_approve === false ? 'Manual Approval (click to switch to Global)' :
+                        'Using Global Setting (click to switch to Auto-Approve)'
+                      }
+                    >
+                      <Zap size={14} />
+                      {db.auto_approve === true ? 'Auto' : db.auto_approve === false ? 'Manual' : 'Global'}
+                    </button>
+                  )}
                   <button
                     onClick={() => handlePreview(db)}
                     data-testid={`preview-database-${db.id}`}
