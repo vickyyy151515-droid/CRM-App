@@ -55,9 +55,25 @@ export default function BonusCalculation() {
     setExpandedStaff(prev => ({ ...prev, [staffId]: !prev[staffId] }));
   };
 
-  const exportToExcel = () => {
-    window.open(`${api.defaults.baseURL}/bonus-calculation/export?year=${selectedYear}&month=${selectedMonth}`, '_blank');
-    toast.success('Export started');
+  const exportToExcel = async () => {
+    try {
+      const response = await api.get('/bonus-calculation/export', {
+        params: { year: selectedYear, month: selectedMonth },
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `bonus_calculation_${selectedYear}_${selectedMonth}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('Export started');
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast.error('Failed to export');
+    }
   };
 
   const openSettings = () => {
