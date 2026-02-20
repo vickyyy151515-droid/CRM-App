@@ -21,9 +21,30 @@ from utils.helpers import get_jakarta_now, get_jakarta_date_string, JAKARTA_TZ
 
 router = APIRouter(tags=["Attendance"])
 
-# Shift configuration
-SHIFT_START_HOUR = 11  # 11:00 AM
-SHIFT_END_HOUR = 23    # 11:00 PM
+# Shift configuration (defaults, overridden by DB settings)
+DEFAULT_SHIFT_START_HOUR = 11  # 11:00 AM
+DEFAULT_SHIFT_START_MINUTE = 0
+DEFAULT_SHIFT_END_HOUR = 23    # 11:00 PM
+DEFAULT_SHIFT_END_MINUTE = 0
+
+
+async def get_working_hours():
+    """Get working hours from DB settings, fallback to defaults"""
+    db = get_db()
+    settings = await db.system_settings.find_one({'key': 'working_hours'}, {'_id': 0})
+    if settings:
+        return {
+            'start_hour': settings.get('start_hour', DEFAULT_SHIFT_START_HOUR),
+            'start_minute': settings.get('start_minute', DEFAULT_SHIFT_START_MINUTE),
+            'end_hour': settings.get('end_hour', DEFAULT_SHIFT_END_HOUR),
+            'end_minute': settings.get('end_minute', DEFAULT_SHIFT_END_MINUTE),
+        }
+    return {
+        'start_hour': DEFAULT_SHIFT_START_HOUR,
+        'start_minute': DEFAULT_SHIFT_START_MINUTE,
+        'end_hour': DEFAULT_SHIFT_END_HOUR,
+        'end_minute': DEFAULT_SHIFT_END_MINUTE,
+    }
 
 # TOTP Configuration
 TOTP_INTERVAL = 30  # Code changes every 30 seconds (Google Authenticator standard)
