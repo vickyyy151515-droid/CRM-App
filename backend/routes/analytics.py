@@ -1344,9 +1344,14 @@ async def drill_down_date_deposits(
 async def export_customer_records(
     format: str = 'xlsx', product_id: Optional[str] = None, status: Optional[str] = None,
     staff_id: Optional[str] = None, start_date: Optional[str] = None, end_date: Optional[str] = None,
-    token: Optional[str] = None, user: User = Depends(get_admin_user)
+    token: Optional[str] = None
 ):
     """Export customer records with filters"""
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    user = await get_user_from_token_param(token)
+    if user.role not in ['admin', 'master_admin']:
+        raise HTTPException(status_code=403, detail="Admin access required")
     db = get_db()
     query = {}
     if product_id:
