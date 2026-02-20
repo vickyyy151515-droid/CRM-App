@@ -1601,6 +1601,57 @@ async def update_auto_approve_settings(settings: AutoApproveSettings, user: User
     }
 
 
+@router.put("/databases/{database_id}/auto-approve")
+async def toggle_database_auto_approve(database_id: str, user: User = Depends(get_admin_user)):
+    """Toggle auto-approve for a specific database. Cycles: None (global) -> True -> False -> None"""
+    db = get_db()
+    
+    database = await db.databases.find_one({'id': database_id}, {'_id': 0})
+    if not database:
+        raise HTTPException(status_code=404, detail="Database not found")
+    
+    current = database.get('auto_approve')  # None, True, or False
+    if current is None:
+        new_value = True
+    elif current is True:
+        new_value = False
+    else:
+        new_value = None
+    
+    if new_value is None:
+        await db.databases.update_one({'id': database_id}, {'$unset': {'auto_approve': ''}})
+    else:
+        await db.databases.update_one({'id': database_id}, {'$set': {'auto_approve': new_value}})
+    
+    label = 'Global Default' if new_value is None else ('Auto-Approve' if new_value else 'Manual Approval')
+    return {
+        'database_id': database_id,
+        'auto_approve': new_value,
+        'message': f'Database set to: {label}'
+    }
+
+@router.put("/databases/{database_id}/auto-approve/set")
+async def set_database_auto_approve(database_id: str, auto_approve: Optional[bool] = None, user: User = Depends(get_admin_user)):
+    """Set auto-approve for a specific database. None = use global, True = auto, False = manual"""
+    db = get_db()
+    
+    database = await db.databases.find_one({'id': database_id}, {'_id': 0})
+    if not database:
+        raise HTTPException(status_code=404, detail="Database not found")
+    
+    if auto_approve is None:
+        await db.databases.update_one({'id': database_id}, {'$unset': {'auto_approve': ''}})
+    else:
+        await db.databases.update_one({'id': database_id}, {'$set': {'auto_approve': auto_approve}})
+    
+    label = 'Global Default' if auto_approve is None else ('Auto-Approve' if auto_approve else 'Manual Approval')
+    return {
+        'database_id': database_id,
+        'auto_approve': auto_approve,
+        'message': f'Database set to: {label}'
+    }
+
+
 # ==================== RESERVED MEMBERS ENDPOINTS ====================
 
 @router.post("/reserved-members")
