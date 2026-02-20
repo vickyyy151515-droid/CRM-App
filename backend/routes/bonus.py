@@ -317,6 +317,7 @@ async def get_bonus_calculation_data(
 async def export_bonus_calculation(
     year: int = None,
     month: int = None,
+    token: Optional[str] = None,
     user: User = Depends(get_admin_user)
 ):
     """Export bonus calculation to Excel"""
