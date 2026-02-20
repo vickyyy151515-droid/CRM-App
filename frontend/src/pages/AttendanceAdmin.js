@@ -39,6 +39,31 @@ export default function AttendanceAdmin() {
     }
   }, []);
 
+  // Fetch working hours
+  const fetchWorkingHours = useCallback(async () => {
+    try {
+      const res = await api.get('/attendance/admin/working-hours');
+      setWorkingHours(res.data);
+      setNewStartTime(res.data.start_display);
+      setNewEndTime(res.data.end_display);
+    } catch (error) {
+      console.error('Error fetching working hours:', error);
+    }
+  }, []);
+
+  const saveWorkingHours = async () => {
+    try {
+      const [sh, sm] = newStartTime.split(':').map(Number);
+      const [eh, em] = newEndTime.split(':').map(Number);
+      await api.put(`/attendance/admin/working-hours?start_hour=${sh}&start_minute=${sm}&end_hour=${eh}&end_minute=${em}`);
+      toast.success('Working hours updated');
+      setEditingHours(false);
+      fetchWorkingHours();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to update');
+    }
+  };
+
   // Fetch TOTP setup status
   const fetchTotpStatus = useCallback(async () => {
     try {
