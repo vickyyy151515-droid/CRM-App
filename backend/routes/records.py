@@ -687,13 +687,24 @@ async def create_download_request(request_data: DownloadRequestCreate, user: Use
     selected_records = valid_records[:request_data.record_count]
     record_ids = [record['id'] for record in selected_records]
     
-    # Check if auto-approve is enabled
-    auto_approve_settings = await db.system_settings.find_one({'key': 'auto_approve_requests'}, {'_id': 0})
-    auto_approve_enabled = auto_approve_settings.get('enabled', False) if auto_approve_settings else False
-    max_records = auto_approve_settings.get('max_records_per_request') if auto_approve_settings else None
+    # Check if auto-approve is enabled (per-database setting overrides global)
+    db_auto_approve = database.get('auto_approve')  # None = use global, True/False = override
     
-    # Determine if this request should be auto-approved
-    should_auto_approve = auto_approve_enabled and (max_records is None or len(record_ids) <= max_records)
+    if db_auto_approve is not None:
+        # Per-database setting exists — use it directly
+        should_auto_approve = db_auto_approve
+        if should_auto_approve:
+            # Still check max records limit from global settings
+            auto_approve_settings = await db.system_settings.find_one({'key': 'auto_approve_requests'}, {'_id': 0})
+            max_records = auto_approve_settings.get('max_records_per_request') if auto_approve_settings else None
+            if max_records is not None and len(record_ids) > max_records:
+                should_auto_approve = False
+    else:
+        # No per-database setting — fall back to global
+        auto_approve_settings = await db.system_settings.find_one({'key': 'auto_approve_requests'}, {'_id': 0})
+        auto_approve_enabled = auto_approve_settings.get('enabled', False) if auto_approve_settings else False
+        max_records = auto_approve_settings.get('max_records_per_request') if auto_approve_settings else None
+        should_auto_approve = auto_approve_enabled and (max_records is None or len(record_ids) <= max_records)
     
     request = DownloadRequest(
         database_id=request_data.database_id,
