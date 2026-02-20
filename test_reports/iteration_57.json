@@ -1,0 +1,98 @@
+{
+  "summary": "Completed comprehensive testing of Per-Database Auto-Approve feature. All 8 backend tests passed (100%). Frontend UI verified working correctly with toggle buttons showing Auto-Approve (green) and Manual (amber) states, proper state toggling, and toast notifications.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "✓ Backend: PUT /api/databases/{id}/auto-approve/set?auto_approve=false stores False (bool) in MongoDB",
+    "✓ Backend: PUT /api/databases/{id}/auto-approve/set?auto_approve=true stores True (bool) in MongoDB",
+    "✓ Backend: GET /api/databases returns auto_approve field in response for each database",
+    "✓ Backend: Database auto_approve=false AND global toggle ON → status=pending",
+    "✓ Backend: Database auto_approve=true AND global toggle ON → status=approved",
+    "✓ Backend: Global toggle OFF → ALL requests return status=pending regardless of per-database setting",
+    "✓ Backend: Database auto_approve=None follows global setting (Global ON → approved)",
+    "✓ Backend: auto_approve value correctly persisted in MongoDB (verified via GET)",
+    "✓ Frontend: Manage Databases page shows per-database auto-approve toggle buttons",
+    "✓ Frontend: Buttons show 'Auto-Approve' (green/emerald) for auto_approve=true",
+    "✓ Frontend: Buttons show 'Manual' (amber) for auto_approve=false",
+    "✓ Frontend: Clicking toggle button changes state with visual feedback",
+    "✓ Frontend: Toast notification 'Set to Auto-Approve' / 'Set to Manual Approval' appears",
+    "✓ Frontend: Global auto-approve toggle visible at top of Manage Databases page"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_per_database_auto_approve.py",
+    "/app/test_reports/pytest/per_database_auto_approve_results.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [
+    "✓ Backend records.py (lines 691-707): Auto-approve logic correctly checks global first, then per-database setting",
+    "✓ Backend records.py (line 221): Database Pydantic model includes 'auto_approve: Optional[bool] = None' field",
+    "✓ Backend records.py (lines 1636-1654): /set endpoint correctly stores True/False booleans in MongoDB",
+    "✓ Backend records.py (line 704): Uses 'db_auto_approve is not None and not db_auto_approve' for safe comparison",
+    "✓ Frontend DatabaseList.js (lines 379-403): Per-database toggle button with correct data-testid and color coding"
+  ],
+
+  "updated_files": [
+    "/app/backend/tests/test_per_database_auto_approve.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (8/8 tests passed)",
+    "frontend": "100% (6/6 UI elements verified)"
+  },
+
+  "test_credentials": {
+    "admin": {"email": "vicky@crm.com", "password": "admin123"},
+    "staff": {"email": "staff@crm.com", "password": "staff123"}
+  },
+
+  "seed_data_creation": "Used existing database 'ted db liga 1.xlsx' (id: 84c66ca8-c707-45f6-91fa-5c0b176edbb9) with 150 records for testing",
+
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "Per-database auto-approve feature fully tested in iteration_57. Backend test file: /app/backend/tests/test_per_database_auto_approve.py (8 tests). Feature hierarchy: Global toggle is master switch (OFF = everything manual). When Global ON, per-database setting takes over (True=auto, False=manual, None=follows global). Frontend shows Auto-Approve (green) / Manual (amber) buttons per database card in Manage Databases page. API endpoints: PUT /api/databases/{id}/auto-approve/set?auto_approve=true|false",
+
+  "feature_verification": {
+    "global_toggle": {
+      "collection": "system_settings",
+      "key": "auto_approve_requests",
+      "field": "enabled (bool)"
+    },
+    "per_database_setting": {
+      "collection": "databases",
+      "field": "auto_approve (Optional[bool])",
+      "values": "True=auto, False=manual, None=follows global"
+    },
+    "logic_flow": {
+      "step1": "Check global toggle - if OFF, everything is manual",
+      "step2": "If global ON, check per-database auto_approve field",
+      "step3": "If per-db is False, request status=pending",
+      "step4": "If per-db is True or None, request status=approved (within max_records limit)"
+    },
+    "frontend_elements": [
+      "Global toggle at top of Manage Databases page",
+      "Per-database toggle button (green=Auto-Approve, amber=Manual)",
+      "Toast notifications on state change"
+    ],
+    "api_endpoints": [
+      "PUT /api/databases/{id}/auto-approve/set?auto_approve=true|false",
+      "PUT /api/databases/{id}/auto-approve (toggle cycle: None→True→False→None)",
+      "GET /api/databases (returns auto_approve field)",
+      "GET /api/settings/auto-approve (global settings)",
+      "PUT /api/settings/auto-approve (update global settings)"
+    ]
+  }
+}
