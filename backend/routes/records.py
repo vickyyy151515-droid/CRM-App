@@ -688,24 +688,23 @@ async def create_download_request(request_data: DownloadRequestCreate, user: Use
     selected_records = valid_records[:request_data.record_count]
     record_ids = [record['id'] for record in selected_records]
     
-    # Check if auto-approve is enabled (per-database setting overrides global)
-    db_auto_approve = database.get('auto_approve')  # None = use global, True/False = override
+    # Check if auto-approve is enabled
+    # 1. Global toggle must be ON as the master switch
+    # 2. Then check per-database setting (True=auto, False=manual)
+    # 3. If per-database not set, follow global
+    auto_approve_settings = await db.system_settings.find_one({'key': 'auto_approve_requests'}, {'_id': 0})
+    global_enabled = auto_approve_settings.get('enabled', False) if auto_approve_settings else False
+    max_records = auto_approve_settings.get('max_records_per_request') if auto_approve_settings else None
     
-    if db_auto_approve is not None:
-        # Per-database setting exists — use it directly
-        should_auto_approve = db_auto_approve
-        if should_auto_approve:
-            # Still check max records limit from global settings
-            auto_approve_settings = await db.system_settings.find_one({'key': 'auto_approve_requests'}, {'_id': 0})
-            max_records = auto_approve_settings.get('max_records_per_request') if auto_approve_settings else None
-            if max_records is not None and len(record_ids) > max_records:
-                should_auto_approve = False
+    if not global_enabled:
+        # Global is OFF — everything needs manual approval
+        should_auto_approve = False
+    elif database.get('auto_approve') is False:
+        # Per-database explicitly set to Manual
+        should_auto_approve = False
     else:
-        # No per-database setting — fall back to global
-        auto_approve_settings = await db.system_settings.find_one({'key': 'auto_approve_requests'}, {'_id': 0})
-        auto_approve_enabled = auto_approve_settings.get('enabled', False) if auto_approve_settings else False
-        max_records = auto_approve_settings.get('max_records_per_request') if auto_approve_settings else None
-        should_auto_approve = auto_approve_enabled and (max_records is None or len(record_ids) <= max_records)
+        # Global ON + per-database is Auto (True) or not set (None = follows global = auto)
+        should_auto_approve = max_records is None or len(record_ids) <= max_records
     
     request = DownloadRequest(
         database_id=request_data.database_id,
