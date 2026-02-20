@@ -701,7 +701,7 @@ async def create_download_request(request_data: DownloadRequestCreate, user: Use
     if not global_enabled:
         # Global is OFF — everything needs manual approval
         should_auto_approve = False
-    elif db_auto_approve == False:
+    elif db_auto_approve is not None and not db_auto_approve:
         # Per-database explicitly set to Manual (use == not is for safety)
         should_auto_approve = False
     else:
