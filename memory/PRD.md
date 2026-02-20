@@ -47,6 +47,13 @@ CRM application for sales tracking, customer retention, and staff management. In
 
 **Testing**: 7/7 tests passed (iteration_54)
 
+### Export Authentication Fix (2026-02-20) - COMPLETE
+Fixed "Not authenticated" error on CSV/Excel export across the entire app. Root cause: `window.open()` doesn't send JWT header.
+- `BonusCalculation.js`: Changed to `api.get()` with blob response
+- `analytics.py`: 4 export endpoints now use `token` query param auth
+- `bonus.py`: Added `token` param support
+- `deps.py`: Added reusable `get_user_from_token_param()` helper
+
 ### Advanced Analytics Date Range Filter (2026-02-18) - COMPLETE
 Added "Custom Range" option to the Advanced Analytics period filter with date picker inputs. Backend `get_date_range()` updated to accept `custom_start`/`custom_end` params across all analytics endpoints. Frontend shows date pickers when "Custom Range" is selected, auto-loads when both dates are filled.
 
