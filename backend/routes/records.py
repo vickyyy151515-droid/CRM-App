@@ -691,16 +691,18 @@ async def create_download_request(request_data: DownloadRequestCreate, user: Use
     # Check if auto-approve is enabled
     # 1. Global toggle must be ON as the master switch
     # 2. Then check per-database setting (True=auto, False=manual)
-    # 3. If per-database not set, follow global
+    # 3. If per-database not set (None), follow global
     auto_approve_settings = await db.system_settings.find_one({'key': 'auto_approve_requests'}, {'_id': 0})
     global_enabled = auto_approve_settings.get('enabled', False) if auto_approve_settings else False
     max_records = auto_approve_settings.get('max_records_per_request') if auto_approve_settings else None
     
+    db_auto_approve = database.get('auto_approve')
+    
     if not global_enabled:
         # Global is OFF — everything needs manual approval
         should_auto_approve = False
-    elif database.get('auto_approve') is False:
-        # Per-database explicitly set to Manual
+    elif db_auto_approve == False:
+        # Per-database explicitly set to Manual (use == not is for safety)
         should_auto_approve = False
     else:
         # Global ON + per-database is Auto (True) or not set (None = follows global = auto)
