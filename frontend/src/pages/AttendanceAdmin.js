@@ -23,6 +23,10 @@ export default function AttendanceAdmin() {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedStaff, setExpandedStaff] = useState(null);
   const [resettingTotp, setResettingTotp] = useState(null);
+  const [workingHours, setWorkingHours] = useState(null);
+  const [editingHours, setEditingHours] = useState(false);
+  const [newStartTime, setNewStartTime] = useState('');
+  const [newEndTime, setNewEndTime] = useState('');
 
   // Fetch today's attendance
   const fetchTodayAttendance = useCallback(async () => {
