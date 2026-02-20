@@ -218,6 +218,7 @@ class Database(BaseModel):
     file_path: str
     preview_data: Optional[dict] = None
     total_records: int = 0
+    auto_approve: Optional[bool] = None
 
 class CustomerRecord(BaseModel):
     model_config = ConfigDict(extra="ignore")
