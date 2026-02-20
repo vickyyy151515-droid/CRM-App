@@ -1459,9 +1459,14 @@ async def export_omset_data(
         return FileResponse(path=temp_path, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', filename=f"{filename}.xlsx")
 
 @router.get("/export/staff-report")
-async def export_staff_performance_report(format: str = 'xlsx', period: str = 'month', custom_start: Optional[str] = None, custom_end: Optional[str] = None, token: Optional[str] = None, user: User = Depends(get_admin_user)):
+async def export_staff_performance_report(format: str = 'xlsx', period: str = 'month', custom_start: Optional[str] = None, custom_end: Optional[str] = None, token: Optional[str] = None):
     """Export staff performance report"""
-    analytics = await get_staff_performance_analytics(period=period, user=user)
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    user = await get_user_from_token_param(token)
+    if user.role not in ['admin', 'master_admin']:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    analytics = await get_staff_performance_analytics(period=period, custom_start=custom_start, custom_end=custom_end, user=user)
     
     export_data = [{
         'Staff Name': s['staff_name'], 'Total Assigned': s['total_assigned'],
