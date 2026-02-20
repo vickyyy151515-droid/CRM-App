@@ -47,6 +47,9 @@ CRM application for sales tracking, customer retention, and staff management. In
 
 **Testing**: 7/7 tests passed (iteration_54)
 
+### Per-Database Auto-Approve Control (2026-02-20) - COMPLETE
+Added per-database auto-approve setting. Each database can be set to: Auto-Approve, Manual Approval, or Global Default (falls back to the master toggle). Per-database setting overrides the global setting. Backend: `PUT /api/databases/{id}/auto-approve/set` endpoint + updated download request logic. Frontend: Toggle button on each database card.
+
 ### Export Authentication Fix (2026-02-20) - COMPLETE
 Fixed "Not authenticated" error on CSV/Excel export across the entire app. Root cause: `window.open()` doesn't send JWT header.
 - `BonusCalculation.js`: Changed to `api.get()` with blob response
