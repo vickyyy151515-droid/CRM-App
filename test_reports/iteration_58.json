@@ -1,0 +1,109 @@
+{
+  "summary": "Completed comprehensive backend testing of Auto-Reassignment feature for expired/deleted reserved members on new omset. All 5/5 tests passed (100%). Feature working correctly: manual deletion archives to deleted_reserved_members, auto-reassignment triggers on new omset, notifications created, and negative cases handled properly.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "GET /api/reserved-members",
+        "issue": "auto_reassigned field is stored in MongoDB but NOT returned in API response due to Pydantic model having extra='ignore'. This is minor - the field value can be verified via created_by='system' and approved_by_name='Auto-Reassignment' fields.",
+        "priority": "LOW"
+      }
+    ]
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "✓ TEST 1: Manual admin deletion archives to deleted_reserved_members with deleted_reason='admin_manual_delete'",
+    "✓ TEST 2: Auto-reassignment triggers when staff records omset for customer with deleted reservation",
+    "✓ TEST 3: Auto-reassignment creates reserved_members entry with status=approved, created_by=system, approved_by=system, approved_by_name='Auto-Reassignment'",
+    "✓ TEST 4: Auto-reassignment removes entry from deleted_reserved_members archive",
+    "✓ TEST 5: Auto-reassignment creates notification (type=reservation_auto_restored) with user_id field",
+    "✓ TEST 6 NEGATIVE: No auto-reassignment when customer is already reserved by another staff (omset goes to pending)",
+    "✓ TEST 7 NEGATIVE: No auto-reassignment when no deleted reservation exists for customer+staff+product",
+    "✓ TEST 8: Auto-reassignment sets last_omset_date on the new reservation"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_auto_reassignment.py",
+    "/app/test_reports/pytest/auto_reassignment_results.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [
+    "✓ Backend omset.py (lines 340-413): Auto-reassignment logic correctly implemented in create_omset_record endpoint",
+    "✓ Backend omset.py (lines 347-353): Properly checks if customer is NOT currently reserved by ANYONE before auto-reassignment",
+    "✓ Backend omset.py (lines 357-364): Correctly checks for deleted reservation matching customer+staff+product",
+    "✓ Backend omset.py (lines 369-389): New reservation created with all required fields including auto_reassigned=True",
+    "✓ Backend omset.py (lines 394-396): Correctly removes entry from deleted_reserved_members archive after auto-reassignment",
+    "✓ Backend omset.py (lines 399-412): Notification created with type='reservation_auto_restored' and user_id field (not target_user_id)",
+    "✓ Backend records.py (lines 2020-2031): Manual admin deletion now archives to deleted_reserved_members with deleted_reason='admin_manual_delete'",
+    "✓ Backend scheduled_reports.py (lines 831-842): Auto-expiration archives with deleted_reason='no_omset_grace_period'"
+  ],
+
+  "updated_files": [
+    "/app/backend/tests/test_auto_reassignment.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (5/5 tests passed)",
+    "frontend": "N/A (backend only testing requested)"
+  },
+
+  "test_credentials": {
+    "admin": {"email": "vicky@crm.com", "password": "admin123"},
+    "staff": {"email": "staff@crm.com", "password": "staff123", "id": "staff-user-1"}
+  },
+
+  "seed_data_creation": "Tests create and clean up test data with unique TEST_REASSIGN_* customer IDs",
+
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "Auto-reassignment feature fully tested in iteration_58. Backend test file: /app/backend/tests/test_auto_reassignment.py (5 tests). Feature flow: 1) Admin/system deletes reserved member -> archived to deleted_reserved_members, 2) Staff records omset for same customer+product -> auto-reassignment checks if customer NOT currently reserved by anyone AND has deleted reservation, 3) If both conditions met: new reservation created with created_by='system', entry removed from deleted archive, notification sent with type='reservation_auto_restored'. Products used: prod-istana2000 (ISTANA2000). API endpoints: POST /api/omset, DELETE /api/reserved-members/{id}, GET /api/reserved-members/deleted, GET /api/notifications",
+
+  "feature_verification": {
+    "auto_reassignment_trigger": {
+      "endpoint": "POST /api/omset",
+      "conditions": [
+        "approval_status == 'approved' (not pending due to conflict)",
+        "Customer is NOT currently reserved by ANYONE",
+        "Deleted reservation exists for same customer+staff+product"
+      ]
+    },
+    "archived_fields": {
+      "collection": "deleted_reserved_members",
+      "fields": [
+        "deleted_at (ISO timestamp)",
+        "deleted_reason ('admin_manual_delete' | 'no_omset_grace_period' | 'no_deposit')",
+        "deleted_by (user ID for manual delete)",
+        "deleted_by_name (user name for manual delete)"
+      ]
+    },
+    "restored_reservation_fields": {
+      "collection": "reserved_members",
+      "fields": [
+        "status: 'approved'",
+        "created_by: 'system'",
+        "created_by_name: 'Auto-Reassignment'",
+        "approved_by: 'system'",
+        "approved_by_name: 'Auto-Reassignment'",
+        "auto_reassigned: true (stored but not in API response)",
+        "auto_reassigned_at: ISO timestamp",
+        "last_omset_date: record_date from omset",
+        "is_permanent: false"
+      ]
+    },
+    "notification": {
+      "type": "reservation_auto_restored",
+      "title": "Reservation Auto-Restored",
+      "user_id_field": "user_id (NOT target_user_id)"
+    }
+  }
+}
