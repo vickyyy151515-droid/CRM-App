@@ -98,6 +98,14 @@ Fixed 19 linting issues in `scheduled_reports.py`:
 - 2 bare `except` clauses replaced with specific exception types (`ValueError, TypeError, AttributeError`)
 - Verified all related backend files (`memberwd.py`, `bonanza.py`, `records.py`, `omset.py`, `utils/`) pass linting with zero issues.
 
+### Auto-Reassignment of Expired/Deleted Reserved Members (2026-02-22) - COMPLETE
+When a staff member records a new omset for a customer whose reservation was previously deleted/expired, the system automatically re-establishes the reservation under that staff member if the customer is not currently reserved by anyone else.
+- **Trigger**: `POST /api/omset` with `approval_status=approved`
+- **Conditions**: Customer not currently reserved by anyone + deleted reservation exists for same customer+staff+product
+- **Actions**: Creates new `reserved_members` entry (created_by=system), removes from `deleted_reserved_members` archive, sends notification (type=reservation_auto_restored)
+- **Also fixed**: Manual admin deletion (`DELETE /api/reserved-members/{id}`) now archives to `deleted_reserved_members` (previously only auto-expiration did this)
+- **Testing**: 5/5 backend tests passed including negative cases (iteration_58)
+
 ## Prioritized Backlog
 
 ### P1 - Upcoming
@@ -119,7 +127,8 @@ Fixed 19 linting issues in `scheduled_reports.py`:
 - `GET /api/analytics/drilldown/*` - Chart drill-down data
 
 ## DB Schema (Key Collections)
-- `reserved_members`: {customer_id, customer_name, staff_id, staff_name, status, is_permanent, product_id}
+- `reserved_members`: {customer_id, customer_name, staff_id, staff_name, status, is_permanent, product_id, auto_reassigned, auto_reassigned_at}
+- `deleted_reserved_members`: {<all reserved_members fields>, deleted_at, deleted_reason, deleted_by, deleted_by_name}
 - `memberwd_records`: {row_data, status, assigned_to, is_reserved_member, batch_id}
 - `bonanza_records`: {row_data, status, assigned_to, is_reserved_member}
 - `customer_records`: {row_data, status, assigned_to}
