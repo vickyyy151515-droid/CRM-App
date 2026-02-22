@@ -29,51 +29,52 @@ STAFF_CREDENTIALS = {"email": "staff@crm.com", "password": "staff123"}
 PRODUCT_ID = "prod-istana2000"
 PRODUCT_NAME = "ISTANA2000"
 
-class TestAutoReassignment:
-    """Test suite for auto-reassignment feature"""
+
+@pytest.fixture(scope="module")
+def admin_auth():
+    """Get admin authentication token"""
+    resp = requests.post(f"{BASE_URL}/api/auth/login", json=ADMIN_CREDENTIALS)
+    assert resp.status_code == 200, f"Admin login failed: {resp.text}"
+    data = resp.json()
+    return {
+        "token": data.get('token'),
+        "user_id": data.get('user', {}).get('id'),
+        "headers": {"Authorization": f"Bearer {data.get('token')}", "Content-Type": "application/json"}
+    }
+
+
+@pytest.fixture(scope="module")
+def staff_auth():
+    """Get staff authentication token"""
+    resp = requests.post(f"{BASE_URL}/api/auth/login", json=STAFF_CREDENTIALS)
+    assert resp.status_code == 200, f"Staff login failed: {resp.text}"
+    data = resp.json()
+    return {
+        "token": data.get('token'),
+        "user_id": data.get('user', {}).get('id'),  # Should be "staff-user-1"
+        "headers": {"Authorization": f"Bearer {data.get('token')}", "Content-Type": "application/json"}
+    }
+
+
+def cleanup_test_customer(customer_id, admin_headers):
+    """Remove test customer from reserved_members, deleted_reserved_members"""
+    try:
+        # Get reserved member by customer_id and delete
+        resp = requests.get(f"{BASE_URL}/api/reserved-members", headers=admin_headers)
+        if resp.status_code == 200:
+            for member in resp.json():
+                if member.get('customer_id') == customer_id or member.get('customer_name') == customer_id:
+                    requests.delete(f"{BASE_URL}/api/reserved-members/{member['id']}", headers=admin_headers)
+    except:
+        pass
+
+
+class TestAdminDeletion:
+    """Test manual admin deletion archives correctly"""
     
-    admin_token = None
-    staff_token = None
-    staff_user_id = None
-    
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        """Setup - get admin and staff tokens"""
-        # Login as admin
-        resp = requests.post(f"{BASE_URL}/api/auth/login", json=ADMIN_CREDENTIALS)
-        assert resp.status_code == 200, f"Admin login failed: {resp.text}"
-        self.admin_token = resp.json().get('access_token')
-        
-        # Login as staff
-        resp = requests.post(f"{BASE_URL}/api/auth/login", json=STAFF_CREDENTIALS)
-        assert resp.status_code == 200, f"Staff login failed: {resp.text}"
-        staff_data = resp.json()
-        self.staff_token = staff_data.get('access_token')
-        self.staff_user_id = staff_data.get('user', {}).get('id')
-        
-    def admin_headers(self):
-        return {"Authorization": f"Bearer {self.admin_token}", "Content-Type": "application/json"}
-    
-    def staff_headers(self):
-        return {"Authorization": f"Bearer {self.staff_token}", "Content-Type": "application/json"}
-    
-    # Helper functions for cleanup
-    def cleanup_test_customer(self, customer_id):
-        """Remove test customer from reserved_members, deleted_reserved_members, notifications"""
-        try:
-            # Get reserved member by customer_id and delete
-            resp = requests.get(f"{BASE_URL}/api/reserved-members", headers=self.admin_headers())
-            if resp.status_code == 200:
-                for member in resp.json():
-                    if member.get('customer_id') == customer_id or member.get('customer_name') == customer_id:
-                        requests.delete(f"{BASE_URL}/api/reserved-members/{member['id']}", headers=self.admin_headers())
-        except:
-            pass
-    
-    # TEST 1: Manual admin deletion archives to deleted_reserved_members
-    def test_1_manual_admin_deletion_archives_with_correct_reason(self):
+    def test_manual_admin_deletion_archives_with_correct_reason(self, admin_auth, staff_auth):
         """
-        When admin manually deletes a reserved member, it should:
+        TEST 1: When admin manually deletes a reserved member, it should:
         - Archive to deleted_reserved_members collection
         - Set deleted_reason='admin_manual_delete'
         """
@@ -85,19 +86,22 @@ class TestAutoReassignment:
                 "customer_id": test_customer_id,
                 "phone_number": "08123456789",
                 "product_id": PRODUCT_ID,
-                "staff_id": self.staff_user_id
+                "staff_id": staff_auth["user_id"]
             }
-            resp = requests.post(f"{BASE_URL}/api/reserved-members", json=create_data, headers=self.admin_headers())
+            resp = requests.post(f"{BASE_URL}/api/reserved-members", json=create_data, headers=admin_auth["headers"])
             assert resp.status_code in [200, 201], f"Failed to create reservation: {resp.text}"
             reservation = resp.json()
             reservation_id = reservation.get('id')
             
+            print(f"Created reservation: {reservation_id}")
+            
             # Step 2: Delete the reservation as admin
-            resp = requests.delete(f"{BASE_URL}/api/reserved-members/{reservation_id}", headers=self.admin_headers())
+            resp = requests.delete(f"{BASE_URL}/api/reserved-members/{reservation_id}", headers=admin_auth["headers"])
             assert resp.status_code == 200, f"Failed to delete reservation: {resp.text}"
+            print(f"Deleted reservation: {reservation_id}")
             
             # Step 3: Verify it's in deleted_reserved_members with correct reason
-            resp = requests.get(f"{BASE_URL}/api/reserved-members/deleted", headers=self.admin_headers())
+            resp = requests.get(f"{BASE_URL}/api/reserved-members/deleted", headers=admin_auth["headers"])
             assert resp.status_code == 200, f"Failed to get deleted members: {resp.text}"
             deleted_members = resp.json()
             
@@ -115,16 +119,19 @@ class TestAutoReassignment:
             print(f"TEST 1 PASSED: Manual deletion archived with deleted_reason='admin_manual_delete'")
             
         finally:
-            # Cleanup
-            self.cleanup_test_customer(test_customer_id)
+            cleanup_test_customer(test_customer_id, admin_auth["headers"])
+
+
+class TestAutoReassignment:
+    """Test auto-reassignment flow"""
     
-    # TEST 2 & 3 & 4: Auto-reassignment flow
-    def test_2_auto_reassignment_on_new_omset(self):
+    def test_auto_reassignment_on_new_omset(self, admin_auth, staff_auth):
         """
-        When staff records omset for a customer who had a deleted/expired reservation:
+        TEST 2,3,4,8: When staff records omset for a customer who had a deleted/expired reservation:
         - If customer is NOT currently reserved by anyone else
-        - A new reservation should be auto-created
+        - A new reservation should be auto-created with status=approved, created_by=system, auto_reassigned=true
         - The entry should be removed from deleted_reserved_members
+        - last_omset_date should be set to the omset date
         """
         test_customer_id = f"TEST_REASSIGN_{uuid.uuid4().hex[:8].upper()}"
         today = datetime.now().strftime('%Y-%m-%d')
@@ -135,22 +142,25 @@ class TestAutoReassignment:
                 "customer_id": test_customer_id,
                 "phone_number": "08123456789",
                 "product_id": PRODUCT_ID,
-                "staff_id": self.staff_user_id
+                "staff_id": staff_auth["user_id"]
             }
-            resp = requests.post(f"{BASE_URL}/api/reserved-members", json=create_data, headers=self.admin_headers())
+            resp = requests.post(f"{BASE_URL}/api/reserved-members", json=create_data, headers=admin_auth["headers"])
             assert resp.status_code in [200, 201], f"Failed to create reservation: {resp.text}"
             reservation = resp.json()
             original_reservation_id = reservation.get('id')
+            print(f"Created reservation: {original_reservation_id}")
             
             # Step 2: Delete the reservation as admin (archives to deleted_reserved_members)
-            resp = requests.delete(f"{BASE_URL}/api/reserved-members/{original_reservation_id}", headers=self.admin_headers())
+            resp = requests.delete(f"{BASE_URL}/api/reserved-members/{original_reservation_id}", headers=admin_auth["headers"])
             assert resp.status_code == 200, f"Failed to delete reservation: {resp.text}"
+            print(f"Deleted reservation: {original_reservation_id}")
             
             # Verify it's in deleted archive
-            resp = requests.get(f"{BASE_URL}/api/reserved-members/deleted", headers=self.admin_headers())
+            resp = requests.get(f"{BASE_URL}/api/reserved-members/deleted", headers=admin_auth["headers"])
             assert resp.status_code == 200
             deleted_before = [m for m in resp.json() if m.get('customer_id') == test_customer_id or m.get('customer_name') == test_customer_id]
             assert len(deleted_before) > 0, "Deleted reservation not found in archive before omset"
+            print(f"Verified in deleted archive: {len(deleted_before)} entries")
             
             # Step 3: Staff records omset for this customer
             omset_data = {
@@ -162,12 +172,13 @@ class TestAutoReassignment:
                 "depo_kelipatan": 1.0,
                 "keterangan": "Test omset for auto-reassignment"
             }
-            resp = requests.post(f"{BASE_URL}/api/omset", json=omset_data, headers=self.staff_headers())
+            resp = requests.post(f"{BASE_URL}/api/omset", json=omset_data, headers=staff_auth["headers"])
             assert resp.status_code == 200, f"Failed to create omset: {resp.text}"
             omset_record = resp.json()
+            print(f"Created omset: {omset_record.get('id')}")
             
             # Step 4: Verify reservation is AUTO-RESTORED
-            resp = requests.get(f"{BASE_URL}/api/reserved-members", headers=self.admin_headers())
+            resp = requests.get(f"{BASE_URL}/api/reserved-members", headers=admin_auth["headers"])
             assert resp.status_code == 200
             reserved_members = resp.json()
             
@@ -178,6 +189,7 @@ class TestAutoReassignment:
                     break
             
             assert restored_reservation is not None, f"Auto-restored reservation for {test_customer_id} not found"
+            print(f"Found restored reservation: {restored_reservation.get('id')}")
             
             # Verify properties of restored reservation (TEST 3)
             assert restored_reservation.get('status') == 'approved', \
@@ -192,7 +204,7 @@ class TestAutoReassignment:
                 f"Expected last_omset_date='{today}', got '{restored_reservation.get('last_omset_date')}'"
             
             # Step 5: Verify entry is REMOVED from deleted_reserved_members (TEST 4)
-            resp = requests.get(f"{BASE_URL}/api/reserved-members/deleted", headers=self.admin_headers())
+            resp = requests.get(f"{BASE_URL}/api/reserved-members/deleted", headers=admin_auth["headers"])
             assert resp.status_code == 200
             deleted_after = [m for m in resp.json() if m.get('customer_id') == test_customer_id or m.get('customer_name') == test_customer_id]
             assert len(deleted_after) == 0, f"Entry should be removed from deleted_reserved_members after auto-reassignment, but found {len(deleted_after)}"
@@ -200,13 +212,11 @@ class TestAutoReassignment:
             print("TEST 2,3,4,8 PASSED: Auto-reassignment creates proper entry, removes from archive, sets last_omset_date")
             
         finally:
-            # Cleanup - delete the omset record and reservation
-            self.cleanup_test_customer(test_customer_id)
+            cleanup_test_customer(test_customer_id, admin_auth["headers"])
     
-    # TEST 5: Notification created for staff
-    def test_5_auto_reassignment_creates_notification(self):
+    def test_auto_reassignment_creates_notification(self, admin_auth, staff_auth):
         """
-        When auto-reassignment happens, a notification should be created for the staff:
+        TEST 5: When auto-reassignment happens, a notification should be created for the staff:
         - type='reservation_auto_restored'
         - user_id = staff's user ID (not target_user_id)
         """
@@ -219,14 +229,14 @@ class TestAutoReassignment:
                 "customer_id": test_customer_id,
                 "phone_number": "08123456789",
                 "product_id": PRODUCT_ID,
-                "staff_id": self.staff_user_id
+                "staff_id": staff_auth["user_id"]
             }
-            resp = requests.post(f"{BASE_URL}/api/reserved-members", json=create_data, headers=self.admin_headers())
-            assert resp.status_code in [200, 201]
+            resp = requests.post(f"{BASE_URL}/api/reserved-members", json=create_data, headers=admin_auth["headers"])
+            assert resp.status_code in [200, 201], f"Failed to create reservation: {resp.text}"
             reservation_id = resp.json().get('id')
             
-            resp = requests.delete(f"{BASE_URL}/api/reserved-members/{reservation_id}", headers=self.admin_headers())
-            assert resp.status_code == 200
+            resp = requests.delete(f"{BASE_URL}/api/reserved-members/{reservation_id}", headers=admin_auth["headers"])
+            assert resp.status_code == 200, f"Failed to delete reservation: {resp.text}"
             
             # Step 2: Staff records omset (triggers auto-reassignment)
             omset_data = {
@@ -238,71 +248,66 @@ class TestAutoReassignment:
                 "depo_kelipatan": 1.0,
                 "keterangan": "Test omset for notification check"
             }
-            resp = requests.post(f"{BASE_URL}/api/omset", json=omset_data, headers=self.staff_headers())
-            assert resp.status_code == 200
+            resp = requests.post(f"{BASE_URL}/api/omset", json=omset_data, headers=staff_auth["headers"])
+            assert resp.status_code == 200, f"Failed to create omset: {resp.text}"
             
             # Step 3: Check staff notifications
-            resp = requests.get(f"{BASE_URL}/api/staff-notifications", headers=self.staff_headers())
+            resp = requests.get(f"{BASE_URL}/api/staff-notifications", headers=staff_auth["headers"])
             assert resp.status_code == 200, f"Failed to get staff notifications: {resp.text}"
             notifications = resp.json()
             
             # Find the auto-restored notification
             auto_restore_notif = None
             for notif in notifications:
-                if notif.get('type') == 'reservation_auto_restored' and test_customer_id in str(notif.get('data', {})):
-                    auto_restore_notif = notif
-                    break
+                if notif.get('type') == 'reservation_auto_restored':
+                    notif_data = notif.get('data', {})
+                    if test_customer_id in str(notif_data) or test_customer_id.lower() in str(notif_data).lower():
+                        auto_restore_notif = notif
+                        break
             
-            assert auto_restore_notif is not None, f"Notification for reservation_auto_restored not found"
-            assert auto_restore_notif.get('user_id') == self.staff_user_id, \
-                f"Notification should use 'user_id' field with staff's ID"
+            assert auto_restore_notif is not None, f"Notification for reservation_auto_restored not found for {test_customer_id}"
+            
+            # Verify it uses 'user_id' field (per the context from main agent)
+            assert auto_restore_notif.get('user_id') == staff_auth["user_id"], \
+                f"Notification should use 'user_id' field with staff's ID. Got user_id={auto_restore_notif.get('user_id')}, expected {staff_auth['user_id']}"
             
             print("TEST 5 PASSED: Auto-reassignment creates notification with type='reservation_auto_restored' and user_id field")
             
         finally:
-            self.cleanup_test_customer(test_customer_id)
+            cleanup_test_customer(test_customer_id, admin_auth["headers"])
+
+
+class TestNegativeCases:
+    """Test negative cases where auto-reassignment should NOT happen"""
     
-    # TEST 6: NEGATIVE - No auto-reassignment if customer already reserved by someone else
-    def test_6_no_reassignment_if_customer_reserved_by_another(self):
+    def test_no_reassignment_if_customer_reserved_by_another(self, admin_auth, staff_auth):
         """
-        NEGATIVE TEST: Auto-reassignment should NOT happen if:
+        TEST 6 NEGATIVE: Auto-reassignment should NOT happen if:
         - The customer is currently reserved by a DIFFERENT staff member
         """
         test_customer_id = f"TEST_REASSIGN_NEG_{uuid.uuid4().hex[:8].upper()}"
         today = datetime.now().strftime('%Y-%m-%d')
         
         try:
-            # Step 1: Create a second staff user or use another existing staff
-            # For this test, we'll create a reservation for the admin as the "other staff"
-            # First, get admin user ID
-            resp = requests.get(f"{BASE_URL}/api/users", headers=self.admin_headers())
-            other_staff_id = None
-            if resp.status_code == 200:
-                for user in resp.json():
-                    if user.get('email') == 'vicky@crm.com':
-                        other_staff_id = user.get('id')
-                        break
-            
-            # If we can't find another staff, we'll simulate with admin
-            if not other_staff_id:
-                # Use admin's ID as the "other staff"
-                resp = requests.get(f"{BASE_URL}/api/auth/me", headers=self.admin_headers())
-                other_staff_id = resp.json().get('id')
+            # Step 1: Get admin user ID to use as "other staff"
+            other_staff_id = admin_auth["user_id"]
             
             # Step 2: Create a reservation for our test staff, then delete it
             create_data = {
                 "customer_id": test_customer_id,
                 "phone_number": "08123456789",
                 "product_id": PRODUCT_ID,
-                "staff_id": self.staff_user_id
+                "staff_id": staff_auth["user_id"]
             }
-            resp = requests.post(f"{BASE_URL}/api/reserved-members", json=create_data, headers=self.admin_headers())
-            assert resp.status_code in [200, 201]
+            resp = requests.post(f"{BASE_URL}/api/reserved-members", json=create_data, headers=admin_auth["headers"])
+            assert resp.status_code in [200, 201], f"Failed to create reservation for staff: {resp.text}"
             reservation_id = resp.json().get('id')
+            print(f"Created reservation for staff: {reservation_id}")
             
             # Delete it (archives it)
-            resp = requests.delete(f"{BASE_URL}/api/reserved-members/{reservation_id}", headers=self.admin_headers())
-            assert resp.status_code == 200
+            resp = requests.delete(f"{BASE_URL}/api/reserved-members/{reservation_id}", headers=admin_auth["headers"])
+            assert resp.status_code == 200, f"Failed to delete reservation: {resp.text}"
+            print(f"Deleted reservation: {reservation_id}")
             
             # Step 3: Create a CURRENT reservation for the SAME customer but DIFFERENT staff (admin)
             create_data_other = {
@@ -311,14 +316,13 @@ class TestAutoReassignment:
                 "product_id": PRODUCT_ID,
                 "staff_id": other_staff_id
             }
-            resp = requests.post(f"{BASE_URL}/api/reserved-members", json=create_data_other, headers=self.admin_headers())
-            # This should create or could be duplicate, either way customer is now reserved by other
-            other_reservation_id = None
-            if resp.status_code in [200, 201]:
-                other_reservation_id = resp.json().get('id')
+            resp = requests.post(f"{BASE_URL}/api/reserved-members", json=create_data_other, headers=admin_auth["headers"])
+            assert resp.status_code in [200, 201], f"Failed to create reservation for other staff: {resp.text}"
+            other_reservation_id = resp.json().get('id')
+            print(f"Created reservation for other staff: {other_reservation_id}")
             
             # Step 4: Staff records omset - should NOT trigger auto-reassignment
-            # (because customer is already reserved by someone else)
+            # The omset should be 'pending' due to conflict with other staff's reservation
             omset_data = {
                 "product_id": PRODUCT_ID,
                 "record_date": today,
@@ -328,40 +332,35 @@ class TestAutoReassignment:
                 "depo_kelipatan": 1.0,
                 "keterangan": "Test omset - should be pending due to conflict"
             }
-            resp = requests.post(f"{BASE_URL}/api/omset", json=omset_data, headers=self.staff_headers())
-            # The omset might be created as 'pending' due to conflict
+            resp = requests.post(f"{BASE_URL}/api/omset", json=omset_data, headers=staff_auth["headers"])
             assert resp.status_code == 200, f"Omset creation failed: {resp.text}"
             omset_record = resp.json()
             
             # Verify the omset is pending (conflict with other staff's reservation)
-            # OR if approved, verify NO new reservation was created for our staff
-            if omset_record.get('approval_status') == 'pending':
-                print("TEST 6 PASSED: Omset is pending because customer is reserved by another staff")
-            else:
-                # Check that no auto-reassignment happened - the reservation should still be with other_staff
-                resp = requests.get(f"{BASE_URL}/api/reserved-members", headers=self.admin_headers())
-                assert resp.status_code == 200
-                reserved_members = resp.json()
-                
-                # Find reservations for this customer
-                reservations_for_customer = [m for m in reserved_members 
-                                            if m.get('customer_id') == test_customer_id or m.get('customer_name') == test_customer_id]
-                
-                # Should only be the other staff's reservation (the one we created in step 3)
-                staff_reservations = [m for m in reservations_for_customer if m.get('staff_id') == self.staff_user_id]
-                assert len(staff_reservations) == 0, \
-                    f"Auto-reassignment should NOT happen when customer is reserved by another staff"
-                
-                print("TEST 6 PASSED: No auto-reassignment when customer is already reserved by another staff")
+            assert omset_record.get('approval_status') == 'pending', \
+                f"Omset should be pending due to conflict. Got: {omset_record.get('approval_status')}"
+            
+            # Verify NO new reservation was created for our staff
+            resp = requests.get(f"{BASE_URL}/api/reserved-members", headers=admin_auth["headers"])
+            assert resp.status_code == 200
+            reserved_members = resp.json()
+            
+            # Find reservations for this customer that belong to our test staff
+            staff_reservations = [m for m in reserved_members 
+                                 if (m.get('customer_id') == test_customer_id or m.get('customer_name') == test_customer_id)
+                                 and m.get('staff_id') == staff_auth["user_id"]]
+            
+            assert len(staff_reservations) == 0, \
+                f"Auto-reassignment should NOT happen when customer is reserved by another staff. Found {len(staff_reservations)} reservations."
+            
+            print("TEST 6 PASSED: No auto-reassignment when customer is already reserved by another staff")
             
         finally:
-            # Cleanup
-            self.cleanup_test_customer(test_customer_id)
+            cleanup_test_customer(test_customer_id, admin_auth["headers"])
     
-    # TEST 7: NEGATIVE - No auto-reassignment if no deleted reservation exists
-    def test_7_no_reassignment_if_no_deleted_reservation(self):
+    def test_no_reassignment_if_no_deleted_reservation(self, admin_auth, staff_auth):
         """
-        NEGATIVE TEST: Auto-reassignment should NOT happen if:
+        TEST 7 NEGATIVE: Auto-reassignment should NOT happen if:
         - There is no deleted reservation in the archive for this customer+staff+product
         """
         test_customer_id = f"TEST_REASSIGN_NEW_{uuid.uuid4().hex[:8].upper()}"
@@ -369,17 +368,18 @@ class TestAutoReassignment:
         
         try:
             # Step 1: Verify this customer has NO prior reservations (deleted or active)
-            resp = requests.get(f"{BASE_URL}/api/reserved-members", headers=self.admin_headers())
+            resp = requests.get(f"{BASE_URL}/api/reserved-members", headers=admin_auth["headers"])
             assert resp.status_code == 200
             existing_reservations = [m for m in resp.json() 
                                     if m.get('customer_id') == test_customer_id or m.get('customer_name') == test_customer_id]
             assert len(existing_reservations) == 0, "Test customer should not have existing reservations"
             
-            resp = requests.get(f"{BASE_URL}/api/reserved-members/deleted", headers=self.admin_headers())
+            resp = requests.get(f"{BASE_URL}/api/reserved-members/deleted", headers=admin_auth["headers"])
             assert resp.status_code == 200
             deleted_reservations = [m for m in resp.json() 
                                    if m.get('customer_id') == test_customer_id or m.get('customer_name') == test_customer_id]
             assert len(deleted_reservations) == 0, "Test customer should not have deleted reservations"
+            print(f"Verified: No existing or deleted reservations for {test_customer_id}")
             
             # Step 2: Staff records omset for this NEW customer
             omset_data = {
@@ -391,11 +391,12 @@ class TestAutoReassignment:
                 "depo_kelipatan": 1.0,
                 "keterangan": "Test omset for new customer - no auto-reassignment expected"
             }
-            resp = requests.post(f"{BASE_URL}/api/omset", json=omset_data, headers=self.staff_headers())
+            resp = requests.post(f"{BASE_URL}/api/omset", json=omset_data, headers=staff_auth["headers"])
             assert resp.status_code == 200, f"Omset creation failed: {resp.text}"
+            print(f"Created omset for new customer")
             
             # Step 3: Verify NO reservation was auto-created
-            resp = requests.get(f"{BASE_URL}/api/reserved-members", headers=self.admin_headers())
+            resp = requests.get(f"{BASE_URL}/api/reserved-members", headers=admin_auth["headers"])
             assert resp.status_code == 200
             reservations_after = [m for m in resp.json() 
                                  if m.get('customer_id') == test_customer_id or m.get('customer_name') == test_customer_id]
@@ -406,7 +407,7 @@ class TestAutoReassignment:
             print("TEST 7 PASSED: No auto-reassignment for customers without deleted reservations")
             
         finally:
-            self.cleanup_test_customer(test_customer_id)
+            cleanup_test_customer(test_customer_id, admin_auth["headers"])
 
 
 if __name__ == "__main__":
