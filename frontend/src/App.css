@@ -3,6 +3,558 @@
   background-color: #f8fafc;
 }
 
+/* =============================================
+   FROSTED GLASS BUTTON SYSTEM
+   ============================================= */
+
+/* Base glass treatment for ALL action buttons */
+button:not([role="tab"]):not([class*="text-slate-400 hover:text-slate-600"]):not([data-no-glass]) {
+  position: relative;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- PRIMARY: Indigo glass --- */
+button[class*="bg-indigo-600"],
+button[class*="bg-indigo-500"],
+button[class*="bg-primary"] {
+  background: rgba(79, 70, 229, 0.8) !important;
+  border: 1px solid rgba(165, 160, 255, 0.35) !important;
+  box-shadow: 
+    0 4px 16px rgba(79, 70, 229, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+button[class*="bg-indigo-600"]:hover:not(:disabled),
+button[class*="bg-indigo-500"]:hover:not(:disabled),
+button[class*="bg-primary"]:hover:not(:disabled) {
+  background: rgba(79, 70, 229, 0.95) !important;
+  box-shadow: 
+    0 8px 24px rgba(79, 70, 229, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+/* --- PRIMARY ALT: Blue glass --- */
+button[class*="bg-blue-600"],
+button[class*="bg-blue-500"] {
+  background: rgba(37, 99, 235, 0.8) !important;
+  border: 1px solid rgba(120, 170, 255, 0.35) !important;
+  box-shadow: 
+    0 4px 16px rgba(37, 99, 235, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+button[class*="bg-blue-600"]:hover:not(:disabled),
+button[class*="bg-blue-500"]:hover:not(:disabled) {
+  background: rgba(37, 99, 235, 0.95) !important;
+  box-shadow: 
+    0 8px 24px rgba(37, 99, 235, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+/* --- SUCCESS: Emerald/Green glass --- */
+button[class*="bg-emerald-600"],
+button[class*="bg-emerald-500"],
+button[class*="bg-green-600"],
+button[class*="bg-green-500"] {
+  background: rgba(5, 150, 105, 0.8) !important;
+  border: 1px solid rgba(80, 220, 170, 0.35) !important;
+  box-shadow: 
+    0 4px 16px rgba(5, 150, 105, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+button[class*="bg-emerald-600"]:hover:not(:disabled),
+button[class*="bg-emerald-500"]:hover:not(:disabled),
+button[class*="bg-green-600"]:hover:not(:disabled),
+button[class*="bg-green-500"]:hover:not(:disabled) {
+  background: rgba(5, 150, 105, 0.95) !important;
+  box-shadow: 
+    0 8px 24px rgba(5, 150, 105, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+/* --- DANGER: Red/Rose glass --- */
+button[class*="bg-red-600"],
+button[class*="bg-red-500"],
+button[class*="bg-rose-600"],
+button[class*="bg-rose-500"] {
+  background: rgba(220, 38, 38, 0.8) !important;
+  border: 1px solid rgba(255, 120, 120, 0.35) !important;
+  box-shadow: 
+    0 4px 16px rgba(220, 38, 38, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+button[class*="bg-red-600"]:hover:not(:disabled),
+button[class*="bg-red-500"]:hover:not(:disabled),
+button[class*="bg-rose-600"]:hover:not(:disabled),
+button[class*="bg-rose-500"]:hover:not(:disabled) {
+  background: rgba(220, 38, 38, 0.95) !important;
+  box-shadow: 
+    0 8px 24px rgba(220, 38, 38, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+/* --- WARNING: Amber/Yellow glass --- */
+button[class*="bg-amber-600"],
+button[class*="bg-amber-500"],
+button[class*="bg-yellow-600"],
+button[class*="bg-yellow-500"] {
+  background: rgba(217, 119, 6, 0.8) !important;
+  border: 1px solid rgba(255, 190, 80, 0.4) !important;
+  box-shadow: 
+    0 4px 16px rgba(217, 119, 6, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+button[class*="bg-amber-600"]:hover:not(:disabled),
+button[class*="bg-amber-500"]:hover:not(:disabled),
+button[class*="bg-yellow-600"]:hover:not(:disabled),
+button[class*="bg-yellow-500"]:hover:not(:disabled) {
+  background: rgba(217, 119, 6, 0.95) !important;
+  box-shadow: 
+    0 8px 24px rgba(217, 119, 6, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+/* --- SECONDARY: Slate/gray ghost glass --- */
+button[class*="bg-slate-600"],
+button[class*="bg-slate-700"],
+button[class*="bg-slate-800"],
+button[class*="bg-slate-900"],
+button[class*="bg-gray-600"],
+button[class*="bg-gray-700"],
+button[class*="bg-gray-800"],
+button[class*="bg-gray-900"] {
+  background: rgba(51, 65, 85, 0.8) !important;
+  border: 1px solid rgba(148, 163, 184, 0.3) !important;
+  box-shadow: 
+    0 4px 16px rgba(15, 23, 42, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+button[class*="bg-slate-600"]:hover:not(:disabled),
+button[class*="bg-slate-700"]:hover:not(:disabled),
+button[class*="bg-slate-800"]:hover:not(:disabled),
+button[class*="bg-slate-900"]:hover:not(:disabled),
+button[class*="bg-gray-600"]:hover:not(:disabled),
+button[class*="bg-gray-700"]:hover:not(:disabled),
+button[class*="bg-gray-800"]:hover:not(:disabled),
+button[class*="bg-gray-900"]:hover:not(:disabled) {
+  background: rgba(51, 65, 85, 0.95) !important;
+  box-shadow: 
+    0 8px 24px rgba(15, 23, 42, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+/* --- TEAL glass --- */
+button[class*="bg-teal-600"],
+button[class*="bg-teal-500"] {
+  background: rgba(13, 148, 136, 0.8) !important;
+  border: 1px solid rgba(80, 220, 210, 0.35) !important;
+  box-shadow: 
+    0 4px 16px rgba(13, 148, 136, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+button[class*="bg-teal-600"]:hover:not(:disabled),
+button[class*="bg-teal-500"]:hover:not(:disabled) {
+  background: rgba(13, 148, 136, 0.95) !important;
+  box-shadow: 
+    0 8px 24px rgba(13, 148, 136, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+/* --- PURPLE glass --- */
+button[class*="bg-purple-600"],
+button[class*="bg-purple-500"],
+button[class*="bg-violet-600"],
+button[class*="bg-violet-500"] {
+  background: rgba(124, 58, 237, 0.8) !important;
+  border: 1px solid rgba(180, 140, 255, 0.35) !important;
+  box-shadow: 
+    0 4px 16px rgba(124, 58, 237, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+button[class*="bg-purple-600"]:hover:not(:disabled),
+button[class*="bg-purple-500"]:hover:not(:disabled),
+button[class*="bg-violet-600"]:hover:not(:disabled),
+button[class*="bg-violet-500"]:hover:not(:disabled) {
+  background: rgba(124, 58, 237, 0.95) !important;
+  box-shadow: 
+    0 8px 24px rgba(124, 58, 237, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+/* --- OUTLINE / GHOST buttons: Subtle glass --- */
+button[class*="hover:bg-slate-100"]:not([class*="bg-indigo"]):not([class*="bg-blue"]):not([class*="bg-emerald"]):not([class*="bg-green"]):not([class*="bg-red"]):not([class*="bg-amber"]):not([class*="bg-slate-6"]):not([class*="bg-slate-7"]):not([class*="bg-slate-8"]):not([class*="bg-slate-9"]) {
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+button[class*="hover:bg-slate-100"]:not([class*="bg-indigo"]):not([class*="bg-blue"]):not([class*="bg-emerald"]):not([class*="bg-green"]):not([class*="bg-red"]):not([class*="bg-amber"]):not([class*="bg-slate-6"]):not([class*="bg-slate-7"]):not([class*="bg-slate-8"]):not([class*="bg-slate-9"]):hover {
+  background: rgba(241, 245, 249, 0.7) !important;
+  border-color: rgba(148, 163, 184, 0.4);
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+/* --- ICON buttons: Small glass treatment --- */
+button[class*="p-1.5"][class*="rounded"] {
+  border: 1px solid transparent;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+button[class*="p-1.5"][class*="rounded"]:hover:not(:disabled) {
+  border-color: rgba(148, 163, 184, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* --- Light-colored glass buttons (indigo-100, etc) --- */
+button[class*="bg-indigo-100"] {
+  background: rgba(224, 231, 255, 0.6) !important;
+  border: 1px solid rgba(165, 180, 252, 0.3) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+button[class*="bg-indigo-100"]:hover {
+  background: rgba(224, 231, 255, 0.85) !important;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.12);
+}
+
+/* --- Disabled state for all glass buttons --- */
+button:disabled {
+  opacity: 0.5;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Active/pressed state */
+button:active:not(:disabled) {
+  transform: translateY(0px) scale(0.98) !important;
+  transition-duration: 0.1s;
+}
+
+/* =============================================
+   DARK MODE: FROSTED GLASS ENHANCEMENTS
+   ============================================= */
+
+/* Dark mode: buttons get a subtle glow effect */
+.dark button[class*="bg-indigo-600"],
+.dark button[class*="bg-indigo-500"] {
+  background: rgba(99, 102, 241, 0.7) !important;
+  border: 1px solid rgba(165, 160, 255, 0.45) !important;
+  box-shadow: 
+    0 4px 20px rgba(99, 102, 241, 0.3),
+    0 0 1px rgba(165, 160, 255, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.dark button[class*="bg-indigo-600"]:hover:not(:disabled),
+.dark button[class*="bg-indigo-500"]:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.85) !important;
+  box-shadow: 
+    0 8px 30px rgba(99, 102, 241, 0.45),
+    0 0 2px rgba(165, 160, 255, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.dark button[class*="bg-blue-600"],
+.dark button[class*="bg-blue-500"] {
+  background: rgba(59, 130, 246, 0.7) !important;
+  border: 1px solid rgba(120, 170, 255, 0.45) !important;
+  box-shadow: 
+    0 4px 20px rgba(59, 130, 246, 0.3),
+    0 0 1px rgba(120, 170, 255, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.dark button[class*="bg-blue-600"]:hover:not(:disabled),
+.dark button[class*="bg-blue-500"]:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.85) !important;
+  box-shadow: 
+    0 8px 30px rgba(59, 130, 246, 0.45),
+    0 0 2px rgba(120, 170, 255, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.dark button[class*="bg-emerald-600"],
+.dark button[class*="bg-emerald-500"],
+.dark button[class*="bg-green-600"],
+.dark button[class*="bg-green-500"] {
+  background: rgba(16, 185, 129, 0.7) !important;
+  border: 1px solid rgba(80, 220, 170, 0.45) !important;
+  box-shadow: 
+    0 4px 20px rgba(16, 185, 129, 0.3),
+    0 0 1px rgba(80, 220, 170, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.dark button[class*="bg-emerald-600"]:hover:not(:disabled),
+.dark button[class*="bg-emerald-500"]:hover:not(:disabled),
+.dark button[class*="bg-green-600"]:hover:not(:disabled),
+.dark button[class*="bg-green-500"]:hover:not(:disabled) {
+  background: rgba(16, 185, 129, 0.85) !important;
+  box-shadow: 
+    0 8px 30px rgba(16, 185, 129, 0.45),
+    0 0 2px rgba(80, 220, 170, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.dark button[class*="bg-red-600"],
+.dark button[class*="bg-red-500"],
+.dark button[class*="bg-rose-600"],
+.dark button[class*="bg-rose-500"] {
+  background: rgba(239, 68, 68, 0.7) !important;
+  border: 1px solid rgba(255, 130, 130, 0.45) !important;
+  box-shadow: 
+    0 4px 20px rgba(239, 68, 68, 0.3),
+    0 0 1px rgba(255, 130, 130, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.dark button[class*="bg-red-600"]:hover:not(:disabled),
+.dark button[class*="bg-red-500"]:hover:not(:disabled),
+.dark button[class*="bg-rose-600"]:hover:not(:disabled),
+.dark button[class*="bg-rose-500"]:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.85) !important;
+  box-shadow: 
+    0 8px 30px rgba(239, 68, 68, 0.45),
+    0 0 2px rgba(255, 130, 130, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.dark button[class*="bg-amber-600"],
+.dark button[class*="bg-amber-500"],
+.dark button[class*="bg-yellow-600"],
+.dark button[class*="bg-yellow-500"] {
+  background: rgba(245, 158, 11, 0.7) !important;
+  border: 1px solid rgba(255, 200, 80, 0.45) !important;
+  box-shadow: 
+    0 4px 20px rgba(245, 158, 11, 0.3),
+    0 0 1px rgba(255, 200, 80, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.dark button[class*="bg-amber-600"]:hover:not(:disabled),
+.dark button[class*="bg-amber-500"]:hover:not(:disabled),
+.dark button[class*="bg-yellow-600"]:hover:not(:disabled),
+.dark button[class*="bg-yellow-500"]:hover:not(:disabled) {
+  background: rgba(245, 158, 11, 0.85) !important;
+  box-shadow: 
+    0 8px 30px rgba(245, 158, 11, 0.45),
+    0 0 2px rgba(255, 200, 80, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.dark button[class*="bg-slate-600"],
+.dark button[class*="bg-slate-700"],
+.dark button[class*="bg-slate-800"],
+.dark button[class*="bg-slate-900"],
+.dark button[class*="bg-gray-600"],
+.dark button[class*="bg-gray-700"],
+.dark button[class*="bg-gray-800"],
+.dark button[class*="bg-gray-900"] {
+  background: rgba(71, 85, 105, 0.7) !important;
+  border: 1px solid rgba(148, 163, 184, 0.35) !important;
+  box-shadow: 
+    0 4px 20px rgba(15, 23, 42, 0.3),
+    0 0 1px rgba(148, 163, 184, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.dark button[class*="bg-slate-600"]:hover:not(:disabled),
+.dark button[class*="bg-slate-700"]:hover:not(:disabled),
+.dark button[class*="bg-slate-800"]:hover:not(:disabled),
+.dark button[class*="bg-slate-900"]:hover:not(:disabled),
+.dark button[class*="bg-gray-600"]:hover:not(:disabled),
+.dark button[class*="bg-gray-700"]:hover:not(:disabled),
+.dark button[class*="bg-gray-800"]:hover:not(:disabled),
+.dark button[class*="bg-gray-900"]:hover:not(:disabled) {
+  background: rgba(71, 85, 105, 0.85) !important;
+  box-shadow: 
+    0 8px 30px rgba(15, 23, 42, 0.4),
+    0 0 2px rgba(148, 163, 184, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.dark button[class*="bg-teal-600"],
+.dark button[class*="bg-teal-500"] {
+  background: rgba(20, 184, 166, 0.7) !important;
+  border: 1px solid rgba(80, 220, 210, 0.45) !important;
+  box-shadow: 
+    0 4px 20px rgba(20, 184, 166, 0.3),
+    0 0 1px rgba(80, 220, 210, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.dark button[class*="bg-teal-600"]:hover:not(:disabled),
+.dark button[class*="bg-teal-500"]:hover:not(:disabled) {
+  background: rgba(20, 184, 166, 0.85) !important;
+  box-shadow: 
+    0 8px 30px rgba(20, 184, 166, 0.45),
+    0 0 2px rgba(80, 220, 210, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.dark button[class*="bg-purple-600"],
+.dark button[class*="bg-purple-500"],
+.dark button[class*="bg-violet-600"],
+.dark button[class*="bg-violet-500"] {
+  background: rgba(139, 92, 246, 0.7) !important;
+  border: 1px solid rgba(190, 150, 255, 0.45) !important;
+  box-shadow: 
+    0 4px 20px rgba(139, 92, 246, 0.3),
+    0 0 1px rgba(190, 150, 255, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.dark button[class*="bg-purple-600"]:hover:not(:disabled),
+.dark button[class*="bg-purple-500"]:hover:not(:disabled),
+.dark button[class*="bg-violet-600"]:hover:not(:disabled),
+.dark button[class*="bg-violet-500"]:hover:not(:disabled) {
+  background: rgba(139, 92, 246, 0.85) !important;
+  box-shadow: 
+    0 8px 30px rgba(139, 92, 246, 0.45),
+    0 0 2px rgba(190, 150, 255, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* Dark mode: Ghost/outline buttons */
+.dark button[class*="hover:bg-slate-100"]:not([class*="bg-indigo"]):not([class*="bg-blue"]):not([class*="bg-emerald"]):not([class*="bg-green"]):not([class*="bg-red"]):not([class*="bg-amber"]):not([class*="bg-slate-6"]):not([class*="bg-slate-7"]):not([class*="bg-slate-8"]):not([class*="bg-slate-9"]) {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.dark button[class*="hover:bg-slate-100"]:not([class*="bg-indigo"]):not([class*="bg-blue"]):not([class*="bg-emerald"]):not([class*="bg-green"]):not([class*="bg-red"]):not([class*="bg-amber"]):not([class*="bg-slate-6"]):not([class*="bg-slate-7"]):not([class*="bg-slate-8"]):not([class*="bg-slate-9"]):hover {
+  background: rgba(51, 65, 85, 0.5) !important;
+  border-color: rgba(148, 163, 184, 0.35);
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Dark mode: Light-colored glass buttons */
+.dark button[class*="bg-indigo-100"] {
+  background: rgba(99, 102, 241, 0.2) !important;
+  border: 1px solid rgba(165, 180, 252, 0.25) !important;
+}
+.dark button[class*="bg-indigo-100"]:hover {
+  background: rgba(99, 102, 241, 0.35) !important;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+/* Dark mode: Icon buttons subtle glow */
+.dark button[class*="p-1.5"][class*="rounded"]:hover:not(:disabled) {
+  border-color: rgba(148, 163, 184, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* =============================================
+   SHADCN BUTTON GLASS OVERRIDES
+   ============================================= */
+
+/* Shadcn default (primary) button */
+button[class*="bg-primary"] {
+  background: rgba(15, 23, 42, 0.85) !important;
+  border: 1px solid rgba(148, 163, 184, 0.25) !important;
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+button[class*="bg-primary"]:hover:not(:disabled) {
+  background: rgba(15, 23, 42, 0.95) !important;
+  box-shadow: 
+    0 8px 24px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
+}
+
+.dark button[class*="bg-primary"] {
+  background: rgba(248, 250, 252, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 
+    0 4px 20px rgba(248, 250, 252, 0.15),
+    0 0 1px rgba(255, 255, 255, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+.dark button[class*="bg-primary"]:hover:not(:disabled) {
+  background: rgba(248, 250, 252, 0.95) !important;
+  box-shadow: 
+    0 8px 30px rgba(248, 250, 252, 0.25),
+    0 0 2px rgba(255, 255, 255, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+/* Shadcn outline button */
+button[class*="border-input"] {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+button[class*="border-input"]:hover:not(:disabled) {
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.dark button[class*="border-input"] {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.dark button[class*="border-input"]:hover:not(:disabled) {
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Shadcn destructive button */
+button[class*="bg-destructive"] {
+  background: rgba(220, 38, 38, 0.8) !important;
+  border: 1px solid rgba(255, 120, 120, 0.35) !important;
+  box-shadow: 
+    0 4px 16px rgba(220, 38, 38, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+button[class*="bg-destructive"]:hover:not(:disabled) {
+  background: rgba(220, 38, 38, 0.95) !important;
+  box-shadow: 
+    0 8px 24px rgba(220, 38, 38, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+/* =============================================
+   GLOBAL BUTTON ROUNDED UPGRADE
+   ============================================= */
+
+/* Make all glass buttons slightly more rounded */
+button[class*="rounded-lg"] {
+  border-radius: 10px;
+}
+button[class*="rounded-md"] {
+  border-radius: 8px;
+}
+
+/* =============================================
+   DARK MODE: Original overrides
+   ============================================= */
+
 /* Dark mode background */
 .dark .App,
 .dark body {
