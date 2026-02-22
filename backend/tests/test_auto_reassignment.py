@@ -255,10 +255,11 @@ class TestAutoReassignment:
             resp = requests.post(f"{BASE_URL}/api/omset", json=omset_data, headers=staff_auth["headers"])
             assert resp.status_code == 200, f"Failed to create omset: {resp.text}"
             
-            # Step 3: Check staff notifications
-            resp = requests.get(f"{BASE_URL}/api/staff-notifications", headers=staff_auth["headers"])
+            # Step 3: Check staff notifications (endpoint is /api/notifications)
+            resp = requests.get(f"{BASE_URL}/api/notifications", headers=staff_auth["headers"])
             assert resp.status_code == 200, f"Failed to get staff notifications: {resp.text}"
-            notifications = resp.json()
+            notifications_data = resp.json()
+            notifications = notifications_data.get('notifications', [])
             
             # Find the auto-restored notification
             auto_restore_notif = None
