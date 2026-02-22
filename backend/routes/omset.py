@@ -406,7 +406,7 @@ async def create_omset_record(record_data: OmsetRecordCreate, user: User = Depen
                         'product_name': deleted_reservation.get('product_name', ''),
                         'new_reservation_id': new_reservation['id']
                     },
-                    'target_user_id': user.id,
+                    'user_id': user.id,
                     'read': False,
                     'created_at': now.isoformat()
                 })
