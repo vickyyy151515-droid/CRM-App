@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="5" skipped="0" tests="5" time="12.065" timestamp="2026-02-22T11:37:04.031851+00:00" hostname="agent-env-ab16582f-50e2-42b2-b4c0-619aed06f48e"><testcase classname="backend.tests.test_auto_reassignment.TestAutoReassignment" name="test_1_manual_admin_deletion_archives_with_correct_reason" time="1.023"><failure message="AssertionError: Failed to create reservation: {&quot;detail&quot;:&quot;Invalid token&quot;}&#10;assert 401 in [200, 201]&#10; +  where 401 = &lt;Response [401]&gt;.status_code">backend/tests/test_auto_reassignment.py:91: in test_1_manual_admin_deletion_archives_with_correct_reason
+    assert resp.status_code in [200, 201], f"Failed to create reservation: {resp.text}"
+E   AssertionError: Failed to create reservation: {"detail":"Invalid token"}
+E   assert 401 in [200, 201]
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_auto_reassignment.TestAutoReassignment" name="test_2_auto_reassignment_on_new_omset" time="0.882"><failure message="AssertionError: Failed to create reservation: {&quot;detail&quot;:&quot;Invalid token&quot;}&#10;assert 401 in [200, 201]&#10; +  where 401 = &lt;Response [401]&gt;.status_code">backend/tests/test_auto_reassignment.py:141: in test_2_auto_reassignment_on_new_omset
+    assert resp.status_code in [200, 201], f"Failed to create reservation: {resp.text}"
+E   AssertionError: Failed to create reservation: {"detail":"Invalid token"}
+E   assert 401 in [200, 201]
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_auto_reassignment.TestAutoReassignment" name="test_5_auto_reassignment_creates_notification" time="0.880"><failure message="assert 401 in [200, 201]&#10; +  where 401 = &lt;Response [401]&gt;.status_code">backend/tests/test_auto_reassignment.py:225: in test_5_auto_reassignment_creates_notification
+    assert resp.status_code in [200, 201]
+E   assert 401 in [200, 201]
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_auto_reassignment.TestAutoReassignment" name="test_6_no_reassignment_if_customer_reserved_by_another" time="8.277"><failure message="assert 401 in [200, 201]&#10; +  where 401 = &lt;Response [401]&gt;.status_code">backend/tests/test_auto_reassignment.py:300: in test_6_no_reassignment_if_customer_reserved_by_another
+    assert resp.status_code in [200, 201]
+E   assert 401 in [200, 201]
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_auto_reassignment.TestAutoReassignment" name="test_7_no_reassignment_if_no_deleted_reservation" time="0.848"><failure message="assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">backend/tests/test_auto_reassignment.py:373: in test_7_no_reassignment_if_no_deleted_reservation
+    assert resp.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase></testsuite></testsuites>
