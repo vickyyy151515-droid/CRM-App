@@ -785,10 +785,20 @@ async def process_reserved_member_cleanup():
         if not has_deposit:
             print(f"  {customer_id}: NO DEPOSIT - deleting immediately")
             
-            # Archive to deleted_reserved_members collection
+            # Archive to deleted_reserved_members collection (deduplicate first)
             member_data = await db.reserved_members.find_one({'id': member_id}, {'_id': 0})
             
             if member_data:
+                # Remove existing archive entry for same customer+staff+product to prevent duplicates
+                cid_clean = customer_id.strip()
+                await db.deleted_reserved_members.delete_many({
+                    'staff_id': staff_id,
+                    'product_id': product_id,
+                    '$or': [
+                        {'customer_id': {'$regex': f'^{cid_clean}$', '$options': 'i'}},
+                        {'customer_name': {'$regex': f'^{cid_clean}$', '$options': 'i'}}
+                    ]
+                })
                 archived_member = {
                     **member_data,
                     'deleted_at': jakarta_now.isoformat(),
@@ -827,10 +837,20 @@ async def process_reserved_member_cleanup():
         # Check if grace period has passed
         if days_remaining <= 0:
             # Grace period passed - DELETE this member
-            # First, archive to deleted_reserved_members collection
+            # Archive to deleted_reserved_members collection (deduplicate first)
             member_data = await db.reserved_members.find_one({'id': member_id}, {'_id': 0})
             
             if member_data:
+                # Remove existing archive entry for same customer+staff+product to prevent duplicates
+                cid_clean = customer_id.strip()
+                await db.deleted_reserved_members.delete_many({
+                    'staff_id': staff_id,
+                    'product_id': product_id,
+                    '$or': [
+                        {'customer_id': {'$regex': f'^{cid_clean}$', '$options': 'i'}},
+                        {'customer_name': {'$regex': f'^{cid_clean}$', '$options': 'i'}}
+                    ]
+                })
                 archived_member = {
                     **member_data,
                     'deleted_at': jakarta_now.isoformat(),

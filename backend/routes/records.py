@@ -2018,9 +2018,20 @@ async def delete_reserved_member(member_id: str, user: User = Depends(get_admin_
     product_id = member.get('product_id')
     
     # Archive to deleted_reserved_members before deleting (for auto-reassignment)
+    # Deduplicate: remove existing archive entry for same customer+staff+product
     member_data = await db.reserved_members.find_one({'id': member_id}, {'_id': 0})
     if member_data:
         now = get_jakarta_now()
+        cid_clean = customer_id.strip()
+        if cid_clean:
+            await db.deleted_reserved_members.delete_many({
+                'staff_id': staff_id,
+                'product_id': product_id,
+                '$or': [
+                    {'customer_id': {'$regex': f'^{cid_clean}$', '$options': 'i'}},
+                    {'customer_name': {'$regex': f'^{cid_clean}$', '$options': 'i'}}
+                ]
+            })
         archived_member = {
             **member_data,
             'deleted_at': now.isoformat(),
