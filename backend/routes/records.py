@@ -2017,6 +2017,19 @@ async def delete_reserved_member(member_id: str, user: User = Depends(get_admin_
     staff_id = member.get('staff_id')
     product_id = member.get('product_id')
     
+    # Archive to deleted_reserved_members before deleting (for auto-reassignment)
+    member_data = await db.reserved_members.find_one({'id': member_id}, {'_id': 0})
+    if member_data:
+        now = get_jakarta_now()
+        archived_member = {
+            **member_data,
+            'deleted_at': now.isoformat(),
+            'deleted_reason': 'admin_manual_delete',
+            'deleted_by': user.id,
+            'deleted_by_name': user.name,
+        }
+        await db.deleted_reserved_members.insert_one(archived_member)
+    
     # SYNC: Delete related bonus_check_submissions for this customer+staff
     if customer_id and staff_id:
         await db.bonus_check_submissions.delete_many({

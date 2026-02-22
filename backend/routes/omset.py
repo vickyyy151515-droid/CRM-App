@@ -337,6 +337,80 @@ async def create_omset_record(record_data: OmsetRecordCreate, user: User = Depen
             {'$set': {'last_omset_date': record_data.record_date}}
         )
     
+    # AUTO-REASSIGNMENT: If this customer had a deleted/expired reservation
+    # under THIS staff, and they're not currently reserved by anyone,
+    # automatically re-establish the reservation
+    if approval_status == 'approved':
+        customer_id_clean = record_data.customer_id.strip()
+        
+        # Check if customer is NOT currently reserved by ANYONE
+        current_reservation = await db.reserved_members.find_one({
+            'status': 'approved',
+            '$or': [
+                {'customer_id': {'$regex': f'^{customer_id_clean}$', '$options': 'i'}},
+                {'customer_name': {'$regex': f'^{customer_id_clean}$', '$options': 'i'}}
+            ]
+        })
+        
+        if not current_reservation:
+            # Check if there's a deleted reservation for this customer + staff + product
+            deleted_reservation = await db.deleted_reserved_members.find_one({
+                'staff_id': user.id,
+                'product_id': record_data.product_id,
+                '$or': [
+                    {'customer_id': {'$regex': f'^{customer_id_clean}$', '$options': 'i'}},
+                    {'customer_name': {'$regex': f'^{customer_id_clean}$', '$options': 'i'}}
+                ]
+            }, {'_id': 0})
+            
+            if deleted_reservation:
+                # Auto-create a new reservation
+                now = get_jakarta_now()
+                new_reservation = {
+                    'id': str(uuid4()),
+                    'customer_id': deleted_reservation.get('customer_id') or customer_id_clean,
+                    'customer_name': deleted_reservation.get('customer_name'),
+                    'phone_number': deleted_reservation.get('phone_number'),
+                    'product_id': deleted_reservation.get('product_id'),
+                    'product_name': deleted_reservation.get('product_name', ''),
+                    'staff_id': user.id,
+                    'staff_name': user.name,
+                    'status': 'approved',
+                    'is_permanent': False,
+                    'created_by': 'system',
+                    'created_by_name': 'Auto-Reassignment',
+                    'created_at': now.isoformat(),
+                    'approved_at': now.isoformat(),
+                    'approved_by': 'system',
+                    'approved_by_name': 'Auto-Reassignment',
+                    'last_omset_date': record_data.record_date,
+                    'auto_reassigned': True,
+                    'auto_reassigned_at': now.isoformat(),
+                }
+                
+                await db.reserved_members.insert_one(new_reservation)
+                
+                # Remove from deleted_reserved_members archive
+                await db.deleted_reserved_members.delete_one({
+                    'id': deleted_reservation['id']
+                })
+                
+                # Notify the staff
+                await db.notifications.insert_one({
+                    'id': str(uuid4()),
+                    'type': 'reservation_auto_restored',
+                    'title': 'Reservation Auto-Restored',
+                    'message': f"Your reservation for '{customer_id_clean}' ({deleted_reservation.get('product_name', '')}) has been automatically restored because you recorded a new omset.",
+                    'data': {
+                        'customer_id': customer_id_clean,
+                        'product_name': deleted_reservation.get('product_name', ''),
+                        'new_reservation_id': new_reservation['id']
+                    },
+                    'target_user_id': user.id,
+                    'read': False,
+                    'created_at': now.isoformat()
+                })
+    
     return record
 
 
