@@ -104,6 +104,7 @@ When a staff member records a new omset for a customer whose reservation was pre
 - **Conditions**: Customer not currently reserved by anyone + deleted reservation exists for same customer+staff+product
 - **Actions**: Creates new `reserved_members` entry (created_by=system), removes from `deleted_reserved_members` archive, sends notification (type=reservation_auto_restored)
 - **Also fixed**: Manual admin deletion (`DELETE /api/reserved-members/{id}`) now archives to `deleted_reserved_members` (previously only auto-expiration did this)
+- **Bug fix**: Fixed duplicate entries in `deleted_reserved_members` - all archiving paths now deduplicate before inserting, and GET endpoint auto-cleans duplicates on fetch
 - **Testing**: 5/5 backend tests passed including negative cases (iteration_58)
 
 ## Prioritized Backlog
