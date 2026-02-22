@@ -2289,13 +2289,35 @@ async def restore_deleted_reserved_member(member_id: str, user: User = Depends(g
     if not archived_member:
         raise HTTPException(status_code=404, detail="Archived member not found")
     
-    # Remove deletion-related fields
-    archived_member.pop('deleted_at', None)
-    archived_member.pop('deleted_reason', None)
-    archived_member.pop('grace_days_used', None)
-    archived_member.pop('days_since_reservation', None)
+    # Check if customer is already actively reserved (prevent duplicates)
+    customer_id = archived_member.get('customer_id') or archived_member.get('customer_name') or ''
+    product_id = archived_member.get('product_id', '')
+    if customer_id:
+        cid_clean = customer_id.strip()
+        existing = await db.reserved_members.find_one({
+            '$or': [
+                {'customer_id': {'$regex': f'^{cid_clean}$', '$options': 'i'}},
+                {'customer_name': {'$regex': f'^{cid_clean}$', '$options': 'i'}}
+            ],
+            'product_id': product_id,
+            'status': {'$in': ['pending', 'approved']}
+        })
+        if existing:
+            owner = await db.users.find_one({'id': existing['staff_id']})
+            owner_name = owner['name'] if owner else 'Unknown'
+            raise HTTPException(
+                status_code=409,
+                detail=f"Customer '{cid_clean}' is already reserved by {owner_name} in this product"
+            )
     
-    # Update timestamps
+    # Remove all deletion-related fields
+    for field in ['deleted_at', 'deleted_reason', 'grace_days_used',
+                  'days_since_reservation', 'days_since_last_deposit',
+                  'last_deposit_date', 'deleted_by', 'deleted_by_name']:
+        archived_member.pop(field, None)
+    
+    # Update timestamps and status
+    archived_member['status'] = 'approved'
     archived_member['reserved_at'] = now.isoformat()
     archived_member['restored_at'] = now.isoformat()
     archived_member['restored_by'] = user.name
