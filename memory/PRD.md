@@ -110,7 +110,7 @@ When a staff member records a new omset for a customer whose reservation was pre
 ## Prioritized Backlog
 
 ### P1 - Upcoming
-- UI/UX consistency standardization across the app
+- ~~UI/UX consistency standardization across the app~~ (Buttons completed 2026-02-22)
 
 ### P2 - Future
 - "Smart Message Queue" WhatsApp follow-up app
