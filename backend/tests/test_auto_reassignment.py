@@ -203,9 +203,10 @@ class TestAutoReassignment:
             assert restored_reservation.get('approved_by') == 'system', \
                 f"Expected approved_by='system', got '{restored_reservation.get('approved_by')}'"
             
-            # Verify last_omset_date is set (TEST 8)
-            assert restored_reservation.get('last_omset_date') == today, \
-                f"Expected last_omset_date='{today}', got '{restored_reservation.get('last_omset_date')}'"
+            # Verify last_omset_date is set (TEST 8) - it includes timezone, so check start of date string
+            last_omset = restored_reservation.get('last_omset_date', '')
+            assert last_omset.startswith(today), \
+                f"Expected last_omset_date to start with '{today}', got '{last_omset}'"
             
             # Step 5: Verify entry is REMOVED from deleted_reserved_members (TEST 4)
             resp = requests.get(f"{BASE_URL}/api/reserved-members/deleted", headers=admin_auth["headers"])
