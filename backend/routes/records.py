@@ -2234,7 +2234,7 @@ async def cleanup_reserved_member_duplicates(user: User = Depends(get_admin_user
 
 @router.get("/reserved-members/deleted")
 async def get_deleted_reserved_members(user: User = Depends(get_admin_user)):
-    """Get list of reserved members deleted due to no omset"""
+    """Get list of reserved members deleted due to no omset (auto-deduplicates)"""
     db = get_db()
     
     deleted_members = await db.deleted_reserved_members.find(
@@ -2242,7 +2242,26 @@ async def get_deleted_reserved_members(user: User = Depends(get_admin_user)):
         {'_id': 0}
     ).sort('deleted_at', -1).to_list(10000)
     
-    return deleted_members
+    # Auto-deduplicate: keep only the latest entry per (customer, staff, product)
+    seen = {}
+    duplicate_ids = []
+    unique_members = []
+    
+    for m in deleted_members:
+        cid = (m.get('customer_id') or m.get('customer_name') or '').strip().upper()
+        key = (cid, m.get('staff_id', ''), m.get('product_id', ''))
+        if key in seen:
+            # This is a duplicate (older entry since we sorted by deleted_at desc)
+            duplicate_ids.append(m.get('id'))
+        else:
+            seen[key] = True
+            unique_members.append(m)
+    
+    # Remove duplicates from DB in background
+    if duplicate_ids:
+        await db.deleted_reserved_members.delete_many({'id': {'$in': duplicate_ids}})
+    
+    return unique_members
 
 
 @router.delete("/reserved-members/deleted/{member_id}")
