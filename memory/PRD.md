@@ -107,6 +107,13 @@ When a staff member records a new omset for a customer whose reservation was pre
 - **Bug fix**: Fixed duplicate entries in `deleted_reserved_members` - all archiving paths now deduplicate before inserting, and GET endpoint auto-cleans duplicates on fetch
 - **Testing**: 5/5 backend tests passed including negative cases (iteration_58)
 
+### Frosted Glass Button System (2026-02-22) - COMPLETE
+Applied Style D (Frosted Glass) to ALL buttons app-wide via global CSS overrides in `App.css` — no individual file edits needed.
+- **Light mode**: Semi-transparent backgrounds, subtle borders with color-matched tint, inner glow (inset shadow), hover lift animation
+- **Dark mode**: Enhanced glow effects on borders/shadows, slightly more vibrant translucency, color bleed glow
+- **Coverage**: All color variants (indigo, blue, emerald, green, red, rose, amber, yellow, teal, purple, slate, gray), ghost/outline buttons, icon buttons, Shadcn Button component
+- **Files changed**: `App.css` (global glass system), `components/ui/button.jsx` (Shadcn base)
+
 ## Prioritized Backlog
 
 ### P1 - Upcoming
