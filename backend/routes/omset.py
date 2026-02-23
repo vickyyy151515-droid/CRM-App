@@ -853,6 +853,11 @@ async def get_omset_summary(
     product_ndp_pairs = {}   # product_id -> set of (staff_id, customer_id)
     product_rdp_pairs = {}   # product_id -> set of (staff_id, customer_id)
     
+    # UNIQUE CUSTOMERS tracking (deduplicated across ALL dates, for the new section)
+    # Per staff: set of (cid_normalized, product_id) -> track original customer_id for display
+    staff_unique_ndp = {}    # staff_id -> {(cid_normalized, product_id): {'customer_id': str, 'product_name': str, 'dates': set, 'total_depo': int}}
+    staff_unique_rdp = {}    # staff_id -> {(cid_normalized, product_id): {'customer_id': str, 'product_name': str, 'dates': set, 'total_depo': int}}
+    
     for record in records:
         date = record['record_date']
         staff_name = record['staff_name']
