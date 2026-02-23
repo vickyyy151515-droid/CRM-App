@@ -115,7 +115,7 @@ async def get_report_crm_data(
         total_form = 0
         nominal = 0
         
-        for (pid, date, cid), deposit_info in unique_deposits.items():
+        for (sid, pid, date, cid), deposit_info in unique_deposits.items():
             if not date.startswith(month_str):
                 continue
             
@@ -144,7 +144,7 @@ async def get_report_crm_data(
         
         # Group by date within this month
         date_data = {}
-        for (pid, date, cid), deposit_info in unique_deposits.items():
+        for (sid, pid, date, cid), deposit_info in unique_deposits.items():
             if not date.startswith(month_str):
                 continue
             
@@ -179,15 +179,12 @@ async def get_report_crm_data(
         
         staff_data = {}
         
-        for (pid, date, cid), deposit_info in unique_deposits.items():
+        for (sid, pid, date, cid), deposit_info in unique_deposits.items():
             if not date.startswith(month_str):
                 continue
             
-            # For staff attribution, use the FIRST record's staff_id
-            # (in case of duplicates, attribute to whoever entered it first)
-            first_record = deposit_info['records'][0]
-            sid = first_record['staff_id']
-            sname = first_record['staff_name']
+            # staff_id is now part of the key, so attribution is always correct
+            sname = deposit_info['records'][0]['staff_name']
             
             if sid not in staff_data:
                 staff_data[sid] = {
