@@ -967,6 +967,40 @@ async def get_omset_summary(
             if staff_customer_date not in product_rdp_pairs[product_id_rec]:
                 product_rdp_pairs[product_id_rec].add(staff_customer_date)
                 product_summary[product_id_rec]['rdp_count'] += 1
+        
+        # --- UNIQUE CUSTOMERS tracking (deduped across ALL dates) ---
+        original_customer_id = record.get('customer_id', cid_normalized)
+        if staff_id_rec not in staff_unique_ndp:
+            staff_unique_ndp[staff_id_rec] = {}
+            staff_unique_rdp[staff_id_rec] = {}
+        
+        unique_key = (cid_normalized, product_id_rec)
+        if is_ndp:
+            if unique_key not in staff_unique_ndp[staff_id_rec]:
+                staff_unique_ndp[staff_id_rec][unique_key] = {
+                    'customer_id': original_customer_id,
+                    'product_id': product_id_rec,
+                    'product_name': product_name,
+                    'dates': set(),
+                    'total_depo': 0,
+                    'deposit_count': 0
+                }
+            staff_unique_ndp[staff_id_rec][unique_key]['dates'].add(date)
+            staff_unique_ndp[staff_id_rec][unique_key]['total_depo'] += depo_total
+            staff_unique_ndp[staff_id_rec][unique_key]['deposit_count'] += 1
+        else:
+            if unique_key not in staff_unique_rdp[staff_id_rec]:
+                staff_unique_rdp[staff_id_rec][unique_key] = {
+                    'customer_id': original_customer_id,
+                    'product_id': product_id_rec,
+                    'product_name': product_name,
+                    'dates': set(),
+                    'total_depo': 0,
+                    'deposit_count': 0
+                }
+            staff_unique_rdp[staff_id_rec][unique_key]['dates'].add(date)
+            staff_unique_rdp[staff_id_rec][unique_key]['total_depo'] += depo_total
+            staff_unique_rdp[staff_id_rec][unique_key]['deposit_count'] += 1
     
     daily_list = []
     for date, data in daily_summary.items():
