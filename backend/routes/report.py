@@ -80,19 +80,20 @@ async def get_report_crm_data(
     
     # ==================== PRE-COMPUTE NDP/RDP FOR EACH RECORD ====================
     # This ensures ALL sections use EXACTLY the same determination
-    # Also compute unique tracking to count each (customer, product, date) only ONCE
+    # Also compute unique tracking to count each (staff, customer, product, date) only ONCE
     
-    # Tracking: (product_id, date, customer_id_normalized) -> is_ndp (True/False)
-    # This ensures if same customer deposits to same product on same date multiple times,
-    # they are only counted ONCE (and consistently as either NDP or RDP)
+    # Tracking: (staff_id, product_id, date, customer_id_normalized) -> is_ndp (True/False)
+    # NDP/RDP is STAFF-SPECIFIC, so staff_id MUST be part of the key.
+    # This ensures consistent counts with the Omset CRM page.
     
-    unique_deposits = {}  # key: (pid, date, cid_normalized) -> {'is_ndp': bool, 'records': [record, ...]}
+    unique_deposits = {}  # key: (sid, pid, date, cid_normalized) -> {'is_ndp': bool, 'records': [record, ...]}
     
     for record in all_records:
         cid_normalized = get_normalized_cid(record)
+        sid = record['staff_id']
         pid = record['product_id']
         date = record['record_date']
-        key = (pid, date, cid_normalized)
+        key = (sid, pid, date, cid_normalized)
         
         if key not in unique_deposits:
             unique_deposits[key] = {
