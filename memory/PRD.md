@@ -107,6 +107,14 @@ When a staff member records a new omset for a customer whose reservation was pre
 - **Bug fix**: Fixed duplicate entries in `deleted_reserved_members` - all archiving paths now deduplicate before inserting, and GET endpoint auto-cleans duplicates on fetch
 - **Testing**: 5/5 backend tests passed including negative cases (iteration_58)
 
+### NDP/RDP Data Consistency Audit (2026-02-23) - COMPLETE
+Full audit of all reporting endpoints for NDP/RDP calculation consistency, as requested by user.
+- **Bug found in `report.py`**: `unique_deposits` deduplication key was `(product_id, date, customer_id)` without `staff_id`, causing incorrect staff attribution and wrong NDP/RDP counts when multiple staff record the same customer.
+- **Fix**: Changed key to `(staff_id, product_id, date, customer_id)` — all loop iterations updated.
+- **`daily_summary.py`**: Already correct (single-day operations with proper staff-specific tracking).
+- **Verification**: All 3 endpoints (`/api/omset/summary`, `/api/report-crm/data`, `/api/daily-summary`) now return identical NDP/RDP counts for same date ranges and staff filters.
+- **Testing**: 50/50 tests passed (iteration_59) — cross-endpoint, per-staff, per-date, with product/staff filters.
+
 ### Frosted Glass Button System (2026-02-22) - COMPLETE
 Applied Style D (Frosted Glass) to ALL buttons app-wide via global CSS overrides in `App.css` — no individual file edits needed.
 - **Light mode**: Semi-transparent backgrounds, subtle borders with color-matched tint, inner glow (inset shadow), hover lift animation
