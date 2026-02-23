@@ -1,0 +1,87 @@
+{
+  "summary": "Comprehensive testing of NDP/RDP consistency fix in report.py. The fix changed unique_deposits key from (product_id, date, customer_id) to (staff_id, product_id, date, customer_id) ensuring correct staff attribution. All tests pass: 10/10 cross-endpoint consistency tests, 11/11 report CRM internal tests, 29/29 NDP/RDP endpoint tests.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "✓ All 3 endpoints return 200 OK (/api/omset/summary, /api/report-crm/data, /api/daily-summary)",
+    "✓ OMSET Summary vs Report CRM yearly totals match: NDP=30, RDP=5 for 2026",
+    "✓ OMSET by_staff vs Report monthly_by_staff match for all staff (novi: 1/0, jon: 3/0, Staff User: 8/3)",
+    "✓ Daily Summary vs OMSET Summary match for specific date (2026-01-15): NDP=1, RDP=2",
+    "✓ Report CRM internal consistency: All 4 sections (yearly, monthly_by_staff, staff_performance, monthly_data) return same NDP=30, RDP=5",
+    "✓ All 3 endpoints match for January 2026: NDP=12, RDP=3",
+    "✓ Code review: report.py uses key = (sid, pid, date, cid_normalized) - FIXED",
+    "✓ Code review: db_operations.py build_staff_first_date_map uses key = (staff_id, normalized_cid, prod_id)",
+    "✓ NDP/RDP consistency with product filter (ISTANA2000): OMSET=Report=25/4",
+    "✓ NDP/RDP consistency with staff filter (Staff User): OMSET=Report=26/5",
+    "✓ Report CRM data endpoint returns valid yearly, monthly, monthly_by_staff, daily, daily_by_staff, staff_performance, deposit_tiers",
+    "✓ Tambahan rule enforcement verified in report.py code"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_ndp_rdp_cross_endpoint_consistency.py",
+    "/app/backend/tests/test_report_crm_ndp_rdp_consistency.py",
+    "/app/backend/tests/test_ndp_rdp_consistency.py",
+    "/app/test_reports/pytest/ndp_rdp_cross_endpoint_results.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [
+    "✓ report.py fix verified: unique_deposits key changed from (pid, date, cid_normalized) to (sid, pid, date, cid_normalized)",
+    "✓ All loop iterations in report.py updated to unpack 4 elements: for (sid, pid, date, cid), deposit_info in unique_deposits.items()",
+    "✓ Staff attribution is now correct because staff_id is part of the deduplication key",
+    "✓ db_operations.py build_staff_first_date_map remains the SINGLE SOURCE OF TRUTH for NDP/RDP determination",
+    "✓ daily_summary.py was already correct (no changes needed)"
+  ],
+
+  "updated_files": [
+    "/app/backend/tests/test_ndp_rdp_cross_endpoint_consistency.py (NEW - comprehensive cross-endpoint test)",
+    "/app/backend/tests/test_report_crm_ndp_rdp_consistency.py (UPDATED - credentials and key format assertion)",
+    "/app/backend/tests/test_ndp_rdp_consistency.py (UPDATED - credentials)"
+  ],
+
+  "success_rate": {
+    "backend": "100% (50/50 tests passed)",
+    "frontend": "N/A (backend only testing requested)"
+  },
+
+  "test_credentials": {
+    "admin": {"email": "vicky@crm.com", "password": "admin123", "role": "master_admin"}
+  },
+
+  "seed_data_creation": "No new seed data created - used existing test data",
+
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "NDP/RDP consistency fix in report.py fully tested and verified in iteration_59. The fix changes unique_deposits key from (product_id, date, customer_id) to (staff_id, product_id, date, customer_id). This ensures NDP/RDP counts are consistent across /api/omset/summary, /api/report-crm/data, and /api/daily-summary. Test files: test_ndp_rdp_cross_endpoint_consistency.py (10 tests), test_report_crm_ndp_rdp_consistency.py (11 tests), test_ndp_rdp_consistency.py (29 tests). All endpoints return matching counts for same date ranges.",
+
+  "feature_verification": {
+    "fix_summary": {
+      "file": "/app/backend/routes/report.py",
+      "change": "unique_deposits key changed from (pid, date, cid_normalized) to (sid, pid, date, cid_normalized)",
+      "reason": "Staff attribution was incorrect - deposits could be counted under wrong staff without staff_id in key",
+      "verification": "For January 2026: OMSET Summary = Report CRM = 12 NDP, 3 RDP"
+    },
+    "endpoints_verified": [
+      {"endpoint": "/api/omset/summary", "status": "PASS", "ndp_2026": 30, "rdp_2026": 5},
+      {"endpoint": "/api/report-crm/data", "status": "PASS", "ndp_2026": 30, "rdp_2026": 5},
+      {"endpoint": "/api/daily-summary", "status": "PASS", "sample_date": "2026-01-15", "ndp": 1, "rdp": 2}
+    ],
+    "staff_level_verification": {
+      "novi": {"omset_ndp": 1, "report_ndp": 1, "match": true},
+      "jon": {"omset_ndp": 3, "report_ndp": 3, "match": true},
+      "Staff User": {"omset_ndp": 8, "report_ndp": 8, "match": true}
+    }
+  }
+}
