@@ -447,11 +447,12 @@ class TestTambahanRuleEnforcement:
         assert 'unique_deposits = {}' in content, "Missing unique_deposits dictionary"
         assert "unique_deposits[key] = {" in content, "Missing unique_deposits population"
         
-        # Check that all sections use unique_deposits
-        assert content.count('for (pid, date, cid), deposit_info in unique_deposits.items()') >= 4, \
-            "Not all sections iterate over unique_deposits"
+        # Check that all sections use unique_deposits with staff_id in key (sid, pid, date, cid)
+        # After the fix, the key format includes staff_id
+        assert content.count('for (sid, pid, date, cid), deposit_info in unique_deposits.items()') >= 4, \
+            "Not all sections iterate over unique_deposits with correct key format (sid, pid, date, cid)"
         
-        print("✓ unique_deposits dictionary used as single source of truth")
+        print("✓ unique_deposits dictionary used as single source of truth with staff_id in key")
 
 
 if __name__ == '__main__':
