@@ -33,7 +33,7 @@ class TestNDPRDPConsistencyEndpoints:
         """Setup: Login and get auth token"""
         login_response = requests.post(
             f"{BASE_URL}/api/auth/login",
-            json={"email": "vicky@crm.com", "password": "vicky123"}
+            json={"email": "vicky@crm.com", "password": "admin123"}
         )
         assert login_response.status_code == 200, f"Login failed: {login_response.text}"
         self.token = login_response.json()["token"]
@@ -525,7 +525,7 @@ class TestNDPRDPEdgeCases:
         """Setup: Login and get auth token"""
         login_response = requests.post(
             f"{BASE_URL}/api/auth/login",
-            json={"email": "vicky@crm.com", "password": "vicky123"}
+            json={"email": "vicky@crm.com", "password": "admin123"}
         )
         assert login_response.status_code == 200
         self.token = login_response.json()["token"]
