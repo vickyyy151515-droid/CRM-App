@@ -36,6 +36,7 @@ export default function AdminOmsetCRM() {
   const [pendingCount, setPendingCount] = useState(0);
   const [trashRecords, setTrashRecords] = useState([]);
   const [showTrash, setShowTrash] = useState(false);
+  const [expandedUniqueStaff, setExpandedUniqueStaff] = useState({});
   const [restoringRecord, setRestoringRecord] = useState(null);
   const [recalculating, setRecalculating] = useState(false);
 
