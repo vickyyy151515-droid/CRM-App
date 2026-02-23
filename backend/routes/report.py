@@ -235,14 +235,13 @@ async def get_report_crm_data(
     # Build nested structure: staff -> products -> daily
     staff_daily_data = {}
     
-    for (pid, date, cid), deposit_info in unique_deposits.items():
+    for (sid, pid, date, cid), deposit_info in unique_deposits.items():
         if not date.startswith(selected_month_str):
             continue
         
-        first_record = deposit_info['records'][0]
-        sid = first_record['staff_id']
-        sname = first_record['staff_name']
-        pname = first_record['product_name']
+        # staff_id is part of the key
+        sname = deposit_info['records'][0]['staff_name']
+        pname = deposit_info['records'][0]['product_name']
         
         if sid not in staff_daily_data:
             staff_daily_data[sid] = {
@@ -316,7 +315,7 @@ async def get_report_crm_data(
     daily_data = []
     date_totals = {}
     
-    for (pid, date, cid), deposit_info in unique_deposits.items():
+    for (sid, pid, date, cid), deposit_info in unique_deposits.items():
         if not date.startswith(selected_month_str):
             continue
         
@@ -344,10 +343,8 @@ async def get_report_crm_data(
     # --- STAFF PERFORMANCE (yearly totals per staff) ---
     staff_perf_data = {}
     
-    for (pid, date, cid), deposit_info in unique_deposits.items():
-        first_record = deposit_info['records'][0]
-        sid = first_record['staff_id']
-        sname = first_record['staff_name']
+    for (sid, pid, date, cid), deposit_info in unique_deposits.items():
+        sname = deposit_info['records'][0]['staff_name']
         
         if sid not in staff_perf_data:
             staff_perf_data[sid] = {
