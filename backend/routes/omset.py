@@ -923,15 +923,15 @@ async def get_omset_summary(
         staff_summary[staff_id_rec]['total_depo'] += depo_total
         staff_summary[staff_id_rec]['count'] += 1
         
-        # Track (customer_id, product_id) per staff — each product is independent
-        customer_product_pair = (cid_normalized, product_id_rec)
+        # Track (customer_id, product_id, date) per staff — include date to match daily totals
+        customer_product_date = (cid_normalized, product_id_rec, date)
         if is_ndp:
-            if customer_product_pair not in staff_ndp_pairs[staff_id_rec]:
-                staff_ndp_pairs[staff_id_rec].add(customer_product_pair)
+            if customer_product_date not in staff_ndp_pairs[staff_id_rec]:
+                staff_ndp_pairs[staff_id_rec].add(customer_product_date)
                 staff_summary[staff_id_rec]['ndp_count'] += 1
         else:
-            if customer_product_pair not in staff_rdp_pairs[staff_id_rec]:
-                staff_rdp_pairs[staff_id_rec].add(customer_product_pair)
+            if customer_product_date not in staff_rdp_pairs[staff_id_rec]:
+                staff_rdp_pairs[staff_id_rec].add(customer_product_date)
                 staff_summary[staff_id_rec]['rdp_count'] += 1
         
         # --- Product Summary ---
@@ -952,15 +952,15 @@ async def get_omset_summary(
         product_summary[product_id_rec]['total_depo'] += depo_total
         product_summary[product_id_rec]['count'] += 1
         
-        # Track (staff_id, customer_id) per product — each staff is independent
-        staff_customer_pair = (staff_id_rec, cid_normalized)
+        # Track (staff_id, customer_id, date) per product — include date to match daily totals
+        staff_customer_date = (staff_id_rec, cid_normalized, date)
         if is_ndp:
-            if staff_customer_pair not in product_ndp_pairs[product_id_rec]:
-                product_ndp_pairs[product_id_rec].add(staff_customer_pair)
+            if staff_customer_date not in product_ndp_pairs[product_id_rec]:
+                product_ndp_pairs[product_id_rec].add(staff_customer_date)
                 product_summary[product_id_rec]['ndp_count'] += 1
         else:
-            if staff_customer_pair not in product_rdp_pairs[product_id_rec]:
-                product_rdp_pairs[product_id_rec].add(staff_customer_pair)
+            if staff_customer_date not in product_rdp_pairs[product_id_rec]:
+                product_rdp_pairs[product_id_rec].add(staff_customer_date)
                 product_summary[product_id_rec]['rdp_count'] += 1
     
     daily_list = []
