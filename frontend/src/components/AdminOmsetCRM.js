@@ -532,6 +532,127 @@ export default function AdminOmsetCRM() {
               </table>
             </div>
           </div>
+
+          {/* Unique Customers by Staff (deduplicated across dates) */}
+          {summary.unique_customers && summary.unique_customers.length > 0 && (
+            <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden lg:col-span-2" data-testid="unique-customers-section">
+              <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
+                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                  <UserPlus className="text-violet-600" size={18} />
+                  Unique Customers by Staff
+                  <span className="text-xs font-normal text-slate-500 ml-1">(deduplicated across dates — click staff to expand)</span>
+                </h3>
+              </div>
+              <div className="divide-y divide-slate-100">
+                {summary.unique_customers.map(staff => {
+                  const isExpanded = expandedUniqueStaff[staff.staff_id];
+                  return (
+                    <div key={staff.staff_id}>
+                      <button
+                        data-no-glass="true"
+                        onClick={() => setExpandedUniqueStaff(prev => ({ ...prev, [staff.staff_id]: !prev[staff.staff_id] }))}
+                        className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 transition-colors"
+                        data-testid={`unique-staff-row-${staff.staff_id}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-medium text-slate-900">{staff.staff_name}</span>
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-green-100 text-green-800">
+                            {staff.unique_ndp_count} NDP
+                          </span>
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-orange-100 text-orange-800">
+                            {staff.unique_rdp_count} RDP
+                          </span>
+                        </div>
+                        {isExpanded ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
+                      </button>
+                      
+                      {isExpanded && (
+                        <div className="px-4 pb-4">
+                          {/* RDP Customers */}
+                          {staff.rdp_customers.length > 0 && (
+                            <div className="mb-3">
+                              <div className="text-xs font-semibold text-orange-700 uppercase tracking-wider mb-2 px-2">
+                                Returning Customers (RDP) - {staff.rdp_customers.length} unique
+                              </div>
+                              <div className="bg-orange-50 rounded-lg overflow-hidden">
+                                <table className="w-full">
+                                  <thead>
+                                    <tr className="border-b border-orange-100">
+                                      <th className="px-3 py-1.5 text-left text-xs font-semibold text-orange-800">Customer ID</th>
+                                      <th className="px-3 py-1.5 text-left text-xs font-semibold text-orange-800">Product</th>
+                                      <th className="px-3 py-1.5 text-right text-xs font-semibold text-orange-800">Deposits</th>
+                                      <th className="px-3 py-1.5 text-right text-xs font-semibold text-orange-800">Total OMSET</th>
+                                      <th className="px-3 py-1.5 text-left text-xs font-semibold text-orange-800">Dates</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-orange-100">
+                                    {staff.rdp_customers.map((c, i) => (
+                                      <tr key={i} className="hover:bg-orange-100/50">
+                                        <td className="px-3 py-1.5 text-sm font-medium text-slate-900">{c.customer_id}</td>
+                                        <td className="px-3 py-1.5">
+                                          <span className="text-xs px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700">{c.product_name}</span>
+                                        </td>
+                                        <td className="px-3 py-1.5 text-sm text-right text-slate-600">{c.deposit_count}x</td>
+                                        <td className="px-3 py-1.5 text-sm text-right font-semibold text-emerald-600">Rp {formatCurrency(c.total_depo)}</td>
+                                        <td className="px-3 py-1.5 text-xs text-slate-500">
+                                          {c.dates.map(d => new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })).join(', ')}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* NDP Customers */}
+                          {staff.ndp_customers.length > 0 && (
+                            <div>
+                              <div className="text-xs font-semibold text-green-700 uppercase tracking-wider mb-2 px-2">
+                                New Customers (NDP) - {staff.ndp_customers.length} unique
+                              </div>
+                              <div className="bg-green-50 rounded-lg overflow-hidden">
+                                <table className="w-full">
+                                  <thead>
+                                    <tr className="border-b border-green-100">
+                                      <th className="px-3 py-1.5 text-left text-xs font-semibold text-green-800">Customer ID</th>
+                                      <th className="px-3 py-1.5 text-left text-xs font-semibold text-green-800">Product</th>
+                                      <th className="px-3 py-1.5 text-right text-xs font-semibold text-green-800">Deposits</th>
+                                      <th className="px-3 py-1.5 text-right text-xs font-semibold text-green-800">Total OMSET</th>
+                                      <th className="px-3 py-1.5 text-left text-xs font-semibold text-green-800">Dates</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-green-100">
+                                    {staff.ndp_customers.map((c, i) => (
+                                      <tr key={i} className="hover:bg-green-100/50">
+                                        <td className="px-3 py-1.5 text-sm font-medium text-slate-900">{c.customer_id}</td>
+                                        <td className="px-3 py-1.5">
+                                          <span className="text-xs px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700">{c.product_name}</span>
+                                        </td>
+                                        <td className="px-3 py-1.5 text-sm text-right text-slate-600">{c.deposit_count}x</td>
+                                        <td className="px-3 py-1.5 text-sm text-right font-semibold text-emerald-600">Rp {formatCurrency(c.total_depo)}</td>
+                                        <td className="px-3 py-1.5 text-xs text-slate-500">
+                                          {c.dates.map(d => new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })).join(', ')}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          )}
+
+                          {staff.ndp_customers.length === 0 && staff.rdp_customers.length === 0 && (
+                            <div className="text-sm text-slate-500 text-center py-3">No customer data</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
