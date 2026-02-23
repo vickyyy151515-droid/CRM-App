@@ -1017,6 +1017,38 @@ async def get_omset_summary(
         total_ndp += len(data['ndp_tuples'])
         total_rdp += len(data['rdp_tuples'])
     
+    # Build unique customers summary per staff
+    unique_customers_by_staff = []
+    for sid, sdata in staff_summary.items():
+        ndp_customers = []
+        for key, cdata in staff_unique_ndp.get(sid, {}).items():
+            ndp_customers.append({
+                'customer_id': cdata['customer_id'],
+                'product_id': cdata['product_id'],
+                'product_name': cdata['product_name'],
+                'deposit_count': cdata['deposit_count'],
+                'total_depo': cdata['total_depo'],
+                'dates': sorted(cdata['dates'])
+            })
+        rdp_customers = []
+        for key, cdata in staff_unique_rdp.get(sid, {}).items():
+            rdp_customers.append({
+                'customer_id': cdata['customer_id'],
+                'product_id': cdata['product_id'],
+                'product_name': cdata['product_name'],
+                'deposit_count': cdata['deposit_count'],
+                'total_depo': cdata['total_depo'],
+                'dates': sorted(cdata['dates'])
+            })
+        unique_customers_by_staff.append({
+            'staff_id': sid,
+            'staff_name': sdata['staff_name'],
+            'unique_ndp_count': len(ndp_customers),
+            'unique_rdp_count': len(rdp_customers),
+            'ndp_customers': sorted(ndp_customers, key=lambda x: x['total_depo'], reverse=True),
+            'rdp_customers': sorted(rdp_customers, key=lambda x: x['total_depo'], reverse=True)
+        })
+    
     return {
         'total': {
             'total_nominal': total_nominal,
@@ -1027,7 +1059,8 @@ async def get_omset_summary(
         },
         'daily': sorted(daily_list, key=lambda x: x['date'], reverse=True),
         'by_staff': sorted(staff_summary.values(), key=lambda x: x['total_depo'], reverse=True),
-        'by_product': sorted(product_summary.values(), key=lambda x: x['total_depo'], reverse=True)
+        'by_product': sorted(product_summary.values(), key=lambda x: x['total_depo'], reverse=True),
+        'unique_customers': sorted(unique_customers_by_staff, key=lambda x: x['unique_rdp_count'], reverse=True)
     }
 
 @router.get("/omset/dates")
