@@ -978,11 +978,13 @@ export default function AdminDBBonanza() {
                               <td className="px-3 py-2">
                                 <div className="flex items-center gap-1">
                                   <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                                    record.status === 'available' 
-                                      ? 'bg-emerald-100 text-emerald-800' 
-                                      : 'bg-blue-100 text-blue-800'
+                                    record.status === 'reserved'
+                                      ? 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300'
+                                      : record.status === 'available' 
+                                        ? 'bg-emerald-100 text-emerald-800' 
+                                        : 'bg-blue-100 text-blue-800'
                                   }`}>
-                                    {record.status === 'available' ? 'Available' : 'Assigned'}
+                                    {record.status === 'reserved' ? `Reserved${record.reserved_by_name ? ` (${record.reserved_by_name})` : ''}` : record.status === 'available' ? 'Available' : 'Assigned'}
                                   </span>
                                   {record.is_reservation_conflict && (
                                     <span 
