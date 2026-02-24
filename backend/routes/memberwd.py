@@ -8,7 +8,7 @@ import random
 import pandas as pd
 import io
 from .deps import User, get_db, get_current_user, get_admin_user, get_jakarta_now
-from utils.reserved_check import build_reserved_set, build_reserved_map, is_record_reserved, find_reservation_owner
+from utils.reserved_check import build_reserved_set, build_reserved_map, is_record_reserved, find_reservation_owner, sync_all_reserved_statuses
 
 router = APIRouter(tags=["Member WD CRM"])
 
