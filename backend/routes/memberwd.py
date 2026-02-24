@@ -485,27 +485,11 @@ async def get_memberwd_databases(product_id: Optional[str] = None, user: User = 
     
     databases = await db.memberwd_databases.find(query, {'_id': 0}).sort('uploaded_at', -1).to_list(1000)
     
-    # Get all approved reserved members for excluded count calculation
-    reserved_members = await db.reserved_members.find(
-        {'status': 'approved'},
-        {'_id': 0, 'customer_id': 1, 'customer_name': 1, 'product_id': 1}
-    ).to_list(100000)
-    
-    # Build set of reserved customer identifiers per product
-    reserved_by_product = {}
-    for rm in reserved_members:
-        prod_id = rm.get('product_id', '')
-        if prod_id not in reserved_by_product:
-            reserved_by_product[prod_id] = set()
-        if rm.get('customer_id'):
-            reserved_by_product[prod_id].add(rm['customer_id'].strip().upper())
-        if rm.get('customer_name'):
-            reserved_by_product[prod_id].add(rm['customer_name'].strip().upper())
-    
     for database in databases:
         total = await db.memberwd_records.count_documents({'database_id': database['id']})
         assigned = await db.memberwd_records.count_documents({'database_id': database['id'], 'status': 'assigned'})
         archived = await db.memberwd_records.count_documents({'database_id': database['id'], 'status': 'invalid_archived'})
+        reserved = await db.memberwd_records.count_documents({'database_id': database['id'], 'status': 'reserved'})
         # Count records with reservation conflicts
         conflict_count = await db.memberwd_records.count_documents({
             'database_id': database['id'], 
@@ -513,29 +497,12 @@ async def get_memberwd_databases(product_id: Optional[str] = None, user: User = 
             'is_reservation_conflict': True
         })
         
-        # Calculate excluded count
-        excluded_count = 0
-        product_id_for_db = database.get('product_id', '')
-        available_raw = total - assigned - archived  # Don't count archived as available
-        
-        if product_id_for_db and product_id_for_db in reserved_by_product and available_raw > 0:
-            # Get available records to check against reserved members
-            available_records = await db.memberwd_records.find(
-                {'database_id': database['id'], 'status': 'available'},
-                {'_id': 0, 'row_data': 1}
-            ).to_list(100000)
-            
-            reserved_set = reserved_by_product[product_id_for_db]
-            for record in available_records:
-                if is_record_reserved(record, reserved_set):
-                    excluded_count += 1
-        
         database['total_records'] = total
         database['assigned_count'] = assigned
         database['archived_count'] = archived
-        database['excluded_count'] = excluded_count
+        database['excluded_count'] = reserved
         database['conflict_count'] = conflict_count
-        database['available_count'] = available_raw - excluded_count
+        database['available_count'] = total - assigned - archived - reserved
         if 'product_id' not in database:
             database['product_id'] = ''
             database['product_name'] = 'Unknown'
