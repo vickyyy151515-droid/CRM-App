@@ -486,10 +486,12 @@ async def get_memberwd_databases(product_id: Optional[str] = None, user: User = 
     databases = await db.memberwd_databases.find(query, {'_id': 0}).sort('uploaded_at', -1).to_list(1000)
     
     for database in databases:
+        # Lazy sync: ensure reserved statuses are correct for this database
+        reserved_count, _ = await ensure_reserved_status_for_database(db, database['id'], 'memberwd_records')
+        
         total = await db.memberwd_records.count_documents({'database_id': database['id']})
         assigned = await db.memberwd_records.count_documents({'database_id': database['id'], 'status': 'assigned'})
         archived = await db.memberwd_records.count_documents({'database_id': database['id'], 'status': 'invalid_archived'})
-        reserved = await db.memberwd_records.count_documents({'database_id': database['id'], 'status': 'reserved'})
         # Count records with reservation conflicts
         conflict_count = await db.memberwd_records.count_documents({
             'database_id': database['id'], 
@@ -500,9 +502,9 @@ async def get_memberwd_databases(product_id: Optional[str] = None, user: User = 
         database['total_records'] = total
         database['assigned_count'] = assigned
         database['archived_count'] = archived
-        database['excluded_count'] = reserved
+        database['excluded_count'] = reserved_count
         database['conflict_count'] = conflict_count
-        database['available_count'] = total - assigned - archived - reserved
+        database['available_count'] = total - assigned - archived - reserved_count
         if 'product_id' not in database:
             database['product_id'] = ''
             database['product_name'] = 'Unknown'
