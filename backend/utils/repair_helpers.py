@@ -286,6 +286,7 @@ async def run_full_repair(
             
             # Get updated counts
             counts = await count_records_by_status(db, database['id'], collections['records'])
+            reserved = await db[collections['records']].count_documents({'database_id': database['id'], 'status': 'reserved'})
             
             repair_log['databases_checked'].append({
                 'database_id': database['id'],
@@ -294,7 +295,8 @@ async def run_full_repair(
                 'available': counts['available'],
                 'assigned': counts['assigned'],
                 'archived': counts['archived'],
-                'is_consistent': counts['total'] == (counts['available'] + counts['assigned'] + counts['archived'])
+                'reserved': reserved,
+                'is_consistent': counts['total'] == (counts['available'] + counts['assigned'] + counts['archived'] + reserved)
             })
             
         except Exception as e:
