@@ -921,8 +921,8 @@ export default function AdminMemberWDCRM() {
                             <span className="text-purple-600 font-medium">{eligibleRecords.length}</span>
                             <span className="text-purple-500"> eligible</span>
                             {reservedInDb > 0 && (
-                              <span className="text-amber-600 ml-1">
-                                ({reservedInDb} excluded - in Reserved Members)
+                              <span className="text-violet-600 ml-1">
+                                ({reservedInDb} reserved)
                               </span>
                             )}
                           </div>
