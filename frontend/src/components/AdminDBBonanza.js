@@ -925,6 +925,7 @@ export default function AdminDBBonanza() {
                     >
                       <option value="all">All Status</option>
                       <option value="available">Available</option>
+                      <option value="reserved">Reserved</option>
                       <option value="assigned">Assigned</option>
                     </select>
                   </div>
