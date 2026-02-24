@@ -1481,14 +1481,19 @@ async def get_memberwd_staff_list(user: User = Depends(get_admin_user)):
 async def repair_memberwd_data(user: User = Depends(get_admin_user)):
     """
     Repair and synchronize memberwd record data.
-    Uses shared repair utilities + MemberWD-specific batch sync.
+    Uses shared repair utilities + MemberWD-specific batch sync + reserved status sync.
     """
     from utils.repair_helpers import run_full_repair, sync_batch_counts
     
     db = get_db()
     
-    # Run standard repair
+    # Run standard repair (fixes unknown statuses, orphaned assignments, etc.)
     result = await run_full_repair(db, module='memberwd')
+    
+    # Sync reserved statuses (mark matching available records as 'reserved')
+    reserved_sync = await sync_all_reserved_statuses(db)
+    result['repair_log']['reserved_marked'] = reserved_sync['marked_reserved']
+    result['repair_log']['reserved_reverted'] = reserved_sync['marked_available']
     
     # Also sync batch counts (MemberWD specific)
     batch_sync = await sync_batch_counts(db)
@@ -1505,7 +1510,8 @@ async def repair_memberwd_data(user: User = Depends(get_admin_user)):
         result['repair_log'].get('fixed_invalid_status_restored', 0) + 
         result['repair_log'].get('fixed_invalid_status_cleared', 0) +
         result['repair_log'].get('fixed_orphaned_assignments', 0) +
-        batch_sync['fixed_batch_counts']
+        batch_sync['fixed_batch_counts'] +
+        reserved_sync['marked_reserved'] + reserved_sync['marked_available']
     )
     result['message'] = f'Data repair completed. Fixed {total_fixed} issues.'
     
