@@ -243,7 +243,7 @@ async def upload_bonanza_database(
             'product_name': product['name'],
             'row_number': idx + 1,
             'row_data': row_data,
-            'status': 'available',
+            'status': 'reserved' if is_reserved else 'available',
             'assigned_to': None,
             'assigned_to_name': None,
             'assigned_at': None,
