@@ -1977,11 +1977,18 @@ async def approve_reserved_member(member_id: str, user: User = Depends(get_admin
         db, customer_id, reserved_by_staff_id, reserved_by_staff_name, product_id
     )
     
+    # SYNC: Mark matching available records as 'reserved' in MemberWD and Bonanza
+    reserved_sync_count = await sync_reserved_status_on_add(
+        db, customer_id, member.get('customer_name', ''), reserved_by_staff_id, reserved_by_staff_name
+    )
+    
     response = {'message': 'Reserved member approved'}
     if invalidated_count > 0:
         response['invalidated_records'] = invalidated_count
         response['notified_staff_count'] = len(notified_staff)
         response['note'] = f'Also invalidated {invalidated_count} records for this customer assigned to other staff'
+    if reserved_sync_count > 0:
+        response['records_marked_reserved'] = reserved_sync_count
     
     return response
 
