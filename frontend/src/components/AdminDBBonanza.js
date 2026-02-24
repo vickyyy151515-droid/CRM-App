@@ -982,11 +982,13 @@ export default function AdminDBBonanza() {
                                   <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                                     record.status === 'reserved'
                                       ? 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300'
-                                      : record.status === 'available' 
-                                        ? 'bg-emerald-100 text-emerald-800' 
-                                        : 'bg-blue-100 text-blue-800'
+                                      : record.status === 'invalid_archived'
+                                        ? 'bg-slate-100 text-slate-600 dark:bg-slate-700/50 dark:text-slate-400'
+                                        : record.status === 'available' 
+                                          ? 'bg-emerald-100 text-emerald-800' 
+                                          : 'bg-blue-100 text-blue-800'
                                   }`}>
-                                    {record.status === 'reserved' ? `Reserved${record.reserved_by_name ? ` (${record.reserved_by_name})` : ''}` : record.status === 'available' ? 'Available' : 'Assigned'}
+                                    {record.status === 'reserved' ? `Reserved${record.reserved_by_name ? ` (${record.reserved_by_name})` : ''}` : record.status === 'invalid_archived' ? 'Archived' : record.status === 'available' ? 'Available' : 'Assigned'}
                                   </span>
                                   {record.is_reservation_conflict && (
                                     <span 
