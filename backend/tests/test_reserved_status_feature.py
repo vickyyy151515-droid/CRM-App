@@ -41,7 +41,7 @@ class TestReservedStatusFeature:
             "password": ADMIN_PASSWORD
         })
         assert response.status_code == 200, f"Login failed: {response.text}"
-        return response.json()["access_token"]
+        return response.json()["token"]
     
     @pytest.fixture(scope="class")
     def auth_headers(self, admin_token):
@@ -384,7 +384,7 @@ class TestReservedStatusCounts:
             "password": ADMIN_PASSWORD
         })
         assert response.status_code == 200, f"Login failed: {response.text}"
-        return response.json()["access_token"]
+        return response.json()["token"]
     
     @pytest.fixture(scope="class")
     def auth_headers(self, admin_token):
