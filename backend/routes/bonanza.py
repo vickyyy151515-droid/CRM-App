@@ -288,7 +288,6 @@ async def get_bonanza_databases(product_id: Optional[str] = None, user: User = D
         # Lazy sync: ensure reserved statuses are correct for this database
         reserved_count, _ = await ensure_reserved_status_for_database(db, database['id'], 'bonanza_records')
         
-        total = await db.bonanza_records.count_documents({'database_id': database['id']})
         available = await db.bonanza_records.count_documents({'database_id': database['id'], 'status': 'available'})
         assigned = await db.bonanza_records.count_documents({'database_id': database['id'], 'status': 'assigned'})
         archived = await db.bonanza_records.count_documents({'database_id': database['id'], 'status': 'invalid_archived'})
@@ -299,7 +298,7 @@ async def get_bonanza_databases(product_id: Optional[str] = None, user: User = D
             'is_reservation_conflict': True
         })
         
-        database['total_records'] = total
+        database['total_records'] = available + reserved_count + assigned
         database['assigned_count'] = assigned
         database['archived_count'] = archived
         database['excluded_count'] = reserved_count
