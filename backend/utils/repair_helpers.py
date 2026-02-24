@@ -58,8 +58,14 @@ async def check_database_health(
         'status': 'invalid'
     })
     
+    # Count reserved status
+    reserved_count = await db[records_collection].count_documents({
+        'database_id': database_id, 
+        'status': 'reserved'
+    })
+    
     # Count other invalid status values
-    valid_statuses = ['available', 'assigned', 'invalid_archived', 'invalid']
+    valid_statuses = ['available', 'assigned', 'invalid_archived', 'invalid', 'reserved']
     other_invalid_status = await db[records_collection].count_documents({
         'database_id': database_id, 
         'status': {'$nin': valid_statuses}
@@ -74,8 +80,9 @@ async def check_database_health(
         'available': counts['available'],
         'assigned': counts['assigned'],
         'archived': counts['archived'],
+        'reserved': reserved_count,
         'invalid_status_records': invalid_status_count,
-        'sum_matches': counts['total'] == (counts['available'] + counts['assigned'] + counts['archived'] + invalid_status_count),
+        'sum_matches': counts['total'] == (counts['available'] + counts['assigned'] + counts['archived'] + invalid_status_count + reserved_count),
         'issues': {
             'missing_db_name': missing_db_name,
             'orphaned_assignments': orphaned_assignments,
