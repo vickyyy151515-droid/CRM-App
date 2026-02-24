@@ -2066,10 +2066,16 @@ async def delete_reserved_member(member_id: str, user: User = Depends(get_admin_
     
     await db.reserved_members.delete_one({'id': member_id})
     
-    return {
+    # SYNC: Revert matching 'reserved' records to 'available' in MemberWD and Bonanza
+    unreserved_count = await sync_reserved_status_on_remove(db, customer_id, member.get('customer_name', ''))
+    
+    response = {
         'message': 'Reserved member deleted',
         'restored_records': restored_count
     }
+    if unreserved_count > 0:
+        response['records_unreserved'] = unreserved_count
+    return response
 
 @router.patch("/reserved-members/{member_id}/move")
 async def move_reserved_member(member_id: str, new_staff_id: str, user: User = Depends(get_admin_user)):
