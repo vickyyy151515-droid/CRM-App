@@ -107,6 +107,16 @@ When a staff member records a new omset for a customer whose reservation was pre
 - **Bug fix**: Fixed duplicate entries in `deleted_reserved_members` - all archiving paths now deduplicate before inserting, and GET endpoint auto-cleans duplicates on fetch
 - **Testing**: 5/5 backend tests passed including negative cases (iteration_58)
 
+### Reserved Status for MemberWD & Bonanza Records (2026-02-24) - COMPLETE
+Records matching active reserved members now get `status: 'reserved'` instead of staying `status: 'available'`.
+- **Upload**: New uploads flag matching records as `reserved` with `reserved_by`/`reserved_by_name`
+- **Auto-sync on approve**: When a reservation is approved, matching `available` records across memberwd_records and bonanza_records become `reserved`
+- **Auto-sync on delete/expire**: When a reservation is deleted or expires, matching `reserved` records revert to `available` (only if no other active reservation covers that customer)
+- **Migration endpoint**: `POST /api/memberwd/admin/sync-reserved-status` for one-time full resync
+- **Frontend**: Purple "Reserved (staff name)" badge in records table, filter dropdown includes "Reserved" option, database stats show reserved count
+- **Files**: `utils/reserved_check.py` (sync_reserved_status_on_add/remove/all), `memberwd.py`, `bonanza.py`, `records.py`, `scheduled_reports.py`, `AdminMemberWDCRM.js`, `AdminDBBonanza.js`
+- **Testing**: 22/22 tests passed (iteration_60)
+
 ### NDP/RDP Data Consistency Audit (2026-02-23) - COMPLETE
 Full audit of all reporting endpoints for NDP/RDP calculation consistency, as requested by user.
 - **Bug found in `report.py`**: `unique_deposits` deduplication key was `(product_id, date, customer_id)` without `staff_id`, causing incorrect staff attribution and wrong NDP/RDP counts when multiple staff record the same customer.
