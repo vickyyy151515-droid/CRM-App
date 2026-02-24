@@ -790,11 +790,8 @@ export default function AdminDBBonanza() {
                         ) || columns[0] || 'username';
                         
                         const availableRecords = records.filter(r => r && r.status === 'available');
-                        const eligibleRecords = availableRecords.filter(r => {
-                          const username = r.row_data?.[usernameField];
-                          return !username || !reservedNames.includes(String(username).toLowerCase().trim());
-                        });
-                        const reservedInDb = availableRecords.length - eligibleRecords.length;
+                        const reservedInDb = records.filter(r => r && r.status === 'reserved').length;
+                        const eligibleRecords = availableRecords;
                     
                     return (
                       <div className="mb-4 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg">
