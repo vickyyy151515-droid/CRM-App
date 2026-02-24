@@ -489,7 +489,6 @@ async def get_memberwd_databases(product_id: Optional[str] = None, user: User = 
         # Lazy sync: ensure reserved statuses are correct for this database
         reserved_count, _ = await ensure_reserved_status_for_database(db, database['id'], 'memberwd_records')
         
-        total = await db.memberwd_records.count_documents({'database_id': database['id']})
         available = await db.memberwd_records.count_documents({'database_id': database['id'], 'status': 'available'})
         assigned = await db.memberwd_records.count_documents({'database_id': database['id'], 'status': 'assigned'})
         archived = await db.memberwd_records.count_documents({'database_id': database['id'], 'status': 'invalid_archived'})
@@ -500,7 +499,7 @@ async def get_memberwd_databases(product_id: Optional[str] = None, user: User = 
             'is_reservation_conflict': True
         })
         
-        database['total_records'] = total
+        database['total_records'] = available + reserved_count + assigned
         database['assigned_count'] = assigned
         database['archived_count'] = archived
         database['excluded_count'] = reserved_count
