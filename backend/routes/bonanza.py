@@ -298,7 +298,7 @@ async def get_bonanza_databases(product_id: Optional[str] = None, user: User = D
             'is_reservation_conflict': True
         })
         
-        database['total_records'] = available + reserved_count + assigned
+        database['total_records'] = available + reserved_count + assigned + archived
         database['assigned_count'] = assigned
         database['archived_count'] = archived
         database['excluded_count'] = reserved_count
