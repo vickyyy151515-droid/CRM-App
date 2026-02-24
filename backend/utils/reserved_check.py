@@ -120,3 +120,178 @@ def find_reservation_owner(record: dict, reserved_map: dict):
             if normalized in reserved_map:
                 return True, reserved_map[normalized].get('staff_name', 'Another staff')
     return False, None
+
+
+async def sync_reserved_status_on_add(db, customer_id: str, customer_name: str, staff_id: str, staff_name: str):
+    """
+    When a reservation is APPROVED, mark matching available records as 'reserved'
+    in both memberwd_records and bonanza_records.
+    """
+    identifiers = set()
+    if customer_id and str(customer_id).strip():
+        identifiers.add(str(customer_id).strip().upper())
+    if customer_name and str(customer_name).strip():
+        identifiers.add(str(customer_name).strip().upper())
+    if not identifiers:
+        return 0
+
+    total_updated = 0
+    for collection_name in ['memberwd_records', 'bonanza_records']:
+        records = await db[collection_name].find(
+            {'status': 'available'},
+            {'_id': 0, 'id': 1, 'row_data': 1}
+        ).to_list(None)
+
+        ids_to_reserve = []
+        for record in records:
+            row_data = record.get('row_data', {})
+            for value in row_data.values():
+                if value and str(value).strip().upper() in identifiers:
+                    ids_to_reserve.append(record['id'])
+                    break
+
+        if ids_to_reserve:
+            await db[collection_name].update_many(
+                {'id': {'$in': ids_to_reserve}},
+                {'$set': {
+                    'status': 'reserved',
+                    'is_reserved_member': True,
+                    'reserved_by': staff_id,
+                    'reserved_by_name': staff_name,
+                }}
+            )
+            total_updated += len(ids_to_reserve)
+
+    return total_updated
+
+
+async def sync_reserved_status_on_remove(db, customer_id: str, customer_name: str):
+    """
+    When a reservation is DELETED/EXPIRED, check if ANY other active reservation
+    still covers this customer. If not, revert matching 'reserved' records back to 'available'.
+    """
+    identifiers = set()
+    if customer_id and str(customer_id).strip():
+        identifiers.add(str(customer_id).strip().upper())
+    if customer_name and str(customer_name).strip():
+        identifiers.add(str(customer_name).strip().upper())
+    if not identifiers:
+        return 0
+
+    # Check if any OTHER active reservation still covers this customer
+    all_reserved = await db.reserved_members.find(
+        {'status': 'approved'},
+        {'_id': 0, 'customer_id': 1, 'customer_name': 1}
+    ).to_list(None)
+
+    still_reserved = build_reserved_set(all_reserved)
+
+    # If any of this customer's identifiers are still in the active set, don't unreserve
+    if identifiers & still_reserved:
+        return 0
+
+    total_updated = 0
+    for collection_name in ['memberwd_records', 'bonanza_records']:
+        records = await db[collection_name].find(
+            {'status': 'reserved'},
+            {'_id': 0, 'id': 1, 'row_data': 1}
+        ).to_list(None)
+
+        ids_to_unreserve = []
+        for record in records:
+            row_data = record.get('row_data', {})
+            for value in row_data.values():
+                if value and str(value).strip().upper() in identifiers:
+                    ids_to_unreserve.append(record['id'])
+                    break
+
+        if ids_to_unreserve:
+            await db[collection_name].update_many(
+                {'id': {'$in': ids_to_unreserve}},
+                {'$set': {
+                    'status': 'available',
+                    'is_reserved_member': False,
+                    'reserved_by': None,
+                    'reserved_by_name': None,
+                }}
+            )
+            total_updated += len(ids_to_unreserve)
+
+    return total_updated
+
+
+async def sync_all_reserved_statuses(db):
+    """
+    Full resync: scan ALL available+reserved records and correct their status
+    based on the current set of active reservations. Used for migration/repair.
+    """
+    reserved_members = await db.reserved_members.find(
+        {'status': 'approved'},
+        {'_id': 0, 'customer_id': 1, 'customer_name': 1, 'staff_id': 1, 'staff_name': 1}
+    ).to_list(None)
+
+    reserved_set = build_reserved_set(reserved_members)
+    reserved_map = build_reserved_map(reserved_members)
+
+    total_marked_reserved = 0
+    total_marked_available = 0
+
+    for collection_name in ['memberwd_records', 'bonanza_records']:
+        # Mark available -> reserved
+        avail_records = await db[collection_name].find(
+            {'status': 'available'},
+            {'_id': 0, 'id': 1, 'row_data': 1}
+        ).to_list(None)
+
+        to_reserve = []
+        reserve_info = {}
+        for record in avail_records:
+            row_data = record.get('row_data', {})
+            for value in row_data.values():
+                if value and str(value).strip():
+                    normalized = str(value).strip().upper()
+                    if normalized in reserved_map:
+                        to_reserve.append(record['id'])
+                        reserve_info[record['id']] = reserved_map[normalized]
+                        break
+
+        for rid in to_reserve:
+            info = reserve_info[rid]
+            await db[collection_name].update_one(
+                {'id': rid},
+                {'$set': {
+                    'status': 'reserved',
+                    'is_reserved_member': True,
+                    'reserved_by': info['staff_id'],
+                    'reserved_by_name': info['staff_name'],
+                }}
+            )
+        total_marked_reserved += len(to_reserve)
+
+        # Mark reserved -> available (if no longer reserved)
+        res_records = await db[collection_name].find(
+            {'status': 'reserved'},
+            {'_id': 0, 'id': 1, 'row_data': 1}
+        ).to_list(None)
+
+        to_unreserve = []
+        for record in res_records:
+            if not is_record_reserved(record, reserved_set):
+                to_unreserve.append(record['id'])
+
+        if to_unreserve:
+            await db[collection_name].update_many(
+                {'id': {'$in': to_unreserve}},
+                {'$set': {
+                    'status': 'available',
+                    'is_reserved_member': False,
+                    'reserved_by': None,
+                    'reserved_by_name': None,
+                }}
+            )
+        total_marked_available += len(to_unreserve)
+
+    return {
+        'marked_reserved': total_marked_reserved,
+        'marked_available': total_marked_available,
+    }
