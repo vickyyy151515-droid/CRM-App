@@ -823,6 +823,9 @@ async def process_reserved_member_cleanup():
             # SYNC: Restore records that were invalidated by this reservation
             await restore_invalidated_records_for_reservation(db, customer_id, staff_id, product_id)
             
+            # SYNC: Revert 'reserved' records back to 'available' in MemberWD/Bonanza
+            await sync_reserved_status_on_remove(db, customer_id, member.get('customer_name', ''))
+            
             print(f"  -> DELETED: {customer_id} (no deposit)")
             continue
         
