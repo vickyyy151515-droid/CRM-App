@@ -1579,3 +1579,19 @@ async def get_memberwd_data_health(user: User = Depends(get_admin_user)):
     health_report['is_healthy'] = health_report['total_issues'] == 0
     
     return health_report
+
+
+@router.post("/memberwd/admin/sync-reserved-status")
+async def sync_reserved_status(user: User = Depends(get_admin_user)):
+    """
+    One-time migration / repair: Sync reserved status for all records
+    in memberwd_records and bonanza_records based on current active reservations.
+    Marks matching available records as 'reserved' and un-marks stale ones.
+    """
+    db = get_db()
+    result = await sync_all_reserved_statuses(db)
+    return {
+        'success': True,
+        'message': f'Synced reserved statuses: {result["marked_reserved"]} marked as reserved, {result["marked_available"]} reverted to available',
+        **result
+    }
