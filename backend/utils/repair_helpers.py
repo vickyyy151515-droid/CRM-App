@@ -170,8 +170,8 @@ async def repair_database_records(
     )
     repairs['fixed_invalid_status_cleared'] += result.modified_count
     
-    # Fix other invalid status values
-    valid_statuses = ['available', 'assigned', 'invalid_archived', 'invalid']
+    # Fix other invalid status values (NOT including 'reserved' which is a valid status)
+    valid_statuses = ['available', 'assigned', 'invalid_archived', 'invalid', 'reserved']
     result = await db[records_collection].update_many(
         {'database_id': database_id, 'status': {'$nin': valid_statuses}},
         {'$set': {'status': 'available'}}
