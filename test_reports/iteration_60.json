@@ -1,0 +1,92 @@
+{
+  "summary": "Backend testing of 'reserved' status feature for Member WD CRM and DB Bonanza. All 22 tests passed. The feature correctly adds status='reserved' to records matching reserved members, with proper sync on approval/deletion.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "✓ POST /api/memberwd/admin/sync-reserved-status - syncs all records based on active reservations (returns marked_reserved and marked_available counts)",
+    "✓ GET /api/memberwd/databases - returns excluded_count (now = reserved count) correctly",
+    "✓ GET /api/bonanza/databases - returns excluded_count correctly",
+    "✓ GET /api/memberwd/databases/{id}/records?status=reserved - returns records with status='reserved', reserved_by, reserved_by_name fields",
+    "✓ GET /api/bonanza/databases/{id}/records?status=reserved - same for bonanza",
+    "✓ POST /api/memberwd/assign-random - does NOT assign records with status='reserved' (only status='available')",
+    "✓ POST /api/bonanza/assign-random - same for bonanza",
+    "✓ POST /api/memberwd/assign - manual assignment filters by status='available', skipping reserved",
+    "✓ Reserved member lifecycle: create -> approve -> records sync to reserved -> delete -> records revert to available",
+    "✓ excluded_count matches actual count of status='reserved' records in each database",
+    "✓ available_count = total - assigned - archived - reserved (formula verified)",
+    "✓ Sync is idempotent (running twice produces same result)",
+    "✓ GET /api/products returns product list",
+    "✓ GET /api/users returns staff list"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_reserved_status_feature.py",
+    "/app/backend/tests/test_reserved_status_lifecycle_e2e.py",
+    "/app/test_reports/pytest/reserved_status_feature_results.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [
+    "✓ reserved_check.py: sync_reserved_status_on_add() correctly marks available records as 'reserved' when a reservation is approved",
+    "✓ reserved_check.py: sync_reserved_status_on_remove() correctly reverts 'reserved' records to 'available' when reservation is deleted (only if no other reservation covers the customer)",
+    "✓ memberwd.py upload: Uses build_reserved_map() to flag records as status='reserved' on upload",
+    "✓ bonanza.py upload: Same reserved member handling on upload",
+    "✓ memberwd.py/bonanza.py database listing: excluded_count = count of status='reserved' records",
+    "✓ records.py approve_reserved_member: Calls sync_reserved_status_on_add() after approval",
+    "✓ records.py delete_reserved_member: Calls sync_reserved_status_on_remove() after deletion",
+    "✓ scheduled_reports.py process_reserved_member_cleanup: Calls sync_reserved_status_on_remove() when reservation expires"
+  ],
+
+  "updated_files": [
+    "/app/backend/tests/test_reserved_status_feature.py (NEW - 14 tests for reserved status feature)",
+    "/app/backend/tests/test_reserved_status_lifecycle_e2e.py (NEW - 8 tests for lifecycle E2E)"
+  ],
+
+  "success_rate": {
+    "backend": "100% (22/22 tests passed)",
+    "frontend": "N/A (backend only testing requested)"
+  },
+
+  "test_credentials": {
+    "admin": {"email": "vicky@crm.com", "password": "admin123", "role": "master_admin"}
+  },
+
+  "seed_data_creation": "Created test reserved member TEST_E2E_* (auto-cleaned up after test)",
+
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "Reserved status feature fully tested in iteration_60. Key files: backend/utils/reserved_check.py (sync functions), backend/routes/memberwd.py & bonanza.py (upload/listing with reserved status), backend/routes/records.py (approve/delete calls sync). Test files: test_reserved_status_feature.py (14 tests), test_reserved_status_lifecycle_e2e.py (8 tests). All endpoints working correctly.",
+
+  "feature_verification": {
+    "feature_summary": "Records matching reserved members now have status='reserved' instead of status='available'. This makes reservations visible in the UI and prevents accidental manual assignment.",
+    "endpoints_verified": [
+      {"endpoint": "POST /api/memberwd/admin/sync-reserved-status", "status": "PASS", "description": "Full resync of reserved statuses"},
+      {"endpoint": "GET /api/memberwd/databases", "status": "PASS", "description": "excluded_count = reserved records count"},
+      {"endpoint": "GET /api/bonanza/databases", "status": "PASS", "description": "excluded_count = reserved records count"},
+      {"endpoint": "GET /api/memberwd/databases/{id}/records", "status": "PASS", "description": "status='reserved' with reserved_by fields"},
+      {"endpoint": "GET /api/bonanza/databases/{id}/records", "status": "PASS", "description": "status='reserved' with reserved_by fields"},
+      {"endpoint": "POST /api/memberwd/assign-random", "status": "PASS", "description": "Skips reserved records"},
+      {"endpoint": "POST /api/bonanza/assign-random", "status": "PASS", "description": "Skips reserved records"},
+      {"endpoint": "POST /api/memberwd/assign", "status": "PASS", "description": "Filters by available only"},
+      {"endpoint": "PATCH /api/reserved-members/{id}/approve", "status": "PASS", "description": "Triggers sync_reserved_status_on_add"},
+      {"endpoint": "DELETE /api/reserved-members/{id}", "status": "PASS", "description": "Triggers sync_reserved_status_on_remove"}
+    ],
+    "sync_functions": [
+      {"function": "sync_reserved_status_on_add()", "behavior": "Marks available records matching customer as reserved"},
+      {"function": "sync_reserved_status_on_remove()", "behavior": "Reverts reserved records to available if no other reservation covers customer"},
+      {"function": "sync_all_reserved_statuses()", "behavior": "Full resync for migration/repair"}
+    ]
+  }
+}
