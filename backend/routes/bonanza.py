@@ -289,6 +289,7 @@ async def get_bonanza_databases(product_id: Optional[str] = None, user: User = D
         reserved_count, _ = await ensure_reserved_status_for_database(db, database['id'], 'bonanza_records')
         
         total = await db.bonanza_records.count_documents({'database_id': database['id']})
+        available = await db.bonanza_records.count_documents({'database_id': database['id'], 'status': 'available'})
         assigned = await db.bonanza_records.count_documents({'database_id': database['id'], 'status': 'assigned'})
         archived = await db.bonanza_records.count_documents({'database_id': database['id'], 'status': 'invalid_archived'})
         # Count records with reservation conflicts
@@ -303,7 +304,7 @@ async def get_bonanza_databases(product_id: Optional[str] = None, user: User = D
         database['archived_count'] = archived
         database['excluded_count'] = reserved_count
         database['conflict_count'] = conflict_count
-        database['available_count'] = total - assigned - archived - reserved_count
+        database['available_count'] = available
         if 'product_id' not in database:
             database['product_id'] = ''
             database['product_name'] = 'Unknown'
