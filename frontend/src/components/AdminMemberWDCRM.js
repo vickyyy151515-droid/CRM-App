@@ -881,13 +881,8 @@ export default function AdminMemberWDCRM() {
                     ) || columns[0];
                     
                     const availableRecords = records.filter(r => r.status === 'available');
-                    const eligibleRecords = availableRecords.filter(r => {
-                      const username = r.row_data?.[usernameField];
-                      if (!username) return true;
-                      const usernameStr = String(username).toLowerCase().trim();
-                      return !reservedNames.includes(usernameStr);
-                    });
-                    const reservedInDb = availableRecords.length - eligibleRecords.length;
+                    const reservedInDb = records.filter(r => r.status === 'reserved').length;
+                    const eligibleRecords = availableRecords;
                     
                     return (
                       <div className="mb-4 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg">
