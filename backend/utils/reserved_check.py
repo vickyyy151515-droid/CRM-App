@@ -295,3 +295,90 @@ async def sync_all_reserved_statuses(db):
         'marked_reserved': total_marked_reserved,
         'marked_available': total_marked_available,
     }
+
+
+async def ensure_reserved_status_for_database(db, database_id: str, collection_name: str):
+    """
+    Lazy sync: ensure all records in a specific database have correct reserved status.
+    Called when listing databases or fetching records. Fast because it only processes one database.
+    
+    Returns (reserved_count, ids_changed) for the caller to use.
+    """
+    reserved_members = await db.reserved_members.find(
+        {'status': 'approved'},
+        {'_id': 0, 'customer_id': 1, 'customer_name': 1, 'staff_id': 1, 'staff_name': 1}
+    ).to_list(None)
+
+    reserved_set = build_reserved_set(reserved_members)
+    reserved_map = build_reserved_map(reserved_members)
+
+    changed = False
+
+    # 1. Check available records → should they be reserved?
+    avail_records = await db[collection_name].find(
+        {'database_id': database_id, 'status': 'available'},
+        {'_id': 0, 'id': 1, 'row_data': 1}
+    ).to_list(None)
+
+    to_reserve = []
+    reserve_info = {}
+    for record in avail_records:
+        row_data = record.get('row_data', {})
+        for value in row_data.values():
+            if value and str(value).strip():
+                normalized = str(value).strip().upper()
+                if normalized in reserved_map:
+                    to_reserve.append(record['id'])
+                    reserve_info[record['id']] = reserved_map[normalized]
+                    break
+
+    if to_reserve:
+        for rid in to_reserve:
+            info = reserve_info[rid]
+            await db[collection_name].update_one(
+                {'id': rid},
+                {'$set': {
+                    'status': 'reserved',
+                    'is_reserved_member': True,
+                    'reserved_by': info['staff_id'],
+                    'reserved_by_name': info['staff_name'],
+                }}
+            )
+        changed = True
+
+    # 2. Check reserved records → should they be unreserved?
+    res_records = await db[collection_name].find(
+        {'database_id': database_id, 'status': 'reserved'},
+        {'_id': 0, 'id': 1, 'row_data': 1, 'is_reserved_member': 1}
+    ).to_list(None)
+
+    to_unreserve = []
+    for record in res_records:
+        # Check against CURRENT reserved set (not stale flag)
+        row_data = record.get('row_data', {})
+        still_reserved = False
+        for value in row_data.values():
+            if value and str(value).strip():
+                if str(value).strip().upper() in reserved_set:
+                    still_reserved = True
+                    break
+        if not still_reserved:
+            to_unreserve.append(record['id'])
+
+    if to_unreserve:
+        await db[collection_name].update_many(
+            {'id': {'$in': to_unreserve}},
+            {'$set': {
+                'status': 'available',
+                'is_reserved_member': False,
+                'reserved_by': None,
+                'reserved_by_name': None,
+            }}
+        )
+        changed = True
+
+    reserved_count = await db[collection_name].count_documents(
+        {'database_id': database_id, 'status': 'reserved'}
+    )
+
+    return reserved_count, changed
