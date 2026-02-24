@@ -11,6 +11,7 @@ import pandas as pd
 
 from .deps import get_db, get_current_user, get_admin_user, get_jakarta_now, User, JAKARTA_TZ
 from .notifications import create_notification
+from utils.reserved_check import sync_reserved_status_on_add, sync_reserved_status_on_remove
 
 router = APIRouter(tags=["Records Management"])
 
