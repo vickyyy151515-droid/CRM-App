@@ -13,6 +13,7 @@ from .deps import get_db, get_admin_user, User
 from .notifications import create_notification
 from .records import restore_invalidated_records_for_reservation
 from utils.helpers import normalize_customer_id
+from utils.reserved_check import sync_reserved_status_on_remove
 
 router = APIRouter()
 
