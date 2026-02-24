@@ -750,9 +750,9 @@ export default function AdminDBBonanza() {
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                       <span className="text-emerald-600 font-medium">{database.available_count}</span> available • 
                       {database.excluded_count > 0 && (
-                        <span className="text-amber-600 font-medium ml-1">{database.excluded_count}</span>
+                        <span className="text-violet-600 font-medium ml-1">{database.excluded_count}</span>
                       )}
-                      {database.excluded_count > 0 && ' excluded • '}
+                      {database.excluded_count > 0 && ' reserved • '}
                       <span className="text-blue-600 font-medium ml-1">{database.assigned_count}</span> assigned
                       {database.conflict_count > 0 && (
                         <span className="text-amber-600 font-medium ml-1" title="Records with reservation conflicts">
